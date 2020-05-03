@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1062
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET", "LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj", "{CF35AE67-910A-42DF-A939-25E1A1CF47D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.Tests", "LVD.Stakhanovise.NET.Tests\LVD.Stakhanovise.NET.Tests.csproj", "{A01D2FAD-25C2-462F-840F-1F3079DDD818}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF35AE67-910A-42DF-A939-25E1A1CF47D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF35AE67-910A-42DF-A939-25E1A1CF47D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF35AE67-910A-42DF-A939-25E1A1CF47D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF35AE67-910A-42DF-A939-25E1A1CF47D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A01D2FAD-25C2-462F-840F-1F3079DDD818}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A01D2FAD-25C2-462F-840F-1F3079DDD818}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A01D2FAD-25C2-462F-840F-1F3079DDD818}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A01D2FAD-25C2-462F-840F-1F3079DDD818}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7257DD3E-0CDA-4722-A635-469CB9494445}
+	EndGlobalSection
+EndGlobal

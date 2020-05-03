@@ -1,0 +1,16 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace LVD.Stakhanovise.NET.Processor
+{
+   public interface ITaskPoller : IDisposable
+   {
+      Task StartAsync(params string[] requiredPayloadTypes);
+
+      Task StopAync();
+
+      bool IsRunning { get; }
+   }
+}

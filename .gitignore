@@ -1,0 +1,11 @@
+bin
+obj
+Logs
+tools
+.vs
+*.suo
+aspnet_client
+/db/*.bak
+*.nupkg
+*.nuspec
+license-ss.txt
