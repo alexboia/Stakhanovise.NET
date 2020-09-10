@@ -55,9 +55,9 @@ namespace LVD.Stakhanovise.NET.Model
 			LastProcessingAttemptedAtColumnName = "task_last_processing_attempted_at";
 			ProcessingFinalizedAtColumnName = "task_processing_finalized_at";
 
-			TableName = "tasks_queue_t";
-			NewTaskNotificaionChannelName = "prt_task_queue_item_added";
-			DequeueFunctionName = "prt_try_dequeue_task";
+			TableName = "sk_tasks_queue_t";
+			NewTaskNotificaionChannelName = "sk_task_queue_item_added";
+			DequeueFunctionName = "sk_try_dequeue_task";
 		}
 
 		public void AddTablePrefix ( string tablePrefix )
