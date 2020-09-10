@@ -4,64 +4,64 @@ using System.Collections.Concurrent;
 
 namespace LVD.Stakhanovise.NET
 {
-   public class TaskExecutionContext : ITaskExecutionContext
-   {
-      private QueueTask mTask;
+	public class TaskExecutionContext : ITaskExecutionContext
+	{
+		private QueuedTask mTask;
 
-      private ConcurrentDictionary<string, object> mContextData =
-         new ConcurrentDictionary<string, object>();
+		private ConcurrentDictionary<string, object> mContextData =
+		   new ConcurrentDictionary<string, object>();
 
-      private TaskExecutionResult mResult;
+		private TaskExecutionResult mResult;
 
-      public TaskExecutionContext(QueueTask task)
-      {
-         mTask = task
-             ?? throw new ArgumentNullException(nameof(task));
-      }
+		public TaskExecutionContext ( QueuedTask task )
+		{
+			mTask = task
+				?? throw new ArgumentNullException( nameof( task ) );
+		}
 
-      public void NotifyTaskCompleted()
-      {
-         mResult = new TaskExecutionResult(mTask);
-      }
+		public void NotifyTaskCompleted ()
+		{
+			mResult = new TaskExecutionResult( mTask );
+		}
 
-      public void NotifyTaskErrored(QueueTaskError error, bool isRecoverable)
-      {
-         mResult = new TaskExecutionResult(mTask,
-             error,
-             isRecoverable);
-      }
+		public void NotifyTaskErrored ( QueuedTaskError error, bool isRecoverable )
+		{
+			mResult = new TaskExecutionResult( mTask,
+				error,
+				isRecoverable );
+		}
 
-      public TValue Get<TValue>(string key)
-      {
-         if (string.IsNullOrEmpty(key))
-            throw new ArgumentNullException(nameof(key));
+		public TValue Get<TValue> ( string key )
+		{
+			if ( string.IsNullOrEmpty( key ) )
+				throw new ArgumentNullException( nameof( key ) );
 
-         object value;
-         if (!mContextData.TryGetValue(key, out value))
-            value = null;
+			object value;
+			if ( !mContextData.TryGetValue( key, out value ) )
+				value = null;
 
-         return value is TValue
-             ? (TValue)value
-             : default(TValue);
-      }
+			return value is TValue
+				? ( TValue )value
+				: default( TValue );
+		}
 
-      public void Set<TValue>(string key, TValue value)
-      {
-         if (string.IsNullOrEmpty(key))
-            throw new ArgumentNullException(nameof(key));
+		public void Set<TValue> ( string key, TValue value )
+		{
+			if ( string.IsNullOrEmpty( key ) )
+				throw new ArgumentNullException( nameof( key ) );
 
-         TValue current = Get<TValue>(key);
-         mContextData.TryUpdate(key,
-            value,
-            current);
-      }
+			TValue current = Get<TValue>( key );
+			mContextData.TryUpdate( key,
+			   value,
+			   current );
+		}
 
-      public QueueTask Task => mTask;
+		public QueuedTask Task => mTask;
 
-      public TaskExecutionResult Result => mResult;
+		public TaskExecutionResult Result => mResult;
 
-      public QueueTaskStatus TaskStatus => mTask.Status;
+		public QueuedTaskStatus TaskStatus => mTask.Status;
 
-      public bool HasResult => mResult != null;
-   }
+		public bool HasResult => mResult != null;
+	}
 }

@@ -7,21 +7,21 @@ namespace LVD.Stakhanovise.NET
 {
    public class TaskExecutionResult : IEquatable<TaskExecutionResult>
    {
-      private QueueTask mTask;
+      private QueuedTask mTask;
 
       private bool mExecutedSuccessfully;
 
-      private QueueTaskError mError;
+      private QueuedTaskError mError;
 
       private bool mIsRecoverable;
 
-      public TaskExecutionResult(QueueTask task)
+      public TaskExecutionResult(QueuedTask task)
       {
          mTask = task ?? throw new ArgumentNullException(nameof(task));
          mExecutedSuccessfully = true;
       }
 
-      public TaskExecutionResult(QueueTask task, QueueTaskError error, bool isRecoverable)
+      public TaskExecutionResult(QueuedTask task, QueuedTaskError error, bool isRecoverable)
       {
          mTask = task ?? throw new ArgumentNullException(nameof(task));
          mError = error;
@@ -57,11 +57,11 @@ namespace LVD.Stakhanovise.NET
          return result;
       }
 
-      public QueueTask Task => mTask;
+      public QueuedTask Task => mTask;
 
       public bool ExecutedSuccessfully => mExecutedSuccessfully;
 
-      public QueueTaskError Error => mError;
+      public QueuedTaskError Error => mError;
 
       public bool IsRecoverable => mIsRecoverable;
    }

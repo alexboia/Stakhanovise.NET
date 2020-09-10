@@ -38,117 +38,117 @@ using LVD.Stakhanovise.NET.Model;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
-   public static class NpgsqlDataReaderExtensions
-   {
-      public static async Task<T> GetFieldValueAsync<T>(this NpgsqlDataReader reader, string columnName, T defaultValue)
-      {
-         if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
+	public static class NpgsqlDataReaderExtensions
+	{
+		public static async Task<T> GetFieldValueAsync<T> ( this NpgsqlDataReader reader, string columnName, T defaultValue )
+		{
+			if ( reader == null )
+				throw new ArgumentNullException( nameof( reader ) );
 
-         if (string.IsNullOrEmpty(columnName))
-            throw new ArgumentNullException(nameof(columnName));
+			if ( string.IsNullOrEmpty( columnName ) )
+				throw new ArgumentNullException( nameof( columnName ) );
 
-         int index = reader.GetOrdinal(columnName);
+			int index = reader.GetOrdinal( columnName );
 
-         if (await reader.IsDBNullAsync(index))
-            return defaultValue;
+			if ( await reader.IsDBNullAsync( index ) )
+				return defaultValue;
 
-         return await reader.GetFieldValueAsync<T>(index);
-      }
+			return await reader.GetFieldValueAsync<T>( index );
+		}
 
-      public static async Task<T?> GetNullableFieldValueAsync<T>(this NpgsqlDataReader reader, string columnName, T? defaultValue)
-          where T : struct
-      {
-         if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
+		public static async Task<T?> GetNullableFieldValueAsync<T> ( this NpgsqlDataReader reader, string columnName, T? defaultValue )
+			where T : struct
+		{
+			if ( reader == null )
+				throw new ArgumentNullException( nameof( reader ) );
 
-         if (string.IsNullOrEmpty(columnName))
-            throw new ArgumentNullException(nameof(columnName));
+			if ( string.IsNullOrEmpty( columnName ) )
+				throw new ArgumentNullException( nameof( columnName ) );
 
-         int index = reader.GetOrdinal(columnName);
+			int index = reader.GetOrdinal( columnName );
 
-         if (await reader.IsDBNullAsync(index))
-            return defaultValue;
+			if ( await reader.IsDBNullAsync( index ) )
+				return defaultValue;
 
-         T fieldValue = await reader.GetFieldValueAsync<T>(index);
-         return new T?(fieldValue);
-      }
+			T fieldValue = await reader.GetFieldValueAsync<T>( index );
+			return new T?( fieldValue );
+		}
 
-      public static async Task<QueueTask> ReadQueuedTaskAsync(this NpgsqlDataReader reader, QueueTaskMapping modelMapping)
-      {
-         string payloadString,
-             taskErrorString;
+		public static async Task<QueuedTask> ReadQueuedTaskAsync ( this NpgsqlDataReader reader, QueuedTaskMapping modelMapping )
+		{
+			string payloadString,
+				taskErrorString;
 
-         QueueTask queuedTask;
+			QueuedTask queuedTask;
 
-         if (reader == null)
-            throw new ArgumentNullException(nameof(reader));
+			if ( reader == null )
+				throw new ArgumentNullException( nameof( reader ) );
 
-         if (modelMapping == null)
-            throw new ArgumentNullException(nameof(modelMapping));
+			if ( modelMapping == null )
+				throw new ArgumentNullException( nameof( modelMapping ) );
 
-         queuedTask = new QueueTask();
+			queuedTask = new QueuedTask();
 
-         queuedTask.Id = 
-            await reader.GetFieldValueAsync<Guid>(modelMapping.IdColumnName,
-               defaultValue: Guid.Empty);
-         queuedTask.LockHandleId = 
-            await reader.GetFieldValueAsync<long>(modelMapping.LockHandleIdColumnName,
-               defaultValue: 0);
+			queuedTask.Id =
+			   await reader.GetFieldValueAsync<Guid>( modelMapping.IdColumnName,
+				  defaultValue: Guid.Empty );
+			queuedTask.LockHandleId =
+			   await reader.GetFieldValueAsync<long>( modelMapping.LockHandleIdColumnName,
+				  defaultValue: 0 );
 
-         queuedTask.Status = 
-            (QueueTaskStatus)(await reader.GetFieldValueAsync<int>(modelMapping.StatusColumnName,
-               defaultValue: 0));
-         queuedTask.Priority = 
-            await reader.GetFieldValueAsync<int>(modelMapping.PriorityColumnName,
-               defaultValue: 0);
+			queuedTask.Status =
+			   ( QueuedTaskStatus )( await reader.GetFieldValueAsync<int>( modelMapping.StatusColumnName,
+				  defaultValue: 0 ) );
+			queuedTask.Priority =
+			   await reader.GetFieldValueAsync<int>( modelMapping.PriorityColumnName,
+				  defaultValue: 0 );
 
-         queuedTask.Type = 
-            await reader.GetFieldValueAsync<string>(modelMapping.TypeColumnName,
-               defaultValue: string.Empty);
-         queuedTask.Source = 
-            await reader.GetFieldValueAsync<string>(modelMapping.SourceColumnName,
-               defaultValue: string.Empty);
+			queuedTask.Type =
+			   await reader.GetFieldValueAsync<string>( modelMapping.TypeColumnName,
+				  defaultValue: string.Empty );
+			queuedTask.Source =
+			   await reader.GetFieldValueAsync<string>( modelMapping.SourceColumnName,
+				  defaultValue: string.Empty );
 
-         queuedTask.LastErrorIsRecoverable = 
-            await reader.GetFieldValueAsync<bool>(modelMapping.LastErrorIsRecoverableColumnName,
-               defaultValue: false);
-         queuedTask.ErrorCount = 
-            await reader.GetFieldValueAsync<int>(modelMapping.ErrorCountColumnName,
-               defaultValue: 0);
+			queuedTask.LastErrorIsRecoverable =
+			   await reader.GetFieldValueAsync<bool>( modelMapping.LastErrorIsRecoverableColumnName,
+				  defaultValue: false );
+			queuedTask.ErrorCount =
+			   await reader.GetFieldValueAsync<int>( modelMapping.ErrorCountColumnName,
+				  defaultValue: 0 );
 
-         //Get payoad
-         payloadString = await reader.GetFieldValueAsync<string>(modelMapping.PayloadColumnName,
-             defaultValue: string.Empty);
+			//Get payoad
+			payloadString = await reader.GetFieldValueAsync<string>( modelMapping.PayloadColumnName,
+				defaultValue: string.Empty );
 
-         queuedTask.Payload = payloadString
-             .AsObjectFromJson();
+			queuedTask.Payload = payloadString
+				.AsObjectFromJson();
 
-         //Get last task error
-         taskErrorString = await reader.GetFieldValueAsync<string>(modelMapping.LastErrorColumnName,
-             defaultValue: string.Empty);
+			//Get last task error
+			taskErrorString = await reader.GetFieldValueAsync<string>( modelMapping.LastErrorColumnName,
+				defaultValue: string.Empty );
 
-         queuedTask.LastError = taskErrorString
-             .AsObjectFromJson<QueueTaskError>();
+			queuedTask.LastError = taskErrorString
+				.AsObjectFromJson<QueuedTaskError>();
 
-         queuedTask.PostedAt = 
-            await reader.GetFieldValueAsync<DateTimeOffset>(modelMapping.PostedAtColumnName,
-               defaultValue: DateTimeOffset.MinValue);
-         queuedTask.RepostedAt = 
-            await reader.GetFieldValueAsync<DateTimeOffset>(modelMapping.RepostedAtColumnName,
-               defaultValue: DateTimeOffset.MinValue);
+			queuedTask.PostedAt =
+			   await reader.GetFieldValueAsync<DateTimeOffset>( modelMapping.PostedAtColumnName,
+				  defaultValue: DateTimeOffset.MinValue );
+			queuedTask.RepostedAt =
+			   await reader.GetFieldValueAsync<DateTimeOffset>( modelMapping.RepostedAtColumnName,
+				  defaultValue: DateTimeOffset.MinValue );
 
-         queuedTask.FirstProcessingAttemptedAt =
-            await reader.GetNullableFieldValueAsync<DateTimeOffset>(modelMapping.FirstProcessingAttemptedAtColumnName,
-               defaultValue: null);
-         queuedTask.LastProcessingAttemptedAt = 
-            await reader.GetNullableFieldValueAsync<DateTimeOffset>(modelMapping.LastProcessingAttemptedAtColumnName,
-               defaultValue: null);
-         queuedTask.ProcessingFinalizedAt = 
-            await reader.GetNullableFieldValueAsync<DateTimeOffset>(modelMapping.ProcessingFinalizedAtColumnName,
-               defaultValue: null);
+			queuedTask.FirstProcessingAttemptedAt =
+			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.FirstProcessingAttemptedAtColumnName,
+				  defaultValue: null );
+			queuedTask.LastProcessingAttemptedAt =
+			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.LastProcessingAttemptedAtColumnName,
+				  defaultValue: null );
+			queuedTask.ProcessingFinalizedAt =
+			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.ProcessingFinalizedAtColumnName,
+				  defaultValue: null );
 
-         return queuedTask;
-      }
-   }
+			return queuedTask;
+		}
+	}
 }

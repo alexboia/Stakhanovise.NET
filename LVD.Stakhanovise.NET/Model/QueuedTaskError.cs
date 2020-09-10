@@ -35,26 +35,26 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-   public class QueueTaskError
+   public class QueuedTaskError
    {
-      private QueueTaskError()
+      private QueuedTaskError()
       {
          return;
       }
 
-      public QueueTaskError(string message)
+      public QueuedTaskError(string message)
           : this(null, message, null)
       {
          return;
       }
 
-      public QueueTaskError(string type, string message)
+      public QueuedTaskError(string type, string message)
          : this(type, message, null)
       {
          return;
       }
 
-      public QueueTaskError(string type, string message, string stackTrace)
+      public QueuedTaskError(string type, string message, string stackTrace)
           : this()
       {
          Type = type;
@@ -62,28 +62,28 @@ namespace LVD.Stakhanovise.NET.Model
          StackTrace = stackTrace;
       }
 
-      public QueueTaskError(Exception exc)
+      public QueuedTaskError(Exception exc)
           : this(exc.GetType().FullName, exc.Message, exc.StackTrace)
       {
          return;
       }
 
-      public static QueueTaskError FromException(Exception exc)
+      public static QueuedTaskError FromException(Exception exc)
       {
-         return new QueueTaskError(exc);
+         return new QueuedTaskError(exc);
       }
 
-      public static QueueTaskError FromMessage(string message)
+      public static QueuedTaskError FromMessage(string message)
       {
-         return new QueueTaskError(message);
+         return new QueuedTaskError(message);
       }
 
-      public static QueueTaskError FromMessage(string type, string message)
+      public static QueuedTaskError FromMessage(string type, string message)
       {
-         return new QueueTaskError(type, message);
+         return new QueuedTaskError(type, message);
       }
 
-      public bool Equals(QueueTaskError taskError)
+      public bool Equals(QueuedTaskError taskError)
       {
          return taskError != null
              && string.Equals(Type, taskError.Type)
@@ -93,7 +93,7 @@ namespace LVD.Stakhanovise.NET.Model
 
       public override bool Equals(object obj)
       {
-         return Equals(obj as QueueTaskError);
+         return Equals(obj as QueuedTaskError);
       }
 
       public override int GetHashCode()

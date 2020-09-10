@@ -8,6 +8,6 @@ namespace LVD.Stakhanovise.NET.Processor
 {
    public interface ITaskResultQueue : IDisposable
    {
-      Task EnqueueResultAsync(QueueTask queuedTask, TaskExecutionResult executionResult);
+      Task EnqueueResultAsync(QueuedTask queuedTask, TaskExecutionResult executionResult);
    }
 }

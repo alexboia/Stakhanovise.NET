@@ -13,9 +13,9 @@ namespace LVD.Stakhanovise.NET
 
       void NotifyTaskCompleted();
 
-      void NotifyTaskErrored(QueueTaskError error, bool isRecoverable);
+      void NotifyTaskErrored(QueuedTaskError error, bool isRecoverable);
 
-      QueueTaskStatus TaskStatus { get; }
+      QueuedTaskStatus TaskStatus { get; }
 
       TaskExecutionResult Result { get; }
 

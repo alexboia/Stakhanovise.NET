@@ -35,37 +35,37 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-   public enum QueueTaskStatus : int
-   {
-      Unknown = 0x00,
+	public enum QueuedTaskStatus : int
+	{
+		Unknown = 0x00,
 
-      /// <summary>
-      /// The task has been posted to the queue and is pending processing
-      /// </summary>
-      Unprocessed = 0x01,
+		/// <summary>
+		/// The task has been posted to the queue and is pending processing
+		/// </summary>
+		Unprocessed = 0x01,
 
-      /// <summary>
-      /// The task has been successfully processed
-      /// </summary>
-      Processed = 0x03,
+		/// <summary>
+		/// The task has been successfully processed
+		/// </summary>
+		Processed = 0x03,
 
-      /// <summary>
-      /// The task has been processed, 
-      ///     but an error occured 
-      ///     and has been scheduled for retrial
-      /// </summary>
-      Error = 0x04,
+		/// <summary>
+		/// The task has been processed, 
+		///     but an error occured 
+		///     and has been scheduled for retrial
+		/// </summary>
+		Error = 0x04,
 
-      /// <summary>
-      /// The task processing has errored out 
-      ///     beyond the configured number of processing errors threshold 
-      ///     and has been flagged for special processing
-      /// </summary>
-      Faulted = 0x05,
+		/// <summary>
+		/// The task processing has errored out 
+		///     beyond the configured number of processing errors threshold 
+		///     and has been flagged for special processing
+		/// </summary>
+		Faulted = 0x05,
 
-      /// <summary>
-      /// Fault state could not be handled
-      /// </summary>
-      Fatal = 0x06
-   }
+		/// <summary>
+		/// Fault state could not be handled
+		/// </summary>
+		Fatal = 0x06
+	}
 }

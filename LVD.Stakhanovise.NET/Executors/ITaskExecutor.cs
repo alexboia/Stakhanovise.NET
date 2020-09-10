@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Executors
 {
-   public interface ITaskExecutor
-   {
-      Task ExecuteAsync(object payload, ITaskExecutionContext executionContext);
+	public interface ITaskExecutor
+	{
+		Task ExecuteAsync ( object payload, ITaskExecutionContext executionContext );
 
-      Type PayloadType { get; }
-   }
+		Type PayloadType { get; }
+	}
 }

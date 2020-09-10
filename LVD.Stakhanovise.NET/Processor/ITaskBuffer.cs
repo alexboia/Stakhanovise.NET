@@ -11,9 +11,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
       event EventHandler QueuedTaskAdded;
 
-      QueueTask TryGetNextTask();
+      QueuedTask TryGetNextTask();
 
-      bool TryAddNewTask(QueueTask task);
+      bool TryAddNewTask(QueuedTask task);
 
       void CompleteAdding();
 

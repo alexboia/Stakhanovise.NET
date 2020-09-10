@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Executors
 {
-   public interface ITaskExecutor<TPayload> : ITaskExecutor
-   {
-      Task ExecuteAsync(TPayload payload, ITaskExecutionContext executionContext);
-   }
+	public interface ITaskExecutor<TPayload> : ITaskExecutor
+	{
+		Task ExecuteAsync ( TPayload payload, ITaskExecutionContext executionContext );
+	}
 }
