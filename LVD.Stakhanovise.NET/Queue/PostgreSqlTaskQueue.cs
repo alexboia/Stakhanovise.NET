@@ -151,6 +151,8 @@ namespace LVD.Stakhanovise.NET.Queue
 				HandleListenerConnectionRestored;
 			mNotificationListener.NewTaskPosted +=
 				HandleNewTaskUpdateReceived;
+			mNotificationListener.ListenerTimedOut +=
+				HandleListenerTimedOut;
 
 			mReadOnlyConnectionString = connectionString;
 			mQueuedTaskMapping = queuedTaskMap;
@@ -167,6 +169,12 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			NotifyClearForDequeue( ClearForDequeReason
 				.NewTaskListenerConnectionStateChange );
+		}
+
+		private void HandleListenerTimedOut ( object sender, ListenerTimedOutEventArgs e )
+		{
+			NotifyClearForDequeue( ClearForDequeReason
+				.ListenerTimedOut );
 		}
 
 		private string DeriveManagementConnectionString ( NpgsqlConnectionStringBuilder info, int poolSize, int keepalive )
@@ -652,6 +660,8 @@ namespace LVD.Stakhanovise.NET.Queue
 						HandleListenerConnectionRestored;
 					mNotificationListener.NewTaskPosted -=
 						HandleNewTaskUpdateReceived;
+					mNotificationListener.ListenerTimedOut -=
+						HandleListenerTimedOut;
 
 					DisposeAcquiredLocks();
 					DisposeWaitHandles();

@@ -34,6 +34,7 @@ using LVD.Stakhanovise.NET.Helpers;
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -49,13 +50,20 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public event EventHandler<NewTaskPostedEventArgs> NewTaskPosted;
 
+		public event EventHandler<ListenerConnectedEventArgs> ListenerConnected;
+
 		public event EventHandler<ListenerConnectionRestoredEventArgs> ListenerConnectionRestored;
+
+		public event EventHandler<ListenerTimedOutEventArgs> ListenerTimedOut;
 
 		private bool mIsDisposed = false;
 
 		private string mSignalingConnectionString;
 
 		private string mNewTaskNotificationChannelName;
+
+		private PostgreSqlTaskQueueNotificationListenerDiagnostics mDiagnostics =
+			PostgreSqlTaskQueueNotificationListenerDiagnostics.Zero;
 
 		private StateController mNewTaskUpdatesStateController =
 			new StateController();
@@ -94,26 +102,52 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void HandleNewTaskUpdateReceived ( object sender, NpgsqlNotificationEventArgs e )
 		{
-			NotifyNewTaskPosted();
+			ProcessNewTaskPosted();
 		}
 
-		private void NotifyNewTaskPosted ()
+		private void ProcessNewTaskPosted ()
 		{
+			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount + 1,
+				mDiagnostics.ReconnectCount,
+				mDiagnostics.ConnectionBackendProcessId );
+
 			EventHandler<NewTaskPostedEventArgs> eventHandler = NewTaskPosted;
 			if ( eventHandler != null )
 				eventHandler( this, new NewTaskPostedEventArgs() );
 		}
 
-		private void NotifyListenerConnectionRestored ()
+		private void ProcessListenerConnectionRestored ( int connectionProcessId )
 		{
+			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount,
+				mDiagnostics.ReconnectCount + 1,
+				connectionProcessId );
+
 			EventHandler<ListenerConnectionRestoredEventArgs> eventHandler = ListenerConnectionRestored;
 			if ( eventHandler != null )
 				eventHandler( this, new ListenerConnectionRestoredEventArgs() );
 		}
 
+		private void ProcessListenerConnected ( int connectionProcessId )
+		{
+			mWaitForFirstStartWaitHandle.Set();
+			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount,
+				mDiagnostics.ReconnectCount,
+				connectionProcessId );
+
+			EventHandler<ListenerConnectedEventArgs> eventHandler = ListenerConnected;
+			if ( eventHandler != null )
+				eventHandler( this, new ListenerConnectedEventArgs() );
+		}
+
+		private void ProcessListenerTimedOut ()
+		{
+			EventHandler<ListenerTimedOutEventArgs> eventHandler = ListenerTimedOut;
+			if ( eventHandler != null )
+				eventHandler( this, new ListenerTimedOutEventArgs() );
+		}
+
 		private async Task ListenForNewTaskUpdatesAsync ()
 		{
-			bool isFirstConnect = true;
 			NpgsqlConnection signalingConn = null;
 			CancellationToken token = mWaitForTaskUpdatesCancellationTokenSource.Token;
 
@@ -142,13 +176,10 @@ namespace LVD.Stakhanovise.NET.Queue
 						//  set the wait handle for the first connection 
 						//  to signal the completion of the initial listener start-up;
 						//  otherwise notify that the connection has been lost and subsequently restored.
-						if ( isFirstConnect )
-						{
-							mWaitForFirstStartWaitHandle.Set();
-							isFirstConnect = false;
-						}
+						if ( mDiagnostics.ConnectionBackendProcessId <= 0 )
+							ProcessListenerConnected( signalingConn.ProcessID );
 						else
-							NotifyListenerConnectionRestored();
+							ProcessListenerConnectionRestored( signalingConn.ProcessID );
 
 						//At this point, check if cancellation was requested 
 						//  and exit if so
@@ -160,10 +191,24 @@ namespace LVD.Stakhanovise.NET.Queue
 
 							//Pass the cancellation token to the WaitAsync 
 							//  to be able to stop the listener when requested
-							await signalingConn.WaitAsync( mWaitForTaskUpdatesCancellationTokenSource.Token );
-
-							mLogger.DebugFormat( "Notification received on channel {0}...",
-								mNewTaskNotificationChannelName );
+							try
+							{
+								bool hadNotification = signalingConn.Wait( 250 );
+								if ( !hadNotification )
+								{
+									ProcessListenerTimedOut();
+									mLogger.Debug( "Listener timed out while waiting. Checking cancellation token and restarting wait" );
+								}
+								else
+								{
+									mLogger.DebugFormat( "Notification received on channel {0}...",
+										mNewTaskNotificationChannelName );
+								}
+							}
+							catch ( NullReferenceException exc )
+							{
+								mLogger.Error( "Null reference exception caught from NpgsqlConnection.Wait(). Possible connection failure while waiting", exc );
+							}
 
 							//At this point a notification has been received:
 							//   before the next go-around of WaitAsync, 
@@ -187,11 +232,14 @@ namespace LVD.Stakhanovise.NET.Queue
 						//  so we need to clean-up before exiting
 						if ( signalingConn != null )
 						{
+							mLogger.DebugFormat( "Signalling connection state is {0}",
+								signalingConn.FullState.ToString() );
+
 							if ( signalingConn.IsListening( mNewTaskNotificationChannelName ) )
 								await signalingConn.UnlistenAsync( mNewTaskNotificationChannelName, HandleNewTaskUpdateReceived );
 
 							if ( signalingConn.IsConnectionSomewhatOpen() )
-								signalingConn.Close();
+								await signalingConn.CloseAsync();
 
 							signalingConn.Dispose();
 							signalingConn = null;
@@ -225,7 +273,9 @@ namespace LVD.Stakhanovise.NET.Queue
 					mWaitForFirstStartWaitHandle.Reset();
 					mWaitForTaskUpdatesCancellationTokenSource = new CancellationTokenSource();
 
+					mDiagnostics = PostgreSqlTaskQueueNotificationListenerDiagnostics.Zero;
 					mNewTaskUpdatesListenerTask = Task.Run( ListenForNewTaskUpdatesAsync );
+
 					await mWaitForFirstStartWaitHandle.ToTask();
 
 					mLogger.DebugFormat( "Successfully started queue notification listener for channel {0}.",
@@ -258,6 +308,8 @@ namespace LVD.Stakhanovise.NET.Queue
 					finally
 					{
 						mWaitForFirstStartWaitHandle.Reset();
+						mDiagnostics = PostgreSqlTaskQueueNotificationListenerDiagnostics.Zero;
+
 						mWaitForTaskUpdatesCancellationTokenSource?.Dispose();
 						mWaitForTaskUpdatesCancellationTokenSource = null;
 						mNewTaskUpdatesListenerTask = null;
@@ -295,6 +347,22 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		public bool IsStarted => mNewTaskUpdatesStateController.IsStarted;
+		public bool IsStarted
+		{
+			get
+			{
+				CheckDisposedOrThrow();
+				return mNewTaskUpdatesStateController.IsStarted;
+			}
+		}
+
+		public PostgreSqlTaskQueueNotificationListenerDiagnostics Diagnostics
+		{
+			get
+			{
+				CheckDisposedOrThrow();
+				return mDiagnostics;
+			}
+		}
 	}
 }

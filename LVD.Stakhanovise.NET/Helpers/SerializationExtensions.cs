@@ -36,50 +36,50 @@ using Newtonsoft.Json;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
-   public static class SerializationExtensions
-   {
-      public static List<T> AsListFromJson<T>(this string sourceString)
-      {
-         return sourceString.AsObjectFromJson<List<T>>();
-      }
+	public static class SerializationExtensions
+	{
+		public static List<T> AsListFromJson<T> ( this string sourceString )
+		{
+			return sourceString.AsObjectFromJson<List<T>>();
+		}
 
-      public static string ToJson(this object sourceObject, bool includeTypeInformation = false)
-      {
-         if (sourceObject == null)
-            return null;
+		public static string ToJson ( this object sourceObject, bool includeTypeInformation = false )
+		{
+			if ( sourceObject == null )
+				return null;
 
-         JsonSerializerSettings settings = new JsonSerializerSettings();
+			JsonSerializerSettings settings = new JsonSerializerSettings();
 
-         if (includeTypeInformation)
-            settings.TypeNameHandling = TypeNameHandling.All;
+			if ( includeTypeInformation )
+				settings.TypeNameHandling = TypeNameHandling.All;
 
-         return JsonConvert.SerializeObject(sourceObject, settings);
-      }
+			return JsonConvert.SerializeObject( sourceObject, settings );
+		}
 
-      public static T AsObjectFromJson<T>(this string sourceString)
-      {
-         if (string.IsNullOrEmpty(sourceString))
-            return default(T);
+		public static T AsObjectFromJson<T> ( this string sourceString )
+		{
+			if ( string.IsNullOrEmpty( sourceString ) )
+				return default( T );
 
-         JsonSerializerSettings settings = new JsonSerializerSettings();
+			JsonSerializerSettings settings = new JsonSerializerSettings();
 
-         settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
-         settings.TypeNameHandling = TypeNameHandling.Auto;
+			settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+			settings.TypeNameHandling = TypeNameHandling.Auto;
 
-         return JsonConvert.DeserializeObject<T>(sourceString, settings);
-      }
+			return JsonConvert.DeserializeObject<T>( sourceString, settings );
+		}
 
-      public static object AsObjectFromJson(this string sourceString)
-      {
-         if (string.IsNullOrEmpty(sourceString))
-            return null;
+		public static object AsObjectFromJson ( this string sourceString )
+		{
+			if ( string.IsNullOrEmpty( sourceString ) )
+				return null;
 
-         JsonSerializerSettings settings = new JsonSerializerSettings();
+			JsonSerializerSettings settings = new JsonSerializerSettings();
 
-         settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
-         settings.TypeNameHandling = TypeNameHandling.Auto;
+			settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+			settings.TypeNameHandling = TypeNameHandling.Auto;
 
-         return JsonConvert.DeserializeObject(sourceString, settings);
-      }
-   }
+			return JsonConvert.DeserializeObject( sourceString, settings );
+		}
+	}
 }

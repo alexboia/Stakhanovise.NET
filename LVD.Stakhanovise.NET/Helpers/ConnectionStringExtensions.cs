@@ -36,19 +36,19 @@ using Npgsql;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
-   public static class ConnectionStringExtensions
-   {
-      public static NpgsqlConnectionStringBuilder Copy(this NpgsqlConnectionStringBuilder builder)
-      {
-         if (builder == null)
-            return null;
+	public static class ConnectionStringExtensions
+	{
+		public static NpgsqlConnectionStringBuilder Copy ( this NpgsqlConnectionStringBuilder builder )
+		{
+			if ( builder == null )
+				return null;
 
-         NpgsqlConnectionStringBuilder builderCopy = new NpgsqlConnectionStringBuilder();
+			NpgsqlConnectionStringBuilder builderCopy = new NpgsqlConnectionStringBuilder();
 
-         foreach (string key in builder.Keys)
-            builderCopy[key] = builder[key];
+			foreach ( string key in builder.Keys )
+				builderCopy[ key ] = builder[ key ];
 
-         return builderCopy;
-      }
-   }
+			return builderCopy;
+		}
+	}
 }

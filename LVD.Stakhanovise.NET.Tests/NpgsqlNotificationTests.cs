@@ -1,4 +1,5 @@
-﻿using Npgsql;
+﻿using LVD.Stakhanovise.NET.Tests.Helpers;
+using Npgsql;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -34,67 +35,96 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
+		[Repeat( 5 )]
 		public void Test_TryBreakConnectionWhileListenAndWait ()
 		{
-			Assert.CatchAsync<NpgsqlException>( async () =>
+			using ( ManualResetEvent syncHandle = new ManualResetEvent( false ) )
 			{
-				CancellationTokenSource cancellation =
-					new CancellationTokenSource();
-
-				using ( NpgsqlConnection conn = new NpgsqlConnection( ConnectionString ) )
+				Assert.CatchAsync<NpgsqlException>( async () =>
 				{
-					await conn.OpenAsync();
+					CancellationTokenSource cancellation =
+						new CancellationTokenSource();
 
-					using ( NpgsqlCommand listenCmd = new NpgsqlCommand( "LISTEN sk_test_break_connection_queue_item_added", conn ) )
-						await listenCmd.ExecuteNonQueryAsync();
+					using ( NpgsqlConnection conn = new NpgsqlConnection( ConnectionString ) )
+					{
+						await conn.OpenAsync();
 
-					await conn.WaitAsync( cancellation.Token );
-				}
-			} );
+						WaitAndTerminateConnection( conn.ProcessID,
+							syncHandle: syncHandle,
+							timeout: 1000 );
+
+						using ( NpgsqlCommand listenCmd = new NpgsqlCommand( "LISTEN sk_test_break_connection_queue_item_added", conn ) )
+							await listenCmd.ExecuteNonQueryAsync();
+
+						syncHandle.Set();
+						await conn.WaitAsync( cancellation.Token );
+					}
+				} );
+			}
 		}
 
 		[Test]
+		[Repeat( 5 )]
 		public async Task Test_TryBreakConnectionWhileListenWithoutWait ()
 		{
 			Task waitTask;
 			CancellationTokenSource cancellation =
 				new CancellationTokenSource();
 
-			using ( NpgsqlConnection conn = new NpgsqlConnection( ConnectionString ) )
+			using ( ManualResetEvent syncHandle = new ManualResetEvent( false ) )
 			{
-				await conn.OpenAsync();
-				using ( NpgsqlCommand listenCmd = new NpgsqlCommand( "LISTEN sk_test_break_connection_queue_item_added", conn ) )
-					await listenCmd.ExecuteNonQueryAsync();
+				using ( NpgsqlConnection conn = new NpgsqlConnection( ConnectionString ) )
+				{
+					await conn.OpenAsync();
 
-				waitTask = conn.WaitAsync( cancellation.Token );
+					WaitAndTerminateConnection( conn.ProcessID,
+						syncHandle: syncHandle,
+						timeout: 1000 );
 
-				while ( !waitTask.IsCompleted )
-					await Task.Delay( 10 );
+					using ( NpgsqlCommand listenCmd = new NpgsqlCommand( "LISTEN sk_test_break_connection_queue_item_added", conn ) )
+						await listenCmd.ExecuteNonQueryAsync();
 
-				Assert.IsTrue( waitTask.IsCompleted );
-				Assert.Throws<AggregateException>( ()
-					 => waitTask.Wait() );
+					syncHandle.Set();
+					waitTask = conn.WaitAsync( cancellation.Token );
+
+					while ( !waitTask.IsCompleted )
+						await Task.Delay( 10 );
+
+					Assert.IsTrue( waitTask.IsCompleted );
+					Assert.Throws<AggregateException>( ()
+						 => waitTask.Wait() );
+				}
 			}
 		}
 
 		[Test]
 		public async Task Test_CollectConnectionStateChanges ()
 		{
-			List<ConnectionState> connectionStates = new List<ConnectionState>();
-			using ( NpgsqlConnection conn = new NpgsqlConnection( ConnectionString ) )
+			List<ConnectionState> connectionStates =
+				new List<ConnectionState>();
+
+			using ( ManualResetEvent syncHandle = new ManualResetEvent( false ) )
 			{
-				conn.StateChange += ( sender, e ) => connectionStates.Add( e.CurrentState );
-				await conn.OpenAsync();
+				using ( NpgsqlConnection conn = new NpgsqlConnection( ConnectionString ) )
+				{
+					conn.StateChange += ( sender, e ) => connectionStates.Add( e.CurrentState );
+					await conn.OpenAsync();
 
-				using ( NpgsqlCommand queryCmd = new NpgsqlCommand( "select current_timestamp", conn ) )
-					await queryCmd.ExecuteNonQueryAsync();
+					WaitAndTerminateConnection( conn.ProcessID,
+						syncHandle: syncHandle,
+						timeout: 1000 );
 
-				while ( conn.State != ConnectionState.Closed )
-					await Task.Delay( 10 );
+					using ( NpgsqlCommand queryCmd = new NpgsqlCommand( "select current_timestamp", conn ) )
+						await queryCmd.ExecuteNonQueryAsync();
+
+					syncHandle.Set();
+					while ( conn.State != ConnectionState.Closed )
+						await Task.Delay( 10 );
+				}
 			}
 
-			foreach ( ConnectionState cs in connectionStates )
-				Console.WriteLine( cs );
+			Assert.Contains( ConnectionState.Closed,
+				connectionStates );
 		}
 
 		[Test]
@@ -209,6 +239,23 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.NotNull( notificationData.Any( n => n.Payload.Equals( "5" ) ) );
 		}
 
-		private string ConnectionString => GetConnectionString( "testDbConnectionString" );
+		private void WaitAndTerminateConnection ( int pid, ManualResetEvent syncHandle, int timeout )
+		{
+			Task.Run( async () =>
+			{
+				using ( NpgsqlConnection mgmtConn = new NpgsqlConnection( ManagementConnectionString ) )
+				{
+					await mgmtConn.WaitAndTerminateConnectionAsync( pid,
+						syncHandle,
+						timeout );
+				}
+			} );
+		}
+
+		private string ManagementConnectionString
+			=> GetConnectionString( "mgmtDbConnectionString" );
+
+		private string ConnectionString
+			=> GetConnectionString( "testDbConnectionString" );
 	}
 }

@@ -39,61 +39,61 @@ using SqlKata.Compilers;
 
 namespace LVD.Stakhanovise.NET.Infrastructure
 {
-   public class PostgresCompilerEx : PostgresCompiler
-   {
-      private static readonly Regex mRecursiveCteAliasRegex = new Regex(@"^(RECURSIVE)(\s+)",
-          RegexOptions.Compiled
-          | RegexOptions.IgnoreCase);
+	public class PostgresCompilerEx : PostgresCompiler
+	{
+		private static readonly Regex mRecursiveCteAliasRegex = new Regex( @"^(RECURSIVE)(\s+)",
+			RegexOptions.Compiled
+			| RegexOptions.IgnoreCase );
 
-      public PostgresCompilerEx()
-          : base()
-      {
-         return;
-      }
+		public PostgresCompilerEx ()
+			: base()
+		{
+			return;
+		}
 
-      public override SqlResult CompileCte(AbstractFrom clause)
-      {
-         List<string> sql = new List<string>();
-         SqlResult sqlResult = new SqlResult();
+		public override SqlResult CompileCte ( AbstractFrom clause )
+		{
+			List<string> sql = new List<string>();
+			SqlResult sqlResult = new SqlResult();
 
-         if (clause == null)
-            return sqlResult;
+			if ( clause == null )
+				return sqlResult;
 
-         if (clause is RawFromClause raw)
-         {
-            sqlResult.Bindings.AddRange(raw.Bindings);
-            sql.Add(ComposeCteExpression(raw.Alias,
-                expression: WrapIdentifiers(raw.Expression)));
-         }
-         else if (clause is QueryFromClause queryFromClause)
-         {
-            SqlResult subSqlResult = CompileSelectQuery(queryFromClause.Query);
-            sqlResult.Bindings.AddRange(subSqlResult.Bindings);
-            sql.Add(ComposeCteExpression(queryFromClause.Alias,
-                expression: subSqlResult.RawSql));
-         }
+			if ( clause is RawFromClause raw )
+			{
+				sqlResult.Bindings.AddRange( raw.Bindings );
+				sql.Add( ComposeCteExpression( raw.Alias,
+					expression: WrapIdentifiers( raw.Expression ) ) );
+			}
+			else if ( clause is QueryFromClause queryFromClause )
+			{
+				SqlResult subSqlResult = CompileSelectQuery( queryFromClause.Query );
+				sqlResult.Bindings.AddRange( subSqlResult.Bindings );
+				sql.Add( ComposeCteExpression( queryFromClause.Alias,
+					expression: subSqlResult.RawSql ) );
+			}
 
-         sqlResult.RawSql = string.Join(", ", sql) + " ";
-         return sqlResult;
-      }
+			sqlResult.RawSql = string.Join( ", ", sql ) + " ";
+			return sqlResult;
+		}
 
-      private string ComposeCteExpression(string alias, string expression)
-      {
-         bool isRecursive = IsRecursive(alias);
+		private string ComposeCteExpression ( string alias, string expression )
+		{
+			bool isRecursive = IsRecursive( alias );
 
-         if (isRecursive)
-            alias = mRecursiveCteAliasRegex.Replace(alias, string.Empty);
+			if ( isRecursive )
+				alias = mRecursiveCteAliasRegex.Replace( alias, string.Empty );
 
-         string cteExpression = $"{WrapValue(alias)} AS ({expression})";
+			string cteExpression = $"{WrapValue( alias )} AS ({expression})";
 
-         return isRecursive
-             ? $"RECURSIVE {cteExpression}"
-             : cteExpression;
-      }
+			return isRecursive
+				? $"RECURSIVE {cteExpression}"
+				: cteExpression;
+		}
 
-      private bool IsRecursive(string alias)
-      {
-         return mRecursiveCteAliasRegex.IsMatch(alias);
-      }
-   }
+		private bool IsRecursive ( string alias )
+		{
+			return mRecursiveCteAliasRegex.IsMatch( alias );
+		}
+	}
 }

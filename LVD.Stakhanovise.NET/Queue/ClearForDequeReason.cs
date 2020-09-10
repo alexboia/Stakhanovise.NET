@@ -38,6 +38,7 @@ namespace LVD.Stakhanovise.NET.Queue
 	public enum ClearForDequeReason
 	{
 		NewTaskPostedNotificationReceived = 0x01,
-		NewTaskListenerConnectionStateChange = 0x02
+		NewTaskListenerConnectionStateChange = 0x02,
+		ListenerTimedOut = 0x03
 	}
 }

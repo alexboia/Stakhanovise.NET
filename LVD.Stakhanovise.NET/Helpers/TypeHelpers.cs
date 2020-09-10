@@ -37,16 +37,16 @@ using System.Collections.Concurrent;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
-   public static class TypeHelpers
-   {
-      public static bool IsNullableStructType(this Type type)
-      {
-         if (type == null)
-            throw new ArgumentNullException(nameof(type));
+	public static class TypeHelpers
+	{
+		public static bool IsNullableStructType ( this Type type )
+		{
+			if ( type == null )
+				throw new ArgumentNullException( nameof( type ) );
 
-         return type.IsValueType
-             && type.IsGenericType
-             && typeof(Nullable<>).IsAssignableFrom(type.GetGenericTypeDefinition());
-      }
-   }
+			return type.IsValueType
+				&& type.IsGenericType
+				&& typeof( Nullable<> ).IsAssignableFrom( type.GetGenericTypeDefinition() );
+		}
+	}
 }

@@ -55,7 +55,8 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		public DefaultTaskExecutorRegistry ( Func<Type, object> dependencyResolverFn )
 		{
-			mDependencyResolverFn = dependencyResolverFn ?? throw new ArgumentNullException( nameof( dependencyResolverFn ) );
+			mDependencyResolverFn = dependencyResolverFn 
+				?? throw new ArgumentNullException( nameof( dependencyResolverFn ) );
 		}
 
 		private Type GetImplementedExecutorInterface ( Type type )
@@ -170,6 +171,7 @@ namespace LVD.Stakhanovise.NET.Executors
 			return type;
 		}
 
-		public IEnumerable<Type> DetectedPayloadTypes => mPayloadTypes.Values;
+		public IEnumerable<Type> DetectedPayloadTypes 
+			=> mPayloadTypes.Values;
 	}
 }
