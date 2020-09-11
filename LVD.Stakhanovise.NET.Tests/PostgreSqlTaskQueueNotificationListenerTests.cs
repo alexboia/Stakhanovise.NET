@@ -19,7 +19,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TearDown]
 		public void TestTearDown ()
 		{
-			Task.Delay( 1000 ).Wait();
+			Task.Delay( 250 ).Wait();
 		}
 
 		[Test]
@@ -27,12 +27,17 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanStartAndStopReceivingNotifications_NoConnectionLoss ()
 		{
+			bool connectedReceived = false;
 			bool notificationReceived = false;
-			ManualResetEvent notificationReceivedWaitHandle =
-				new ManualResetEvent( initialState: false );
 
+			using ( ManualResetEvent notificationReceivedWaitHandle = new ManualResetEvent( false ) )
 			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
 			{
+				listener.ListenerConnected += ( sender, e ) =>
+				{
+					connectedReceived = true;
+				};
+
 				listener.NewTaskPosted += ( sender, e ) =>
 				{
 					notificationReceived = true;
@@ -46,6 +51,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				notificationReceivedWaitHandle.WaitOne();
 
 				Assert.IsTrue( notificationReceived );
+				Assert.IsTrue( connectedReceived );
 
 				notificationReceived = false;
 				notificationReceivedWaitHandle.Reset();
@@ -66,7 +72,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanRecoverFromConnectionLoss ()
 		{
-			int reconnectsRemaining = 3;
+			int reconnectsRemaining = 10;
 
 			using ( ManualResetEvent maxReconnectsReachedWaitHandle = new ManualResetEvent( false ) )
 			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
@@ -78,7 +84,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					{
 						WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
 							syncHandle: null,
-							timeout: 1000 );
+							timeout: RandomTimeout() );
 					}
 					else
 						maxReconnectsReachedWaitHandle.Set();
@@ -103,7 +109,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanStartAndStopReceivingNotifications_WithConnectionLossRecovery ()
 		{
-			int reconnectsRemaining = 3;
+			int reconnectsRemaining = 10;
 			int notificationsReceived = 0;
 
 			using ( ManualResetEvent maximumReconnectReachedWaitHandle = new ManualResetEvent( false ) )
@@ -112,12 +118,11 @@ namespace LVD.Stakhanovise.NET.Tests
 				listener.NewTaskPosted += ( sender, e ) =>
 				{
 					notificationsReceived++;
-					Console.WriteLine( $"New task received. Reconnects remaining={reconnectsRemaining}" );
 					if ( reconnectsRemaining > 0 )
 					{
 						WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
 							syncHandle: null,
-							timeout: 1000 );
+							timeout: RandomTimeout() );
 					}
 					else
 						maximumReconnectReachedWaitHandle.Set();
@@ -127,23 +132,20 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					reconnectsRemaining = Math.Max( reconnectsRemaining - 1, 0 );
 					await SendChannelNotificationAsync();
-					Console.WriteLine( "Connection restored. Notification sent." );
 				};
 
 				await listener.StartAsync();
 
 				WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
 					syncHandle: null,
-					timeout: 1000 );
+					timeout: RandomTimeout() );
 
 				maximumReconnectReachedWaitHandle.WaitOne();
-				Console.WriteLine( "Will stop listening for tasks" );
 				await listener.StopAsync();
 
 				Assert.AreEqual( 0, reconnectsRemaining );
-				Assert.AreEqual( 3, notificationsReceived );
+				Assert.AreEqual( 10, notificationsReceived );
 			}
-
 		}
 
 		private async Task SendChannelNotificationAsync ()
@@ -183,13 +185,19 @@ namespace LVD.Stakhanovise.NET.Tests
 			} );
 		}
 
+		private int RandomTimeout ()
+		{
+			Random rnd = new Random();
+			return rnd.Next( 100, 2000 );
+		}
+
 		private string ManagementConnectionString
 			=> GetConnectionString( "mgmtDbConnectionString" );
 
-		private string ConnectionString 
+		private string ConnectionString
 			=> GetConnectionString( "listenerTestDbConnectionString" );
 
-		private string NotificationChannelname =>
-			"sk_test_queue_item_added";
+		private string NotificationChannelname
+			=> "sk_test_queue_item_added";
 	}
 }

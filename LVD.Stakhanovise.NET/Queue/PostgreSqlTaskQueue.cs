@@ -151,7 +151,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				HandleListenerConnectionRestored;
 			mNotificationListener.NewTaskPosted +=
 				HandleNewTaskUpdateReceived;
-			mNotificationListener.ListenerTimedOut +=
+			mNotificationListener.ListenerTimedOutWhileWaiting +=
 				HandleListenerTimedOut;
 
 			mReadOnlyConnectionString = connectionString;
@@ -660,7 +660,7 @@ namespace LVD.Stakhanovise.NET.Queue
 						HandleListenerConnectionRestored;
 					mNotificationListener.NewTaskPosted -=
 						HandleNewTaskUpdateReceived;
-					mNotificationListener.ListenerTimedOut -=
+					mNotificationListener.ListenerTimedOutWhileWaiting -=
 						HandleListenerTimedOut;
 
 					DisposeAcquiredLocks();

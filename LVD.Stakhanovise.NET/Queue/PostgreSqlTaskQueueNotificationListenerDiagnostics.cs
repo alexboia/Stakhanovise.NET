@@ -22,6 +22,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public int ReconnectCount { get; private set; }
 
+		public int WaitTimeoutCount { get; private set; }
+
 		public int ConnectionBackendProcessId { get; private set; }
 	}
 }

@@ -42,7 +42,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class PostgreSqlTaskQueueNotificationListener : IDisposable
+	public class PostgreSqlTaskQueueNotificationListener : ITaskQueueNotificationListener, IDisposable
 	{
 		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
 			.GetCurrentMethod()
@@ -54,7 +54,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public event EventHandler<ListenerConnectionRestoredEventArgs> ListenerConnectionRestored;
 
-		public event EventHandler<ListenerTimedOutEventArgs> ListenerTimedOut;
+		public event EventHandler<ListenerTimedOutEventArgs> ListenerTimedOutWhileWaiting;
 
 		private bool mIsDisposed = false;
 
@@ -90,17 +90,11 @@ namespace LVD.Stakhanovise.NET.Queue
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( PostgreSqlTaskQueueNotificationListener ), "Cannot reuse a disposed task queue notification listener" );
+				throw new ObjectDisposedException( nameof( PostgreSqlTaskQueueNotificationListener ),
+					"Cannot reuse a disposed task queue notification listener" );
 		}
 
-		private async Task<NpgsqlConnection> OpenSignalingConnectionAsync ()
-		{
-			NpgsqlConnection connection = new NpgsqlConnection( mSignalingConnectionString );
-			await connection.OpenAsync();
-			return connection;
-		}
-
-		private void HandleNewTaskUpdateReceived ( object sender, NpgsqlNotificationEventArgs e )
+		private void HandleTaskUpdateReceived ( object sender, NpgsqlNotificationEventArgs e )
 		{
 			ProcessNewTaskPosted();
 		}
@@ -139,17 +133,89 @@ namespace LVD.Stakhanovise.NET.Queue
 				eventHandler( this, new ListenerConnectedEventArgs() );
 		}
 
-		private void ProcessListenerTimedOut ()
+		private void ProcessListenerTimedOutWhileWaiting ()
 		{
-			EventHandler<ListenerTimedOutEventArgs> eventHandler = ListenerTimedOut;
+			EventHandler<ListenerTimedOutEventArgs> eventHandler = ListenerTimedOutWhileWaiting;
 			if ( eventHandler != null )
 				eventHandler( this, new ListenerTimedOutEventArgs() );
+		}
+
+		private async Task<NpgsqlConnection> InitiateSignalingConnectionAsync ()
+		{
+			mLogger.Debug( "Attempting to open signaling connection..." );
+
+			NpgsqlConnection signalingConn = new NpgsqlConnection( mSignalingConnectionString );
+			await signalingConn.OpenAsync();
+			await signalingConn.ListenAsync( mNewTaskNotificationChannelName, HandleTaskUpdateReceived );
+
+			mLogger.Debug( "Signaling connection successfully open." );
+
+			return signalingConn;
+		}
+
+		private async Task CleanupSignalingConnectionAsync ( NpgsqlConnection signalingConn )
+		{
+			if ( signalingConn != null )
+			{
+				mLogger.DebugFormat( "Signalling connection state is {0}",
+					signalingConn.FullState.ToString() );
+
+				if ( signalingConn.IsListening( mNewTaskNotificationChannelName ) )
+					await signalingConn.UnlistenAsync( mNewTaskNotificationChannelName, HandleTaskUpdateReceived );
+
+				if ( signalingConn.IsConnectionSomewhatOpen() )
+					await signalingConn.CloseAsync();
+
+				signalingConn.Dispose();
+			}
+			else
+				mLogger.Debug( "Connection was null. Nothing to perform." );
+		}
+
+		private void WaitForNotifications ( NpgsqlConnection signalingConn, CancellationToken cancellationToken )
+		{
+			//At this point, check if cancellation was requested 
+			//  and exit if so
+			cancellationToken.ThrowIfCancellationRequested();
+			while ( true )
+			{
+				mLogger.DebugFormat( "Waiting for notifications on channel {0}...",
+					mNewTaskNotificationChannelName );
+
+				//Pass the cancellation token to the WaitAsync 
+				//  to be able to stop the listener when requested
+				try
+				{
+					bool hadNotification = signalingConn.Wait( 250 );
+					if ( !hadNotification )
+					{
+						ProcessListenerTimedOutWhileWaiting();
+						mLogger.Debug( "Listener timed out while waiting. Checking cancellation token and restarting wait" );
+					}
+					else
+					{
+						mLogger.DebugFormat( "Notification received on channel {0}...",
+							mNewTaskNotificationChannelName );
+					}
+				}
+				catch ( NullReferenceException exc )
+				{
+					mLogger.Error( "Possible connection failure while waiting", exc );
+					break;
+				}
+
+				//At this point a notification has been received:
+				//   before the next go-around of WaitAsync, 
+				//  check if cancellation was requested
+				cancellationToken.ThrowIfCancellationRequested();
+			}
 		}
 
 		private async Task ListenForNewTaskUpdatesAsync ()
 		{
 			NpgsqlConnection signalingConn = null;
-			CancellationToken token = mWaitForTaskUpdatesCancellationTokenSource.Token;
+			CancellationToken cancellationToken = mWaitForTaskUpdatesCancellationTokenSource
+				.Token;
 
 			try
 			{
@@ -157,20 +223,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				{
 					try
 					{
-						token.ThrowIfCancellationRequested();
+						cancellationToken.ThrowIfCancellationRequested();
 						//Signaling connection is not open:
 						//  either is the first time we are connecting
 						//  or the connection failed and we must attempt a reconnect
 						if ( signalingConn == null )
-						{
-							mLogger.Debug( "Attempting to open signaling connection..." );
-
-							signalingConn = await OpenSignalingConnectionAsync();
-							await signalingConn.ListenAsync( mNewTaskNotificationChannelName,
-								HandleNewTaskUpdateReceived );
-
-							mLogger.Debug( "Signaling connection successfully open." );
-						}
+							signalingConn = await InitiateSignalingConnectionAsync();
 
 						//If this is the first time we are connecting
 						//  set the wait handle for the first connection 
@@ -181,40 +239,8 @@ namespace LVD.Stakhanovise.NET.Queue
 						else
 							ProcessListenerConnectionRestored( signalingConn.ProcessID );
 
-						//At this point, check if cancellation was requested 
-						//  and exit if so
-						token.ThrowIfCancellationRequested();
-						while ( true )
-						{
-							mLogger.DebugFormat( "Waiting for notifications on channel {0}...",
-								mNewTaskNotificationChannelName );
-
-							//Pass the cancellation token to the WaitAsync 
-							//  to be able to stop the listener when requested
-							try
-							{
-								bool hadNotification = signalingConn.Wait( 250 );
-								if ( !hadNotification )
-								{
-									ProcessListenerTimedOut();
-									mLogger.Debug( "Listener timed out while waiting. Checking cancellation token and restarting wait" );
-								}
-								else
-								{
-									mLogger.DebugFormat( "Notification received on channel {0}...",
-										mNewTaskNotificationChannelName );
-								}
-							}
-							catch ( NullReferenceException exc )
-							{
-								mLogger.Error( "Null reference exception caught from NpgsqlConnection.Wait(). Possible connection failure while waiting", exc );
-							}
-
-							//At this point a notification has been received:
-							//   before the next go-around of WaitAsync, 
-							//  check if cancellation was requested
-							token.ThrowIfCancellationRequested();
-						}
+						///Start notification wait loop
+						WaitForNotifications( signalingConn, cancellationToken );
 					}
 					catch ( NpgsqlException exc )
 					{
@@ -224,26 +250,13 @@ namespace LVD.Stakhanovise.NET.Queue
 					}
 					finally
 					{
-						mLogger.Debug( "Cleaning-up signaling connection..." );
 						//Clean-up database connection here. 
 						//  This is reached when either the connection is lost, 
 						//  so we need to clean-up before restoring
 						//  or some other condition occurs (such as cancellation or other error)
 						//  so we need to clean-up before exiting
-						if ( signalingConn != null )
-						{
-							mLogger.DebugFormat( "Signalling connection state is {0}",
-								signalingConn.FullState.ToString() );
-
-							if ( signalingConn.IsListening( mNewTaskNotificationChannelName ) )
-								await signalingConn.UnlistenAsync( mNewTaskNotificationChannelName, HandleNewTaskUpdateReceived );
-
-							if ( signalingConn.IsConnectionSomewhatOpen() )
-								await signalingConn.CloseAsync();
-
-							signalingConn.Dispose();
-							signalingConn = null;
-						}
+						await CleanupSignalingConnectionAsync( signalingConn );
+						signalingConn = null;
 					}
 				}
 			}
@@ -270,12 +283,16 @@ namespace LVD.Stakhanovise.NET.Queue
 					mLogger.DebugFormat( "Starting queue notification listener for channel {0}...",
 						mNewTaskNotificationChannelName );
 
+					//Reset wait handle and create cancellation token source
 					mWaitForFirstStartWaitHandle.Reset();
-					mWaitForTaskUpdatesCancellationTokenSource = new CancellationTokenSource();
+					mWaitForTaskUpdatesCancellationTokenSource = 
+						new CancellationTokenSource();
 
+					//Reset diagnostics and start the listener thread
 					mDiagnostics = PostgreSqlTaskQueueNotificationListenerDiagnostics.Zero;
 					mNewTaskUpdatesListenerTask = Task.Run( ListenForNewTaskUpdatesAsync );
 
+					//Wait for connection to be established
 					await mWaitForFirstStartWaitHandle.ToTask();
 
 					mLogger.DebugFormat( "Successfully started queue notification listener for channel {0}.",
@@ -307,9 +324,12 @@ namespace LVD.Stakhanovise.NET.Queue
 					}
 					finally
 					{
+						//Reset wait handle and diagnostics
 						mWaitForFirstStartWaitHandle.Reset();
 						mDiagnostics = PostgreSqlTaskQueueNotificationListenerDiagnostics.Zero;
 
+						//Cleanup cancellation token source 
+						//	and the listener task
 						mWaitForTaskUpdatesCancellationTokenSource?.Dispose();
 						mWaitForTaskUpdatesCancellationTokenSource = null;
 						mNewTaskUpdatesListenerTask = null;
