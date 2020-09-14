@@ -1,2 +1,2 @@
 # Stakhanovise.NET
-Stakhanovise your heavy processing services without additional dependencies.
+Fullfil your five year plan in just under a year without any additional service dependencies.

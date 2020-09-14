@@ -39,12 +39,6 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueueTimingBeltTickRequest : IDisposable
 	{
-		public const int STATUS_COMPLETED = 0x01;
-
-		public const int STATUS_PENDING = 0x02;
-
-		public const int STATUS_CANCELLED = 0x02;
-
 		private CancellationToken mCancellationToken;
 
 		private CancellationTokenSource mCancellationTokenSource;
@@ -57,11 +51,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private int mMaxFailCount;
 
-		private int mStatus = STATUS_PENDING;
-
 		private long mRequestId;
 
-		public PostgreSqlTaskQueueTimingBeltTickRequest ( long requestId, 
+		public PostgreSqlTaskQueueTimingBeltTickRequest ( long requestId,
 			TaskCompletionSource<AbstractTimestamp> completionToken,
 			int timeoutMilliseconds,
 			int maxFailCount )
@@ -80,9 +72,12 @@ namespace LVD.Stakhanovise.NET.Queue
 			mRequestId = requestId;
 			mCancellationTokenSource = new CancellationTokenSource();
 
+			//If timeout is specified, then schedule the CTS 
+			//	to automatically request cancellation
 			if ( timeoutMilliseconds > 0 )
 				mCancellationTokenSource.CancelAfter( timeoutMilliseconds );
 
+			//Register a handler for when cancellation is requested
 			mCancellationToken = mCancellationTokenSource.Token;
 			mCancellationToken.Register( () => HandleCancellationRequested() );
 
@@ -90,28 +85,9 @@ namespace LVD.Stakhanovise.NET.Queue
 			mMaxFailCount = maxFailCount;
 		}
 
-		private bool TrySetCancelledStatus ()
-		{
-			return Interlocked.CompareExchange( ref mStatus, STATUS_CANCELLED, STATUS_PENDING )
-				== STATUS_PENDING;
-		}
-
-		private bool TrySetCompletedStatus ()
-		{
-			return Interlocked.CompareExchange( ref mStatus, STATUS_COMPLETED, STATUS_PENDING )
-				== STATUS_PENDING;
-		}
-
 		private void HandleCancellationRequested ()
 		{
-			if ( TrySetCancelledStatus() )
-				mCompletionToken.TrySetCanceled();
-		}
-
-		public void SetCompleted ( AbstractTimestamp timestamp )
-		{
-			if ( !mCancellationToken.IsCancellationRequested && TrySetCompletedStatus() )
-				mCompletionToken.TrySetResult( timestamp );
+			mCompletionToken.TrySetCanceled();
 		}
 
 		public void SetCancelled ()
@@ -120,17 +96,19 @@ namespace LVD.Stakhanovise.NET.Queue
 				mCancellationTokenSource.Cancel();
 		}
 
+		public void SetCompleted ( AbstractTimestamp timestamp )
+		{
+			if ( !mCancellationToken.IsCancellationRequested )
+				mCompletionToken.TrySetResult( timestamp );
+		}
+
 		public void SetFailed ( Exception exc )
 		{
 			if ( !mCancellationToken.IsCancellationRequested )
 			{
+				IncrementFailCount();
 				if ( !CanBeRetried )
-				{
-					if ( TrySetCompletedStatus() )
-						mCompletionToken.TrySetException( exc );
-				}
-				else
-					IncrementFailCount();
+					mCompletionToken.TrySetException( exc );
 			}
 		}
 

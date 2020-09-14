@@ -46,9 +46,9 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 			if ( cleanup == null )
 				throw new ArgumentNullException( nameof( cleanup ) );
-			
+
 			TaskCompletionSource<T> completion =
-				new TaskCompletionSource<T>();
+				new TaskCompletionSource<T>( TaskCreationOptions.RunContinuationsAsynchronously );
 
 			task.ContinueWith( prev =>
 			{

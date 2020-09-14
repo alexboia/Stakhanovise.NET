@@ -310,7 +310,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			AbstractTimestamp lastTime = mLastTime.Copy();
 
 			TaskCompletionSource<AbstractTimestamp> completionToken =
-				new TaskCompletionSource<AbstractTimestamp>();
+				new TaskCompletionSource<AbstractTimestamp>( TaskCreationOptions.RunContinuationsAsynchronously );
 
 			PostgreSqlTaskQueueTimingBeltTickRequest tickRequest =
 				new PostgreSqlTaskQueueTimingBeltTickRequest( requestId,
