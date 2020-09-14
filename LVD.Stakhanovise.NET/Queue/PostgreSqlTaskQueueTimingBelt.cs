@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using log4net;
+using LVD.Stakhanovise.NET.Helpers;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -96,8 +98,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				RETURNING t_total_ticks AS new_t_total_ticks, 
 					t_total_ticks_cost AS new_t_total_ticks_cost";
 
-			//TODO: check if this is actually the best place to reset it
-			double tickLastCost = Interlocked.Exchange( ref mLocalWallclockTimeCostSinceLastTick, 0 );
+			AbstractTimestamp lastTime = null;
+			double tickLastCost = Interlocked.Exchange( ref mLocalWallclockTimeCostSinceLastTick,
+				value: 0 );
 
 			using ( NpgsqlConnection tickConn = await OpenConnectionAsync( cancellationToken ) )
 			using ( NpgsqlCommand tickCmd = new NpgsqlCommand( tickSql, tickConn ) )
@@ -124,18 +127,20 @@ namespace LVD.Stakhanovise.NET.Queue
 							"new_t_total_ticks_cost"
 						) );
 
-						AbstractTimestamp lastTime = new AbstractTimestamp( newTotalTicks,
+						lastTime = new AbstractTimestamp( newTotalTicks,
 							newTotalTicksCost );
 
 						Interlocked.Exchange( ref mLastTime,
 							lastTime );
 
-						return lastTime;
+						await rdr.CloseAsync();
 					}
-					else
-						return null;
 				}
+
+				await tickConn.CloseAsync();
 			}
+
+			return lastTime;
 		}
 
 		private async Task StartTimeTickingTask ()
@@ -283,11 +288,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			mTickingQueue.Add( tickRequest );
 
-			return completionToken.Task.ContinueWith( ( prev ) =>
-			{
-				tickRequest.Dispose();
-				return prev.Result ?? lastTime;
-			} );
+			return completionToken.Task
+				.WithCleanup( ( prev ) => tickRequest.Dispose() );
 		}
 
 		protected virtual void Dispose ( bool disposing )

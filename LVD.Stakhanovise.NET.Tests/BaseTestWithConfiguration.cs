@@ -17,6 +17,15 @@ namespace LVD.Stakhanovise.NET.Tests
 			mConfiguration = GetConfig();
 		}
 
+		protected string GetAppSetting(string key)
+		{
+			if ( string.IsNullOrEmpty( key ) )
+				throw new ArgumentNullException( nameof( key ) );
+
+			return mConfiguration.GetSection( "AppSettings" )
+				.GetValue<string>( key );
+		}
+
 		protected string GetConnectionString ( string connectionStringName )
 		{
 			if ( string.IsNullOrEmpty( connectionStringName ) )

@@ -8,11 +8,11 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueueTimingBeltTickRequest : IDisposable
 	{
-		private const int COMPLETED = 0x01;
+		public const int STATUS_COMPLETED = 0x01;
 
-		private const int PENDING = 0x02;
+		public const int STATUS_PENDING = 0x02;
 
-		private const int CANCELLED = 0x02;
+		public const int STATUS_CANCELLED = 0x02;
 
 		private CancellationToken mCancellationToken;
 
@@ -26,14 +26,26 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private int mMaxFailCount;
 
-		private int mStatus = PENDING;
+		private int mStatus = STATUS_PENDING;
 
 		private long mRequestId;
 
-		public PostgreSqlTaskQueueTimingBeltTickRequest ( long requestId, TaskCompletionSource<AbstractTimestamp> completionToken,
+		public PostgreSqlTaskQueueTimingBeltTickRequest ( long requestId, 
+			TaskCompletionSource<AbstractTimestamp> completionToken,
 			int timeoutMilliseconds,
 			int maxFailCount )
 		{
+			if ( requestId <= 0 )
+				throw new ArgumentOutOfRangeException( nameof( requestId ),
+					"Request ID must be greater than 0" );
+
+			if ( completionToken == null )
+				throw new ArgumentNullException( nameof( completionToken ) );
+
+			if ( maxFailCount < 0 )
+				throw new ArgumentOutOfRangeException( nameof( maxFailCount ),
+					"Maximum allowed fail count must be greater than or equal to 0" );
+
 			mRequestId = requestId;
 			mCancellationTokenSource = new CancellationTokenSource();
 
@@ -41,25 +53,34 @@ namespace LVD.Stakhanovise.NET.Queue
 				mCancellationTokenSource.CancelAfter( timeoutMilliseconds );
 
 			mCancellationToken = mCancellationTokenSource.Token;
-			mCancellationToken.Register( () =>
-			{
-				Console.WriteLine( "Request with id {0} requested to cancel", mRequestId );
-				if ( Interlocked.CompareExchange( ref mStatus, CANCELLED, PENDING ) == PENDING )
-					completionToken.TrySetCanceled();
-			} );
+			mCancellationToken.Register( () => HandleCancellationRequested() );
 
 			mCompletionToken = completionToken;
 			mMaxFailCount = maxFailCount;
 		}
 
+		private bool TrySetCancelledStatus ()
+		{
+			return Interlocked.CompareExchange( ref mStatus, STATUS_CANCELLED, STATUS_PENDING )
+				== STATUS_PENDING;
+		}
+
+		private bool TrySetCompletedStatus ()
+		{
+			return Interlocked.CompareExchange( ref mStatus, STATUS_COMPLETED, STATUS_PENDING )
+				== STATUS_PENDING;
+		}
+
+		private void HandleCancellationRequested ()
+		{
+			if ( TrySetCancelledStatus() )
+				mCompletionToken.TrySetCanceled();
+		}
+
 		public void SetCompleted ( AbstractTimestamp timestamp )
 		{
-			if ( !mCancellationToken.IsCancellationRequested )
-			{
-				if ( Interlocked.CompareExchange( ref mStatus, COMPLETED, PENDING ) == PENDING )
-					mCompletionToken.TrySetResult( timestamp );
-			}
-
+			if ( !mCancellationToken.IsCancellationRequested && TrySetCompletedStatus() )
+				mCompletionToken.TrySetResult( timestamp );
 		}
 
 		public void SetCancelled ()
@@ -73,7 +94,10 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( !mCancellationToken.IsCancellationRequested )
 			{
 				if ( !CanBeRetried )
-					mCompletionToken.TrySetException( exc );
+				{
+					if ( TrySetCompletedStatus() )
+						mCompletionToken.TrySetException( exc );
+				}
 				else
 					IncrementFailCount();
 			}
@@ -105,8 +129,10 @@ namespace LVD.Stakhanovise.NET.Queue
 			GC.SuppressFinalize( this );
 		}
 
-		public bool CanBeRetried => mCurrentFailCount < mMaxFailCount;
+		public bool CanBeRetried
+			=> mCurrentFailCount < mMaxFailCount;
 
-		public long Id => mRequestId;
+		public long Id
+			=> mRequestId;
 	}
 }

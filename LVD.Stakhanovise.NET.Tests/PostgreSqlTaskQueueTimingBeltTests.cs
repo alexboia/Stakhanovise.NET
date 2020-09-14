@@ -16,16 +16,48 @@ namespace LVD.Stakhanovise.NET.Tests
 		[SetUp]
 		public async Task SetUp ()
 		{
-			string resetSql = @"UPDATE sk_time_t 
-				SET t_total_ticks = 0, 
-					t_total_ticks_cost = 0 
-				WHERE t_id = @t_id";
+			await CleanupTimeDbTableAsync();
+		}
 
-			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( resetSql, conn ) )
+		[TearDown]
+		public async Task TearDown ()
+		{
+			await CleanupTimeDbTableAsync();
+		}
+
+		[Test]
+		[TestCase( 1, 0 )]
+		[TestCase( 1, 100 )]
+		[TestCase( 1, 1000 )]
+		[TestCase( 1, 10000 )]
+
+		[TestCase( 2, 0 )]
+		[TestCase( 2, 100 )]
+		[TestCase( 2, 1000 )]
+		[TestCase( 2, 10000 )]
+
+		[TestCase( 5, 0 )]
+		[TestCase( 5, 100 )]
+		[TestCase( 5, 1000 )]
+
+		[TestCase( 10, 0 )]
+		[TestCase( 10, 100 )]
+		[TestCase( 10, 1000 )]
+		public async Task Test_CanStartStop ( int repeatCycles, int timeBetweenStartStopCalls )
+		{
+			using ( PostgreSqlTaskQueueTimingBelt tb = GetTimingBelt() )
 			{
-				cmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid, TimeId );
-				await cmd.ExecuteNonQueryAsync();
+				for (int i = 0; i < repeatCycles; i ++ )
+				{
+					await tb.StartAsync();
+					Assert.IsTrue( tb.IsRunning );
+
+					if ( timeBetweenStartStopCalls > 0 )
+						await Task.Delay( timeBetweenStartStopCalls );
+
+					await tb.StopAsync();
+					Assert.IsFalse( tb.IsRunning );
+				}
 			}
 		}
 
@@ -67,24 +99,39 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		[TestCase( 2, 1 )]
-		[TestCase( 2, 2 )]
-		[TestCase( 2, 5 )]
-		[TestCase( 2, 10 )]
+		[TestCase( 2, 1, false )]
+		[TestCase( 2, 2, false )]
+		[TestCase( 2, 5, false )]
+		[TestCase( 2, 10, false )]
 
-		[TestCase( 5, 1 )]
-		[TestCase( 5, 2 )]
-		[TestCase( 5, 5 )]
-		[TestCase( 5, 10 )]
+		[TestCase( 5, 1, false )]
+		[TestCase( 5, 2, false )]
+		[TestCase( 5, 5, false )]
+		[TestCase( 5, 10, false )]
 
-		[TestCase( 25, 1 )]
-		[TestCase( 25, 2 )]
-		[TestCase( 25, 5 )]
-		[TestCase( 25, 10 )]
+		[TestCase( 25, 1, false )]
+		[TestCase( 25, 2, false )]
+		[TestCase( 25, 5, false )]
+		[TestCase( 25, 10, false )]
+
+		[TestCase( 2, 1, true )]
+		[TestCase( 2, 2, true )]
+		[TestCase( 2, 5, true )]
+		[TestCase( 2, 10, true )]
+
+		[TestCase( 5, 1, true )]
+		[TestCase( 5, 2, true )]
+		[TestCase( 5, 5, true )]
+		[TestCase( 5, 10, true )]
+
+		[TestCase( 25, 1, true )]
+		[TestCase( 25, 2, true )]
+		[TestCase( 25, 5, true )]
+		[TestCase( 25, 10, true )]
 		[NonParallelizable]
-		public async Task Test_CanTick_ParallelRequests ( int nThreads, int nRequestsPerThread )
+		public async Task Test_CanTick_ParallelRequests ( int nThreads, int nRequestsPerThread, bool syncOnCheckPoints )
 		{
-			Barrier syncStart = new Barrier( nThreads );
+			Barrier checkpointSync = new Barrier( nThreads );
 			List<Task> processingThreads = new List<Task>( nThreads );
 
 			using ( PostgreSqlTaskQueueTimingBelt tb = GetTimingBelt() )
@@ -98,11 +145,16 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					processingThreads.Add( Task.Run( async () =>
 					{
-						syncStart.SignalAndWait();
+						if ( syncOnCheckPoints )
+							checkpointSync.SignalAndWait();
 
 						for ( int iRequest = 0; iRequest < nRequestsPerThread; iRequest++ )
 						{
 							AbstractTimestamp lastThreadTime = tb.LastTime;
+
+							if ( syncOnCheckPoints )
+								checkpointSync.SignalAndWait();
+
 							AbstractTimestamp time = await tb.TickAbstractTimeAsync( 10000 );
 
 							Assert.NotNull( time );
@@ -224,6 +276,22 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
+		private async Task CleanupTimeDbTableAsync ()
+		{
+			string resetSql = @"UPDATE sk_time_t 
+				SET t_total_ticks = 0, 
+					t_total_ticks_cost = 0 
+				WHERE t_id = @t_id";
+
+			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( resetSql, conn ) )
+			{
+				cmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid, TimeId );
+				await cmd.ExecuteNonQueryAsync();
+				await conn.CloseAsync();
+			}
+		}
+
 		private PostgreSqlTaskQueueTimingBelt GetTimingBelt ()
 		{
 			return new PostgreSqlTaskQueueTimingBelt( TimeId, timeConnectionString: ConnectionString,
@@ -239,8 +307,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			return conn;
 		}
 
-		public string ConnectionString => GetConnectionString( "testDbConnectionString" );
+		public string ConnectionString
+			=> GetConnectionString( "testDbConnectionString" );
 
-		public Guid TimeId => Guid.Parse( "9eca068e-c4e2-49db-b537-50d74381a4bb" );
+		public Guid TimeId
+			=> Guid.Parse( GetAppSetting( "timeId" ) );
 	}
 }
