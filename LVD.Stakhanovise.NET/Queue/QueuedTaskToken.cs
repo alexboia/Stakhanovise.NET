@@ -37,11 +37,11 @@ using Npgsql;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class QueuedTaskLock : IDisposable
+	public class QueuedTaskToken : IDisposable
 	{
 		private bool mIsDisposed;
 
-		public QueuedTaskLock ( QueuedTask queuedTask, NpgsqlConnection connection )
+		public QueuedTaskToken ( QueuedTask queuedTask, NpgsqlConnection connection )
 		{
 			QueuedTask = queuedTask
 				?? throw new ArgumentNullException( nameof( queuedTask ) );

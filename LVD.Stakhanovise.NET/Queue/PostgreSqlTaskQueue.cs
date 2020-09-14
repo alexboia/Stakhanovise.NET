@@ -67,8 +67,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string mReadOnlyConnectionString;
 
-		private ConcurrentDictionary<Guid, QueuedTaskLock> mLocks
-			= new ConcurrentDictionary<Guid, QueuedTaskLock>();
+		private ConcurrentDictionary<Guid, QueuedTaskToken> mTaskTokens
+			= new ConcurrentDictionary<Guid, QueuedTaskToken>();
 
 		private PostgreSqlTaskQueueNotificationListener mNotificationListener;
 
@@ -281,7 +281,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task ReleaseLockAsync ( Guid queuedTaskId )
 		{
-			QueuedTaskLock acquiredLock = null;
+			QueuedTaskToken acquiredToken = null;
 
 			CheckDisposedOrThrow();
 			if ( queuedTaskId.Equals( Guid.Empty ) )
@@ -289,16 +289,16 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			try
 			{
-				if ( !mLocks.TryRemove( queuedTaskId, out acquiredLock ) )
+				if ( !mTaskTokens.TryRemove( queuedTaskId, out acquiredToken ) )
 					return;
 
-				await acquiredLock.Connection.Unlock( acquiredLock
+				await acquiredToken.Connection.Unlock( acquiredToken
 					.QueuedTask
 					.LockHandleId );
 			}
 			finally
 			{
-				acquiredLock?.Dispose();
+				acquiredToken?.Dispose();
 			}
 		}
 
@@ -309,7 +309,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			CheckDisposedOrThrow();
 
-			Guid[] excludeLockedTaskIds = mLocks.Keys
+			Guid[] excludeLockedTaskIds = mTaskTokens.Keys
 				.ToArray();
 
 			//We have reached the maximum allowed lock pool size,
@@ -351,10 +351,12 @@ namespace LVD.Stakhanovise.NET.Queue
 							? await taskReader.ReadQueuedTaskAsync( mQueuedTaskMapping )
 							: null;
 
-						//If a new task has been found, save it along with the database connection that holds the lock
+						//If a new task has been found, save it 
+						//	along with the database connection 
+						//	that holds the lock
 						if ( dequedTask != null )
 						{
-							mLocks.TryAdd( dequedTask.Id, new QueuedTaskLock( dequedTask, db ) );
+							mTaskTokens.TryAdd( dequedTask.Id, new QueuedTaskToken( dequedTask, db ) );
 							mLogger.DebugFormat( "Found with id = {0} in database queue.",
 								dequedTask.Id );
 						}
@@ -447,7 +449,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task<QueuedTask> NotifyTaskCompletedAsync ( Guid queuedTaskId, TaskExecutionResult result )
 		{
-			QueuedTaskLock acquiredLock = null;
+			QueuedTaskToken acquiredToken = null;
 			Dictionary<string, object> updateData;
 
 			CheckDisposedOrThrow();
@@ -460,47 +462,47 @@ namespace LVD.Stakhanovise.NET.Queue
 				//Removing the item (TryRemove) instead of just fetching it (TryGet) from the collection
 				//  ensures that only one thread at a time 
 				//  may request processing of a given task
-				if ( !mLocks.TryRemove( queuedTaskId, out acquiredLock ) )
+				if ( !mTaskTokens.TryRemove( queuedTaskId, out acquiredToken ) )
 					return null;
 
 				//Mark the task as processed
-				acquiredLock.QueuedTask
+				acquiredToken.QueuedTask
 					.Processed();
 
 				//Update database
 				updateData = new Dictionary<string, object>()
 				{
 					{ mQueuedTaskMapping.StatusColumnName,
-						acquiredLock.QueuedTask.Status },
+						acquiredToken.QueuedTask.Status },
 					{ mQueuedTaskMapping.ProcessingFinalizedAtColumnName,
-						acquiredLock.QueuedTask.ProcessingFinalizedAt },
+						acquiredToken.QueuedTask.ProcessingFinalizedAt },
 					{ mQueuedTaskMapping.LastProcessingAttemptedAtColumnName,
-						acquiredLock.QueuedTask.LastProcessingAttemptedAt },
+						acquiredToken.QueuedTask.LastProcessingAttemptedAt },
 					{ mQueuedTaskMapping.FirstProcessingAttemptedAtColumnName,
-						acquiredLock.QueuedTask.FirstProcessingAttemptedAt }
+						acquiredToken.QueuedTask.FirstProcessingAttemptedAt }
 				};
 
-				await acquiredLock.Connection
+				await acquiredToken.Connection
 					.QueryFactory()
 						.Query( mQueuedTaskMapping.TableName )
 						.Where( mQueuedTaskMapping.IdColumnName, "=", queuedTaskId )
 						.UpdateAsync( updateData );
 
 				//Release lock
-				await acquiredLock.Connection.Unlock( acquiredLock
+				await acquiredToken.Connection.Unlock( acquiredToken
 					.QueuedTask
 					.LockHandleId );
 
-				return acquiredLock.QueuedTask;
+				return acquiredToken.QueuedTask;
 			}
 			catch ( Exception )
 			{
 				//If something failed, attempt to add it back 
 				//  to the array of held locks
-				if ( acquiredLock != null )
-					mLocks.TryAdd( queuedTaskId, acquiredLock );
+				if ( acquiredToken != null )
+					mTaskTokens.TryAdd( queuedTaskId, acquiredToken );
 
-				acquiredLock = null;
+				acquiredToken = null;
 				throw;
 			}
 			finally
@@ -508,14 +510,14 @@ namespace LVD.Stakhanovise.NET.Queue
 				//Make sure the connection is cleaned-up, 
 				//  if the task lock was found and no error occured 
 				//  while processing the completion of the task
-				if ( acquiredLock != null )
-					acquiredLock.Dispose();
+				if ( acquiredToken != null )
+					acquiredToken.Dispose();
 			}
 		}
 
 		public async Task<QueuedTask> NotifyTaskErroredAsync ( Guid queuedTaskId, TaskExecutionResult result )
 		{
-			QueuedTaskLock acquiredLock = null;
+			QueuedTaskToken acquiredToken = null;
 			Dictionary<string, object> updateData;
 
 			CheckDisposedOrThrow();
@@ -532,63 +534,63 @@ namespace LVD.Stakhanovise.NET.Queue
 				//Removing the item (TryRemove) instead of just fetching it (TryGet) from the collection
 				//  ensures that only one thread at a time 
 				//  may request processing of a given task
-				if ( !mLocks.TryRemove( queuedTaskId, out acquiredLock ) )
+				if ( !mTaskTokens.TryRemove( queuedTaskId, out acquiredToken ) )
 					return null;
 
 				//Mark the task as processed
-				acquiredLock.QueuedTask
+				acquiredToken.QueuedTask
 					.HadError( result.Error, result.IsRecoverable );
 
-				if ( acquiredLock.QueuedTask.ErrorCount >= mFaultErrorThresholdCount )
+				if ( acquiredToken.QueuedTask.ErrorCount >= mFaultErrorThresholdCount )
 				{
-					if ( acquiredLock.QueuedTask.Status == QueuedTaskStatus.Error )
-						acquiredLock.QueuedTask.Faulted();
-					else if ( acquiredLock.QueuedTask.Status == QueuedTaskStatus.Faulted )
-						acquiredLock.QueuedTask.ProcessingFailedPermanently();
+					if ( acquiredToken.QueuedTask.Status == QueuedTaskStatus.Error )
+						acquiredToken.QueuedTask.Faulted();
+					else if ( acquiredToken.QueuedTask.Status == QueuedTaskStatus.Faulted )
+						acquiredToken.QueuedTask.ProcessingFailedPermanently();
 				}
 
 				//Update database
 				updateData = new Dictionary<string, object>()
 				{
 					{ mQueuedTaskMapping.StatusColumnName,
-						acquiredLock.QueuedTask.Status },
+						acquiredToken.QueuedTask.Status },
 
 					{ mQueuedTaskMapping.LastErrorColumnName,
-						acquiredLock.QueuedTask.LastError.ToJson() },
+						acquiredToken.QueuedTask.LastError.ToJson() },
 					{ mQueuedTaskMapping.LastErrorIsRecoverableColumnName,
-						acquiredLock.QueuedTask.LastErrorIsRecoverable },
+						acquiredToken.QueuedTask.LastErrorIsRecoverable },
 					{ mQueuedTaskMapping.ErrorCountColumnName,
-						acquiredLock.QueuedTask.ErrorCount },
+						acquiredToken.QueuedTask.ErrorCount },
 
 					{ mQueuedTaskMapping.FirstProcessingAttemptedAtColumnName,
-						acquiredLock.QueuedTask.FirstProcessingAttemptedAt },
+						acquiredToken.QueuedTask.FirstProcessingAttemptedAt },
 					{ mQueuedTaskMapping.LastProcessingAttemptedAtColumnName,
-						acquiredLock.QueuedTask.LastProcessingAttemptedAt },
+						acquiredToken.QueuedTask.LastProcessingAttemptedAt },
 					{ mQueuedTaskMapping.RepostedAtColumnName,
-						acquiredLock.QueuedTask.RepostedAt }
+						acquiredToken.QueuedTask.RepostedAt }
 				};
 
-				await acquiredLock.Connection
+				await acquiredToken.Connection
 					.QueryFactory()
 						.Query( mQueuedTaskMapping.TableName )
 						.Where( mQueuedTaskMapping.IdColumnName, "=", queuedTaskId )
 						.UpdateAsync( updateData );
 
 				//Release lock
-				await acquiredLock.Connection.Unlock( acquiredLock
+				await acquiredToken.Connection.Unlock( acquiredToken
 					.QueuedTask
 					.LockHandleId );
 
-				return acquiredLock.QueuedTask;
+				return acquiredToken.QueuedTask;
 			}
 			catch ( Exception )
 			{
 				//If something failed, attempt to add it back 
 				//  to the array of held locks
-				if ( acquiredLock != null )
-					mLocks.TryAdd( queuedTaskId, acquiredLock );
+				if ( acquiredToken != null )
+					mTaskTokens.TryAdd( queuedTaskId, acquiredToken );
 
-				acquiredLock = null;
+				acquiredToken = null;
 				throw;
 			}
 			finally
@@ -596,8 +598,8 @@ namespace LVD.Stakhanovise.NET.Queue
 				//Make sure the connection is cleaned-up, 
 				//  if the task lock was found and no error occured 
 				//  while processing the completion of the task
-				if ( acquiredLock != null )
-					acquiredLock.Dispose();
+				if ( acquiredToken != null )
+					acquiredToken.Dispose();
 			}
 		}
 
@@ -607,7 +609,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			//Tasks that have been dequeued must not appear 
 			//  in front of the queue when peeking
-			Guid[] excludeLockedTaskIds = mLocks.Keys
+			Guid[] excludeLockedTaskIds = mTaskTokens.Keys
 				.ToArray();
 
 			//This simply returns the latest item on top of the queue,
@@ -634,12 +636,12 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void DisposeAcquiredLocks ()
 		{
-			ICollection<QueuedTaskLock> acquiredLocks = mLocks.Values;
+			ICollection<QueuedTaskToken> acquiredLocks = mTaskTokens.Values;
 
-			foreach ( QueuedTaskLock acquiredLock in acquiredLocks )
+			foreach ( QueuedTaskToken acquiredLock in acquiredLocks )
 				acquiredLock.Dispose();
 
-			mLocks.Clear();
+			mTaskTokens.Clear();
 		}
 
 		private void DisposeWaitHandles ()

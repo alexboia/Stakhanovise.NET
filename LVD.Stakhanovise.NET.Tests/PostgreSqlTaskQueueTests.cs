@@ -34,9 +34,8 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private int mNumFatalTasks = 1;
 
-		private int mNumAuthorizationFailedTasks = 7;
-
-		private List<QueuedTask> mSeededTasks = new List<QueuedTask>();
+		private List<QueuedTask> mSeededTasks = 
+			new List<QueuedTask>();
 
 		private QueuedTaskStatus[] mDequeueWithStatuses = new QueuedTaskStatus[] {
 			QueuedTaskStatus.Unprocessed,

@@ -73,10 +73,11 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
 		}
 
-		private void CheckDisposedOrThrow ()
+		private void CheckNotDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultTaskPoller ), "Cannot reuse a disposed task poller" );
+				throw new ObjectDisposedException( nameof( DefaultTaskPoller ),
+					"Cannot reuse a disposed task poller" );
 		}
 
 		private void HandleQueuedTaskRetrievedFromBuffer ( object sender, EventArgs e )
@@ -115,27 +116,31 @@ namespace LVD.Stakhanovise.NET.Processor
 				else
 					mWaitForClearToDequeue.Reset();
 
-
 				//If there is no task available in the queue, begin waiting for 
 				//  a notification of new added tasks
-				QueuedTask queuedTask = await mTaskQueueConsumer.DequeueAsync( mRequiredPayloadTypes );
-				if ( queuedTask == null )
-				{
-					mLogger.Debug( "No task dequeued when polled. Waiting for available task..." );
-					await mWaitForClearToDequeue.ToTask();
-				}
-				else
+				QueuedTask queuedTask = await mTaskQueueConsumer
+					.DequeueAsync( mRequiredPayloadTypes );
+
+				if ( queuedTask != null )
 				{
 					mLogger.DebugFormat( "Task found with id = {0}. Adding to task buffer...", queuedTask.Id );
 					mTaskBuffer.TryAddNewTask( queuedTask );
 				}
+				else
+				{
+					mLogger.Debug( "No task dequeued when polled. Waiting for available task..." );
+					await mWaitForClearToDequeue.ToTask();
+				}
 
 				//See that we have not been notified to proceed 
 				//  as part of the stop operation
-				if ( !mStateController.IsStopRequested )
-					mWaitForClearToDequeue.Reset();
-				else
+				if ( mStateController.IsStopRequested )
+				{
+					mLogger.Debug( "Stop requested. Breaking polling loop..." );
 					break;
+				}
+				else
+					mWaitForClearToDequeue.Reset();
 			}
 
 			mTaskBuffer.CompleteAdding();
@@ -143,23 +148,22 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public async Task StartAsync ( params string[] requiredPayloadTypes )
 		{
-			CheckDisposedOrThrow();
+			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
 			{
 				mLogger.Debug( "Task poller is stopped. Starting..." );
 				await mStateController.TryRequestStartAsync( async () =>
 				{
-					//Set everything to proper initial state
-					ResetState();
-
 					//Save payload types
 					mRequiredPayloadTypes = requiredPayloadTypes
 						 ?? new string[ 0 ];
 
 					//Register event handlers
-					mTaskQueueConsumer.ClearForDequeue += HandlePollForDequeueRequired;
-					mTaskBuffer.QueuedTaskRetrieved += HandleQueuedTaskRetrievedFromBuffer;
+					mTaskQueueConsumer.ClearForDequeue +=
+						HandlePollForDequeueRequired;
+					mTaskBuffer.QueuedTaskRetrieved +=
+						HandleQueuedTaskRetrievedFromBuffer;
 
 					if ( !mTaskQueueConsumer.IsReceivingNewTaskUpdates )
 						await mTaskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
@@ -174,7 +178,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public async Task StopAync ()
 		{
-			CheckDisposedOrThrow();
+			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
 			{
@@ -192,30 +196,21 @@ namespace LVD.Stakhanovise.NET.Processor
 					await mPollTask;
 
 					//Clean-up event handlers and reset state
-					mTaskBuffer.QueuedTaskRetrieved -= HandleQueuedTaskRetrievedFromBuffer;
-					mTaskQueueConsumer.ClearForDequeue -= HandlePollForDequeueRequired;
+					mTaskBuffer.QueuedTaskRetrieved -=
+						HandleQueuedTaskRetrievedFromBuffer;
+					mTaskQueueConsumer.ClearForDequeue -=
+						HandlePollForDequeueRequired;
 
 					if ( mTaskQueueConsumer.IsReceivingNewTaskUpdates )
 						await mTaskQueueConsumer.StopReceivingNewTaskUpdatesAsync();
 
 					//Set everything to proper final state
-					ResetState();
+					mWaitForClearToDequeue.Reset();
+					mPollTask = null;
 				} );
 			}
 			else
 				mLogger.Debug( "Task poller is already stopped. Nothing to be done." );
-		}
-
-		private void ResetState ()
-		{
-			mWaitForClearToDequeue.Reset();
-			mPollTask = null;
-		}
-
-		private void DisposeWaitHandles ()
-		{
-			mWaitForClearToDequeue.Dispose();
-			mWaitForClearToDequeue = null;
 		}
 
 		protected virtual void Dispose ( bool disposing )
@@ -228,7 +223,8 @@ namespace LVD.Stakhanovise.NET.Processor
 					StopAync().Wait();
 
 					//Clear wait handles
-					DisposeWaitHandles();
+					mWaitForClearToDequeue.Dispose();
+					mWaitForClearToDequeue = null;
 
 					//It is not our responsibility to dispose 
 					//  of the queue and the buffer
@@ -255,7 +251,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			get
 			{
-				CheckDisposedOrThrow();
+				CheckNotDisposedOrThrow();
 				return mStateController.IsStarted;
 			}
 		}

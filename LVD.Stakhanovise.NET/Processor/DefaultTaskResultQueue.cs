@@ -46,13 +46,14 @@ namespace LVD.Stakhanovise.NET.Processor
 			.GetCurrentMethod()
 			.DeclaringType );
 
-		private ITaskQueueConsumer mTaskQueue;
+		private ITaskQueueConsumer mTaskQueueConsumer;
 
 		private bool mIsDisposed;
 
-		public DefaultTaskResultQueue ( ITaskQueueConsumer taskQueue )
+		public DefaultTaskResultQueue ( ITaskQueueConsumer taskQueueConsumer )
 		{
-			mTaskQueue = taskQueue ?? throw new ArgumentNullException( nameof( taskQueue ) );
+			mTaskQueueConsumer = taskQueueConsumer 
+				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
 		}
 
 		private void CheckDisposedOrThrow ()
@@ -75,17 +76,17 @@ namespace LVD.Stakhanovise.NET.Processor
 					//If the task did not execute successfully, notify the queue of the error;
 					//  otherwise mark it as completed
 					if ( !result.ExecutedSuccessfully )
-						await mTaskQueue.NotifyTaskErroredAsync( queuedTask.Id,
+						await mTaskQueueConsumer.NotifyTaskErroredAsync( queuedTask.Id,
 							result );
 					else
-						await mTaskQueue.NotifyTaskCompletedAsync( queuedTask.Id,
+						await mTaskQueueConsumer.NotifyTaskCompletedAsync( queuedTask.Id,
 							result );
 				}
 
 				//If there is no result, simply release the task - 
 				//  we don't really have anything else to do
 				else
-					await mTaskQueue.ReleaseLockAsync( queuedTask.Id );
+					await mTaskQueueConsumer.ReleaseLockAsync( queuedTask.Id );
 			}
 			catch ( Exception exc )
 			{
@@ -100,7 +101,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				//We are not responsible for managing the lifecycle 
 				//  of the task queue, so we will not be disposing it over here
 				if ( disposing )
-					mTaskQueue = null;
+					mTaskQueueConsumer = null;
 
 				mIsDisposed = true;
 			}

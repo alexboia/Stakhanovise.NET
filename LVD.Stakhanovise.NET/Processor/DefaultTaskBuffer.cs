@@ -37,112 +37,113 @@ using LVD.Stakhanovise.NET.Model;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-   public class DefaultTaskBuffer : ITaskBuffer
-   {
-      private int mCapacity;
+	public class DefaultTaskBuffer : ITaskBuffer
+	{
+		private int mCapacity;
 
-      private BlockingCollection<QueuedTask> mInnerBuffer;
+		private BlockingCollection<QueuedTask> mInnerBuffer;
 
-      private bool mIsDisposed = false;
+		private bool mIsDisposed = false;
 
-      public event EventHandler QueuedTaskRetrieved;
+		public event EventHandler QueuedTaskRetrieved;
 
-      public event EventHandler QueuedTaskAdded;
+		public event EventHandler QueuedTaskAdded;
 
-      public DefaultTaskBuffer(int capacity)
-      {
-         if (capacity <= 0)
-            throw new ArgumentOutOfRangeException(nameof(capacity), "The capacity must be greater than 0");
+		public DefaultTaskBuffer ( int capacity )
+		{
+			if ( capacity <= 0 )
+				throw new ArgumentOutOfRangeException( nameof( capacity ), "The capacity must be greater than 0" );
 
-         mInnerBuffer = new BlockingCollection<QueuedTask>(new ConcurrentQueue<QueuedTask>(), capacity);
-         mCapacity = capacity;
-      }
+			mInnerBuffer = new BlockingCollection<QueuedTask>( new ConcurrentQueue<QueuedTask>(), capacity );
+			mCapacity = capacity;
+		}
 
-      private void CheckDisposedOrThrow()
-      {
-         if (mIsDisposed)
-            throw new ObjectDisposedException(nameof(DefaultTaskBuffer), "Cannot reuse a disposed FIFO task buffer");
-      }
+		private void CheckDisposedOrThrow ()
+		{
+			if ( mIsDisposed )
+				throw new ObjectDisposedException( nameof( DefaultTaskBuffer ), 
+					"Cannot reuse a disposed task buffer" );
+		}
 
-      private void NotifyQueuedTaskRetrieved()
-      {
-         EventHandler itemRetrievedHandler = QueuedTaskRetrieved;
-         if (itemRetrievedHandler != null)
-            itemRetrievedHandler.Invoke(this, EventArgs.Empty);
-      }
+		private void NotifyQueuedTaskRetrieved ()
+		{
+			EventHandler itemRetrievedHandler = QueuedTaskRetrieved;
+			if ( itemRetrievedHandler != null )
+				itemRetrievedHandler.Invoke( this, EventArgs.Empty );
+		}
 
-      private void NotifyQueuedTaskAdded()
-      {
-         EventHandler itemAddedHandler = QueuedTaskAdded;
-         if (itemAddedHandler != null)
-            itemAddedHandler.Invoke(this, EventArgs.Empty);
-      }
+		private void NotifyQueuedTaskAdded ()
+		{
+			EventHandler itemAddedHandler = QueuedTaskAdded;
+			if ( itemAddedHandler != null )
+				itemAddedHandler.Invoke( this, EventArgs.Empty );
+		}
 
-      public bool TryAddNewTask(QueuedTask task)
-      {
-         CheckDisposedOrThrow();
+		public bool TryAddNewTask ( QueuedTask task )
+		{
+			CheckDisposedOrThrow();
 
-         if (task == null)
-            throw new ArgumentNullException(nameof(task));
+			if ( task == null )
+				throw new ArgumentNullException( nameof( task ) );
 
-         if (mInnerBuffer.IsAddingCompleted)
-            return false;
+			if ( mInnerBuffer.IsAddingCompleted )
+				return false;
 
-         bool isAdded = mInnerBuffer.TryAdd(task);
-         if (isAdded)
-            NotifyQueuedTaskAdded();
+			bool isAdded = mInnerBuffer.TryAdd( task );
+			if ( isAdded )
+				NotifyQueuedTaskAdded();
 
-         return isAdded;
-      }
+			return isAdded;
+		}
 
-      public QueuedTask TryGetNextTask()
-      {
-         CheckDisposedOrThrow();
+		public QueuedTask TryGetNextTask ()
+		{
+			CheckDisposedOrThrow();
 
-         QueuedTask newTask;
-         if (!mInnerBuffer.TryTake(out newTask))
-            newTask = null;
+			QueuedTask newTask;
+			if ( !mInnerBuffer.TryTake( out newTask ) )
+				newTask = null;
 
-         if (newTask != null)
-            NotifyQueuedTaskRetrieved();
+			if ( newTask != null )
+				NotifyQueuedTaskRetrieved();
 
-         return newTask;
-      }
+			return newTask;
+		}
 
-      public void CompleteAdding()
-      {
-         CheckDisposedOrThrow();
-         mInnerBuffer.CompleteAdding();
-      }
+		public void CompleteAdding ()
+		{
+			CheckDisposedOrThrow();
+			mInnerBuffer.CompleteAdding();
+		}
 
-      protected virtual void Dispose(bool disposing)
-      {
-         if (!mIsDisposed)
-         {
-            if (disposing)
-            {
-               mInnerBuffer.Dispose();
-               mInnerBuffer = null;
-            }
+		protected virtual void Dispose ( bool disposing )
+		{
+			if ( !mIsDisposed )
+			{
+				if ( disposing )
+				{
+					mInnerBuffer.Dispose();
+					mInnerBuffer = null;
+				}
 
-            mIsDisposed = true;
-         }
-      }
+				mIsDisposed = true;
+			}
+		}
 
-      public void Dispose()
-      {
-         Dispose(true);
-         GC.SuppressFinalize(this);
-      }
+		public void Dispose ()
+		{
+			Dispose( true );
+			GC.SuppressFinalize( this );
+		}
 
-      public int Count => mInnerBuffer.Count;
+		public int Count => mInnerBuffer.Count;
 
-      public bool HasTasks => mInnerBuffer.Count > 0;
+		public bool HasTasks => mInnerBuffer.Count > 0;
 
-      public bool IsFull => mInnerBuffer.Count == mCapacity;
+		public bool IsFull => mInnerBuffer.Count == mCapacity;
 
-      public int Capacity => mCapacity;
+		public int Capacity => mCapacity;
 
-      public bool IsCompleted => mInnerBuffer.IsCompleted;
-   }
+		public bool IsCompleted => mInnerBuffer.IsCompleted;
+	}
 }

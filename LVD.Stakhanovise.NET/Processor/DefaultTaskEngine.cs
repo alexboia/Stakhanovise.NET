@@ -177,7 +177,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 				//Stop all the workers
 				foreach ( ITaskWorker worker in mWorkers )
-					await TryStopWorker( worker );
+					await TryStopWorkerAsync( worker );
 
 				mWorkers.Clear();
 				mLogger.Info( "All the workers have been successfully stopped." );
@@ -186,7 +186,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Info( "The task engine has been successfully stopped." );
 		}
 
-		private async Task TryStopWorker ( ITaskWorker worker )
+		private async Task TryStopWorkerAsync ( ITaskWorker worker )
 		{
 			using ( worker )
 				await worker.StopAync();

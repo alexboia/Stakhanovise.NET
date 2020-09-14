@@ -235,18 +235,19 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public async Task StartAsync ( params string[] requiredPayloadTypes )
+		public Task StartAsync ( params string[] requiredPayloadTypes )
 		{
 			CheckDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
 			{
-				await mStateController.TryRequestStartAsync( async () =>
+				mStateController.TryRequestStart( () =>
 				{
+					mLogger.Debug( "Worker is stopped. Starting..." );
 					//Set everything to proper initial state
 					//   and register event handlers
-					ResetState();
-					mTaskBuffer.QueuedTaskAdded += HandleQueuedTaskAdded;
+					mTaskBuffer.QueuedTaskAdded +=
+						HandleQueuedTaskAdded;
 
 					//Save payload types
 					mRequiredPayloadTypes = requiredPayloadTypes
@@ -254,11 +255,12 @@ namespace LVD.Stakhanovise.NET.Processor
 
 					//Run worker thread
 					mWorkerTask = Task.Run( RunWorkerAsync );
-
-					//Just remove the compiler warning
-					await Task.CompletedTask;
 				} );
 			}
+			else
+				mLogger.Debug( "Worker is already started or in the process of starting." );
+
+			return Task.CompletedTask;
 		}
 
 		public async Task StopAync ()
@@ -269,6 +271,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			{
 				await mStateController.TryRequestStopASync( async () =>
 				{
+					mLogger.Debug( "Worker is started. Stopping..." );
 					//We may be waiting for the right conditions to
 					//  try polling the buffer again
 					//Thus, in order to avoid waiting for these conditions to be met 
@@ -279,22 +282,15 @@ namespace LVD.Stakhanovise.NET.Processor
 					await mWorkerTask;
 
 					//Clean-up event handlers and reset state
-					mTaskBuffer.QueuedTaskAdded -= HandleQueuedTaskAdded;
-					ResetState();
+					mTaskBuffer.QueuedTaskAdded -= 
+						HandleQueuedTaskAdded;
+
+					mWaitForClearToFetchTask.Reset();
+					mWorkerTask = null;
 				} );
 			}
-		}
-
-		private void ResetState ()
-		{
-			mWaitForClearToFetchTask.Reset();
-			mWorkerTask = null;
-		}
-
-		private void DisposeWaitHandles ()
-		{
-			mWaitForClearToFetchTask.Dispose();
-			mWaitForClearToFetchTask = null;
+			else
+				mLogger.Debug( "Worker is already stopped or in the process of stopping." );
 		}
 
 		protected void Dispose ( bool disposing )
@@ -307,7 +303,8 @@ namespace LVD.Stakhanovise.NET.Processor
 					StopAync().Wait();
 
 					//Clear wait handles
-					DisposeWaitHandles();
+					mWaitForClearToFetchTask.Dispose();
+					mWaitForClearToFetchTask = null;
 
 					//It is not our responsibility to dispose of these dependencies
 					//  since we are not the owner and we may interfere with their orchestration
