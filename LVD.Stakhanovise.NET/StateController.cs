@@ -37,128 +37,128 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET
 {
-   public sealed class StateController
-   {
-      private const int StateStopped = 0;
+	public sealed class StateController
+	{
+		private const int StateStopped = 0;
 
-      private const int StateStartRequested = 1;
+		private const int StateStartRequested = 1;
 
-      private const int StateStarted = 2;
+		private const int StateStarted = 2;
 
-      private const int StateStopRequested = 3;
+		private const int StateStopRequested = 3;
 
-      private int mState;
+		private int mState;
 
-      public StateController()
-      {
-         mState = StateStopped;
-      }
+		public StateController ()
+		{
+			mState = StateStopped;
+		}
 
-      private bool TryRequestStart()
-      {
-         return Interlocked.CompareExchange(ref mState,
-             value: StateStartRequested,
-             comparand: StateStopped) == StateStopped;
-      }
+		private bool TryRequestStart ()
+		{
+			return Interlocked.CompareExchange( ref mState,
+				value: StateStartRequested,
+				comparand: StateStopped ) == StateStopped;
+		}
 
-      public void TryRequestStart(Action onStartFn)
-      {
-         if (onStartFn == null)
-            throw new ArgumentNullException(nameof(onStartFn));
+		public void TryRequestStart ( Action onStartFn )
+		{
+			if ( onStartFn == null )
+				throw new ArgumentNullException( nameof( onStartFn ) );
 
-         if (TryRequestStart())
-         {
-            try
-            {
-               onStartFn.Invoke();
-               Interlocked.Exchange(ref mState, StateStarted);
-            }
-            catch (Exception)
-            {
-               Interlocked.Exchange(ref mState, StateStopped);
-               throw;
-            }
-         }
-      }
+			if ( TryRequestStart() )
+			{
+				try
+				{
+					onStartFn.Invoke();
+					Interlocked.Exchange( ref mState, StateStarted );
+				}
+				catch ( Exception )
+				{
+					Interlocked.Exchange( ref mState, StateStopped );
+					throw;
+				}
+			}
+		}
 
-      public async Task TryRequestStartAsync(Func<Task> onStartFn)
-      {
-         if (onStartFn == null)
-            throw new ArgumentNullException(nameof(onStartFn));
+		public async Task TryRequestStartAsync ( Func<Task> onStartFn )
+		{
+			if ( onStartFn == null )
+				throw new ArgumentNullException( nameof( onStartFn ) );
 
-         if (TryRequestStart())
-         {
-            try
-            {
-               await onStartFn.Invoke();
-               Interlocked.Exchange(ref mState, StateStarted);
-            }
-            catch (Exception)
-            {
-               Interlocked.Exchange(ref mState, StateStopped);
-               throw;
-            }
-         }
-      }
+			if ( TryRequestStart() )
+			{
+				try
+				{
+					await onStartFn.Invoke();
+					Interlocked.Exchange( ref mState, StateStarted );
+				}
+				catch ( Exception )
+				{
+					Interlocked.Exchange( ref mState, StateStopped );
+					throw;
+				}
+			}
+		}
 
-      private bool TryRequestStop()
-      {
-         return Interlocked.CompareExchange(ref mState,
-             value: StateStopRequested,
-             comparand: StateStarted) == StateStarted;
-      }
+		private bool TryRequestStop ()
+		{
+			return Interlocked.CompareExchange( ref mState,
+				value: StateStopRequested,
+				comparand: StateStarted ) == StateStarted;
+		}
 
-      public void TryRequestStop(Action onStopFn)
-      {
-         if (onStopFn == null)
-            throw new ArgumentNullException(nameof(onStopFn));
+		public void TryRequestStop ( Action onStopFn )
+		{
+			if ( onStopFn == null )
+				throw new ArgumentNullException( nameof( onStopFn ) );
 
-         if (TryRequestStop())
-         {
-            try
-            {
-               onStopFn.Invoke();
-               Interlocked.Exchange(ref mState, StateStopped);
-            }
-            catch (Exception)
-            {
-               Interlocked.Exchange(ref mState, StateStarted);
-               throw;
-            }
-         }
-      }
+			if ( TryRequestStop() )
+			{
+				try
+				{
+					onStopFn.Invoke();
+					Interlocked.Exchange( ref mState, StateStopped );
+				}
+				catch ( Exception )
+				{
+					Interlocked.Exchange( ref mState, StateStarted );
+					throw;
+				}
+			}
+		}
 
-      public async Task TryRequestStopASync(Func<Task> onStopFn)
-      {
-         if (onStopFn == null)
-            throw new ArgumentNullException(nameof(onStopFn));
+		public async Task TryRequestStopASync ( Func<Task> onStopFn )
+		{
+			if ( onStopFn == null )
+				throw new ArgumentNullException( nameof( onStopFn ) );
 
-         if (TryRequestStop())
-         {
-            try
-            {
-               await onStopFn.Invoke();
-               Interlocked.Exchange(ref mState, StateStopped);
-            }
-            catch (Exception)
-            {
-               Interlocked.Exchange(ref mState, StateStarted);
-               throw;
-            }
-         }
-      }
+			if ( TryRequestStop() )
+			{
+				try
+				{
+					await onStopFn.Invoke();
+					Interlocked.Exchange( ref mState, StateStopped );
+				}
+				catch ( Exception exc )
+				{
+					Interlocked.Exchange( ref mState, StateStarted );
+					throw;
+				}
+			}
+		}
 
-      public void Reset()
-      {
-         Interlocked.Exchange(ref mState, StateStopped);
-      }
+		public void Reset ()
+		{
+			Interlocked.Exchange( ref mState, StateStopped );
+		}
 
-      public bool IsStartRequested => mState == StateStartRequested;
+		public bool IsStartRequested => mState == StateStartRequested;
 
-      public bool IsStopRequested => mState == StateStopRequested;
+		public bool IsStopRequested => mState == StateStopRequested;
 
-      public bool IsStarted => mState == StateStarted;
+		public bool IsStarted => mState == StateStarted;
 
-      public bool IsStopped => mState == StateStopped;
-   }
+		public bool IsStopped => mState == StateStopped;
+	}
 }

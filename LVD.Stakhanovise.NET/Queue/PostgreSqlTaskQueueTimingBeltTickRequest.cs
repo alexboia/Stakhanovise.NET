@@ -8,6 +8,12 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueueTimingBeltTickRequest : IDisposable
 	{
+		private const int COMPLETED = 0x01;
+
+		private const int PENDING = 0x02;
+
+		private const int CANCELLED = 0x02;
+
 		private CancellationToken mCancellationToken;
 
 		private CancellationTokenSource mCancellationTokenSource;
@@ -20,18 +26,27 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private int mMaxFailCount;
 
-		public PostgreSqlTaskQueueTimingBeltTickRequest ( TaskCompletionSource<AbstractTimestamp> completionToken,
+		private int mStatus = PENDING;
+
+		private long mRequestId;
+
+		public PostgreSqlTaskQueueTimingBeltTickRequest ( long requestId, TaskCompletionSource<AbstractTimestamp> completionToken,
 			int timeoutMilliseconds,
 			int maxFailCount )
 		{
-			mCancellationTokenSource =
-				new CancellationTokenSource();
+			mRequestId = requestId;
+			mCancellationTokenSource = new CancellationTokenSource();
 
 			if ( timeoutMilliseconds > 0 )
 				mCancellationTokenSource.CancelAfter( timeoutMilliseconds );
 
 			mCancellationToken = mCancellationTokenSource.Token;
-			mCancellationToken.Register( () => completionToken.TrySetCanceled() );
+			mCancellationToken.Register( () =>
+			{
+				Console.WriteLine( "Request with id {0} requested to cancel", mRequestId );
+				if ( Interlocked.CompareExchange( ref mStatus, CANCELLED, PENDING ) == PENDING )
+					completionToken.TrySetCanceled();
+			} );
 
 			mCompletionToken = completionToken;
 			mMaxFailCount = maxFailCount;
@@ -40,7 +55,11 @@ namespace LVD.Stakhanovise.NET.Queue
 		public void SetCompleted ( AbstractTimestamp timestamp )
 		{
 			if ( !mCancellationToken.IsCancellationRequested )
-				mCompletionToken.TrySetResult( timestamp );
+			{
+				if ( Interlocked.CompareExchange( ref mStatus, COMPLETED, PENDING ) == PENDING )
+					mCompletionToken.TrySetResult( timestamp );
+			}
+
 		}
 
 		public void SetCancelled ()
@@ -87,5 +106,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		}
 
 		public bool CanBeRetried => mCurrentFailCount < mMaxFailCount;
+
+		public long Id => mRequestId;
 	}
 }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -42,14 +44,23 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private bool mIsDisposed = false;
 
-		public PostgreSqlTaskQueueTimingBelt ( Guid timeId, string timeConnectionString, int timeTickBatchSize, int timeTickMaxFailCount )
+		private long mLastRequestId;
+
+		public PostgreSqlTaskQueueTimingBelt ( Guid timeId,
+			string timeConnectionString,
+			int initialWallclockTimeCost,
+			int timeTickBatchSize,
+			int timeTickMaxFailCount )
 		{
 			mTimeId = timeId;
 			mTimeConnectionString = timeConnectionString;
 			mTimeTickBatchSize = timeTickBatchSize;
-			mTimeTickRequestMaxFailCount = 3;
+			mTimeTickRequestMaxFailCount = timeTickMaxFailCount;
 
-			mLastTime = AbstractTimestamp.Zero();
+			mLocalWallclockTimeCostSinceLastTick = initialWallclockTimeCost;
+			mTotalLocalWallclockTimeCost = initialWallclockTimeCost;
+
+			mLastTime = new AbstractTimestamp( 0, initialWallclockTimeCost );
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -66,6 +77,16 @@ namespace LVD.Stakhanovise.NET.Queue
 			return conn;
 		}
 
+		private async Task PrepConnectionPoolAsync ( CancellationToken cancellationToken )
+		{
+			using ( NpgsqlConnection conn = await OpenConnectionAsync( cancellationToken ) )
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT NULL as sk_connection_prep", conn ) )
+			{
+				await cmd.ExecuteNonQueryAsync( cancellationToken );
+				await conn.CloseAsync();
+			}
+		}
+
 		private async Task<AbstractTimestamp> TickAsync ( int ticksCount, CancellationToken cancellationToken )
 		{
 			string tickSql = @"UPDATE sk_time_t 
@@ -75,6 +96,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				RETURNING t_total_ticks AS new_t_total_ticks, 
 					t_total_ticks_cost AS new_t_total_ticks_cost";
 
+			//TODO: check if this is actually the best place to reset it
 			double tickLastCost = Interlocked.Exchange( ref mLocalWallclockTimeCostSinceLastTick, 0 );
 
 			using ( NpgsqlConnection tickConn = await OpenConnectionAsync( cancellationToken ) )
@@ -92,29 +114,36 @@ namespace LVD.Stakhanovise.NET.Queue
 
 				using ( NpgsqlDataReader rdr = await tickCmd.ExecuteReaderAsync( cancellationToken ) )
 				{
-					long newTotalTicks = rdr.GetInt64( rdr.GetOrdinal(
-						"new_t_total_ticks"
-					) );
+					if ( await rdr.ReadAsync() )
+					{
+						long newTotalTicks = rdr.GetInt64( rdr.GetOrdinal(
+							"new_t_total_ticks"
+						) );
 
-					long newTotalTicksCost = rdr.GetInt64( rdr.GetOrdinal(
-						"new_t_total_ticks_cost"
-					) );
+						long newTotalTicksCost = rdr.GetInt64( rdr.GetOrdinal(
+							"new_t_total_ticks_cost"
+						) );
 
-					AbstractTimestamp lastTime = new AbstractTimestamp( newTotalTicks,
-						newTotalTicksCost );
+						AbstractTimestamp lastTime = new AbstractTimestamp( newTotalTicks,
+							newTotalTicksCost );
 
-					Interlocked.Exchange( ref mLastTime,
-						lastTime );
+						Interlocked.Exchange( ref mLastTime,
+							lastTime );
 
-					return lastTime;
+						return lastTime;
+					}
+					else
+						return null;
 				}
 			}
 		}
 
-		private void StartTimeTickingTask ()
+		private async Task StartTimeTickingTask ()
 		{
-			mTickingQueue = new BlockingCollection<PostgreSqlTaskQueueTimingBeltTickRequest>();
+			await PrepConnectionPoolAsync( CancellationToken.None );
+
 			mTimeTickingStopRequest = new CancellationTokenSource();
+			mTickingQueue = new BlockingCollection<PostgreSqlTaskQueueTimingBeltTickRequest>();
 
 			mTimeTickingTask = Task.Run( async () =>
 			{
@@ -131,21 +160,20 @@ namespace LVD.Stakhanovise.NET.Queue
 						cancellationToken.ThrowIfCancellationRequested();
 
 						//Try to dequeue and block if no item is available
-						PostgreSqlTaskQueueTimingBeltTickRequest tickRqBatchItem = 
+						PostgreSqlTaskQueueTimingBeltTickRequest tickRqBatchItem =
 							mTickingQueue.Take( cancellationToken );
-						
+
 						currentBatch.Add( tickRqBatchItem );
 
 						//See if there are other items available 
 						//	and add them to current batch
-						while ( mTickingQueue.TryTake( out tickRqBatchItem )
-							&& currentBatch.Count < mTimeTickBatchSize )
+						while ( currentBatch.Count < mTimeTickBatchSize && mTickingQueue.TryTake( out tickRqBatchItem ) )
 							currentBatch.Add( tickRqBatchItem );
 
 						cancellationToken.ThrowIfCancellationRequested();
 
 						//Tick the entire batch
-						AbstractTimestamp lastTime = await TickAsync( currentBatch.Count, 
+						AbstractTimestamp lastTime = await TickAsync( currentBatch.Count,
 							cancellationToken );
 
 						//And distribute the result to each tick request
@@ -165,6 +193,9 @@ namespace LVD.Stakhanovise.NET.Queue
 						foreach ( PostgreSqlTaskQueueTimingBeltTickRequest rq in mTickingQueue.ToArray() )
 							rq.SetCancelled();
 
+						currentBatch.Clear();
+						mLogger.Debug( "Cancellation requested. Breaking time ticking loop..." );
+
 						break;
 					}
 					catch ( Exception exc )
@@ -177,8 +208,8 @@ namespace LVD.Stakhanovise.NET.Queue
 								mTickingQueue.Add( rq );
 						}
 
-						mLogger.Error( "Error processing time tick", exc );
 						currentBatch.Clear();
+						mLogger.Error( "Error processing time tick", exc );
 					}
 				}
 			} );
@@ -198,21 +229,21 @@ namespace LVD.Stakhanovise.NET.Queue
 			mTimeTickingTask = null;
 		}
 
-		public Task StartAsync ()
+		public async Task StartAsync ()
 		{
 			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
-				mStateController.TryRequestStart( () => StartTimeTickingTask() );
+				await mStateController.TryRequestStartAsync( async () => await StartTimeTickingTask() );
 			else
 				mLogger.Debug( "Timing belt is already started or in the process of starting." );
-
-			return Task.CompletedTask;
 		}
 
 		public async Task StopAsync ()
 		{
 			CheckNotDisposedOrThrow();
+
+			Console.WriteLine( "Stop requested. Current state is {0}", mStateController.IsStarted );
 
 			if ( mStateController.IsStarted )
 				await mStateController.TryRequestStopASync( async () => await StopTimeTickingTask() );
@@ -239,13 +270,15 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			CheckNotDisposedOrThrow();
 
+			long requestId = Interlocked.Increment( ref mLastRequestId );
 			AbstractTimestamp lastTime = mLastTime.Copy();
 
 			TaskCompletionSource<AbstractTimestamp> completionToken =
 				new TaskCompletionSource<AbstractTimestamp>();
 
 			PostgreSqlTaskQueueTimingBeltTickRequest tickRequest =
-				new PostgreSqlTaskQueueTimingBeltTickRequest( completionToken,
+				new PostgreSqlTaskQueueTimingBeltTickRequest( requestId,
+					completionToken,
 					timeoutMilliseconds, mTimeTickRequestMaxFailCount );
 
 			mTickingQueue.Add( tickRequest );
@@ -263,7 +296,9 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				if ( disposing )
 				{
-					StopAsync().Wait();
+					Console.WriteLine( "Dispose requested. Current state is {0}", mStateController.IsStarted );
+					Task t = StopAsync();
+					t.Wait();
 
 					mStateController = null;
 					mLastTime = null;
@@ -294,6 +329,23 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				CheckNotDisposedOrThrow();
 				return mStateController.IsStarted;
+			}
+		}
+
+		public long LocalWallclockTimeCostSinceLastTick
+		{
+			get
+			{
+				CheckNotDisposedOrThrow();
+				return mLocalWallclockTimeCostSinceLastTick;
+			}
+		}
+		public long TotalLocalWallclockTimeCost
+		{
+			get
+			{
+				CheckNotDisposedOrThrow();
+				return mTotalLocalWallclockTimeCost;
 			}
 		}
 	}
