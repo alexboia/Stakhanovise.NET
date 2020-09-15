@@ -35,7 +35,7 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public class QueuedTask : IEquatable<QueuedTask>
+	public class QueuedTask : IQueuedTask, IEquatable<QueuedTask>
 	{
 		public QueuedTask ()
 		{
@@ -46,6 +46,12 @@ namespace LVD.Stakhanovise.NET.Model
 			: this()
 		{
 			Id = taskId;
+		}
+
+		public virtual void ProcessingStarted ( AbstractTimestamp lockUntil )
+		{
+			Status = QueuedTaskStatus.Processing;
+			LockedUntil = lockUntil.Ticks;
 		}
 
 		public virtual void Processed ()
@@ -69,7 +75,10 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		public virtual void HadError ( QueuedTaskError error, bool isRecoverable )
+		public virtual void HadError ( QueuedTaskError error,
+			bool isRecoverable,
+			int faultErrorThresholdCount,
+			AbstractTimestamp retryAt )
 		{
 			LastError = error;
 			LastErrorIsRecoverable = isRecoverable;
@@ -83,6 +92,19 @@ namespace LVD.Stakhanovise.NET.Model
 			if ( Status != QueuedTaskStatus.Fatal &&
 				Status != QueuedTaskStatus.Faulted )
 				Status = QueuedTaskStatus.Error;
+
+			if ( ErrorCount >= faultErrorThresholdCount )
+			{
+				if ( Status == QueuedTaskStatus.Error )
+					Faulted();
+				else if ( Status == QueuedTaskStatus.Faulted )
+					ProcessingFailedPermanently();
+			}
+
+			if ( retryAt != null )
+				LockedUntil = retryAt.Ticks;
+			else
+				LockedUntil = 0;
 		}
 
 		public virtual void ProcessingFailedPermanently ()
@@ -128,6 +150,10 @@ namespace LVD.Stakhanovise.NET.Model
 		public QueuedTaskStatus Status { get; set; }
 
 		public int Priority { get; set; }
+
+		public long LockedUntil { get; set; }
+
+		public long ProcessingTimeMilliseconds { get; set; }
 
 		public QueuedTaskError LastError { get; set; }
 

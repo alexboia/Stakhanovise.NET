@@ -78,7 +78,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			using ( PostgreSqlTaskQueueTimingBelt tb = GetTimingBelt() )
 			{
-				for (int i = 0; i < repeatCycles; i ++ )
+				for ( int i = 0; i < repeatCycles; i++ )
 				{
 					await tb.StartAsync();
 					Assert.IsTrue( tb.IsRunning );
@@ -112,9 +112,9 @@ namespace LVD.Stakhanovise.NET.Tests
 					AbstractTimestamp time = await tb.TickAbstractTimeAsync( 1000 );
 
 					Assert.NotNull( time );
-					Assert.AreEqual( i + 1, time.CurrentTicks );
-					Assert.AreEqual( currentWallclockTimeCost, time.CurrentTicksWallclockTimeCost );
-					Assert.AreEqual( ( i + 1 ) / currentWallclockTimeCost, time.TickDuration );
+					Assert.AreEqual( i + 1, time.Ticks );
+					Assert.AreEqual( currentWallclockTimeCost, time.TicksWallclockTimeCost );
+					Assert.AreEqual( ( long )Math.Ceiling( ( double )currentWallclockTimeCost / ( i + 1 ) ), time.TickDuration );
 
 					if ( i < nRequests - 1 )
 					{
@@ -189,10 +189,10 @@ namespace LVD.Stakhanovise.NET.Tests
 							AbstractTimestamp time = await tb.TickAbstractTimeAsync( 10000 );
 
 							Assert.NotNull( time );
-							Assert.GreaterOrEqual( time.CurrentTicks,
-								lastThreadTime.CurrentTicks );
-							Assert.GreaterOrEqual( time.CurrentTicksWallclockTimeCost,
-								lastThreadTime.CurrentTicksWallclockTimeCost );
+							Assert.GreaterOrEqual( time.Ticks,
+								lastThreadTime.Ticks );
+							Assert.GreaterOrEqual( time.TicksWallclockTimeCost,
+								lastThreadTime.TicksWallclockTimeCost );
 
 							if ( iRequest < nRequestsPerThread - 1 )
 							{
@@ -213,9 +213,9 @@ namespace LVD.Stakhanovise.NET.Tests
 					tb.TotalLocalWallclockTimeCost );
 
 				Assert.AreEqual( nThreads * nRequestsPerThread,
-					lastTime.CurrentTicks );
+					lastTime.Ticks );
 				Assert.AreEqual( currentWallclockTimeCost,
-					lastTime.CurrentTicksWallclockTimeCost );
+					lastTime.TicksWallclockTimeCost );
 
 				await tb.StopAsync();
 				Assert.IsFalse( tb.IsRunning );

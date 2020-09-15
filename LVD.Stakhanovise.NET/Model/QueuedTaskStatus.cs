@@ -45,6 +45,11 @@ namespace LVD.Stakhanovise.NET.Model
 		Unprocessed = 0x01,
 
 		/// <summary>
+		/// The task has been locked and processing has started
+		/// </summary>
+		Processing = 0x02,
+
+		/// <summary>
 		/// The task has been successfully processed
 		/// </summary>
 		Processed = 0x03,

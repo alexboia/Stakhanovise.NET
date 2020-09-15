@@ -33,56 +33,68 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Queue
+namespace LVD.Stakhanovise.NET.Model
 {
 	public class AbstractTimestamp
 	{
-		private long mCurrentTicks;
+		private long mTicks;
 
 		private long mTickDuration;
 
-		private long mCurrentTicksWallclockTimeCost;
+		private long mWallclockTimeCost;
 
-		public AbstractTimestamp ( long currentTicks, long currentTicksWallclockTimeCost )
+		public AbstractTimestamp ( long ticks, long wallclockTimeCost )
 		{
-			mCurrentTicks = currentTicks;
-			mCurrentTicksWallclockTimeCost = currentTicksWallclockTimeCost;
+			mTicks = ticks;
+			mWallclockTimeCost = wallclockTimeCost;
 
-			mTickDuration = currentTicksWallclockTimeCost > 0 
-				? currentTicks / currentTicksWallclockTimeCost 
+			mTickDuration = ticks > 0
+				? ( long )Math.Ceiling( ( double )wallclockTimeCost / ticks )
 				: 0;
 		}
 
-		public static AbstractTimestamp Zero()
+		public static AbstractTimestamp Zero ()
 		{
 			return new AbstractTimestamp( 0, 0 );
 		}
 
 		public long GetAbstractTimeDurationForWallclockDuration ( TimeSpan duration )
 		{
-			return GetAbstractTimeDurationForWallclockDuration( ( long )duration.TotalMilliseconds );
+			return GetAbstractTimeDurationForWallclockDuration( ( long )Math.Ceiling( duration.TotalMilliseconds ) );
 		}
 
 		public long GetAbstractTimeDurationForWallclockDuration ( long wallclockMilliseconds )
 		{
-			return mTickDuration > 0 
-				? wallclockMilliseconds / mTickDuration 
+			return mTickDuration > 0
+				? ( long )Math.Ceiling( ( double )wallclockMilliseconds * mTicks / mWallclockTimeCost )
 				: 0;
+		}
+
+		public AbstractTimestamp AddWallclockTimeDuration ( TimeSpan duration )
+		{
+			return AddWallclockTimeDuration( ( long )Math.Ceiling( duration.TotalMilliseconds ) );
+		}
+
+		public AbstractTimestamp AddWallclockTimeDuration ( long duration )
+		{
+			long ticksForWallclockMilliseconds = GetAbstractTimeDurationForWallclockDuration( duration );
+			return new AbstractTimestamp( mTicks + ticksForWallclockMilliseconds,
+				mWallclockTimeCost + duration );
 		}
 
 		public AbstractTimestamp Copy ()
 		{
-			return new AbstractTimestamp( mCurrentTicks, 
-				mCurrentTicksWallclockTimeCost );
+			return new AbstractTimestamp( mTicks,
+				mWallclockTimeCost );
 		}
 
-		public long CurrentTicks
-			=> mCurrentTicks;
+		public long Ticks
+			=> mTicks;
 
 		public long TickDuration
 			=> mTickDuration;
 
-		public long CurrentTicksWallclockTimeCost
-			=> mCurrentTicksWallclockTimeCost;
+		public long WallclockTimeCost
+			=> mWallclockTimeCost;
 	}
 }

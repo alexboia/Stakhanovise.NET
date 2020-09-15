@@ -69,7 +69,20 @@ namespace LVD.Stakhanovise.NET.Helpers
 			}
 		}
 
-		public static async Task<bool> Unlock ( this NpgsqlConnection db, long lockHandleId )
+		public static async Task<bool> LockAsync ( this NpgsqlConnection db, long lockHandleId )
+		{
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT pg_try_advisory_lock(@lock_handle_id)", db ) )
+			{
+				cmd.CommandType = CommandType.Text;
+				cmd.Parameters.AddWithValue( "lock_handle_id",
+					NpgsqlDbType.Bigint,
+					lockHandleId );
+
+				return ( bool )( await cmd.ExecuteScalarAsync() );
+			}
+		}
+
+		public static async Task<bool> UnlockAsync ( this NpgsqlConnection db, long lockHandleId )
 		{
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT pg_advisory_unlock(@lock_handle_id)", db ) )
 			{

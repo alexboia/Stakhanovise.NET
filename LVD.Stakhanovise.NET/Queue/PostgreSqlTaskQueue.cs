@@ -292,7 +292,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				if ( !mTaskTokens.TryRemove( queuedTaskId, out acquiredToken ) )
 					return;
 
-				await acquiredToken.Connection.Unlock( acquiredToken
+				await acquiredToken.Connection.UnlockAsync( acquiredToken
 					.QueuedTask
 					.LockHandleId );
 			}
@@ -489,7 +489,7 @@ namespace LVD.Stakhanovise.NET.Queue
 						.UpdateAsync( updateData );
 
 				//Release lock
-				await acquiredToken.Connection.Unlock( acquiredToken
+				await acquiredToken.Connection.UnlockAsync( acquiredToken
 					.QueuedTask
 					.LockHandleId );
 
@@ -538,8 +538,8 @@ namespace LVD.Stakhanovise.NET.Queue
 					return null;
 
 				//Mark the task as processed
-				acquiredToken.QueuedTask
-					.HadError( result.Error, result.IsRecoverable );
+				//acquiredToken.QueuedTask
+				//	.HadError( result.Error, result.IsRecoverable );
 
 				if ( acquiredToken.QueuedTask.ErrorCount >= mFaultErrorThresholdCount )
 				{
@@ -577,7 +577,7 @@ namespace LVD.Stakhanovise.NET.Queue
 						.UpdateAsync( updateData );
 
 				//Release lock
-				await acquiredToken.Connection.Unlock( acquiredToken
+				await acquiredToken.Connection.UnlockAsync( acquiredToken
 					.QueuedTask
 					.LockHandleId );
 

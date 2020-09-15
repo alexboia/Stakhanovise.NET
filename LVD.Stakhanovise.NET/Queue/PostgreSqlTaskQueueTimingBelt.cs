@@ -41,6 +41,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using log4net;
 using LVD.Stakhanovise.NET.Helpers;
+using LVD.Stakhanovise.NET.Model;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -279,8 +280,6 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			CheckNotDisposedOrThrow();
 
-			Console.WriteLine( "Stop requested. Current state is {0}", mStateController.IsStarted );
-
 			if ( mStateController.IsStarted )
 				await mStateController.TryRequestStopASync( async () => await StopTimeTickingTask() );
 			else
@@ -329,9 +328,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				if ( disposing )
 				{
-					Console.WriteLine( "Dispose requested. Current state is {0}", mStateController.IsStarted );
-					Task t = StopAsync();
-					t.Wait();
+					StopAsync().Wait();
 
 					mStateController = null;
 					mLastTime = null;

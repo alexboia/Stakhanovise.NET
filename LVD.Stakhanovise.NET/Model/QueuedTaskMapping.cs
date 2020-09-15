@@ -54,6 +54,8 @@ namespace LVD.Stakhanovise.NET.Model
 			FirstProcessingAttemptedAtColumnName = "task_first_processing_attempted_at";
 			LastProcessingAttemptedAtColumnName = "task_last_processing_attempted_at";
 			ProcessingFinalizedAtColumnName = "task_processing_finalized_at";
+			LockedUntilColumnName = "task_locked_until";
+			ProcessingTimeMilliseconds = "task_processing_time_milliseconds";
 
 			TableName = "sk_tasks_queue_t";
 			NewTaskNotificaionChannelName = "sk_task_queue_item_added";
@@ -76,6 +78,10 @@ namespace LVD.Stakhanovise.NET.Model
 		public string PayloadColumnName { get; set; }
 
 		public string StatusColumnName { get; set; }
+
+		public string LockedUntilColumnName { get; set; }
+
+		public string ProcessingTimeMilliseconds { get; set; }
 
 		public string PriorityColumnName { get; set; }
 

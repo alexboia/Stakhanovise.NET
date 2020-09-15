@@ -33,67 +33,72 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 
 namespace LVD.Stakhanovise.NET
 {
-   public class TaskExecutionResult : IEquatable<TaskExecutionResult>
-   {
-      private QueuedTask mTask;
+	public class TaskExecutionResult : IEquatable<TaskExecutionResult>
+	{
+		private QueuedTask mTask;
 
-      private bool mExecutedSuccessfully;
+		private bool mExecutedSuccessfully;
 
-      private QueuedTaskError mError;
+		private QueuedTaskError mError;
 
-      private bool mIsRecoverable;
+		private bool mIsRecoverable;
 
-      public TaskExecutionResult(QueuedTask task)
-      {
-         mTask = task ?? throw new ArgumentNullException(nameof(task));
-         mExecutedSuccessfully = true;
-      }
+		private AbstractTimestamp mRetryAt;
 
-      public TaskExecutionResult(QueuedTask task, QueuedTaskError error, bool isRecoverable)
-      {
-         mTask = task ?? throw new ArgumentNullException(nameof(task));
-         mError = error;
-         mIsRecoverable = isRecoverable;
-         mExecutedSuccessfully = false;
-      }
+		public TaskExecutionResult ( QueuedTask task )
+		{
+			mTask = task ?? throw new ArgumentNullException( nameof( task ) );
+			mExecutedSuccessfully = true;
+		}
 
-      public bool Equals(TaskExecutionResult other)
-      {
-         return other != null &&
-             Task.Equals(other.Task) &&
-             ExecutedSuccessfully == other.ExecutedSuccessfully &&
-             IsRecoverable == other.IsRecoverable &&
-             object.Equals(Error, other.Error);
-      }
+		public TaskExecutionResult ( QueuedTask task, QueuedTaskError error, bool isRecoverable )
+		{
+			mTask = task ?? throw new ArgumentNullException( nameof( task ) );
+			mError = error;
+			mIsRecoverable = isRecoverable;
+			mExecutedSuccessfully = false;
+		}
 
-      public override bool Equals(object obj)
-      {
-         return Equals(obj as TaskExecutionResult);
-      }
+		public bool Equals ( TaskExecutionResult other )
+		{
+			return other != null &&
+				Task.Equals( other.Task ) &&
+				ExecutedSuccessfully == other.ExecutedSuccessfully &&
+				IsRecoverable == other.IsRecoverable &&
+				object.Equals( Error, other.Error );
+		}
 
-      public override int GetHashCode()
-      {
-         int result = 1;
+		public override bool Equals ( object obj )
+		{
+			return Equals( obj as TaskExecutionResult );
+		}
 
-         result = result * 31 + mTask.GetHashCode();
-         result = result * 31 + mExecutedSuccessfully.GetHashCode();
-         result = result * 31 + mIsRecoverable.GetHashCode();
+		public override int GetHashCode ()
+		{
+			int result = 1;
 
-         if (mError != null)
-            result = result * 31 + mError.GetHashCode();
+			result = result * 31 + mTask.GetHashCode();
+			result = result * 31 + mExecutedSuccessfully.GetHashCode();
+			result = result * 31 + mIsRecoverable.GetHashCode();
 
-         return result;
-      }
+			if ( mError != null )
+				result = result * 31 + mError.GetHashCode();
 
-      public QueuedTask Task => mTask;
+			return result;
+		}
 
-      public bool ExecutedSuccessfully => mExecutedSuccessfully;
+		public QueuedTask Task => mTask;
 
-      public QueuedTaskError Error => mError;
+		public bool ExecutedSuccessfully => mExecutedSuccessfully;
+		
+		public AbstractTimestamp RetryAt => mRetryAt;
 
-      public bool IsRecoverable => mIsRecoverable;
-   }
+		public QueuedTaskError Error => mError;
+
+		public bool IsRecoverable => mIsRecoverable;
+	}
 }
