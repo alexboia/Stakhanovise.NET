@@ -54,15 +54,16 @@ namespace LVD.Stakhanovise.NET.Model
 			LockedUntil = lockUntil.Ticks;
 		}
 
-		public virtual void Processed ()
+		public virtual void Processed ( long processingTimeMilliseconds )
 		{
 			Status = QueuedTaskStatus.Processed;
-			ProcessingFinalizedAt = DateTimeOffset.Now;
+			ProcessingFinalizedAt = DateTimeOffset.UtcNow;
+			ProcessingTimeMilliseconds = processingTimeMilliseconds;
 
 			if ( !FirstProcessingAttemptedAt.HasValue )
-				FirstProcessingAttemptedAt = DateTimeOffset.Now;
+				FirstProcessingAttemptedAt = DateTimeOffset.UtcNow;
 
-			LastProcessingAttemptedAt = DateTimeOffset.Now;
+			LastProcessingAttemptedAt = DateTimeOffset.UtcNow;
 		}
 
 		public virtual void Faulted ()
@@ -70,8 +71,8 @@ namespace LVD.Stakhanovise.NET.Model
 			if ( Status == QueuedTaskStatus.Error )
 			{
 				Status = QueuedTaskStatus.Faulted;
-				LastProcessingAttemptedAt = DateTimeOffset.Now;
-				RepostedAt = DateTimeOffset.Now;
+				LastProcessingAttemptedAt = DateTimeOffset.UtcNow;
+				RepostedAt = DateTimeOffset.UtcNow;
 			}
 		}
 
@@ -85,10 +86,10 @@ namespace LVD.Stakhanovise.NET.Model
 			ErrorCount += 1;
 
 			if ( !FirstProcessingAttemptedAt.HasValue )
-				FirstProcessingAttemptedAt = DateTimeOffset.Now;
+				FirstProcessingAttemptedAt = DateTimeOffset.UtcNow;
 
-			LastProcessingAttemptedAt = DateTimeOffset.Now;
-			RepostedAt = DateTimeOffset.Now;
+			LastProcessingAttemptedAt = DateTimeOffset.UtcNow;
+			RepostedAt = DateTimeOffset.UtcNow;
 			if ( Status != QueuedTaskStatus.Fatal &&
 				Status != QueuedTaskStatus.Faulted )
 				Status = QueuedTaskStatus.Error;
@@ -112,7 +113,7 @@ namespace LVD.Stakhanovise.NET.Model
 			if ( Status == QueuedTaskStatus.Faulted )
 			{
 				Status = QueuedTaskStatus.Fatal;
-				LastProcessingAttemptedAt = DateTimeOffset.Now;
+				LastProcessingAttemptedAt = DateTimeOffset.UtcNow;
 			}
 		}
 

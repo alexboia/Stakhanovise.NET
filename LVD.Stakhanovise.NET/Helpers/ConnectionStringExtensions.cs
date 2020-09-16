@@ -31,7 +31,9 @@
 // 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
+using LVD.Stakhanovise.NET.Setup;
 using Npgsql;
 
 namespace LVD.Stakhanovise.NET.Helpers
@@ -49,6 +51,76 @@ namespace LVD.Stakhanovise.NET.Helpers
 				builderCopy[ key ] = builder[ key ];
 
 			return builderCopy;
+		}
+
+		public static string DeriveSignalingConnectionString ( this string connectionString, TaskQueueOptions options )
+		{
+			if ( string.IsNullOrEmpty( connectionString ) )
+				throw new ArgumentNullException( nameof( connectionString ) );
+
+			if ( options == null )
+				throw new ArgumentNullException( nameof( options ) );
+
+			NpgsqlConnectionStringBuilder builder = new NpgsqlConnectionStringBuilder( connectionString );
+			return builder.DeriveSignalingConnectionString( options );
+		}
+
+		public static string DeriveSignalingConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueOptions options )
+		{
+			if ( info == null )
+				throw new ArgumentNullException( nameof( info ) );
+
+			//The connection used for signaling will be 
+			//  the same as the one used for read-only queue operation 
+			//  with the notable exceptions that: 
+			//  a) we need  to activate the Npgsql keepalive mechanism (see: http://www.npgsql.org/doc/keepalive.html)
+			//  b) we do not need a large pool - one connection will do
+
+			NpgsqlConnectionStringBuilder signalingConnectionStringInfo = info.Copy();
+
+			signalingConnectionStringInfo.Pooling = true;
+			signalingConnectionStringInfo.MinPoolSize = 1;
+			signalingConnectionStringInfo.MaxPoolSize = 1;
+			signalingConnectionStringInfo.KeepAlive = options.ConnectionKeepAlive;
+
+			return signalingConnectionStringInfo.ToString();
+		}
+
+		public static string DeriveQueueConnectionString ( this string connectionString, TaskQueueOptions options )
+		{
+			if ( string.IsNullOrEmpty( connectionString ) )
+				throw new ArgumentNullException( nameof( connectionString ) );
+
+			if ( options == null )
+				throw new ArgumentNullException( nameof( options ) );
+
+			NpgsqlConnectionStringBuilder builder = new NpgsqlConnectionStringBuilder( connectionString );
+			return builder.DeriveManagementConnectionString( options );
+		}
+
+		public static string DeriveManagementConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueOptions options )
+		{
+			if ( info == null )
+				throw new ArgumentNullException( nameof( info ) );
+
+			if ( options == null )
+				throw new ArgumentNullException( nameof( options ) );
+
+			//The connection used for management will be 
+			//  the same as the one used for read-only queue operation 
+			//  with the notable exceptions that: 
+			//  a) we need  to activate the Npgsql keepalive mechanism (see: http://www.npgsql.org/doc/keepalive.html)
+			//  b) we need to configure the connection pool to match the required lock pool size
+
+			int poolSize = options.WorkerCount * 2;
+			NpgsqlConnectionStringBuilder managementConnectionStringInfo = info.Copy();
+
+			managementConnectionStringInfo.Pooling = true;
+			managementConnectionStringInfo.MinPoolSize = poolSize;
+			managementConnectionStringInfo.MaxPoolSize = poolSize;
+			managementConnectionStringInfo.KeepAlive = options.ConnectionKeepAlive;
+
+			return managementConnectionStringInfo.ToString();
 		}
 	}
 }

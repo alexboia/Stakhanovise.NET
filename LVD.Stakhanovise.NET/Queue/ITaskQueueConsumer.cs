@@ -45,18 +45,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		Task StopReceivingNewTaskUpdatesAsync ();
 
-		Task<QueuedTask> NotifyTaskCompletedAsync ( Guid queuedTaskId, TaskExecutionResult result );
-
-		Task<QueuedTask> NotifyTaskErroredAsync ( Guid queuedTaskId, TaskExecutionResult result );
-
-		Task<QueuedTask> DequeueAsync ( params string[] supportedTypes );
-
-		Task ReleaseLockAsync ( Guid queuedTaskId );
+		Task<IQueuedTaskToken> DequeueAsync ( AbstractTimestamp now, params string[] supportedTypes );
 
 		bool IsReceivingNewTaskUpdates { get; }
-
-		int FaultErrorThresholdCount { get; set; }
-
-		int DequeuePoolSize { get; }
 	}
 }

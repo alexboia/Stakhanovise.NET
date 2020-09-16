@@ -9,9 +9,11 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public interface IQueuedTaskToken : IDisposable
 	{
+		public event EventHandler<TokenReleasedEventArgs> TokenReleased;
+
 		Task<bool> TrySetStartedAsync ( long estimatedProcessingTimeMillisencods );
 
-		Task<bool> TrySetResultAsync ( TaskExecutionResult result, long actualProcessingTimeMilliseconds );
+		Task<bool> TrySetResultAsync ( TaskExecutionResult result );
 
 		Task ReleaseLockAsync ();
 

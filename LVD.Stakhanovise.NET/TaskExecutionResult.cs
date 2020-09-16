@@ -49,6 +49,8 @@ namespace LVD.Stakhanovise.NET
 
 		private AbstractTimestamp mRetryAt;
 
+		private long mProcessingTimeMilliseconds;
+
 		public TaskExecutionResult ( QueuedTask task )
 		{
 			mTask = task ?? throw new ArgumentNullException( nameof( task ) );
@@ -96,6 +98,8 @@ namespace LVD.Stakhanovise.NET
 		public bool ExecutedSuccessfully => mExecutedSuccessfully;
 		
 		public AbstractTimestamp RetryAt => mRetryAt;
+
+		public long ProcessingTimeMilliseconds => mProcessingTimeMilliseconds;
 
 		public QueuedTaskError Error => mError;
 
