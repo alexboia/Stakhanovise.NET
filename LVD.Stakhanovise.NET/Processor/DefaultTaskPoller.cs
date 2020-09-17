@@ -52,6 +52,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskQueueConsumer mTaskQueueConsumer;
 
+		private ITaskQueueTimingBelt mTimingBelt;
+
 		private bool mIsDisposed = false;
 
 		private StateController mStateController
@@ -60,17 +62,25 @@ namespace LVD.Stakhanovise.NET.Processor
 		private ManualResetEvent mWaitForClearToDequeue
 			= new ManualResetEvent( false );
 
+		private ManualResetEvent mWaitForClearToAddToBuffer
+			= new ManualResetEvent( false );
+
 		private string[] mRequiredPayloadTypes;
+
+		private CancellationTokenSource mStopTokenSource;
 
 		private Task mPollTask;
 
 		public DefaultTaskPoller ( ITaskQueueConsumer taskQueueConsumer,
-			ITaskBuffer taskBuffer )
+			ITaskBuffer taskBuffer,
+			ITaskQueueTimingBelt timingBelt )
 		{
 			mTaskBuffer = taskBuffer
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
+			mTimingBelt = timingBelt
+				?? throw new ArgumentNullException( nameof( timingBelt ) );
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -83,7 +93,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void HandleQueuedTaskRetrievedFromBuffer ( object sender, EventArgs e )
 		{
 			mLogger.Debug( "Received new buffer space available notification. Will resume polling..." );
-			mWaitForClearToDequeue.Set();
+			mWaitForClearToAddToBuffer.Set();
 		}
 
 		private void HandlePollForDequeueRequired ( object sender, ClearForDequeueEventArgs e )
@@ -92,55 +102,91 @@ namespace LVD.Stakhanovise.NET.Processor
 			mWaitForClearToDequeue.Set();
 		}
 
-		private async Task PollForQueuedTasksAsync ()
+		private async Task<IQueuedTaskToken> DequeueAsync ()
 		{
-			while ( !mStateController.IsStopRequested )
+			//Tick time and fetch current
+			AbstractTimestamp now = await mTimingBelt.TickAbstractTimeAsync( 1000 );
+
+			mLogger.DebugFormat( "Current abstract time is: {0}. Wallclock time cost is {1}.",
+				now.Ticks,
+				now.WallclockTimeCost );
+
+			return await mTaskQueueConsumer.DequeueAsync( now, mRequiredPayloadTypes );
+		}
+
+		private async Task TryReserveAndAddToBufferAsync ( IQueuedTaskToken queuedTaskToken )
+		{
+			if ( await queuedTaskToken.TrySetStartedAsync( 1000 ) )
 			{
-				//If the buffer is full, we wait for some space to become available,
-				//  since, even if we can dequeue an task, 
-				//  we won't have anywhere to place it yet and we 
-				//  may be needlessly helding a lock to that task 
-				if ( mTaskBuffer.IsFull )
-				{
-					mLogger.Debug( "Task buffer is full. Waiting for available space..." );
-					await mWaitForClearToDequeue.ToTask();
-				}
+				mLogger.Debug( "Successfully acquired reservation. Adding to buffer..." );
+				mTaskBuffer.TryAddNewTask( queuedTaskToken );
+			}
+			else
+			{
+				mLogger.Debug( "Failed to acquire reservation. Token will be discarded." );
+				queuedTaskToken.Dispose();
+			}
+		}
 
-				//See that we have not been notified to proceed 
-				//  as part of the stop operation
-				if ( mStateController.IsStopRequested )
+		private async Task PollForQueuedTasksAsync ( CancellationToken stopToken )
+		{
+			while ( true )
+			{
+				try
+				{
+					//If the buffer is full, we wait for some space to become available,
+					//  since, even if we can dequeue an task, 
+					//  we won't have anywhere to place it yet and we 
+					//  may be needlessly helding a lock to that task 
+					if ( mTaskBuffer.IsFull )
+					{
+						mLogger.Debug( "Task buffer is full. Waiting for available space..." );
+						await mWaitForClearToAddToBuffer.ToTask();
+					}
+
+					//It may be that the wait handle was signaled 
+					//  as part of the Stop operation,
+					//  so we need to check for that as well.
+					stopToken.ThrowIfCancellationRequested();
+
+					//Attempt to dequeue and then check cancellation
+					IQueuedTaskToken queuedTaskToken = await DequeueAsync();
+					stopToken.ThrowIfCancellationRequested();
+
+					if ( queuedTaskToken != null )
+					{
+						//If we have found a token, attempt to set it as started
+						//	 and only then add it to buffer for processing.
+						//If not, dispose and discard the token
+						mLogger.DebugFormat( "Task found with id = {0}, type = {1}, status = {2}. Acquiring reservation...",
+							queuedTaskToken.QueuedTask.Id,
+							queuedTaskToken.QueuedTask.Type,
+							queuedTaskToken.QueuedTask.Status );
+
+						await TryReserveAndAddToBufferAsync( queuedTaskToken );
+					}
+					else
+					{
+						//If there is no task available in the queue, begin waiting for 
+						//  a notification of new added tasks
+						mLogger.Debug( "No task dequeued when polled. Waiting for available task..." );
+						await mWaitForClearToDequeue.ToTask();
+					}
+
+					//It may be that the wait handle was signaled 
+					//  as part of the Stop operation,
+					//  so we need to check for that as well.
+					stopToken.ThrowIfCancellationRequested();
+
+					//Finally, reset all the handles, at the end of the loop
+					mWaitForClearToAddToBuffer.Reset();
+					mWaitForClearToDequeue.Reset();
+				}
+				catch ( OperationCanceledException )
 				{
 					mLogger.Debug( "Stop requested. Breaking polling loop..." );
 					break;
 				}
-				else
-					mWaitForClearToDequeue.Reset();
-
-				//If there is no task available in the queue, begin waiting for 
-				//  a notification of new added tasks
-				QueuedTask queuedTask = await mTaskQueueConsumer
-					.DequeueAsync( mRequiredPayloadTypes );
-
-				if ( queuedTask != null )
-				{
-					mLogger.DebugFormat( "Task found with id = {0}. Adding to task buffer...", queuedTask.Id );
-					mTaskBuffer.TryAddNewTask( queuedTask );
-				}
-				else
-				{
-					mLogger.Debug( "No task dequeued when polled. Waiting for available task..." );
-					await mWaitForClearToDequeue.ToTask();
-				}
-
-				//See that we have not been notified to proceed 
-				//  as part of the stop operation
-				if ( mStateController.IsStopRequested )
-				{
-					mLogger.Debug( "Stop requested. Breaking polling loop..." );
-					break;
-				}
-				else
-					mWaitForClearToDequeue.Reset();
 			}
 
 			mTaskBuffer.CompleteAdding();
@@ -152,9 +198,10 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			if ( mStateController.IsStopped )
 			{
-				mLogger.Debug( "Task poller is stopped. Starting..." );
 				await mStateController.TryRequestStartAsync( async () =>
 				{
+					mLogger.Debug( "Task poller is stopped. Starting..." );
+
 					//Save payload types
 					mRequiredPayloadTypes = requiredPayloadTypes
 						 ?? new string[ 0 ];
@@ -168,8 +215,15 @@ namespace LVD.Stakhanovise.NET.Processor
 					if ( !mTaskQueueConsumer.IsReceivingNewTaskUpdates )
 						await mTaskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
 
+					//Reset wait handles
+					mWaitForClearToDequeue.Reset();
+					mWaitForClearToAddToBuffer.Reset();
+
 					//Run the polling thread
-					mPollTask = Task.Run( PollForQueuedTasksAsync );
+					mStopTokenSource = new CancellationTokenSource();
+					mPollTask = Task.Run( async () => await PollForQueuedTasksAsync( mStopTokenSource.Token ) );
+
+					mLogger.Debug( "Successfully started task poller." );
 				} );
 			}
 			else
@@ -182,9 +236,13 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			if ( mStateController.IsStarted )
 			{
-				mLogger.Debug( "Task poller is started. Stopping..." );
 				await mStateController.TryRequestStopASync( async () =>
 				{
+					mLogger.Debug( "Task poller is started. Stopping..." );
+
+					//Request to stop the polling loop
+					mStopTokenSource.Cancel();
+
 					//We may be waiting for the right conditions to
 					//  try polling the queue and populating 
 					//  the buffer respectively again
@@ -193,6 +251,9 @@ namespace LVD.Stakhanovise.NET.Processor
 					//  and the polling thread is responsible for double-checking that stopping 
 					//  has not been requested in the mean-time
 					mWaitForClearToDequeue.Set();
+					mWaitForClearToAddToBuffer.Set();
+
+					//Wait for the polling loop to be stopped
 					await mPollTask;
 
 					//Clean-up event handlers and reset state
@@ -206,7 +267,13 @@ namespace LVD.Stakhanovise.NET.Processor
 
 					//Set everything to proper final state
 					mWaitForClearToDequeue.Reset();
+					mWaitForClearToAddToBuffer.Reset();
 					mPollTask = null;
+
+					mStopTokenSource.Dispose();
+					mStopTokenSource = null;
+
+					mLogger.Debug( "Successfully stopped task poller." );
 				} );
 			}
 			else
@@ -226,12 +293,16 @@ namespace LVD.Stakhanovise.NET.Processor
 					mWaitForClearToDequeue.Dispose();
 					mWaitForClearToDequeue = null;
 
+					mWaitForClearToAddToBuffer.Dispose();
+					mWaitForClearToAddToBuffer = null;
+
 					//It is not our responsibility to dispose 
 					//  of the queue and the buffer
 					//  since we are not the owner and we may 
 					//  interfere with their orchestration
 					mTaskBuffer = null;
 					mTaskQueueConsumer = null;
+					mTimingBelt = null;
 
 					mRequiredPayloadTypes = null;
 					mStateController = null;

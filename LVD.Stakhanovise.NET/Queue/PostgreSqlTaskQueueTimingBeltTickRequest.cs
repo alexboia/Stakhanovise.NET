@@ -42,6 +42,8 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		private CancellationToken mCancellationToken;
 
+		private CancellationTokenRegistration mCancellationTokenRegistration;
+
 		private CancellationTokenSource mCancellationTokenSource;
 
 		private TaskCompletionSource<AbstractTimestamp> mCompletionToken;
@@ -80,7 +82,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			//Register a handler for when cancellation is requested
 			mCancellationToken = mCancellationTokenSource.Token;
-			mCancellationToken.Register( () => HandleCancellationRequested() );
+			mCancellationTokenRegistration = mCancellationToken.Register( () => HandleCancellationRequested() );
 
 			mCompletionToken = completionToken;
 			mMaxFailCount = maxFailCount;
@@ -119,6 +121,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				if ( disposing )
 				{
+					mCancellationTokenRegistration.Dispose();
 					mCancellationTokenSource.Dispose();
 					mCancellationTokenSource = null;
 					mCompletionToken = null;

@@ -40,6 +40,7 @@ namespace LVD.Stakhanovise.NET.Queue
 	public interface ITaskQueueProducer
 	{
 		Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload,
+			AbstractTimestamp now,
 			string source,
 			int priority );
 	}

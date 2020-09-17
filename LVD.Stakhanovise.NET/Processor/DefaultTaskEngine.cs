@@ -32,6 +32,7 @@
 using log4net;
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Setup;
 using Ninject;
 using System;
 using System.Collections.Generic;
@@ -58,6 +59,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskResultQueue mTaskResultQueue;
 
+		private ITaskQueueTimingBelt mTimingBelt;
+
 		private List<ITaskWorker> mWorkers = new List<ITaskWorker>();
 
 		private StateController mStateController
@@ -67,36 +70,82 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private bool mIsDisposed;
 
-		private int mWorkerCount;
+		private TaskQueueOptions mOptions;
 
-		public DefaultTaskEngine ( int workerCount,
+		public DefaultTaskEngine ( TaskQueueOptions options,
 			ITaskQueueConsumer taskQueueConsumer,
+			ITaskQueueTimingBelt timingBelt,
 			IKernel kernel )
 		{
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
+			mTimingBelt = timingBelt
+				?? throw new ArgumentNullException( nameof( timingBelt ) );
 			mKernel = kernel
 				?? throw new ArgumentNullException( nameof( kernel ) );
 
-			if ( workerCount <= 0 )
-				throw new ArgumentOutOfRangeException( "Worker count must be greater than 0", nameof( workerCount ) );
+			if ( options == null )
+				throw new ArgumentNullException( nameof( options ) );
 
-			mTaskBuffer = new DefaultTaskBuffer( mTaskQueueConsumer.DequeuePoolSize );
-			mTaskPoller = new DefaultTaskPoller( mTaskQueueConsumer, mTaskBuffer );
+
+			mTaskBuffer = new DefaultTaskBuffer( options.WorkerCount );
+			mTaskPoller = new DefaultTaskPoller( mTaskQueueConsumer, mTaskBuffer, timingBelt );
 			mTaskResultQueue = new DefaultTaskResultQueue( mTaskQueueConsumer );
 			mExecutorRegistry = new DefaultTaskExecutorRegistry( ResolveExecutorDependency );
-			mWorkerCount = workerCount;
-		}
-
-		private object ResolveExecutorDependency ( Type type )
-		{
-			return mKernel.TryGet( type );
+			mOptions = options;
 		}
 
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( DefaultTaskEngine ), "Cannot reuse a disposed task result queue" );
+		}
+
+		public async Task StartAsync ()
+		{
+			CheckDisposedOrThrow();
+
+			if ( mStateController.IsStopped )
+			{
+				await mStateController.TryRequestStartAsync( async () =>
+				{
+					string[] requiredPayloadTypes =
+						GetRequiredPayloadTypeNames();
+
+					mLogger.DebugFormat( "Attempting to start the task engine with {0} workers and payload types: {1}.",
+						mOptions.WorkerCount,
+						string.Join( ",", requiredPayloadTypes ) );
+
+					//Start the task poller and then start workers
+					await StartPollerAsync( requiredPayloadTypes );
+					await StartWorkersAsync( requiredPayloadTypes );
+
+					mLogger.Debug( "The task engine has been successfully started." );
+				} );
+			}
+			else
+				mLogger.Info( "The task engine is already started." );
+		}
+
+		public async Task StopAync ()
+		{
+			CheckDisposedOrThrow();
+
+			if ( mStateController.IsStarted )
+			{
+				await mStateController.TryRequestStopASync( async () =>
+				{
+					mLogger.Debug( "Attempting to stop the task engine." );
+					
+					//Stop the task poller and then stop the workers
+					await StopPollerAsync();
+					await StopWorkersAsync();
+
+					mLogger.Debug( "The task engine has been successfully stopped." );
+				} );
+			}
+			else
+				mLogger.Debug( "The task engine is already stopped." );
 		}
 
 		private string[] GetRequiredPayloadTypeNames ()
@@ -109,87 +158,62 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public void ScanAssemblies ( params Assembly[] assemblies )
 		{
-			mLogger.Info( "Scanning given assemblies for task executors..." );
+			mLogger.Debug( "Scanning given assemblies for task executors..." );
 			mExecutorRegistry.ScanAssemblies( assemblies );
-			mLogger.Info( "Done scanning given assemblies for task executors." );
+			mLogger.Debug( "Done scanning given assemblies for task executors." );
 		}
 
-		public async Task StartAsync ()
+		private async Task StartPollerAsync ( string[] requiredPayloadTypes )
 		{
-			CheckDisposedOrThrow();
-
-			if ( !mStateController.IsStopped )
-			{
-				mLogger.Info( "The task engine is already started." );
-				return;
-			}
-
-			string[] requiredPayloadTypes =
-				GetRequiredPayloadTypeNames();
-
-			mLogger.DebugFormat( "Attempting to start the task engine with {0} workers and payload types: {1}.",
-				mWorkerCount,
-				string.Join( ",", requiredPayloadTypes ) );
-
-			await mStateController.TryRequestStartAsync( async () =>
-			{
-				//Start the task poller
-				mLogger.Info( "Attempting to start the task poller..." );
-				await mTaskPoller.StartAsync( requiredPayloadTypes );
-				mLogger.Info( "The task poller has been successfully started. Attempting to start workers." );
-
-				//Start workers
-				mLogger.InfoFormat( "Attempting to start {0} workers...", mWorkerCount );
-				for ( int i = 0; i < mWorkerCount; i++ )
-				{
-					ITaskWorker taskWorker = new DefaultTaskWorker( mTaskBuffer,
-						mExecutorRegistry,
-						mTaskResultQueue );
-
-					await taskWorker.StartAsync( requiredPayloadTypes );
-					mWorkers.Add( taskWorker );
-				}
-
-				mLogger.Info( "All the workers have been successfully started." );
-			} );
-
-			mLogger.Info( "The task engine has been successfully started." );
+			mLogger.Debug( "Attempting to start the task poller..." );
+			await mTaskPoller.StartAsync( requiredPayloadTypes );
+			mLogger.Debug( "The task poller has been successfully started. Attempting to start workers." );
 		}
 
-		public async Task StopAync ()
+		private async Task StopPollerAsync ()
 		{
-			CheckDisposedOrThrow();
+			mLogger.Debug( "Attempting to stop the task poller." );
+			await mTaskPoller.StopAync();
+			mLogger.Debug( "The task poller has been successfully stopped. Attempting to stop workers." );
+		}
 
-			if ( !mStateController.IsStarted )
+		private async Task StartWorkersAsync ( string[] requiredPayloadTypes )
+		{
+			mLogger.Debug( "Attempting to start workers..." );
+
+			for ( int i = 0; i < mOptions.WorkerCount; i++ )
 			{
-				mLogger.Info( "The task engine is already stopped." );
-				return;
+				ITaskWorker taskWorker = new DefaultTaskWorker( mTaskBuffer,
+					mExecutorRegistry,
+					mTaskResultQueue );
+
+				await taskWorker.StartAsync( requiredPayloadTypes );
+				mWorkers.Add( taskWorker );
 			}
 
-			mLogger.Info( "Attempting to stop the task engine." );
+			mLogger.Debug( "All the workers have been successfully started." );
+		}
 
-			await mStateController.TryRequestStopASync( async () =>
-			{
-				//Stop the task poller
-				mLogger.Info( "Attempting to stop the task poller." );
-				await mTaskPoller.StopAync();
-				mLogger.Info( "The task poller has been successfully stopped. Attempting to stop workers." );
+		private async Task StopWorkersAsync ()
+		{
+			mLogger.Debug( "Attempting to stop workers..." );
 
-				//Stop all the workers
-				foreach ( ITaskWorker worker in mWorkers )
-					await TryStopWorkerAsync( worker );
+			foreach ( ITaskWorker worker in mWorkers )
+				await TryStopWorkerAsync( worker );
+			mWorkers.Clear();
 
-				mWorkers.Clear();
-				mLogger.Info( "All the workers have been successfully stopped." );
-			} );
-
-			mLogger.Info( "The task engine has been successfully stopped." );
+			mLogger.Debug( "All the workers have been successfully stopped." );
 		}
 
 		private async Task TryStopWorkerAsync ( ITaskWorker worker )
 		{
 			using ( worker )
 				await worker.StopAync();
+		}
+
+		private object ResolveExecutorDependency ( Type type )
+		{
+			return mKernel.TryGet( type );
 		}
 
 		protected void Dispose ( bool disposing )
@@ -223,10 +247,22 @@ namespace LVD.Stakhanovise.NET.Processor
 		}
 
 		public IEnumerable<ITaskWorker> Workers
-			=> mWorkers.AsReadOnly();
+		{
+			get
+			{
+				CheckDisposedOrThrow();
+				return mWorkers.AsReadOnly();
+			}
+		}
 
 		public ITaskPoller TaskPoller
-			=> mTaskPoller;
+		{
+			get
+			{
+				CheckDisposedOrThrow();
+				return mTaskPoller;
+			}
+		}
 
 		public bool IsRunning
 		{

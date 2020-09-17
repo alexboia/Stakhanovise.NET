@@ -114,9 +114,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			string updateSql = $@"UPDATE {mOptions.Mapping.TableName} 
 				SET {mOptions.Mapping.StatusColumnName} = @t_status,
-					{mOptions.Mapping.ProcessingFinalizedAtColumnName} = @t_processing_finalized_at,
-					{mOptions.Mapping.FirstProcessingAttemptedAtColumnName} = @t_first_processing_attempted_at,
-					{mOptions.Mapping.LastProcessingAttemptedAtColumnName} = @t_last_processing_attempted_at,
+					{mOptions.Mapping.ProcessingFinalizedAtTsColumnName} = @t_processing_finalized_at,
+					{mOptions.Mapping.FirstProcessingAttemptedAtTsColumnName} = @t_first_processing_attempted_at,
+					{mOptions.Mapping.LastProcessingAttemptedAtTsColumnName} = @t_last_processing_attempted_at,
 					{mOptions.Mapping.ProcessingTimeMillisecondsColumnName} = @t_processing_time_milliseconds
 				WHERE {mOptions.Mapping.IdColumnName} = @t_id";
 
@@ -125,11 +125,11 @@ namespace LVD.Stakhanovise.NET.Queue
 				updateCmd.Parameters.AddWithValue( "t_status", NpgsqlDbType.Integer,
 					( int )mQueuedTask.Status );
 				updateCmd.Parameters.AddWithValue( "t_processing_finalized_at", NpgsqlDbType.TimestampTz,
-					mQueuedTask.ProcessingFinalizedAt );
+					mQueuedTask.ProcessingFinalizedAtTs );
 				updateCmd.Parameters.AddWithValue( "t_first_processing_attempted_at", NpgsqlDbType.TimestampTz,
-					mQueuedTask.FirstProcessingAttemptedAt );
+					mQueuedTask.FirstProcessingAttemptedAtTs );
 				updateCmd.Parameters.AddWithValue( "t_last_processing_attempted_at", NpgsqlDbType.TimestampTz,
-					mQueuedTask.LastProcessingAttemptedAt );
+					mQueuedTask.LastProcessingAttemptedAtTs );
 				updateCmd.Parameters.AddWithValue( "t_processing_time_milliseconds", NpgsqlDbType.Bigint,
 					mQueuedTask.ProcessingTimeMilliseconds );
 				updateCmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid,
@@ -145,7 +145,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			mQueuedTask.HadError( result.Error,
 				result.IsRecoverable,
 				mOptions.FaultErrorThresholdCount,
-				result.RetryAt );
+				mDequeuedAt.FromTicks( result.RetryAtTicks ) );
 
 			string updateSql = $@"UPDATE {mOptions.Mapping.TableName} 
 				SET {mOptions.Mapping.StatusColumnName} = @t_status,
@@ -153,9 +153,9 @@ namespace LVD.Stakhanovise.NET.Queue
 					{mOptions.Mapping.LastErrorColumnName} = @t_last_error,
 					{mOptions.Mapping.LastErrorIsRecoverableColumnName} = @t_last_error_is_recoverable,
 					{mOptions.Mapping.ErrorCountColumnName} = @t_error_count,
-					{mOptions.Mapping.FirstProcessingAttemptedAtColumnName} = @t_first_processing_attempted_at,
-					{mOptions.Mapping.LastProcessingAttemptedAtColumnName} = @t_last_processing_attempted_at,
-					{mOptions.Mapping.RepostedAtColumnName} = @t_reposted_at
+					{mOptions.Mapping.FirstProcessingAttemptedAtTsColumnName} = @t_first_processing_attempted_at,
+					{mOptions.Mapping.LastProcessingAttemptedAtTsColumnName} = @t_last_processing_attempted_at,
+					{mOptions.Mapping.RepostedAtTsColumnName} = @t_reposted_at
 				WHERE {mOptions.Mapping.IdColumnName} = @t_id";
 
 			using ( NpgsqlCommand updateCmd = new NpgsqlCommand( updateSql, mSourceConnection ) )
@@ -171,11 +171,11 @@ namespace LVD.Stakhanovise.NET.Queue
 				updateCmd.Parameters.AddWithValue( "t_error_count", NpgsqlDbType.Integer,
 					mQueuedTask.ErrorCount );
 				updateCmd.Parameters.AddWithValue( "t_first_processing_attempted_at", NpgsqlDbType.TimestampTz,
-					mQueuedTask.FirstProcessingAttemptedAt );
+					mQueuedTask.FirstProcessingAttemptedAtTs );
 				updateCmd.Parameters.AddWithValue( "t_last_processing_attempted_at", NpgsqlDbType.TimestampTz,
-					mQueuedTask.LastProcessingAttemptedAt );
+					mQueuedTask.LastProcessingAttemptedAtTs );
 				updateCmd.Parameters.AddWithValue( "t_reposted_at", NpgsqlDbType.TimestampTz,
-					mQueuedTask.RepostedAt );
+					mQueuedTask.RepostedAtTs );
 				updateCmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid,
 					mQueuedTask.Id );
 

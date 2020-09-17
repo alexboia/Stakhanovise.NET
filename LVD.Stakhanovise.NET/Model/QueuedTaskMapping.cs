@@ -49,11 +49,11 @@ namespace LVD.Stakhanovise.NET.Model
 			LastErrorColumnName = "task_last_error";
 			LastErrorIsRecoverableColumnName = "task_last_error_is_recoverable";
 			ErrorCountColumnName = "task_error_count";
-			PostedAtColumnName = "task_posted_at";
-			RepostedAtColumnName = "task_reposted_at";
-			FirstProcessingAttemptedAtColumnName = "task_first_processing_attempted_at";
-			LastProcessingAttemptedAtColumnName = "task_last_processing_attempted_at";
-			ProcessingFinalizedAtColumnName = "task_processing_finalized_at";
+			PostedAtTsColumnName = "task_posted_at_ts";
+			RepostedAtTsColumnName = "task_reposted_at_ts";
+			FirstProcessingAttemptedAtTsColumnName = "task_first_processing_attempted_at_ts";
+			LastProcessingAttemptedAtTsColumnName = "task_last_processing_attempted_at_ts";
+			ProcessingFinalizedAtTsColumnName = "task_processing_finalized_at_ts";
 			LockedUntilColumnName = "task_locked_until";
 			ProcessingTimeMillisecondsColumnName = "task_processing_time_milliseconds";
 
@@ -79,6 +79,8 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public string StatusColumnName { get; set; }
 
+		public string PostedAtColumnName { get; set; }
+
 		public string LockedUntilColumnName { get; set; }
 
 		public string ProcessingTimeMillisecondsColumnName { get; set; }
@@ -91,15 +93,15 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public string ErrorCountColumnName { get; set; }
 
-		public string PostedAtColumnName { get; set; }
+		public string PostedAtTsColumnName { get; set; }
 
-		public string RepostedAtColumnName { get; set; }
+		public string RepostedAtTsColumnName { get; set; }
 
-		public string FirstProcessingAttemptedAtColumnName { get; set; }
+		public string FirstProcessingAttemptedAtTsColumnName { get; set; }
 
-		public string LastProcessingAttemptedAtColumnName { get; set; }
+		public string LastProcessingAttemptedAtTsColumnName { get; set; }
 
-		public string ProcessingFinalizedAtColumnName { get; set; }
+		public string ProcessingFinalizedAtTsColumnName { get; set; }
 
 		public string TableName { get; set; }
 

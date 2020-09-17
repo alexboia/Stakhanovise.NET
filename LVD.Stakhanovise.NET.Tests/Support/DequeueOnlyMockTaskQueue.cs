@@ -40,7 +40,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 {
 	public class DequeueOnlyMockTaskQueue : ITaskQueueConsumer,
 		ITaskQueueProducer,
-		ITaskQueueStats,
+		ITaskQueueInfo,
 		IDisposable
 	{
 		public event EventHandler<ClearForDequeueEventArgs> ClearForDequeue;

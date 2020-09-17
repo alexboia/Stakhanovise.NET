@@ -199,7 +199,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					lockHandleIds.Add( newTask.LockHandleId );
 
 					if ( previousTask != null )
-						Assert.GreaterOrEqual( newTask.PostedAt, previousTask.PostedAt );
+						Assert.GreaterOrEqual( newTask.PostedAtTs, previousTask.PostedAtTs );
 
 					previousTask = newTask;
 				}
@@ -415,8 +415,8 @@ namespace LVD.Stakhanovise.NET.Tests
 					Id = Guid.NewGuid(),
 					Type = typeof( SampleTaskPayload ).FullName,
 					Payload = new SampleTaskPayload( mNumUnProcessedTasks ),
-					PostedAt = now,
-					RepostedAt = now,
+					PostedAtTs = now,
+					RepostedAtTs = now,
 					Source = GetType().FullName,
 					Status = QueuedTaskStatus.Unprocessed,
 					Priority = 0
@@ -437,12 +437,12 @@ namespace LVD.Stakhanovise.NET.Tests
 					Id = Guid.NewGuid(),
 					Type = typeof( SampleTaskPayload ).FullName,
 					Payload = new SampleTaskPayload( mNumErroredTasks ),
-					PostedAt = now.AddSeconds( 1 ),
-					RepostedAt = now.AddSeconds( 1 ),
+					PostedAtTs = now.AddSeconds( 1 ),
+					RepostedAtTs = now.AddSeconds( 1 ),
 					Source = GetType().FullName,
 					Status = QueuedTaskStatus.Error,
-					FirstProcessingAttemptedAt = DateTimeOffset.Now,
-					LastProcessingAttemptedAt = DateTimeOffset.Now,
+					FirstProcessingAttemptedAtTs = DateTimeOffset.Now,
+					LastProcessingAttemptedAtTs = DateTimeOffset.Now,
 					LastErrorIsRecoverable = i % 2 == 0,
 					LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: error" ) ),
 					ErrorCount = Math.Abs( QUEUE_FAULT_ERROR_THRESHOLD_COUNT - i ),
@@ -464,12 +464,12 @@ namespace LVD.Stakhanovise.NET.Tests
 					Id = Guid.NewGuid(),
 					Type = typeof( SampleTaskPayload ).FullName,
 					Payload = new SampleTaskPayload( mNumFatalTasks ),
-					PostedAt = now.AddSeconds( 2 ),
-					RepostedAt = now.AddSeconds( 2 ),
+					PostedAtTs = now.AddSeconds( 2 ),
+					RepostedAtTs = now.AddSeconds( 2 ),
 					Source = GetType().FullName,
 					Status = QueuedTaskStatus.Fatal,
-					FirstProcessingAttemptedAt = DateTimeOffset.Now,
-					LastProcessingAttemptedAt = DateTimeOffset.Now,
+					FirstProcessingAttemptedAtTs = DateTimeOffset.Now,
+					LastProcessingAttemptedAtTs = DateTimeOffset.Now,
 					LastErrorIsRecoverable = i % 2 == 0,
 					LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: fatal" ) ),
 					ErrorCount = QUEUE_FAULT_ERROR_THRESHOLD_COUNT + i,
@@ -491,12 +491,12 @@ namespace LVD.Stakhanovise.NET.Tests
 					Id = Guid.NewGuid(),
 					Type = typeof( SampleTaskPayload ).FullName,
 					Payload = new SampleTaskPayload( mNumFaultedTasks ),
-					PostedAt = now.AddSeconds( 3 ),
-					RepostedAt = now.AddSeconds( 3 ),
+					PostedAtTs = now.AddSeconds( 3 ),
+					RepostedAtTs = now.AddSeconds( 3 ),
 					Source = GetType().FullName,
 					Status = QueuedTaskStatus.Faulted,
-					FirstProcessingAttemptedAt = DateTimeOffset.Now,
-					LastProcessingAttemptedAt = DateTimeOffset.Now,
+					FirstProcessingAttemptedAtTs = DateTimeOffset.Now,
+					LastProcessingAttemptedAtTs = DateTimeOffset.Now,
 					LastErrorIsRecoverable = i % 2 == 0,
 					LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: faulted" ) ),
 					ErrorCount = QUEUE_FAULT_ERROR_THRESHOLD_COUNT,
@@ -529,10 +529,10 @@ namespace LVD.Stakhanovise.NET.Tests
 					{ mQueuedTaskMap.PriorityColumnName,
 						queuedTask.Priority },
 
-					{ mQueuedTaskMap.PostedAtColumnName,
-						queuedTask.PostedAt },
-					{ mQueuedTaskMap.RepostedAtColumnName,
-						queuedTask.RepostedAt },
+					{ mQueuedTaskMap.PostedAtTsColumnName,
+						queuedTask.PostedAtTs },
+					{ mQueuedTaskMap.RepostedAtTsColumnName,
+						queuedTask.RepostedAtTs },
 
 					{ mQueuedTaskMap.ErrorCountColumnName,
 						queuedTask.ErrorCount },
@@ -541,12 +541,12 @@ namespace LVD.Stakhanovise.NET.Tests
 					{ mQueuedTaskMap.LastErrorIsRecoverableColumnName,
 						queuedTask.LastErrorIsRecoverable },
 
-					{ mQueuedTaskMap.FirstProcessingAttemptedAtColumnName,
-						queuedTask.FirstProcessingAttemptedAt },
-					{ mQueuedTaskMap.LastProcessingAttemptedAtColumnName,
-						queuedTask.LastProcessingAttemptedAt },
-					{ mQueuedTaskMap.ProcessingFinalizedAtColumnName,
-						queuedTask.ProcessingFinalizedAt }
+					{ mQueuedTaskMap.FirstProcessingAttemptedAtTsColumnName,
+						queuedTask.FirstProcessingAttemptedAtTs },
+					{ mQueuedTaskMap.LastProcessingAttemptedAtTsColumnName,
+						queuedTask.LastProcessingAttemptedAtTs },
+					{ mQueuedTaskMap.ProcessingFinalizedAtTsColumnName,
+						queuedTask.ProcessingFinalizedAtTs }
 				};
 
 				await db.QueryFactory()
@@ -560,9 +560,9 @@ namespace LVD.Stakhanovise.NET.Tests
 		private void AssertTaskCompleted ( QueuedTask testTask )
 		{
 			Assert.NotNull( testTask );
-			Assert.IsTrue( testTask.FirstProcessingAttemptedAt.HasValue );
-			Assert.IsTrue( testTask.LastProcessingAttemptedAt.HasValue );
-			Assert.IsTrue( testTask.ProcessingFinalizedAt.HasValue );
+			Assert.IsTrue( testTask.FirstProcessingAttemptedAtTs.HasValue );
+			Assert.IsTrue( testTask.LastProcessingAttemptedAtTs.HasValue );
+			Assert.IsTrue( testTask.ProcessingFinalizedAtTs.HasValue );
 			Assert.AreEqual( QueuedTaskStatus.Processed,
 				testTask.Status );
 		}
@@ -572,9 +572,9 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.NotNull( testTask.LastError );
 			Assert.Greater( testTask.ErrorCount, 0 );
 
-			Assert.IsTrue( testTask.FirstProcessingAttemptedAt.HasValue );
-			Assert.IsTrue( testTask.LastProcessingAttemptedAt.HasValue );
-			Assert.IsTrue( testTask.FirstProcessingAttemptedAt.HasValue );
+			Assert.IsTrue( testTask.FirstProcessingAttemptedAtTs.HasValue );
+			Assert.IsTrue( testTask.LastProcessingAttemptedAtTs.HasValue );
+			Assert.IsTrue( testTask.FirstProcessingAttemptedAtTs.HasValue );
 
 			if ( testTask.ErrorCount >= QUEUE_FAULT_ERROR_THRESHOLD_COUNT )
 			{
@@ -632,7 +632,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private QueuedTask ExpectedTopOfQueueTask
 			=> mSeededTasks.Where( t => mDequeueWithStatuses.Contains( t.Status ) )
 				.OrderByDescending( t => t.Priority )
-				.OrderBy( t => t.PostedAt )
+				.OrderBy( t => t.PostedAtTs )
 				.OrderBy( t => t.LockHandleId )
 				.FirstOrDefault();
 

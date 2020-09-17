@@ -33,29 +33,30 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-   public interface ITaskBuffer : IDisposable
-   {
-      event EventHandler QueuedTaskRetrieved;
+	public interface ITaskBuffer : IDisposable
+	{
+		event EventHandler QueuedTaskRetrieved;
 
-      event EventHandler QueuedTaskAdded;
+		event EventHandler QueuedTaskAdded;
 
-      QueuedTask TryGetNextTask();
+		IQueuedTaskToken TryGetNextTask ();
 
-      bool TryAddNewTask(QueuedTask task);
+		bool TryAddNewTask ( IQueuedTaskToken task );
 
-      void CompleteAdding();
+		void CompleteAdding ();
 
-      bool HasTasks { get; }
+		bool HasTasks { get; }
 
-      bool IsFull { get; }
+		bool IsFull { get; }
 
-      int Capacity { get; }
+		int Capacity { get; }
 
-      int Count { get; }
+		int Count { get; }
 
-      bool IsCompleted { get; }
-   }
+		bool IsCompleted { get; }
+	}
 }

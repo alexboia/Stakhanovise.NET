@@ -36,12 +36,12 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-   public interface ITaskPoller : IDisposable
-   {
-      Task StartAsync(params string[] requiredPayloadTypes);
+	public interface ITaskPoller : IDisposable
+	{
+		Task StartAsync ( params string[] requiredPayloadTypes );
 
-      Task StopAync();
+		Task StopAync ();
 
-      bool IsRunning { get; }
-   }
+		bool IsRunning { get; }
+	}
 }

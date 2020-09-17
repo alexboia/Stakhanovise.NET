@@ -33,8 +33,11 @@ using log4net;
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Setup;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -62,20 +65,35 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskExecutorRegistry mExecutorRegistry;
 
-		private ITaskResultQueue mResultQueue;
+		private ITaskQueueTimingBelt mTimingBelt;
+
+		private CancellationTokenSource mStopTokenSource;
 
 		private Task mWorkerTask;
 
-		public DefaultTaskWorker ( ITaskBuffer taskBuffer,
+		private TaskQueueOptions mOptions;
+
+		public DefaultTaskWorker (
+			TaskQueueOptions options,
+			ITaskBuffer taskBuffer,
 			ITaskExecutorRegistry executorRegistry,
-			ITaskResultQueue resultQueue )
+			ITaskQueueTimingBelt timingBelt )
 		{
+			mOptions = options ??
+				throw new ArgumentNullException( nameof( options ) );
 			mTaskBuffer = taskBuffer
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mExecutorRegistry = executorRegistry
 				?? throw new ArgumentNullException( nameof( executorRegistry ) );
-			mResultQueue = resultQueue
-				?? throw new ArgumentNullException( nameof( resultQueue ) );
+			mTimingBelt = timingBelt ??
+				throw new ArgumentNullException( nameof( timingBelt ) );
+		}
+
+		private void CheckDisposedOrThrow ()
+		{
+			if ( mIsDisposed )
+				throw new ObjectDisposedException( nameof( DefaultTaskWorker ),
+					"Cannot reuse a disposed task worker" );
 		}
 
 		private void HandleQueuedTaskAdded ( object sender, EventArgs e )
@@ -83,20 +101,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mWaitForClearToFetchTask.Set();
 		}
 
-		private void CheckDisposedOrThrow ()
-		{
-			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultTaskWorker ), "Cannot reuse a disposed task worker" );
-		}
-
-		private bool CanBeExecuted ( QueuedTask queuedTask )
-		{
-			return queuedTask.Status == QueuedTaskStatus.Error
-				|| queuedTask.Status == QueuedTaskStatus.Unprocessed
-				|| queuedTask.Status == QueuedTaskStatus.Faulted;
-		}
-
-		private ITaskExecutor ResolveTaskExecutor ( QueuedTask queuedTask )
+		private ITaskExecutor ResolveTaskExecutor ( IQueuedTask queuedTask )
 		{
 			Type payloadType;
 			ITaskExecutor taskExecutor = null;
@@ -106,15 +111,21 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			if ( payloadType != null )
 			{
-				mLogger.InfoFormat( "Runtime payload type found for task type {0}.",
+				mLogger.DebugFormat( "Runtime payload type {0} found for task type {1}.",
+					payloadType,
 					queuedTask.Type );
 
 				taskExecutor = mExecutorRegistry
 					.ResolveExecutor( payloadType );
 
-				if ( taskExecutor == null )
+				if ( taskExecutor != null )
+					mLogger.DebugFormat( "Executor {0} found for task type {1}.",
+						taskExecutor.GetType().FullName,
+						queuedTask.Type );
+				else
 					mLogger.WarnFormat( "Executor not found for task type {0}.",
 						queuedTask.Type );
+
 			}
 			else
 				mLogger.WarnFormat( "Runtime payload type not found for task type {0}.",
@@ -123,26 +134,24 @@ namespace LVD.Stakhanovise.NET.Processor
 			return taskExecutor;
 		}
 
-		private async Task<TaskExecutionResult> ExecuteQueuedTaskAsync ( QueuedTask queuedTask )
+		private async Task<TaskExecutionResultInfo> ExecuteQueuedTaskAsync ( IQueuedTaskToken queuedTaskToken )
 		{
-			ITaskExecutor taskExecutor;
-			ITaskExecutionContext executionContext;
-
-			if ( !CanBeExecuted( queuedTask ) )
-				return null;
+			ITaskExecutor taskExecutor = null;
+			ITaskExecutionContext executionContext = null;
+			IQueuedTask queuedTask = queuedTaskToken.QueuedTask;
 
 			//Initialize execution context
-			executionContext = new TaskExecutionContext( queuedTask );
+			executionContext = new TaskExecutionContext( queuedTaskToken );
 
 			try
 			{
+				//Check for cancellation before we start execution
+				executionContext.ThrowIfCancellationRequested();
+
+				//Attempt to resolve and run task executor
 				taskExecutor = ResolveTaskExecutor( queuedTask );
 				if ( taskExecutor != null )
 				{
-					mLogger.InfoFormat( "Executor {0} found for task type {1}.",
-						taskExecutor.GetType().FullName,
-						queuedTask.Type );
-
 					mLogger.DebugFormat( "Beginning task execution. Task id = {0}.",
 						queuedTask.Id );
 
@@ -153,85 +162,190 @@ namespace LVD.Stakhanovise.NET.Processor
 					mLogger.DebugFormat( "Task execution completed. Task id = {0}.",
 						queuedTask.Id );
 
-					//Ensure we have a result
+					//Check for cancellation after we completed execution
+					executionContext.ThrowIfCancellationRequested();
+
+					//Ensure we have a result - since no exception was thrown 
+					//	and no result explicitly set, assume success.
 					if ( !executionContext.HasResult )
 						executionContext.NotifyTaskCompleted();
 				}
+			}
+			catch ( OperationCanceledException )
+			{
+				//User code has observed cancellation request 
+				executionContext.NotifyCancellationObserved();
 			}
 			catch ( Exception exc )
 			{
 				mLogger.Error( "Error executing queued task",
 					exception: exc );
 
+				//TODO allow a user provided hook to decide 
+				//	whether the error is recoverable or not
 				executionContext.NotifyTaskErrored( new QueuedTaskError( exc ),
 					isRecoverable: false );
 			}
 
-			return executionContext.Result;
+			return taskExecutor != null
+				? executionContext.ResultInfo
+				: null;
 		}
 
-		private async Task TryExecuteQueuedTaskAsync ( QueuedTask queuedTask )
+		private async Task TrySetTaskExecutionResultAsync ( IQueuedTaskToken queuedTaskToken,
+			TimedExecutionResult<TaskExecutionResultInfo> resultInfo )
 		{
-			TaskExecutionResult executionResult
-				= await ExecuteQueuedTaskAsync( queuedTask );
+			long retrtyAtTicks = 0;
+			bool resultPostedOk = false;
+			AbstractTimestamp lastKnownTime = 
+				mTimingBelt.LastTime;
 
-			await mResultQueue.EnqueueResultAsync( queuedTask,
-				executionResult );
-		}
-
-		private async Task RunWorkerAsync ()
-		{
-			while ( !mStateController.IsStopRequested && !mTaskBuffer.IsCompleted )
+			//Task execution did not end successfully, 
+			//	so we need to see how much we should delay its next execution
+			if ( !resultInfo.Result.ExecutedSuccessfully )
 			{
-				if ( !mTaskBuffer.HasTasks )
-				{
-					mLogger.Debug( "No tasks found in buffer. Checking if buffer is completed..." );
+				mLogger.Debug( "Will compute task execution delay." );
 
-					//It may be that it ran out of tasks because 
-					//  it was marked as completed and all 
-					//  the remaining tasks were consumed
-					//In this case, waiting would mean waiting for ever, 
-					//  since a completed buffer will no longer have 
-					//  any items added to it
-					if ( mTaskBuffer.IsCompleted )
-					{
-						mLogger.Debug( "Task worker found buffer completed, will break worker processing loop." );
-						break;
-					}
+				//Compute the amount of ticks to delay task execution
+				long delayTicks = mOptions.CalculateDelayTaskAfterFailure( queuedTaskToken
+					.QueuedTask
+					.ErrorCount );
+
+				try
+				{
+					//Compute the absolute time, in ticks, 
+					//	until the task execution is delayed.
+					retrtyAtTicks = await mTimingBelt.ComputeAbsolutetTimeTicksAsync( delayTicks );
+				}
+				catch ( Exception exc )
+				{
+					//Attempt failed, we will fallback to the last known time 
+					//	+ the amount to delay
+					retrtyAtTicks = lastKnownTime.Ticks + delayTicks;
+					mLogger.Error( "Failed to compute absolute delay. Using last known time as a basis.",
+						exc );
+				}
+
+				mLogger.DebugFormat( "Computed retry at ticks = {0}",
+					retrtyAtTicks );
+			}
+
+			mLogger.Debug( "Will post task execution result." );
+
+			//Then try and post task execution result. 
+			//	If this fails, we have no other option 
+			//	than to discard the token
+			resultPostedOk = await queuedTaskToken.TrySetResultAsync( new TaskExecutionResult( resultInfo,
+				retrtyAtTicks ) );
+
+			if ( resultPostedOk )
+				mLogger.Debug( "Task execution result successfully posted." );
+			else
+				mLogger.Debug( "Task execution result could not be posted." );
+		}
+
+		private async Task ExecuteQueuedTaskAndSetResultAsync ( IQueuedTaskToken queuedTaskToken )
+		{
+			mLogger.DebugFormat( "New task to execute retrieved from buffer: task id = {0}.",
+				queuedTaskToken.QueuedTask.Id );
+
+			//Execute token and measure the execution time
+			Func<Task<TaskExecutionResultInfo>> executorFunction =
+				async () => await ExecuteQueuedTaskAsync( queuedTaskToken );
+
+			TimedExecutionResult<TaskExecutionResultInfo> timedExecutionResult =
+				await executorFunction.ExecuteWithTimingAsync();
+
+			try
+			{
+				//TODO: report task execution to a central stats manager or smth
+				if ( timedExecutionResult.HasResult )
+				{
+					//If the task execution cancelled, 
+					//	we will simply discard the token
+					if ( !timedExecutionResult.Result.ExecutionCancelled )
+						await TrySetTaskExecutionResultAsync( queuedTaskToken, timedExecutionResult );
 					else
-						await mWaitForClearToFetchTask.ToTask();
+						mLogger.Debug( "Task execution cancelled. Token will be discarded." );
 				}
 				else
-					mLogger.Debug( "Buffer has tasks. Checking if stop was requested..." );
+					mLogger.Debug( "No result info returned. Token will be discarded." );
+			}
+			catch ( Exception exc )
+			{
+				mLogger.Error( "Failed to set queud task token result. The token will be discarded.",
+					exc );
+			}
+			finally
+			{
+				queuedTaskToken.Dispose();
+			}
 
-				//It may be that the wait handle was signaled 
-				//  as part of the Stop operation,
-				//  so we need to check for that as well.
-				if ( mStateController.IsStopRequested )
+			mLogger.DebugFormat( "Done executing task with id = {0}.",
+				queuedTaskToken.QueuedTask.Id );
+		}
+
+		private async Task<bool> PerformBufferCheckAsync ()
+		{
+			//Buffer has tasks, all good
+			if ( mTaskBuffer.HasTasks )
+				return true;
+
+			//No tasks found in buffer, dig deeper
+			mLogger.Debug( "No tasks found in buffer. Checking if buffer is completed..." );
+
+			//It may be that it ran out of tasks because 
+			//  it was marked as completed and all 
+			//  the remaining tasks were consumed
+			//In this case, waiting would mean waiting for ever, 
+			//  since a completed buffer will no longer have 
+			//  any items added to it
+			if ( mTaskBuffer.IsCompleted )
+			{
+				mLogger.Debug( "Buffer completed, will break worker processing loop." );
+				return false;
+			}
+
+			//Wait for tasks to become available
+			await mWaitForClearToFetchTask.ToTask();
+			return true;
+		}
+
+		private async Task RunWorkerAsync ( CancellationToken stopToken )
+		{
+			while ( true )
+			{
+				try
+				{
+					//Maybe got stopped before we begin new processing loop
+					stopToken.ThrowIfCancellationRequested();
+
+					//Check if buffer can deliver new tasks to us.
+					//	If not (and it's permanent), break worker processing loop.
+					if ( !await PerformBufferCheckAsync() )
+						break;
+
+					//It may be that the wait handle was signaled 
+					//  as part of the Stop operation,
+					//  so we need to check for that as well.
+					stopToken.ThrowIfCancellationRequested();
+
+					//Finally, dequeue and execute the task
+					//  and forward the result to the result queue
+					IQueuedTaskToken queuedTaskToken = mTaskBuffer.TryGetNextTask();
+					if ( queuedTaskToken != null )
+						await ExecuteQueuedTaskAndSetResultAsync( queuedTaskToken );
+					else
+						mLogger.Debug( "Nothing to execute: no task was retrieved from buffer." );
+
+					//At the end of the loop, reset the handle
+					mWaitForClearToFetchTask.Reset();
+				}
+				catch ( OperationCanceledException )
 				{
 					mLogger.Debug( "Task worker stop requested. Breaking processing loop..." );
 					break;
 				}
-
-				//Reset the wait handle for fetching tasks, 
-				//  since we obviously have tasks to process
-				mWaitForClearToFetchTask.Reset();
-
-				//Finally, dequeue and execute the task
-				//  and forward the result to the result queue
-				QueuedTask queuedTask = mTaskBuffer.TryGetNextTask();
-				if ( queuedTask != null )
-				{
-					mLogger.DebugFormat( "New task to execute retrieved from buffer: task id = {0}.",
-						queuedTask.Id );
-
-					await TryExecuteQueuedTaskAsync( queuedTask );
-
-					mLogger.DebugFormat( "Done executing task with id = {0}.",
-						queuedTask.Id );
-				}
-				else
-					mLogger.Debug( "Nothing to execute: no task was retrieved from buffer." );
 			}
 		}
 
@@ -244,17 +358,21 @@ namespace LVD.Stakhanovise.NET.Processor
 				mStateController.TryRequestStart( () =>
 				{
 					mLogger.Debug( "Worker is stopped. Starting..." );
-					//Set everything to proper initial state
-					//   and register event handlers
-					mTaskBuffer.QueuedTaskAdded +=
-						HandleQueuedTaskAdded;
 
 					//Save payload types
 					mRequiredPayloadTypes = requiredPayloadTypes
 						?? new string[ 0 ];
 
+					//Set everything to proper initial state
+					//   and register event handlers
+					mTaskBuffer.QueuedTaskAdded +=
+						HandleQueuedTaskAdded;
+
 					//Run worker thread
-					mWorkerTask = Task.Run( RunWorkerAsync );
+					mStopTokenSource = new CancellationTokenSource();
+					mWorkerTask = Task.Run( async () => await RunWorkerAsync( mStopTokenSource.Token ) );
+
+					mLogger.Debug( "Worker successfully started." );
 				} );
 			}
 			else
@@ -272,6 +390,10 @@ namespace LVD.Stakhanovise.NET.Processor
 				await mStateController.TryRequestStopASync( async () =>
 				{
 					mLogger.Debug( "Worker is started. Stopping..." );
+
+					//Request to stop processing loop
+					mStopTokenSource.Cancel();
+
 					//We may be waiting for the right conditions to
 					//  try polling the buffer again
 					//Thus, in order to avoid waiting for these conditions to be met 
@@ -279,14 +401,21 @@ namespace LVD.Stakhanovise.NET.Processor
 					//  and the polling thread is responsible for double-checking that stopping 
 					//  has not been requested in the mean-time
 					mWaitForClearToFetchTask.Set();
+
+					//Wait for the processing loop to be stopped
 					await mWorkerTask;
 
 					//Clean-up event handlers and reset state
-					mTaskBuffer.QueuedTaskAdded -= 
+					mTaskBuffer.QueuedTaskAdded -=
 						HandleQueuedTaskAdded;
 
 					mWaitForClearToFetchTask.Reset();
 					mWorkerTask = null;
+
+					mStopTokenSource.Dispose();
+					mStopTokenSource = null;
+
+					mLogger.Debug( "Worker successfully stopped." );
 				} );
 			}
 			else

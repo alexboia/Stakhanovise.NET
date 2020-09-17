@@ -81,6 +81,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 			QueuedTask queuedTask;
 
+
 			if ( reader == null )
 				throw new ArgumentNullException( nameof( reader ) );
 
@@ -132,20 +133,31 @@ namespace LVD.Stakhanovise.NET.Helpers
 				.AsObjectFromJson<QueuedTaskError>();
 
 			queuedTask.PostedAt =
-			   await reader.GetFieldValueAsync<DateTimeOffset>( modelMapping.PostedAtColumnName,
+				await reader.GetFieldValueAsync<long>( modelMapping.PostedAtColumnName, 
+					defaultValue: 0 );
+			queuedTask.LockedUntil =
+				await reader.GetFieldValueAsync<long>( modelMapping.LockedUntilColumnName,
+					defaultValue: 0 );
+
+			queuedTask.ProcessingTimeMilliseconds =
+				await reader.GetFieldValueAsync<long>( modelMapping.ProcessingTimeMillisecondsColumnName,
+					defaultValue: 0 );
+
+			queuedTask.PostedAtTs =
+			   await reader.GetFieldValueAsync<DateTimeOffset>( modelMapping.PostedAtTsColumnName,
 				  defaultValue: DateTimeOffset.MinValue );
-			queuedTask.RepostedAt =
-			   await reader.GetFieldValueAsync<DateTimeOffset>( modelMapping.RepostedAtColumnName,
+			queuedTask.RepostedAtTs =
+			   await reader.GetFieldValueAsync<DateTimeOffset>( modelMapping.RepostedAtTsColumnName,
 				  defaultValue: DateTimeOffset.MinValue );
 
-			queuedTask.FirstProcessingAttemptedAt =
-			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.FirstProcessingAttemptedAtColumnName,
+			queuedTask.FirstProcessingAttemptedAtTs =
+			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.FirstProcessingAttemptedAtTsColumnName,
 				  defaultValue: null );
-			queuedTask.LastProcessingAttemptedAt =
-			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.LastProcessingAttemptedAtColumnName,
+			queuedTask.LastProcessingAttemptedAtTs =
+			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.LastProcessingAttemptedAtTsColumnName,
 				  defaultValue: null );
-			queuedTask.ProcessingFinalizedAt =
-			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.ProcessingFinalizedAtColumnName,
+			queuedTask.ProcessingFinalizedAtTs =
+			   await reader.GetNullableFieldValueAsync<DateTimeOffset>( modelMapping.ProcessingFinalizedAtTsColumnName,
 				  defaultValue: null );
 
 			return queuedTask;

@@ -32,24 +32,27 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using LVD.Stakhanovise.NET.Model;
 
 namespace LVD.Stakhanovise.NET
 {
-   public interface ITaskExecutionContext
-   {
-      TValue Get<TValue>(string key);
+	public interface ITaskExecutionContext
+	{
+		void NotifyTaskCompleted ();
 
-      void Set<TValue>(string key, TValue value);
+		void NotifyTaskErrored ( QueuedTaskError error, bool isRecoverable );
 
-      void NotifyTaskCompleted();
+		void NotifyCancellationObserved ();
 
-      void NotifyTaskErrored(QueuedTaskError error, bool isRecoverable);
+		void ThrowIfCancellationRequested ();
 
-      QueuedTaskStatus TaskStatus { get; }
+		QueuedTaskStatus TaskStatus { get; }
 
-      TaskExecutionResult Result { get; }
+		TaskExecutionResultInfo ResultInfo { get; }
 
-      bool HasResult { get; }
-   }
+		bool IsCancellationRequested { get; }
+
+		bool HasResult { get; }
+	}
 }

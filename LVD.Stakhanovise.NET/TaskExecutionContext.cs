@@ -30,68 +30,60 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace LVD.Stakhanovise.NET
 {
 	public class TaskExecutionContext : ITaskExecutionContext
 	{
-		private QueuedTask mTask;
+		private IQueuedTask mTask;
 
-		private ConcurrentDictionary<string, object> mContextData =
-		   new ConcurrentDictionary<string, object>();
+		private TaskExecutionResultInfo mResult;
 
-		private TaskExecutionResult mResult;
+		private CancellationToken mCancellationToken;
 
-		public TaskExecutionContext ( QueuedTask task )
+		public TaskExecutionContext ( IQueuedTaskToken taskToken )
+			: this( taskToken.QueuedTask, taskToken.CancellationToken )
 		{
-			mTask = task
-				?? throw new ArgumentNullException( nameof( task ) );
+			return;
+		}
+
+		public TaskExecutionContext ( IQueuedTask task, CancellationToken cancellationToken )
+		{
+			mTask = task ?? throw new ArgumentNullException( nameof( task ) );
+			mCancellationToken = cancellationToken;
 		}
 
 		public void NotifyTaskCompleted ()
 		{
-			mResult = new TaskExecutionResult( mTask );
+			mResult = TaskExecutionResultInfo.Successful();
 		}
 
 		public void NotifyTaskErrored ( QueuedTaskError error, bool isRecoverable )
 		{
-			mResult = new TaskExecutionResult( mTask,
-				error,
-				isRecoverable );
+			mResult = TaskExecutionResultInfo.ExecutedWithError( error, isRecoverable );
 		}
 
-		public TValue Get<TValue> ( string key )
+		public void NotifyCancellationObserved ()
 		{
-			if ( string.IsNullOrEmpty( key ) )
-				throw new ArgumentNullException( nameof( key ) );
-
-			object value;
-			if ( !mContextData.TryGetValue( key, out value ) )
-				value = null;
-
-			return value is TValue
-				? ( TValue )value
-				: default( TValue );
+			mResult = TaskExecutionResultInfo.Cancelled();
 		}
 
-		public void Set<TValue> ( string key, TValue value )
+		public void ThrowIfCancellationRequested ()
 		{
-			if ( string.IsNullOrEmpty( key ) )
-				throw new ArgumentNullException( nameof( key ) );
-
-			TValue current = Get<TValue>( key );
-			mContextData.TryUpdate( key,
-			   value,
-			   current );
+			mCancellationToken.ThrowIfCancellationRequested();
 		}
 
-		public QueuedTask Task => mTask;
+		public IQueuedTask Task => mTask;
 
-		public TaskExecutionResult Result => mResult;
+		public TaskExecutionResultInfo ResultInfo => mResult;
 
 		public QueuedTaskStatus TaskStatus => mTask.Status;
+
+		public bool IsCancellationRequested => mCancellationToken.IsCancellationRequested;
 
 		public bool HasResult => mResult != null;
 	}

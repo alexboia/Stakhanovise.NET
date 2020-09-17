@@ -37,10 +37,10 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public interface ITaskQueueStats
+	public interface ITaskQueueInfo
 	{
 		Task<TaskQueueMetrics> ComputeMetricsAsync ();
 
-		Task<QueuedTask> PeekAsync ();
+		Task<IQueuedTask> PeekAsync ( AbstractTimestamp now );
 	}
 }

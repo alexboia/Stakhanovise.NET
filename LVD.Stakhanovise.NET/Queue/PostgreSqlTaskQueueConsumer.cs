@@ -36,12 +36,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private ConcurrentDictionary<Guid, IQueuedTaskToken> mDequeuedTokens =
 			new ConcurrentDictionary<Guid, IQueuedTaskToken>();
 
-		private int[] mDequeueWithStatuses = new int[] {
-			(int)QueuedTaskStatus.Unprocessed,
-			(int)QueuedTaskStatus.Error,
-			(int)QueuedTaskStatus.Faulted,
-			(int)QueuedTaskStatus.Processing
-		};
+		private int[] mDequeueWithStatuses;
 
 		public PostgreSqlTaskQueueConsumer ( TaskQueueOptions options )
 		{
@@ -49,6 +44,11 @@ namespace LVD.Stakhanovise.NET.Queue
 				throw new ArgumentNullException( nameof( options ) );
 
 			mOptions = options;
+
+			mDequeueWithStatuses = mOptions.DequeueWithStatuses
+				.Select( s => ( int )s )
+				.ToArray();
+
 			mSignalingConnectionString = options.ConnectionString
 				.DeriveSignalingConnectionString( options );
 			mQueueConnectionString = options.ConnectionString
@@ -137,7 +137,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				using ( NpgsqlCommand dequeueCmd = new NpgsqlCommand() )
 				{
 					dequeueCmd.Connection = conn;
-					dequeueCmd.CommandText = $"SELECT tq.* FROM { mOptions.Mapping.DequeueFunctionName }(@statuses, @types, @excluded) tq";
+					dequeueCmd.CommandText = $"SELECT tq.* FROM { mOptions.Mapping.DequeueFunctionName }(@statuses, @types, @excluded, @now) tq";
 
 					dequeueCmd.Parameters.AddWithValue( "statuses",
 						parameterType: NpgsqlDbType.Array | NpgsqlDbType.Integer,
@@ -151,9 +151,13 @@ namespace LVD.Stakhanovise.NET.Queue
 						parameterType: NpgsqlDbType.Array | NpgsqlDbType.Uuid,
 						value: excludeLockedTaskIds );
 
+					dequeueCmd.Parameters.AddWithValue( "now",
+						parameterType: NpgsqlDbType.Bigint,
+						value: now.Ticks );
+
 					dequeueCmd.Prepare();
 
-					using ( NpgsqlDataReader taskReader = ( NpgsqlDataReader )( await dequeueCmd.ExecuteReaderAsync() ) )
+					using ( NpgsqlDataReader taskReader = await dequeueCmd.ExecuteReaderAsync() )
 					{
 						dequedTask = await taskReader.ReadAsync()
 							? await taskReader.ReadQueuedTaskAsync( mOptions.Mapping )
@@ -169,10 +173,10 @@ namespace LVD.Stakhanovise.NET.Queue
 								dequeuedAt: now,
 								options: mOptions );
 
-							dequeuedTaskToken.TokenReleased += 
+							dequeuedTaskToken.TokenReleased +=
 								HandleTaskTokenReleased;
 
-							mDequeuedTokens.TryAdd( dequedTask.Id, 
+							mDequeuedTokens.TryAdd( dequedTask.Id,
 								dequeuedTaskToken );
 
 							mLogger.DebugFormat( "Found with id = {0} in database queue.",

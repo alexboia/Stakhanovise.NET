@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
@@ -41,7 +42,7 @@ namespace LVD.Stakhanovise.NET.Processor
 	{
 		private int mCapacity;
 
-		private BlockingCollection<QueuedTask> mInnerBuffer;
+		private BlockingCollection<IQueuedTaskToken> mInnerBuffer;
 
 		private bool mIsDisposed = false;
 
@@ -54,7 +55,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			if ( capacity <= 0 )
 				throw new ArgumentOutOfRangeException( nameof( capacity ), "The capacity must be greater than 0" );
 
-			mInnerBuffer = new BlockingCollection<QueuedTask>( new ConcurrentQueue<QueuedTask>(), capacity );
+			mInnerBuffer = new BlockingCollection<IQueuedTaskToken>( new ConcurrentQueue<IQueuedTaskToken>(), capacity );
 			mCapacity = capacity;
 		}
 
@@ -79,7 +80,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				itemAddedHandler.Invoke( this, EventArgs.Empty );
 		}
 
-		public bool TryAddNewTask ( QueuedTask task )
+		public bool TryAddNewTask ( IQueuedTaskToken task )
 		{
 			CheckDisposedOrThrow();
 
@@ -96,18 +97,18 @@ namespace LVD.Stakhanovise.NET.Processor
 			return isAdded;
 		}
 
-		public QueuedTask TryGetNextTask ()
+		public IQueuedTaskToken TryGetNextTask ()
 		{
 			CheckDisposedOrThrow();
 
-			QueuedTask newTask;
-			if ( !mInnerBuffer.TryTake( out newTask ) )
-				newTask = null;
+			IQueuedTaskToken newTaskToken;
+			if ( !mInnerBuffer.TryTake( out newTaskToken ) )
+				newTaskToken = null;
 
-			if ( newTask != null )
+			if ( newTaskToken != null )
 				NotifyQueuedTaskRetrieved();
 
-			return newTask;
+			return newTaskToken;
 		}
 
 		public void CompleteAdding ()

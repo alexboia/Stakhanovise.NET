@@ -39,36 +39,31 @@ namespace LVD.Stakhanovise.NET
 {
 	public class TaskExecutionResult : IEquatable<TaskExecutionResult>
 	{
-		private QueuedTask mTask;
+		private TaskExecutionResultInfo mResultInfo;
 
-		private bool mExecutedSuccessfully;
-
-		private QueuedTaskError mError;
-
-		private bool mIsRecoverable;
-
-		private AbstractTimestamp mRetryAt;
+		private long mRetryAtTicks;
 
 		private long mProcessingTimeMilliseconds;
 
-		public TaskExecutionResult ( QueuedTask task )
+		public TaskExecutionResult ( TimedExecutionResult<TaskExecutionResultInfo> resultInfo )
 		{
-			mTask = task ?? throw new ArgumentNullException( nameof( task ) );
-			mExecutedSuccessfully = true;
+			if ( resultInfo == null )
+				throw new ArgumentNullException( nameof( resultInfo ) );
+
+			mResultInfo = resultInfo.Result;
+			mProcessingTimeMilliseconds = resultInfo.DurationMilliseconds;
 		}
 
-		public TaskExecutionResult ( QueuedTask task, QueuedTaskError error, bool isRecoverable )
+		public TaskExecutionResult ( TimedExecutionResult<TaskExecutionResultInfo> resultInfo,
+			long retryAtTicks )
+			: this( resultInfo )
 		{
-			mTask = task ?? throw new ArgumentNullException( nameof( task ) );
-			mError = error;
-			mIsRecoverable = isRecoverable;
-			mExecutedSuccessfully = false;
+			mRetryAtTicks = retryAtTicks;
 		}
 
 		public bool Equals ( TaskExecutionResult other )
 		{
 			return other != null &&
-				Task.Equals( other.Task ) &&
 				ExecutedSuccessfully == other.ExecutedSuccessfully &&
 				IsRecoverable == other.IsRecoverable &&
 				object.Equals( Error, other.Error );
@@ -83,26 +78,23 @@ namespace LVD.Stakhanovise.NET
 		{
 			int result = 1;
 
-			result = result * 31 + mTask.GetHashCode();
-			result = result * 31 + mExecutedSuccessfully.GetHashCode();
-			result = result * 31 + mIsRecoverable.GetHashCode();
+			result = result * 31 + mResultInfo.ExecutedSuccessfully.GetHashCode();
+			result = result * 31 + mResultInfo.IsRecoverable.GetHashCode();
 
-			if ( mError != null )
-				result = result * 31 + mError.GetHashCode();
+			if ( mResultInfo.Error != null )
+				result = result * 31 + mResultInfo.Error.GetHashCode();
 
 			return result;
 		}
 
-		public QueuedTask Task => mTask;
+		public bool ExecutedSuccessfully => mResultInfo.ExecutedSuccessfully;
 
-		public bool ExecutedSuccessfully => mExecutedSuccessfully;
-		
-		public AbstractTimestamp RetryAt => mRetryAt;
+		public long RetryAtTicks => mRetryAtTicks;
 
 		public long ProcessingTimeMilliseconds => mProcessingTimeMilliseconds;
 
-		public QueuedTaskError Error => mError;
+		public QueuedTaskError Error => mResultInfo.Error;
 
-		public bool IsRecoverable => mIsRecoverable;
+		public bool IsRecoverable => mResultInfo.IsRecoverable;
 	}
 }

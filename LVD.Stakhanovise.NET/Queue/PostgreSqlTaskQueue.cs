@@ -48,7 +48,7 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueue : ITaskQueueConsumer,
 		ITaskQueueProducer,
-		ITaskQueueStats,
+		ITaskQueueInfo,
 		IDisposable
 	{
 		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
@@ -403,8 +403,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			queuedTask.Source = source;
 			queuedTask.Status = QueuedTaskStatus.Unprocessed;
 			queuedTask.Priority = priority;
-			queuedTask.PostedAt = DateTimeOffset.Now;
-			queuedTask.RepostedAt = DateTimeOffset.Now;
+			queuedTask.PostedAtTs = DateTimeOffset.Now;
+			queuedTask.RepostedAtTs = DateTimeOffset.Now;
 			queuedTask.ErrorCount = 0;
 
 			using ( NpgsqlConnection db = await OpenManagementConnectionAsync() )
@@ -422,10 +422,10 @@ namespace LVD.Stakhanovise.NET.Queue
 						queuedTask.Source },
 					{ mQueuedTaskMapping.PriorityColumnName,
 						queuedTask.Priority },
-					{ mQueuedTaskMapping.PostedAtColumnName,
-						queuedTask.PostedAt },
-					{ mQueuedTaskMapping.RepostedAtColumnName,
-						queuedTask.RepostedAt },
+					{ mQueuedTaskMapping.PostedAtTsColumnName,
+						queuedTask.PostedAtTs },
+					{ mQueuedTaskMapping.RepostedAtTsColumnName,
+						queuedTask.RepostedAtTs },
 					{ mQueuedTaskMapping.ErrorCountColumnName,
 						queuedTask.ErrorCount },
 					{ mQueuedTaskMapping.LastErrorIsRecoverableColumnName,
@@ -474,12 +474,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				{
 					{ mQueuedTaskMapping.StatusColumnName,
 						acquiredToken.QueuedTask.Status },
-					{ mQueuedTaskMapping.ProcessingFinalizedAtColumnName,
-						acquiredToken.QueuedTask.ProcessingFinalizedAt },
-					{ mQueuedTaskMapping.LastProcessingAttemptedAtColumnName,
-						acquiredToken.QueuedTask.LastProcessingAttemptedAt },
-					{ mQueuedTaskMapping.FirstProcessingAttemptedAtColumnName,
-						acquiredToken.QueuedTask.FirstProcessingAttemptedAt }
+					{ mQueuedTaskMapping.ProcessingFinalizedAtTsColumnName,
+						acquiredToken.QueuedTask.ProcessingFinalizedAtTs },
+					{ mQueuedTaskMapping.LastProcessingAttemptedAtTsColumnName,
+						acquiredToken.QueuedTask.LastProcessingAttemptedAtTs },
+					{ mQueuedTaskMapping.FirstProcessingAttemptedAtTsColumnName,
+						acquiredToken.QueuedTask.FirstProcessingAttemptedAtTs }
 				};
 
 				await acquiredToken.Connection
@@ -562,12 +562,12 @@ namespace LVD.Stakhanovise.NET.Queue
 					{ mQueuedTaskMapping.ErrorCountColumnName,
 						acquiredToken.QueuedTask.ErrorCount },
 
-					{ mQueuedTaskMapping.FirstProcessingAttemptedAtColumnName,
-						acquiredToken.QueuedTask.FirstProcessingAttemptedAt },
-					{ mQueuedTaskMapping.LastProcessingAttemptedAtColumnName,
-						acquiredToken.QueuedTask.LastProcessingAttemptedAt },
-					{ mQueuedTaskMapping.RepostedAtColumnName,
-						acquiredToken.QueuedTask.RepostedAt }
+					{ mQueuedTaskMapping.FirstProcessingAttemptedAtTsColumnName,
+						acquiredToken.QueuedTask.FirstProcessingAttemptedAtTs },
+					{ mQueuedTaskMapping.LastProcessingAttemptedAtTsColumnName,
+						acquiredToken.QueuedTask.LastProcessingAttemptedAtTs },
+					{ mQueuedTaskMapping.RepostedAtTsColumnName,
+						acquiredToken.QueuedTask.RepostedAtTs }
 				};
 
 				await acquiredToken.Connection
@@ -623,7 +623,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				peekQuery.WhereNotIn( $"{mQueuedTaskMapping.IdColumnName}", excludeLockedTaskIds );
 
 			peekQuery.OrderByDesc( $"q.{mQueuedTaskMapping.PriorityColumnName}" )
-				.OrderBy( $"q.{mQueuedTaskMapping.PostedAtColumnName}" )
+				.OrderBy( $"q.{mQueuedTaskMapping.PostedAtTsColumnName}" )
 				.OrderBy( $"q.{mQueuedTaskMapping.LockHandleIdColumnName}" )
 				.Limit( 1 );
 

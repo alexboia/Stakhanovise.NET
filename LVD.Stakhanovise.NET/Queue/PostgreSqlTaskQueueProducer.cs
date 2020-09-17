@@ -30,16 +30,22 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<NpgsqlConnection> TryOpenConnectionAsync ()
 		{
-			return await mQueueConnectionString.TryOpenConnectionAsync( mOptions.ConnectionRetryCount, 
+			return await mQueueConnectionString.TryOpenConnectionAsync( mOptions.ConnectionRetryCount,
 				mOptions.ConnectionRetryDelay );
 		}
 
-		public async Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload, string source, int priority )
+		public async Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload,
+			AbstractTimestamp now,
+			string source,
+			int priority )
 		{
 			QueuedTask queuedTask = null;
 
 			if ( EqualityComparer<TPayload>.Default.Equals( payload, default( TPayload ) ) )
 				throw new ArgumentNullException( nameof( payload ) );
+
+			if ( now == null )
+				throw new ArgumentNullException( nameof( now ) );
 
 			if ( string.IsNullOrEmpty( source ) )
 				throw new ArgumentNullException( nameof( source ) );
@@ -49,13 +55,14 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			queuedTask = new QueuedTask();
 			queuedTask.Id = Guid.NewGuid();
+			queuedTask.PostedAt = now.Ticks;
 			queuedTask.Payload = payload;
 			queuedTask.Type = typeof( TPayload ).FullName;
 			queuedTask.Source = source;
 			queuedTask.Status = QueuedTaskStatus.Unprocessed;
 			queuedTask.Priority = priority;
-			queuedTask.PostedAt = DateTimeOffset.UtcNow;
-			queuedTask.RepostedAt = DateTimeOffset.UtcNow;
+			queuedTask.PostedAtTs = DateTimeOffset.UtcNow;
+			queuedTask.RepostedAtTs = DateTimeOffset.UtcNow;
 			queuedTask.ErrorCount = 0;
 
 			using ( NpgsqlConnection conn = await TryOpenConnectionAsync() )
@@ -68,7 +75,8 @@ namespace LVD.Stakhanovise.NET.Queue
 						{mOptions.Mapping.SourceColumnName},
 						{mOptions.Mapping.PriorityColumnName},
 						{mOptions.Mapping.PostedAtColumnName},
-						{mOptions.Mapping.RepostedAtColumnName},
+						{mOptions.Mapping.PostedAtTsColumnName},
+						{mOptions.Mapping.RepostedAtTsColumnName},
 						{mOptions.Mapping.ErrorCountColumnName},
 						{mOptions.Mapping.LastErrorIsRecoverableColumnName},
 						{mOptions.Mapping.StatusColumnName}
@@ -79,7 +87,8 @@ namespace LVD.Stakhanovise.NET.Queue
 						@t_source,
 						@t_priority,
 						@t_posted_at,
-						@t_reposted_at,
+						@t_posted_at_ts,
+						@t_reposted_at_ts,
 						@t_error_count,
 						@t_last_error_is_recoverable,
 						@t_status
@@ -97,10 +106,12 @@ namespace LVD.Stakhanovise.NET.Queue
 						queuedTask.Source );
 					insertCmd.Parameters.AddWithValue( "t_priority", NpgsqlDbType.Integer,
 						queuedTask.Priority );
-					insertCmd.Parameters.AddWithValue( "t_posted_at", NpgsqlDbType.TimestampTz,
+					insertCmd.Parameters.AddWithValue( "t_posted_at", NpgsqlDbType.Bigint,
 						queuedTask.PostedAt );
-					insertCmd.Parameters.AddWithValue( "t_reposted_at", NpgsqlDbType.TimestampTz,
-						queuedTask.RepostedAt );
+					insertCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
+						queuedTask.PostedAtTs );
+					insertCmd.Parameters.AddWithValue( "t_reposted_at_ts", NpgsqlDbType.TimestampTz,
+						queuedTask.RepostedAtTs );
 					insertCmd.Parameters.AddWithValue( "t_error_count", NpgsqlDbType.Integer,
 						queuedTask.ErrorCount );
 					insertCmd.Parameters.AddWithValue( "t_last_error_is_recoverable", NpgsqlDbType.Boolean,

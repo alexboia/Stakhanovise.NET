@@ -106,9 +106,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ( CancellationToken cancellationToken )
 		{
-			NpgsqlConnection conn = new NpgsqlConnection( mTimeConnectionString );
-			await conn.OpenAsync( cancellationToken );
-			return conn;
+			return await mTimeConnectionString.TryOpenConnectionAsync( cancellationToken );
 		}
 
 		private async Task PrepConnectionPoolAsync ( CancellationToken cancellationToken )
@@ -184,7 +182,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			mTimeTickingTask = Task.Run( async () =>
 			{
-				CancellationToken cancellationToken = mTimeTickingStopRequest
+				CancellationToken stopToken = mTimeTickingStopRequest
 				   .Token;
 
 				while ( !mTickingQueue.IsCompleted )
@@ -194,11 +192,11 @@ namespace LVD.Stakhanovise.NET.Queue
 
 					try
 					{
-						cancellationToken.ThrowIfCancellationRequested();
+						stopToken.ThrowIfCancellationRequested();
 
 						//Try to dequeue and block if no item is available
 						PostgreSqlTaskQueueTimingBeltTickRequest tickRqBatchItem =
-							mTickingQueue.Take( cancellationToken );
+							mTickingQueue.Take( stopToken );
 
 						currentBatch.Add( tickRqBatchItem );
 
@@ -207,11 +205,11 @@ namespace LVD.Stakhanovise.NET.Queue
 						while ( currentBatch.Count < mTimeTickBatchSize && mTickingQueue.TryTake( out tickRqBatchItem ) )
 							currentBatch.Add( tickRqBatchItem );
 
-						cancellationToken.ThrowIfCancellationRequested();
+						stopToken.ThrowIfCancellationRequested();
 
 						//Tick the entire batch
 						AbstractTimestamp lastTime = await TickAsync( currentBatch.Count,
-							cancellationToken );
+							stopToken );
 
 						//And distribute the result to each tick request
 						foreach ( PostgreSqlTaskQueueTimingBeltTickRequest processedTickRq in currentBatch )
@@ -320,6 +318,30 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			return completionToken.Task
 				.WithCleanup( ( prev ) => tickRequest.Dispose() );
+		}
+
+		public async Task<long> ComputeAbsolutetTimeTicksAsync ( long timeTicksToAdd )
+		{
+			CheckNotDisposedOrThrow();
+
+			using ( NpgsqlConnection conn = await OpenConnectionAsync( CancellationToken.None ) )
+			{
+				string computeSql = "SELECT sk_compute_absolute_time_ticks(@s_time_id, @s_time_ticks_to_add)";
+				using ( NpgsqlCommand computeCmd = new NpgsqlCommand( computeSql, conn ) )
+				{
+					computeCmd.Parameters.AddWithValue( "s_time_id", NpgsqlDbType.Uuid,
+						mTimeId );
+					computeCmd.Parameters.AddWithValue( "s_time_ticks_to_add", NpgsqlDbType.Bigint,
+						timeTicksToAdd );
+
+					await computeCmd.PrepareAsync();
+					object result = await computeCmd.ExecuteScalarAsync();
+
+					return result is long 
+						? ( long )result 
+						: 0;
+				}
+			}
 		}
 
 		protected virtual void Dispose ( bool disposing )

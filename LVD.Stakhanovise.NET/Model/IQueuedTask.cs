@@ -20,6 +20,8 @@ namespace LVD.Stakhanovise.NET.Model
 
 		int Priority { get; set; }
 
+		long PostedAt { get; }
+
 		long LockedUntil { get; }
 
 		long ProcessingTimeMilliseconds { get; }
@@ -30,14 +32,14 @@ namespace LVD.Stakhanovise.NET.Model
 
 		int ErrorCount { get; }
 
-		DateTimeOffset PostedAt { get; }
+		DateTimeOffset PostedAtTs { get; }
 
-		DateTimeOffset RepostedAt { get; }
+		DateTimeOffset RepostedAtTs { get; }
 
-		DateTimeOffset? FirstProcessingAttemptedAt { get; }
+		DateTimeOffset? FirstProcessingAttemptedAtTs { get; }
 
-		DateTimeOffset? LastProcessingAttemptedAt { get; }
+		DateTimeOffset? LastProcessingAttemptedAtTs { get; }
 
-		DateTimeOffset? ProcessingFinalizedAt { get; }
+		DateTimeOffset? ProcessingFinalizedAtTs { get; }
 	}
 }

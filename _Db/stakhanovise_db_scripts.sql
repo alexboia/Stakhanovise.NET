@@ -8,6 +8,9 @@ CREATE SEQUENCE public.sk_processing_queues_task_lock_handle_id_seq
 ALTER SEQUENCE public.sk_processing_queues_task_lock_handle_id_seq
     OWNER TO postgres;
 	
+-- Table: public.sk_tasks_queue_t
+-- DROP TABLE public.sk_tasks_queue_t;
+
 CREATE TABLE public.sk_tasks_queue_t
 (
     task_id uuid NOT NULL,
@@ -19,21 +22,41 @@ CREATE TABLE public.sk_tasks_queue_t
     task_priority integer NOT NULL,
     task_last_error_is_recoverable boolean NOT NULL,
     task_error_count integer NOT NULL,
-    task_posted_at timestamp with time zone NOT NULL,
-    task_reposted_at timestamp with time zone NOT NULL,
-    task_first_processing_attempted_at timestamp with time zone,
-    task_last_processing_attempted_at timestamp with time zone,
-    task_processing_finalized_at timestamp with time zone,
+	task_locked_until bigint NOT NULL,
+    task_processing_time_milliseconds bigint NOT NULL,
+    task_posted_at bigint NOT NULL,
+    task_posted_at_ts timestamp with time zone NOT NULL,
+    task_reposted_at_ts timestamp with time zone NOT NULL,
+    task_first_processing_attempted_at_ts timestamp with time zone,
+    task_last_processing_attempted_at_ts timestamp with time zone,
+    task_processing_finalized_at_ts timestamp with time zone,
     task_last_error text COLLATE pg_catalog."default",
     CONSTRAINT tasks_queue_t_pkey PRIMARY KEY (task_id)
 )
-WITH (
-    OIDS = FALSE
-)
+
 TABLESPACE pg_default;
 
 ALTER TABLE public.sk_tasks_queue_t
     OWNER to postgres;
+	
+-- Table: public.sk_time_t
+-- DROP TABLE public.sk_time_t;
+
+CREATE TABLE public.sk_time_t
+(
+    t_id uuid NOT NULL,
+    t_total_ticks bigint,
+    t_total_ticks_cost bigint,
+    CONSTRAINT sk_time_t_pkey PRIMARY KEY (t_id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE public.sk_time_t
+    OWNER to postgres;
+	
+-- FUNCTION: public.sk_has_advisory_lock(bigint)
+-- DROP FUNCTION public.sk_has_advisory_lock(bigint);
 
 CREATE OR REPLACE FUNCTION public.sk_has_advisory_lock(
 	lock_handle_id bigint)
@@ -60,16 +83,39 @@ $BODY$;
 ALTER FUNCTION public.sk_has_advisory_lock(bigint)
     OWNER TO postgres;
 	
+-- FUNCTION: public.sk_try_dequeue_task(integer[], character varying[], uuid[], bigint)
+-- DROP FUNCTION public.sk_try_dequeue_task(integer[], character varying[], uuid[], bigint);
+
 CREATE OR REPLACE FUNCTION public.sk_try_dequeue_task(
 	select_statuses integer[],
 	select_types character varying[],
-	exclude_ids uuid[])
-    RETURNS TABLE(task_id uuid, task_lock_handle_id bigint, task_type character varying, task_source character varying, task_payload text, task_status integer, task_priority integer, task_last_error_is_recoverable boolean, task_error_count integer, task_posted_at timestamp with time zone, task_reposted_at timestamp with time zone, task_first_processing_attempted_at timestamp with time zone, task_last_processing_attempted_at timestamp with time zone, task_processing_finalized_at timestamp with time zone, task_last_error text, is_lock_acquired boolean) 
+	exclude_ids uuid[],
+	now bigint)
+    RETURNS TABLE(task_id uuid, 
+				  task_lock_handle_id bigint, 
+				  task_type character varying, 
+				  task_source character varying, 
+				  task_payload text, 
+				  task_status integer, 
+				  task_priority integer, 
+				  task_last_error_is_recoverable boolean, 
+				  task_error_count integer, 
+				  task_locked_until bigint,
+				  task_processing_time_milliseconds bigint,
+    			  task_posted_at bigint,
+				  task_posted_at_ts timestamp with time zone, 
+				  task_reposted_at_ts timestamp with time zone, 
+				  task_first_processing_attempted_at_ts timestamp with time zone, 
+				  task_last_processing_attempted_at_ts timestamp with time zone, 
+				  task_processing_finalized_at_ts timestamp with time zone,
+				  task_last_error text, 
+				  is_lock_acquired boolean) 
     LANGUAGE 'plpgsql'
 
     COST 100
     VOLATILE 
     ROWS 1000
+    
 AS $BODY$
 
 declare
@@ -85,6 +131,7 @@ begin
 						where (tq.task_status = any(select_statuses) or n_select_statuses = 0) 
 					  		and (tq.task_type = any(select_types) or n_select_types = 0)
 							and tq.task_id <> all(exclude_ids)
+					  		and tq.task_locked_until < now
 						order by tq.task_priority desc,
 							tq.task_posted_at asc,
 					  		tq.task_lock_handle_id asc
@@ -104,6 +151,7 @@ begin
 						where (tq.task_status = any(select_statuses) or n_select_statuses = 0) 
 					  		and (tq.task_type = any(select_types) or n_select_types = 0)
 							and tq.task_id <> all(exclude_ids)
+					  		and tq.task_locked_until < now
 						order by tq.task_priority desc,
 							tq.task_posted_at asc,
 					  		tq.task_lock_handle_id asc
@@ -117,5 +165,31 @@ end;
 
 $BODY$;
 
-ALTER FUNCTION public.sk_try_dequeue_task(integer[], character varying[], uuid[])
+ALTER FUNCTION public.sk_try_dequeue_task(integer[], character varying[], uuid[], bigint)
     OWNER TO postgres;
+	
+-- FUNCTION: public.sk_compute_absolute_time_ticks(uuid, bigint)
+-- DROP FUNCTION public.sk_compute_absolute_time_ticks(uuid, bigint);
+
+CREATE OR REPLACE FUNCTION public.sk_compute_absolute_time_ticks(
+	time_id uuid,
+	time_ticks_to_add bigint)
+    RETURNS bigint
+    LANGUAGE 'plpgsql'
+
+    COST 100
+    VOLATILE 
+    
+AS $BODY$declare
+	r_total_ticks bigint;
+begin
+	select st.t_total_ticks + time_ticks_to_add into r_total_ticks
+	from sk_time_t st
+	where st.t_id = time_id;
+	
+	return r_total_ticks;
+end;$BODY$;
+
+ALTER FUNCTION public.sk_compute_absolute_time_ticks(uuid, bigint)
+    OWNER TO postgres;
+

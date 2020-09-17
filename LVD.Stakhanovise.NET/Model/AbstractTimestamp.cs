@@ -43,6 +43,13 @@ namespace LVD.Stakhanovise.NET.Model
 
 		private long mWallclockTimeCost;
 
+		private AbstractTimestamp ( long ticks, long wallclockTimeCost, long tickDuration )
+		{
+			mTicks = ticks;
+			mWallclockTimeCost = wallclockTimeCost;
+			mTickDuration = tickDuration;
+		}
+
 		public AbstractTimestamp ( long ticks, long wallclockTimeCost )
 		{
 			mTicks = ticks;
@@ -58,12 +65,12 @@ namespace LVD.Stakhanovise.NET.Model
 			return new AbstractTimestamp( 0, 0 );
 		}
 
-		public long GetAbstractTimeDurationForWallclockDuration ( TimeSpan duration )
+		public long GetTicksDurationForWallclockDuration ( TimeSpan duration )
 		{
-			return GetAbstractTimeDurationForWallclockDuration( ( long )Math.Ceiling( duration.TotalMilliseconds ) );
+			return GetTicksTimeDurationForWallclockDuration( ( long )Math.Ceiling( duration.TotalMilliseconds ) );
 		}
 
-		public long GetAbstractTimeDurationForWallclockDuration ( long wallclockMilliseconds )
+		public long GetTicksTimeDurationForWallclockDuration ( long wallclockMilliseconds )
 		{
 			return mTickDuration > 0
 				? ( long )Math.Ceiling( ( double )wallclockMilliseconds * mTicks / mWallclockTimeCost )
@@ -77,9 +84,18 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public AbstractTimestamp AddWallclockTimeDuration ( long duration )
 		{
-			long ticksForWallclockMilliseconds = GetAbstractTimeDurationForWallclockDuration( duration );
+			long ticksForWallclockMilliseconds = 
+				GetTicksTimeDurationForWallclockDuration( duration );
+
 			return new AbstractTimestamp( mTicks + ticksForWallclockMilliseconds,
 				mWallclockTimeCost + duration );
+		}
+
+		public AbstractTimestamp FromTicks ( long ticks )
+		{
+			return new AbstractTimestamp( ticks, 
+				mTickDuration * ticks, 
+				mTickDuration );
 		}
 
 		public AbstractTimestamp Copy ()

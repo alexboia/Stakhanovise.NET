@@ -8,6 +8,25 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class TaskQueueOptions
 	{
+		public TaskQueueOptions ()
+		{
+			AbstractTimeTickTimeout = 1000;
+			
+			Mapping = new QueuedTaskMapping();
+
+			DequeueWithStatuses = new QueuedTaskStatus[] {
+				QueuedTaskStatus.Unprocessed,
+				QueuedTaskStatus.Error,
+				QueuedTaskStatus.Faulted,
+				QueuedTaskStatus.Processing
+			};
+
+			ConnectionRetryDelay = 100;
+			ConnectionRetryCount = 5;
+		}
+
+		public int AbstractTimeTickTimeout { get; private set; }
+
 		public int WorkerCount { get; private set; }
 
 		public int ConnectionKeepAlive { get; private set; }
@@ -16,7 +35,9 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public int FaultErrorThresholdCount { get; private set; }
 
-		public Func<int, long> LockTaskAfterFailureCalculator { get; private set; }
+		public Func<int, long> CalculateDelayTaskAfterFailure { get; private set; }
+
+		public IEnumerable<QueuedTaskStatus> DequeueWithStatuses { get; private set; }
 
 		public int ConnectionRetryCount { get; private set; }
 

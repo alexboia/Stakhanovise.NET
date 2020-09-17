@@ -57,13 +57,13 @@ namespace LVD.Stakhanovise.NET.Model
 		public virtual void Processed ( long processingTimeMilliseconds )
 		{
 			Status = QueuedTaskStatus.Processed;
-			ProcessingFinalizedAt = DateTimeOffset.UtcNow;
+			ProcessingFinalizedAtTs = DateTimeOffset.UtcNow;
 			ProcessingTimeMilliseconds = processingTimeMilliseconds;
 
-			if ( !FirstProcessingAttemptedAt.HasValue )
-				FirstProcessingAttemptedAt = DateTimeOffset.UtcNow;
+			if ( !FirstProcessingAttemptedAtTs.HasValue )
+				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 
-			LastProcessingAttemptedAt = DateTimeOffset.UtcNow;
+			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 		}
 
 		public virtual void Faulted ()
@@ -71,8 +71,8 @@ namespace LVD.Stakhanovise.NET.Model
 			if ( Status == QueuedTaskStatus.Error )
 			{
 				Status = QueuedTaskStatus.Faulted;
-				LastProcessingAttemptedAt = DateTimeOffset.UtcNow;
-				RepostedAt = DateTimeOffset.UtcNow;
+				LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
+				RepostedAtTs = DateTimeOffset.UtcNow;
 			}
 		}
 
@@ -85,11 +85,11 @@ namespace LVD.Stakhanovise.NET.Model
 			LastErrorIsRecoverable = isRecoverable;
 			ErrorCount += 1;
 
-			if ( !FirstProcessingAttemptedAt.HasValue )
-				FirstProcessingAttemptedAt = DateTimeOffset.UtcNow;
+			if ( !FirstProcessingAttemptedAtTs.HasValue )
+				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 
-			LastProcessingAttemptedAt = DateTimeOffset.UtcNow;
-			RepostedAt = DateTimeOffset.UtcNow;
+			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
+			RepostedAtTs = DateTimeOffset.UtcNow;
 			if ( Status != QueuedTaskStatus.Fatal &&
 				Status != QueuedTaskStatus.Faulted )
 				Status = QueuedTaskStatus.Error;
@@ -113,7 +113,7 @@ namespace LVD.Stakhanovise.NET.Model
 			if ( Status == QueuedTaskStatus.Faulted )
 			{
 				Status = QueuedTaskStatus.Fatal;
-				LastProcessingAttemptedAt = DateTimeOffset.UtcNow;
+				LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 			}
 		}
 
@@ -152,6 +152,8 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public int Priority { get; set; }
 
+		public long PostedAt { get; set; }
+
 		public long LockedUntil { get; set; }
 
 		public long ProcessingTimeMilliseconds { get; set; }
@@ -162,14 +164,14 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public int ErrorCount { get; set; }
 
-		public DateTimeOffset PostedAt { get; set; }
+		public DateTimeOffset PostedAtTs { get; set; }
 
-		public DateTimeOffset RepostedAt { get; set; }
+		public DateTimeOffset RepostedAtTs { get; set; }
 
-		public DateTimeOffset? FirstProcessingAttemptedAt { get; set; }
+		public DateTimeOffset? FirstProcessingAttemptedAtTs { get; set; }
 
-		public DateTimeOffset? LastProcessingAttemptedAt { get; set; }
+		public DateTimeOffset? LastProcessingAttemptedAtTs { get; set; }
 
-		public DateTimeOffset? ProcessingFinalizedAt { get; set; }
+		public DateTimeOffset? ProcessingFinalizedAtTs { get; set; }
 	}
 }
