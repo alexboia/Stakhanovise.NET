@@ -192,42 +192,83 @@ namespace LVD.Stakhanovise.NET.Processor
 			mTaskBuffer.CompleteAdding();
 		}
 
+		private async Task DoStartupSequenceAsync ( string[] requiredPayloadTypes )
+		{
+			mLogger.Debug( "Task poller is stopped. Starting..." );
+
+			//Save payload types
+			mRequiredPayloadTypes = requiredPayloadTypes
+				 ?? new string[ 0 ];
+
+			//Register event handlers
+			mTaskQueueConsumer.ClearForDequeue +=
+				HandlePollForDequeueRequired;
+			mTaskBuffer.QueuedTaskRetrieved +=
+				HandleQueuedTaskRetrievedFromBuffer;
+
+			if ( !mTaskQueueConsumer.IsReceivingNewTaskUpdates )
+				await mTaskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
+
+			//Reset wait handles
+			mWaitForClearToDequeue.Reset();
+			mWaitForClearToAddToBuffer.Reset();
+
+			//Run the polling thread
+			mStopTokenSource = new CancellationTokenSource();
+			mPollTask = Task.Run( async () => await PollForQueuedTasksAsync( mStopTokenSource.Token ) );
+
+			mLogger.Debug( "Successfully started task poller." );
+		}
+
 		public async Task StartAsync ( params string[] requiredPayloadTypes )
 		{
 			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
-			{
-				await mStateController.TryRequestStartAsync( async () =>
-				{
-					mLogger.Debug( "Task poller is stopped. Starting..." );
-
-					//Save payload types
-					mRequiredPayloadTypes = requiredPayloadTypes
-						 ?? new string[ 0 ];
-
-					//Register event handlers
-					mTaskQueueConsumer.ClearForDequeue +=
-						HandlePollForDequeueRequired;
-					mTaskBuffer.QueuedTaskRetrieved +=
-						HandleQueuedTaskRetrievedFromBuffer;
-
-					if ( !mTaskQueueConsumer.IsReceivingNewTaskUpdates )
-						await mTaskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
-
-					//Reset wait handles
-					mWaitForClearToDequeue.Reset();
-					mWaitForClearToAddToBuffer.Reset();
-
-					//Run the polling thread
-					mStopTokenSource = new CancellationTokenSource();
-					mPollTask = Task.Run( async () => await PollForQueuedTasksAsync( mStopTokenSource.Token ) );
-
-					mLogger.Debug( "Successfully started task poller." );
-				} );
-			}
+				await mStateController.TryRequestStartAsync( async ()
+					=> await DoStartupSequenceAsync( requiredPayloadTypes ) );
 			else
 				mLogger.Debug( "Task poller is already started. Nothing to be done." );
+		}
+
+		private async Task DoShutdownSequenceAsync ()
+		{
+			mLogger.Debug( "Task poller is started. Stopping..." );
+
+			//Request to stop the polling loop
+			mStopTokenSource.Cancel();
+
+			//We may be waiting for the right conditions to
+			//  try polling the queue and populating 
+			//  the buffer respectively again
+			//Thus, in order to avoid waiting for these conditions to be met 
+			//  just to be able to stop we signal that processing can continue
+			//  and the polling thread is responsible for double-checking that stopping 
+			//  has not been requested in the mean-time
+			mWaitForClearToDequeue.Set();
+			mWaitForClearToAddToBuffer.Set();
+
+			//Wait for the polling loop to be stopped
+			await mPollTask;
+
+			//Clean-up event handlers and reset state
+			mTaskBuffer.QueuedTaskRetrieved -=
+				HandleQueuedTaskRetrievedFromBuffer;
+			mTaskQueueConsumer.ClearForDequeue -=
+				HandlePollForDequeueRequired;
+
+			if ( mTaskQueueConsumer.IsReceivingNewTaskUpdates )
+				await mTaskQueueConsumer.StopReceivingNewTaskUpdatesAsync();
+
+			//Set everything to proper final state
+			mWaitForClearToDequeue.Reset();
+			mWaitForClearToAddToBuffer.Reset();
+			mPollTask = null;
+
+			mStopTokenSource.Dispose();
+			mStopTokenSource = null;
+
+			mLogger.Debug( "Successfully stopped task poller." );
 		}
 
 		public async Task StopAync ()
@@ -235,47 +276,8 @@ namespace LVD.Stakhanovise.NET.Processor
 			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
-			{
-				await mStateController.TryRequestStopASync( async () =>
-				{
-					mLogger.Debug( "Task poller is started. Stopping..." );
-
-					//Request to stop the polling loop
-					mStopTokenSource.Cancel();
-
-					//We may be waiting for the right conditions to
-					//  try polling the queue and populating 
-					//  the buffer respectively again
-					//Thus, in order to avoid waiting for these conditions to be met 
-					//  just to be able to stop we signal that processing can continue
-					//  and the polling thread is responsible for double-checking that stopping 
-					//  has not been requested in the mean-time
-					mWaitForClearToDequeue.Set();
-					mWaitForClearToAddToBuffer.Set();
-
-					//Wait for the polling loop to be stopped
-					await mPollTask;
-
-					//Clean-up event handlers and reset state
-					mTaskBuffer.QueuedTaskRetrieved -=
-						HandleQueuedTaskRetrievedFromBuffer;
-					mTaskQueueConsumer.ClearForDequeue -=
-						HandlePollForDequeueRequired;
-
-					if ( mTaskQueueConsumer.IsReceivingNewTaskUpdates )
-						await mTaskQueueConsumer.StopReceivingNewTaskUpdatesAsync();
-
-					//Set everything to proper final state
-					mWaitForClearToDequeue.Reset();
-					mWaitForClearToAddToBuffer.Reset();
-					mPollTask = null;
-
-					mStopTokenSource.Dispose();
-					mStopTokenSource = null;
-
-					mLogger.Debug( "Successfully stopped task poller." );
-				} );
-			}
+				await mStateController.TryRequestStopASync( async ()
+					=> await DoShutdownSequenceAsync() );
 			else
 				mLogger.Debug( "Task poller is already stopped. Nothing to be done." );
 		}

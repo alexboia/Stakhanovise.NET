@@ -57,8 +57,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskExecutorRegistry mExecutorRegistry;
 
-		private ITaskResultQueue mTaskResultQueue;
-
 		private ITaskQueueTimingBelt mTimingBelt;
 
 		private List<ITaskWorker> mWorkers = new List<ITaskWorker>();
@@ -77,6 +75,9 @@ namespace LVD.Stakhanovise.NET.Processor
 			ITaskQueueTimingBelt timingBelt,
 			IKernel kernel )
 		{
+			if ( options == null )
+				throw new ArgumentNullException( nameof( options ) );
+
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
 			mTimingBelt = timingBelt
@@ -84,13 +85,9 @@ namespace LVD.Stakhanovise.NET.Processor
 			mKernel = kernel
 				?? throw new ArgumentNullException( nameof( kernel ) );
 
-			if ( options == null )
-				throw new ArgumentNullException( nameof( options ) );
-
 
 			mTaskBuffer = new DefaultTaskBuffer( options.WorkerCount );
 			mTaskPoller = new DefaultTaskPoller( mTaskQueueConsumer, mTaskBuffer, timingBelt );
-			mTaskResultQueue = new DefaultTaskResultQueue( mTaskQueueConsumer );
 			mExecutorRegistry = new DefaultTaskExecutorRegistry( ResolveExecutorDependency );
 			mOptions = options;
 		}
@@ -101,30 +98,44 @@ namespace LVD.Stakhanovise.NET.Processor
 				throw new ObjectDisposedException( nameof( DefaultTaskEngine ), "Cannot reuse a disposed task result queue" );
 		}
 
+		private async Task DoStartupSequenceAsync ()
+		{
+			string[] requiredPayloadTypes =
+				GetRequiredPayloadTypeNames();
+
+			mLogger.DebugFormat( "Attempting to start the task engine with {0} workers and payload types: {1}.",
+				mOptions.WorkerCount,
+				string.Join( ",", requiredPayloadTypes ) );
+
+			//Start the task poller and then start workers
+			await StartTimingBeltAsync();
+			await StartPollerAsync( requiredPayloadTypes );
+			await StartWorkersAsync( requiredPayloadTypes );
+
+			mLogger.Debug( "The task engine has been successfully started." );
+		}
+
 		public async Task StartAsync ()
 		{
 			CheckDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
-			{
-				await mStateController.TryRequestStartAsync( async () =>
-				{
-					string[] requiredPayloadTypes =
-						GetRequiredPayloadTypeNames();
-
-					mLogger.DebugFormat( "Attempting to start the task engine with {0} workers and payload types: {1}.",
-						mOptions.WorkerCount,
-						string.Join( ",", requiredPayloadTypes ) );
-
-					//Start the task poller and then start workers
-					await StartPollerAsync( requiredPayloadTypes );
-					await StartWorkersAsync( requiredPayloadTypes );
-
-					mLogger.Debug( "The task engine has been successfully started." );
-				} );
-			}
+				await mStateController.TryRequestStartAsync( async ()
+					=> await DoStartupSequenceAsync() );
 			else
 				mLogger.Info( "The task engine is already started." );
+		}
+
+		private async Task DoShutdownSequenceAsync ()
+		{
+			mLogger.Debug( "Attempting to stop the task engine." );
+
+			//Stop the task poller and then stop the workers
+			await StopPollerAsync();
+			await StopWorkersAsync();
+			await StopTimingBeltAsync();
+
+			mLogger.Debug( "The task engine has been successfully stopped." );
 		}
 
 		public async Task StopAync ()
@@ -132,18 +143,8 @@ namespace LVD.Stakhanovise.NET.Processor
 			CheckDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
-			{
-				await mStateController.TryRequestStopASync( async () =>
-				{
-					mLogger.Debug( "Attempting to stop the task engine." );
-					
-					//Stop the task poller and then stop the workers
-					await StopPollerAsync();
-					await StopWorkersAsync();
-
-					mLogger.Debug( "The task engine has been successfully stopped." );
-				} );
-			}
+				await mStateController.TryRequestStopASync( async ()
+					=> await DoShutdownSequenceAsync() );
 			else
 				mLogger.Debug( "The task engine is already stopped." );
 		}
@@ -177,15 +178,30 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "The task poller has been successfully stopped. Attempting to stop workers." );
 		}
 
+		private async Task StartTimingBeltAsync ()
+		{
+			mLogger.Debug( "Attempting to start the timing belt" );
+			await mTimingBelt.StartAsync();
+			mLogger.Debug( "Timing belt successfully started" );
+		}
+
+		private async Task StopTimingBeltAsync ()
+		{
+			mLogger.Debug( "Attempting to stop the timing belt" );
+			await mTimingBelt.StopAsync();
+			mLogger.Debug( "Timing belt successfully stopped" );
+		}
+
 		private async Task StartWorkersAsync ( string[] requiredPayloadTypes )
 		{
 			mLogger.Debug( "Attempting to start workers..." );
 
 			for ( int i = 0; i < mOptions.WorkerCount; i++ )
 			{
-				ITaskWorker taskWorker = new DefaultTaskWorker( mTaskBuffer,
+				ITaskWorker taskWorker = new DefaultTaskWorker( mOptions,
+					mTaskBuffer,
 					mExecutorRegistry,
-					mTaskResultQueue );
+					mTimingBelt );
 
 				await taskWorker.StartAsync( requiredPayloadTypes );
 				mWorkers.Add( taskWorker );
@@ -224,13 +240,12 @@ namespace LVD.Stakhanovise.NET.Processor
 				{
 					StopAync().Wait();
 
-					mTaskResultQueue.Dispose();
 					mTaskPoller.Dispose();
 					mTaskBuffer.Dispose();
 
-					mTaskResultQueue = null;
 					mTaskPoller = null;
 					mTaskBuffer = null;
+					mTimingBelt = null;
 
 					mTaskQueueConsumer = null;
 					mKernel = null;

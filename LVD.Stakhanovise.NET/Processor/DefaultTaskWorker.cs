@@ -192,12 +192,12 @@ namespace LVD.Stakhanovise.NET.Processor
 				: null;
 		}
 
-		private async Task TrySetTaskExecutionResultAsync ( IQueuedTaskToken queuedTaskToken,
+		private async Task SetTaskExecutionResultAsync ( IQueuedTaskToken queuedTaskToken,
 			TimedExecutionResult<TaskExecutionResultInfo> resultInfo )
 		{
 			long retrtyAtTicks = 0;
 			bool resultPostedOk = false;
-			AbstractTimestamp lastKnownTime = 
+			AbstractTimestamp lastKnownTime =
 				mTimingBelt.LastTime;
 
 			//Task execution did not end successfully, 
@@ -264,7 +264,8 @@ namespace LVD.Stakhanovise.NET.Processor
 					//If the task execution cancelled, 
 					//	we will simply discard the token
 					if ( !timedExecutionResult.Result.ExecutionCancelled )
-						await TrySetTaskExecutionResultAsync( queuedTaskToken, timedExecutionResult );
+						await SetTaskExecutionResultAsync( queuedTaskToken,
+							timedExecutionResult );
 					else
 						mLogger.Debug( "Task execution cancelled. Token will be discarded." );
 				}
@@ -306,6 +307,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				return false;
 			}
 
+			//TODO: if there are no more buffer items AND the buffer is set as completed, 
+			//	it may take some time until we notice (and via other channels)
 			//Wait for tasks to become available
 			await mWaitForClearToFetchTask.ToTask();
 			return true;
@@ -349,36 +352,65 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
+		private void DoStartupSequence ( string[] requiredPayloadTypes )
+		{
+			mLogger.Debug( "Worker is stopped. Starting..." );
+
+			//Save payload types
+			mRequiredPayloadTypes = requiredPayloadTypes ?? new string[ 0 ];
+
+			//Set everything to proper initial state
+			//   and register event handlers
+			mTaskBuffer.QueuedTaskAdded += HandleQueuedTaskAdded;
+
+			//Run worker thread
+			mStopTokenSource = new CancellationTokenSource();
+			mWorkerTask = Task.Run( async () => await RunWorkerAsync( mStopTokenSource.Token ) );
+
+			mLogger.Debug( "Worker successfully started." );
+		}
+
 		public Task StartAsync ( params string[] requiredPayloadTypes )
 		{
 			CheckDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
-			{
-				mStateController.TryRequestStart( () =>
-				{
-					mLogger.Debug( "Worker is stopped. Starting..." );
-
-					//Save payload types
-					mRequiredPayloadTypes = requiredPayloadTypes
-						?? new string[ 0 ];
-
-					//Set everything to proper initial state
-					//   and register event handlers
-					mTaskBuffer.QueuedTaskAdded +=
-						HandleQueuedTaskAdded;
-
-					//Run worker thread
-					mStopTokenSource = new CancellationTokenSource();
-					mWorkerTask = Task.Run( async () => await RunWorkerAsync( mStopTokenSource.Token ) );
-
-					mLogger.Debug( "Worker successfully started." );
-				} );
-			}
+				mStateController.TryRequestStart( () 
+					=> DoStartupSequence( requiredPayloadTypes ) );
 			else
 				mLogger.Debug( "Worker is already started or in the process of starting." );
 
 			return Task.CompletedTask;
+		}
+
+		private async Task DoShutdownSequenceAsync ()
+		{
+			mLogger.Debug( "Worker is started. Stopping..." );
+
+			//Request to stop processing loop
+			mStopTokenSource.Cancel();
+
+			//We may be waiting for the right conditions to
+			//  try polling the buffer again
+			//Thus, in order to avoid waiting for these conditions to be met 
+			//  just to be able to stop we signal that processing can continue
+			//  and the polling thread is responsible for double-checking that stopping 
+			//  has not been requested in the mean-time
+			mWaitForClearToFetchTask.Set();
+
+			//Wait for the processing loop to be stopped
+			await mWorkerTask;
+
+			//Clean-up event handlers and reset state
+			mTaskBuffer.QueuedTaskAdded -= HandleQueuedTaskAdded;
+
+			mWaitForClearToFetchTask.Reset();
+			mWorkerTask = null;
+
+			mStopTokenSource.Dispose();
+			mStopTokenSource = null;
+
+			mLogger.Debug( "Worker successfully stopped." );
 		}
 
 		public async Task StopAync ()
@@ -386,38 +418,8 @@ namespace LVD.Stakhanovise.NET.Processor
 			CheckDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
-			{
-				await mStateController.TryRequestStopASync( async () =>
-				{
-					mLogger.Debug( "Worker is started. Stopping..." );
-
-					//Request to stop processing loop
-					mStopTokenSource.Cancel();
-
-					//We may be waiting for the right conditions to
-					//  try polling the buffer again
-					//Thus, in order to avoid waiting for these conditions to be met 
-					//  just to be able to stop we signal that processing can continue
-					//  and the polling thread is responsible for double-checking that stopping 
-					//  has not been requested in the mean-time
-					mWaitForClearToFetchTask.Set();
-
-					//Wait for the processing loop to be stopped
-					await mWorkerTask;
-
-					//Clean-up event handlers and reset state
-					mTaskBuffer.QueuedTaskAdded -=
-						HandleQueuedTaskAdded;
-
-					mWaitForClearToFetchTask.Reset();
-					mWorkerTask = null;
-
-					mStopTokenSource.Dispose();
-					mStopTokenSource = null;
-
-					mLogger.Debug( "Worker successfully stopped." );
-				} );
-			}
+				await mStateController.TryRequestStopASync( async () 
+					=> await DoShutdownSequenceAsync() );
 			else
 				mLogger.Debug( "Worker is already stopped or in the process of stopping." );
 		}

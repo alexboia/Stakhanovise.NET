@@ -140,7 +140,7 @@ namespace LVD.Stakhanovise.NET
 					await onStopFn.Invoke();
 					Interlocked.Exchange( ref mState, StateStopped );
 				}
-				catch ( Exception exc )
+				catch ( Exception )
 				{
 					Interlocked.Exchange( ref mState, StateStarted );
 					throw;

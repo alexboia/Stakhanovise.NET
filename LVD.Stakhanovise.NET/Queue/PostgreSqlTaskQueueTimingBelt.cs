@@ -269,7 +269,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
-				await mStateController.TryRequestStartAsync( async () => await StartTimeTickingTask() );
+				await mStateController.TryRequestStartAsync( async ()
+					=> await StartTimeTickingTask() );
 			else
 				mLogger.Debug( "Timing belt is already started or in the process of starting." );
 		}
@@ -279,7 +280,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStopASync( async () => await StopTimeTickingTask() );
+				await mStateController.TryRequestStopASync( async ()
+					=> await StopTimeTickingTask() );
 			else
 				mLogger.Debug( "Timing belt is already stopped or in the process of stopping." );
 		}
@@ -316,8 +318,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			mTickingQueue.Add( tickRequest );
 
-			return completionToken.Task
-				.WithCleanup( ( prev ) => tickRequest.Dispose() );
+			return completionToken.Task.WithCleanup( ( prev )
+				=> tickRequest.Dispose() );
 		}
 
 		public async Task<long> ComputeAbsolutetTimeTicksAsync ( long timeTicksToAdd )
@@ -337,8 +339,8 @@ namespace LVD.Stakhanovise.NET.Queue
 					await computeCmd.PrepareAsync();
 					object result = await computeCmd.ExecuteScalarAsync();
 
-					return result is long 
-						? ( long )result 
+					return result is long
+						? ( long )result
 						: 0;
 				}
 			}
