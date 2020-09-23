@@ -10,14 +10,14 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public interface IExecutionPerformanceMonitor
 	{
-		void ReportExecutionTime ( Type payloadType, long durationMilliseconds );
+		void ReportExecutionTime ( string payloadType, long durationMilliseconds );
 
-		TaskExecutionStats GetExecutionTimeInfo ( Type payloadType );
+		TaskExecutionStats GetExecutionTimeInfo ( string payloadType );
 
 		Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer, ExecutionPerformanceMonitorWriteOptions options );
 
 		Task StopFlushingAsync ();
 
-		IReadOnlyDictionary<Type, TaskExecutionStats> ExecutionTimeInfo { get; }
+		IReadOnlyDictionary<string, TaskExecutionStats> ExecutionTimeInfo { get; }
 	}
 }

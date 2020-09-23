@@ -34,8 +34,8 @@ namespace LVD.Stakhanovise.NET.Processor
 		private StateController mFlushStateController =
 			new StateController();
 
-		private ConcurrentDictionary<Type, TaskExecutionStats> mExecutionTimeInfo =
-			new ConcurrentDictionary<Type, TaskExecutionStats>();
+		private ConcurrentDictionary<string, TaskExecutionStats> mExecutionTimeInfo =
+			new ConcurrentDictionary<string, TaskExecutionStats>();
 
 		private IExecutionPerformanceMonitorWriter mFlushWriter;
 
@@ -48,7 +48,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					"Cannot reuse a disposed execution performance monitor" );
 		}
 
-		public TaskExecutionStats GetExecutionTimeInfo ( Type payloadType )
+		public TaskExecutionStats GetExecutionTimeInfo ( string payloadType )
 		{
 			if ( payloadType == null )
 				throw new ArgumentNullException( nameof( payloadType ) );
@@ -59,7 +59,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			return executionTimeInfo;
 		}
 
-		public void ReportExecutionTime ( Type payloadType, long durationMilliseconds )
+		public void ReportExecutionTime ( string payloadType, long durationMilliseconds )
 		{
 			if ( payloadType == null )
 				throw new ArgumentNullException( nameof( payloadType ) );
@@ -177,7 +177,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
-		public IReadOnlyDictionary<Type, TaskExecutionStats> ExecutionTimeInfo =>
-			new ReadOnlyDictionary<Type, TaskExecutionStats>( mExecutionTimeInfo );
+		public IReadOnlyDictionary<string, TaskExecutionStats> ExecutionTimeInfo =>
+			new ReadOnlyDictionary<string, TaskExecutionStats>( mExecutionTimeInfo );
 	}
 }

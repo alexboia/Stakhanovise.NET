@@ -67,6 +67,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskQueueTimingBelt mTimingBelt;
 
+		private IExecutionPerformanceMonitor mExecutionPerformanceMonitor;
+
 		private CancellationTokenSource mStopTokenSource;
 
 		private Task mWorkerTask;
@@ -77,6 +79,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			TaskQueueOptions options,
 			ITaskBuffer taskBuffer,
 			ITaskExecutorRegistry executorRegistry,
+			IExecutionPerformanceMonitor executionPerformanceMonitor,
 			ITaskQueueTimingBelt timingBelt )
 		{
 			mOptions = options ??
@@ -85,6 +88,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mExecutorRegistry = executorRegistry
 				?? throw new ArgumentNullException( nameof( executorRegistry ) );
+			mExecutionPerformanceMonitor = executionPerformanceMonitor
+				?? throw new ArgumentNullException( nameof( executionPerformanceMonitor ) );
 			mTimingBelt = timingBelt ??
 				throw new ArgumentNullException( nameof( timingBelt ) );
 		}
@@ -101,15 +106,19 @@ namespace LVD.Stakhanovise.NET.Processor
 			mWaitForClearToFetchTask.Set();
 		}
 
+		private Type DetectTaskPayloadType ( IQueuedTask queuedTask )
+		{
+			return queuedTask.Payload != null
+				? queuedTask.Payload.GetType()
+				: mExecutorRegistry.ResolvePayloadType( queuedTask.Type );
+		}
+
 		private ITaskExecutor ResolveTaskExecutor ( IQueuedTask queuedTask )
 		{
 			Type payloadType;
 			ITaskExecutor taskExecutor = null;
 
-			payloadType = mExecutorRegistry
-				.ResolvePayloadType( queuedTask.Type );
-
-			if ( payloadType != null )
+			if ( ( payloadType = DetectTaskPayloadType( queuedTask ) ) != null )
 			{
 				mLogger.DebugFormat( "Runtime payload type {0} found for task type {1}.",
 					payloadType,
@@ -242,6 +251,10 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Debug( "Task execution result successfully posted." );
 			else
 				mLogger.Debug( "Task execution result could not be posted." );
+
+			//Finally, report execution time
+			mExecutionPerformanceMonitor.ReportExecutionTime( queuedTaskToken.QueuedTask.Type,
+				resultInfo.DurationMilliseconds );
 		}
 
 		private async Task ExecuteQueuedTaskAndSetResultAsync ( IQueuedTaskToken queuedTaskToken )
@@ -250,22 +263,21 @@ namespace LVD.Stakhanovise.NET.Processor
 				queuedTaskToken.QueuedTask.Id );
 
 			//Execute token and measure the execution time
-			Func<Task<TaskExecutionResultInfo>> executorFunction =
+			Func<Task<TaskExecutionResultInfo>> executor =
 				async () => await ExecuteQueuedTaskAsync( queuedTaskToken );
 
-			TimedExecutionResult<TaskExecutionResultInfo> timedExecutionResult =
-				await executorFunction.ExecuteWithTimingAsync();
+			TimedExecutionResult<TaskExecutionResultInfo> timedResult =
+				await executor.ExecuteWithTimingAsync();
 
 			try
 			{
-				//TODO: report task execution to a central stats manager or smth
-				if ( timedExecutionResult.HasResult )
+				if ( timedResult.HasResult )
 				{
 					//If the task execution cancelled, 
 					//	we will simply discard the token
-					if ( !timedExecutionResult.Result.ExecutionCancelled )
+					if ( !timedResult.Result.ExecutionCancelled )
 						await SetTaskExecutionResultAsync( queuedTaskToken,
-							timedExecutionResult );
+							timedResult );
 					else
 						mLogger.Debug( "Task execution cancelled. Token will be discarded." );
 				}
@@ -274,7 +286,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 			catch ( Exception exc )
 			{
-				mLogger.Error( "Failed to set queud task token result. The token will be discarded.",
+				mLogger.Error( "Failed to set queued task result. Token will be discarded.",
 					exc );
 			}
 			finally

@@ -59,6 +59,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskQueueTimingBelt mTimingBelt;
 
+		private IExecutionPerformanceMonitor mExecutionPerformanceMonitor;
+
 		private List<ITaskWorker> mWorkers = new List<ITaskWorker>();
 
 		private StateController mStateController
@@ -72,6 +74,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public DefaultTaskEngine ( TaskQueueOptions options,
 			ITaskQueueConsumer taskQueueConsumer,
+			IExecutionPerformanceMonitor executionPerformanceMonitor,
 			ITaskQueueTimingBelt timingBelt,
 			IKernel kernel )
 		{
@@ -80,14 +83,19 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
+			mExecutionPerformanceMonitor = executionPerformanceMonitor
+				?? throw new ArgumentNullException( nameof( executionPerformanceMonitor ) );
 			mTimingBelt = timingBelt
 				?? throw new ArgumentNullException( nameof( timingBelt ) );
 			mKernel = kernel
 				?? throw new ArgumentNullException( nameof( kernel ) );
 
-
 			mTaskBuffer = new DefaultTaskBuffer( options.WorkerCount );
-			mTaskPoller = new DefaultTaskPoller( mTaskQueueConsumer, mTaskBuffer, timingBelt );
+			mTaskPoller = new DefaultTaskPoller( mTaskQueueConsumer, 
+				mTaskBuffer, 
+				mExecutionPerformanceMonitor, 
+				timingBelt );
+
 			mExecutorRegistry = new DefaultTaskExecutorRegistry( ResolveExecutorDependency );
 			mOptions = options;
 		}
@@ -131,6 +139,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			mLogger.Debug( "Attempting to stop the task engine." );
 
+			//TODO: add option of whether to flush execution performance stats or not
 			//Stop the task poller and then stop the workers
 			await StopPollerAsync();
 			await StopWorkersAsync();
@@ -202,6 +211,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				ITaskWorker taskWorker = new DefaultTaskWorker( mOptions,
 					mTaskBuffer,
 					mExecutorRegistry,
+					mExecutionPerformanceMonitor,
 					mTimingBelt );
 
 				await taskWorker.StartAsync( requiredPayloadTypes );

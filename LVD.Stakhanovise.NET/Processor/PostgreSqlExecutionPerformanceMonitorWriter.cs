@@ -48,7 +48,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public async Task WriteAsync ( IReadOnlyDictionary<Type, TaskExecutionStats> executionTimeInfo )
+		public async Task WriteAsync ( IReadOnlyDictionary<string, TaskExecutionStats> executionTimeInfo )
 		{
 			if ( executionTimeInfo == null )
 				throw new ArgumentNullException( nameof( executionTimeInfo ) );
@@ -73,15 +73,15 @@ namespace LVD.Stakhanovise.NET.Processor
 					@longest_execution_time,
 					@total_execution_time
 				) ON CONFLICT (et_payload_type) DO UPDATE 
-					et_last_execution_time = @last_execution_time,
+					et_last_execution_time = EXCLUDED.et_last_execution_time,
 					et_avg_execution_time = CEILING(
-						(et_total_execution_time + @total_execution_time)::double precision 
-							/ (et_n_execution_cycles + @n_execution_cycles)
+						(et_total_execution_time + EXCLUDED.et_total_execution_time)::double precision 
+							/ (et_n_execution_cycles + EXCLUDED.et_n_execution_cycles)
 					)::bigint,
-					et_fastest_execution_time = LEAST(et_fastest_execution_time, @fastest_execution_time),
-					et_longest_execution_time = GREATEST(et_longest_execution_time, @longest_execution_time),
-					et_total_execution_time = et_total_execution_time + @total_execution_time,
-					et_n_execution_cycles = et_n_execution_cycles + @n_execution_cycles";
+					et_fastest_execution_time = LEAST(et_fastest_execution_time, EXCLUDED.et_fastest_execution_time),
+					et_longest_execution_time = GREATEST(et_longest_execution_time, EXCLUDED.et_longest_execution_time),
+					et_total_execution_time = et_total_execution_time + EXCLUDED.et_total_execution_time,
+					et_n_execution_cycles = et_n_execution_cycles + EXCLUDED.et_n_execution_cycles";
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
@@ -99,10 +99,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 					await upsertCmd.PrepareAsync();
 
-					foreach ( KeyValuePair<Type, TaskExecutionStats> payloadInfo in executionTimeInfo )
+					foreach ( KeyValuePair<string, TaskExecutionStats> payloadInfo in executionTimeInfo )
 					{
-						upsertCmd.Parameters[ "payload_type" ].Value = payloadInfo.Key
-							.FullName;
+						upsertCmd.Parameters[ "payload_type" ].Value = payloadInfo.Key;
 						upsertCmd.Parameters[ "n_execution_cycles" ].Value = payloadInfo.Value
 							.NumberOfExecutionCycles;
 						upsertCmd.Parameters[ "last_execution_time" ].Value = payloadInfo.Value

@@ -52,6 +52,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskQueueConsumer mTaskQueueConsumer;
 
+		private IExecutionPerformanceMonitor mExecutionPerformanceMonitor;
+
 		private ITaskQueueTimingBelt mTimingBelt;
 
 		private bool mIsDisposed = false;
@@ -73,12 +75,15 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public DefaultTaskPoller ( ITaskQueueConsumer taskQueueConsumer,
 			ITaskBuffer taskBuffer,
+			IExecutionPerformanceMonitor executionPerformanceMonitor,
 			ITaskQueueTimingBelt timingBelt )
 		{
 			mTaskBuffer = taskBuffer
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
+			mExecutionPerformanceMonitor = executionPerformanceMonitor
+				?? throw new ArgumentNullException( nameof( executionPerformanceMonitor ) );
 			mTimingBelt = timingBelt
 				?? throw new ArgumentNullException( nameof( timingBelt ) );
 		}
@@ -117,8 +122,16 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task TryReserveAndAddToBufferAsync ( IQueuedTaskToken queuedTaskToken )
 		{
-			//TODO: estimated processing time -> make configurable
-			if ( await queuedTaskToken.TrySetStartedAsync( 1000 ) )
+			TaskExecutionStats execStats = mExecutionPerformanceMonitor
+				.GetExecutionTimeInfo( queuedTaskToken.QueuedTask.Type )
+				?? TaskExecutionStats.Zero();
+
+			//TODO: default estimated processing time should be configurabe
+			long estimatedProcessingTime = execStats.AverageExecutionTime > 0 
+				? execStats.LongestExecutionTime 
+				: 1000;
+
+			if ( await queuedTaskToken.TrySetStartedAsync( estimatedProcessingTime ) )
 			{
 				mLogger.Debug( "Successfully acquired reservation. Adding to buffer..." );
 				mTaskBuffer.TryAddNewTask( queuedTaskToken );

@@ -10,6 +10,6 @@ namespace LVD.Stakhanovise.NET.Processor
 	{
 		Task SetupIfNeededAsync ();
 		
-		Task WriteAsync ( IReadOnlyDictionary<Type, TaskExecutionStats> executionTimeInfo );
+		Task WriteAsync ( IReadOnlyDictionary<string, TaskExecutionStats> executionTimeInfo );
 	}
 }
