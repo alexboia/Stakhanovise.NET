@@ -95,7 +95,8 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultTaskEngine ), "Cannot reuse a disposed task result queue" );
+				throw new ObjectDisposedException( nameof( DefaultTaskEngine ), 
+					"Cannot reuse a disposed task result queue" );
 		}
 
 		private async Task DoStartupSequenceAsync ()

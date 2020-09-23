@@ -47,6 +47,11 @@ namespace LVD.Stakhanovise.NET.Helpers
 			waitHandleSignaledCompletionSource.TrySetResult( true );
 		}
 
+		public static Task<bool> ToTask ( this WaitHandle waitHandle, int timeoutMilliseconds )
+		{
+			return waitHandle.ToTask( TimeSpan.FromMilliseconds( timeoutMilliseconds ) );
+		}
+
 		public static Task<bool> ToTask ( this WaitHandle waitHandle, TimeSpan timeout )
 		{
 			TaskCompletionSource<bool> waitHandleSignaledCompletionSource

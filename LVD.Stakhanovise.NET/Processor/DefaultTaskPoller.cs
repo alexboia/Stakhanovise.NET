@@ -105,6 +105,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private async Task<IQueuedTaskToken> DequeueAsync ()
 		{
 			//Tick time and fetch current
+			//TODO: abstract time tick timeout -> make configurable
 			AbstractTimestamp now = await mTimingBelt.TickAbstractTimeAsync( 1000 );
 
 			mLogger.DebugFormat( "Current abstract time is: {0}. Wallclock time cost is {1}.",
@@ -116,6 +117,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task TryReserveAndAddToBufferAsync ( IQueuedTaskToken queuedTaskToken )
 		{
+			//TODO: estimated processing time -> make configurable
 			if ( await queuedTaskToken.TrySetStartedAsync( 1000 ) )
 			{
 				mLogger.Debug( "Successfully acquired reservation. Adding to buffer..." );
@@ -130,10 +132,18 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task PollForQueuedTasksAsync ( CancellationToken stopToken )
 		{
+			//Check cancellation token before starting 
+			//	the polling loop
+			if ( stopToken.IsCancellationRequested )
+				return;
+
 			while ( true )
 			{
 				try
 				{
+					//Check for token cancellation at the beginning of the loop
+					stopToken.ThrowIfCancellationRequested();
+
 					//If the buffer is full, we wait for some space to become available,
 					//  since, even if we can dequeue an task, 
 					//  we won't have anywhere to place it yet and we 

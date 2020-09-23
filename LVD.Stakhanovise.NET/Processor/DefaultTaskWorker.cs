@@ -316,11 +316,17 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task RunWorkerAsync ( CancellationToken stopToken )
 		{
+			//Check for cancellation before we start 
+			//	the processing loop
+			if ( stopToken.IsCancellationRequested )
+				return;
+
 			while ( true )
 			{
 				try
 				{
-					//Maybe got stopped before we begin new processing loop
+					//Check for cancellation at the beginning 
+					//	of processing each loop
 					stopToken.ThrowIfCancellationRequested();
 
 					//Check if buffer can deliver new tasks to us.
@@ -375,7 +381,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			CheckDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
-				mStateController.TryRequestStart( () 
+				mStateController.TryRequestStart( ()
 					=> DoStartupSequence( requiredPayloadTypes ) );
 			else
 				mLogger.Debug( "Worker is already started or in the process of starting." );
@@ -418,7 +424,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			CheckDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStopASync( async () 
+				await mStateController.TryRequestStopASync( async ()
 					=> await DoShutdownSequenceAsync() );
 			else
 				mLogger.Debug( "Worker is already stopped or in the process of stopping." );
