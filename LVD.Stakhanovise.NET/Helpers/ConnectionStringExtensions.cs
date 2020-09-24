@@ -33,7 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 
 namespace LVD.Stakhanovise.NET.Helpers
@@ -53,7 +53,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 			return builderCopy;
 		}
 
-		public static string DeriveSignalingConnectionString ( this string connectionString, TaskQueueOptions options )
+		public static string DeriveSignalingConnectionString ( this string connectionString, TaskQueueConsumerOptions options )
 		{
 			if ( string.IsNullOrEmpty( connectionString ) )
 				throw new ArgumentNullException( nameof( connectionString ) );
@@ -65,7 +65,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 			return builder.DeriveSignalingConnectionString( options );
 		}
 
-		public static string DeriveSignalingConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueOptions options )
+		public static string DeriveSignalingConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueConsumerOptions options )
 		{
 			if ( info == null )
 				throw new ArgumentNullException( nameof( info ) );
@@ -86,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 			return signalingConnectionStringInfo.ToString();
 		}
 
-		public static string DeriveQueueConnectionString ( this string connectionString, TaskQueueOptions options )
+		public static string DeriveQueueConsumerConnectionString ( this string connectionString, TaskQueueConsumerOptions options )
 		{
 			if ( string.IsNullOrEmpty( connectionString ) )
 				throw new ArgumentNullException( nameof( connectionString ) );
@@ -95,10 +95,10 @@ namespace LVD.Stakhanovise.NET.Helpers
 				throw new ArgumentNullException( nameof( options ) );
 
 			NpgsqlConnectionStringBuilder builder = new NpgsqlConnectionStringBuilder( connectionString );
-			return builder.DeriveQueueConnectionString( options );
+			return builder.DeriveQueueConsumerConnectionString( options );
 		}
 
-		public static string DeriveQueueConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueOptions options )
+		public static string DeriveQueueConsumerConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueConsumerOptions options )
 		{
 			if ( info == null )
 				throw new ArgumentNullException( nameof( info ) );

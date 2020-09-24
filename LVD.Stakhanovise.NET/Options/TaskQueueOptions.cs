@@ -35,20 +35,19 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Setup
+namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskQueueOptions
 	{
-		public TaskQueueOptions ( ConnectionOptions generalConnectionOptions, int queueConsumerConnectionPoolSize )
+		public TaskQueueOptions ( ConnectionOptions generalConnectionOptions )
 		{
-			GeneralConnectionOptions = generalConnectionOptions
-				?? throw new ArgumentNullException( nameof( generalConnectionOptions ) );
-			
-			QueueConsumerConnectionPoolSize = queueConsumerConnectionPoolSize;
+			if ( generalConnectionOptions == null )
+				throw new ArgumentNullException( nameof( generalConnectionOptions ) );
 
+			GeneralConnectionOptions = generalConnectionOptions;
 			Mapping = new QueuedTaskMapping();
 
-			DequeueWithStatuses = new QueuedTaskStatus[] {
+			ProcessWithStatuses = new QueuedTaskStatus[] {
 				QueuedTaskStatus.Unprocessed,
 				QueuedTaskStatus.Error,
 				QueuedTaskStatus.Faulted,
@@ -56,13 +55,9 @@ namespace LVD.Stakhanovise.NET.Setup
 			};
 		}
 
-		public int QueueConsumerConnectionPoolSize { get; private set; }
+		public IEnumerable<QueuedTaskStatus> ProcessWithStatuses { get; private set; }
 
 		public ConnectionOptions GeneralConnectionOptions { get; private set; }
-
-		public int FaultErrorThresholdCount { get; private set; }
-
-		public IEnumerable<QueuedTaskStatus> DequeueWithStatuses { get; private set; }
 
 		public QueuedTaskMapping Mapping { get; private set; }
 

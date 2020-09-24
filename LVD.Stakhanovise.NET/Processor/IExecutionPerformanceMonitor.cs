@@ -1,5 +1,5 @@
 ﻿using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;

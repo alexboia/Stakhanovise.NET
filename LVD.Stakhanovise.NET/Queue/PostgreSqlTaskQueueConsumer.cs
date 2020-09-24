@@ -32,7 +32,7 @@
 using log4net;
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using NpgsqlTypes;
 using System;
@@ -56,7 +56,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private bool mIsDisposed;
 
-		private TaskQueueOptions mOptions;
+		private TaskQueueConsumerOptions mOptions;
 
 		private string mSignalingConnectionString;
 
@@ -69,14 +69,14 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private int[] mDequeueWithStatuses;
 
-		public PostgreSqlTaskQueueConsumer ( TaskQueueOptions options )
+		public PostgreSqlTaskQueueConsumer ( TaskQueueConsumerOptions options )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
 
 			mOptions = options;
 
-			mDequeueWithStatuses = mOptions.DequeueWithStatuses
+			mDequeueWithStatuses = mOptions.ProcessWithStatuses
 				.Select( s => ( int )s )
 				.ToArray();
 
@@ -85,7 +85,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				.DeriveSignalingConnectionString( options );
 			mQueueConnectionString = options.GeneralConnectionOptions
 				.ConnectionString
-				.DeriveQueueConnectionString( options );
+				.DeriveQueueConsumerConnectionString( options );
 
 			mNotificationListener = new PostgreSqlTaskQueueNotificationListener( mSignalingConnectionString,
 				options.Mapping.NewTaskNotificaionChannelName );

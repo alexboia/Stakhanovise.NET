@@ -32,7 +32,7 @@
 using log4net;
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using NpgsqlTypes;
 using System;
@@ -66,7 +66,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string mSourceConnectionString;
 
-		private TaskQueueOptions mOptions;
+		private TaskQueueConsumerOptions mOptions;
 
 		private BlockingCollection<PostgreSqlQueuedTaskTokenOperation> mWatchdogEventsQueue =
 			new BlockingCollection<PostgreSqlQueuedTaskTokenOperation>();
@@ -79,7 +79,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		public PostgreSqlQueuedTaskToken ( QueuedTask queuedTask,
 			NpgsqlConnection sourceConnection,
 			AbstractTimestamp dequeuedAt,
-			TaskQueueOptions options )
+			TaskQueueConsumerOptions options )
 		{
 			mQueuedTask = queuedTask
 				?? throw new ArgumentNullException( nameof( queuedTask ) );

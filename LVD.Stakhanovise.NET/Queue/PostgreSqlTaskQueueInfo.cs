@@ -30,7 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using System;
 using System.Collections.Generic;
@@ -57,7 +57,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				throw new ArgumentNullException( nameof( options ) );
 
 			mOptions = options;
-			mDequeueWithStatuses = mOptions.DequeueWithStatuses
+			mDequeueWithStatuses = mOptions.ProcessWithStatuses
 				.Select( s => ( int )s )
 				.ToArray();
 		}
@@ -71,7 +71,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ()
 		{
-			return await mOptions.GeneralConnectionOptions.TryOpenConnectionAsync();
+			return await mOptions
+				.GeneralConnectionOptions
+				.TryOpenConnectionAsync();
 		}
 
 		public async Task<TaskQueueMetrics> ComputeMetricsAsync ()

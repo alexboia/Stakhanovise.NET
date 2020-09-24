@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Setup
+namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskEngineOptions
 	{
@@ -14,7 +14,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			WorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
 			TaskProcessingOptions = new TaskProcessingOptions();
 			PerfMonOptions = new ExecutionPerformanceMonitorOptions();
-			TaskQueueOptions = new TaskQueueOptions( generalQueueConnectionOptions, WorkerCount * 2 );
+			TaskQueueConsumerOptions = new TaskQueueConsumerOptions( generalQueueConnectionOptions, WorkerCount * 2 );
 		}
 
 		public int WorkerCount { get; private set; }
@@ -23,6 +23,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public TaskProcessingOptions TaskProcessingOptions { get; private set; }
 
-		public TaskQueueOptions TaskQueueOptions { get; private set; }
+		public TaskQueueConsumerOptions TaskQueueConsumerOptions { get; private set; }
 	}
 }

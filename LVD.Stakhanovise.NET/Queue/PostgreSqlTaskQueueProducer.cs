@@ -31,7 +31,7 @@
 // 
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using NpgsqlTypes;
 using System;
@@ -43,8 +43,6 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueueProducer : ITaskQueueProducer
 	{
-		private string mQueueConnectionString;
-
 		private TaskQueueOptions mOptions;
 
 		public PostgreSqlTaskQueueProducer ( TaskQueueOptions options )
@@ -53,19 +51,13 @@ namespace LVD.Stakhanovise.NET.Queue
 				throw new ArgumentNullException( nameof( options ) );
 
 			mOptions = options;
-			mQueueConnectionString = options.GeneralConnectionOptions
-				.ConnectionString
-				.DeriveQueueConnectionString( options );
 		}
 
 		private async Task<NpgsqlConnection> TryOpenConnectionAsync ()
 		{
-			return await mQueueConnectionString.TryOpenConnectionAsync( 
-				mOptions.GeneralConnectionOptions
-					.ConnectionRetryCount,
-				mOptions.GeneralConnectionOptions
-					.ConnectionRetryDelayMilliseconds
-			);
+			return await mOptions
+				.GeneralConnectionOptions
+				.TryOpenConnectionAsync();
 		}
 
 		public async Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload,

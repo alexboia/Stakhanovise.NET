@@ -34,7 +34,7 @@ using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
 using System.Data;

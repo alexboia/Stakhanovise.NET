@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Setup
+namespace LVD.Stakhanovise.NET.Options
 {
 	public class PostgreSqlExecutionPerformanceMonitorWriterOptions
 	{

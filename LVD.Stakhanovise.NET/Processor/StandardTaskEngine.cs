@@ -32,7 +32,7 @@
 using log4net;
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Queue;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using Ninject;
 using System;
 using System.Collections.Generic;
@@ -92,7 +92,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( execeutionPerfMonWriter ) );
 
 			mExecutionPerfMon = new StandardExecutionPerformanceMonitor();
-			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( options.TaskQueueOptions );
+			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( options.TaskQueueConsumerOptions );
 
 			mTaskBuffer = new StandardTaskBuffer( options.WorkerCount );
 			mTaskPoller = new StandardTaskPoller( options.TaskProcessingOptions,

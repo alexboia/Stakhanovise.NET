@@ -1,7 +1,7 @@
 ﻿using log4net;
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

@@ -36,7 +36,7 @@ using Npgsql;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Runtime.InteropServices;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Options;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
