@@ -38,7 +38,7 @@ using LVD.Stakhanovise.NET.Queue;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class DefaultTaskBuffer : ITaskBuffer
+	public class StandardTaskBuffer : ITaskBuffer
 	{
 		private int mCapacity;
 
@@ -50,7 +50,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public event EventHandler QueuedTaskAdded;
 
-		public DefaultTaskBuffer ( int capacity )
+		public StandardTaskBuffer ( int capacity )
 		{
 			if ( capacity <= 0 )
 				throw new ArgumentOutOfRangeException( nameof( capacity ), "The capacity must be greater than 0" );
@@ -62,7 +62,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultTaskBuffer ), 
+				throw new ObjectDisposedException( nameof( StandardTaskBuffer ), 
 					"Cannot reuse a disposed task buffer" );
 		}
 

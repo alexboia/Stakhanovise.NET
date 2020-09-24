@@ -29,12 +29,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using Dapper;
 using Npgsql;
 using NpgsqlTypes;
-using LVD.Stakhanovise.NET.Infrastructure;
-using SqlKata.Execution;
-using SqlKata;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -47,11 +43,6 @@ namespace LVD.Stakhanovise.NET.Helpers
 	{
 		private static ConcurrentDictionary<string, bool> mListeningChannels
 			= new ConcurrentDictionary<string, bool>();
-
-		public static QueryFactory QueryFactory ( this NpgsqlConnection db )
-		{
-			return new QueryFactory( db, new PostgresCompilerEx() );
-		}
 
 		public static bool IsConnectionSomewhatOpen ( this NpgsqlConnection db )
 		{
@@ -93,88 +84,6 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 				return ( bool )( await cmd.ExecuteScalarAsync() );
 			}
-		}
-
-		public static NpgsqlCommand ToNpgsqlCommand ( this Query query )
-		{
-			if ( query == null )
-				throw new ArgumentNullException( nameof( query ) );
-
-			SqlResult compiledQuery = new PostgresCompilerEx()
-				.Compile( query );
-
-			NpgsqlCommand compiledCommand = new NpgsqlCommand( compiledQuery.Sql );
-
-			if ( compiledQuery.NamedBindings != null )
-			{
-				foreach ( KeyValuePair<string, object> paramWithValue in compiledQuery.NamedBindings )
-					compiledCommand.Parameters.AddWithValue( paramWithValue.Key,
-						paramWithValue.Value );
-			}
-
-			return compiledCommand;
-		}
-
-		public static async Task<NpgsqlDataReader> ExecuteReaderAsync ( this NpgsqlConnection db, Query query )
-		{
-			if ( db == null )
-				throw new ArgumentNullException( nameof( db ) );
-
-			if ( query == null )
-				throw new ArgumentNullException( nameof( query ) );
-
-			using ( NpgsqlCommand cmd = query.ToNpgsqlCommand() )
-			{
-				cmd.Connection = db;
-				return ( NpgsqlDataReader )( await cmd.ExecuteReaderAsync() );
-			}
-		}
-
-		public static async Task<int> ExecuteNonQueryAsync ( this NpgsqlConnection db, Query query )
-		{
-			if ( db == null )
-				throw new ArgumentNullException( nameof( db ) );
-
-			if ( query == null )
-				throw new ArgumentNullException( nameof( query ) );
-
-			using ( NpgsqlCommand cmd = query.ToNpgsqlCommand() )
-			{
-				cmd.Connection = db;
-				return await cmd.ExecuteNonQueryAsync();
-			}
-		}
-
-		public static async Task<object> ExecuteScalarAsync ( this NpgsqlConnection db, Query query )
-		{
-			if ( db == null )
-				throw new ArgumentNullException( nameof( db ) );
-
-			if ( query == null )
-				throw new ArgumentNullException( nameof( query ) );
-
-			using ( NpgsqlCommand cmd = query.ToNpgsqlCommand() )
-			{
-				cmd.Connection = db;
-				return await cmd.ExecuteScalarAsync();
-			}
-		}
-
-		public static async Task<int> InsertAsync ( this Query query, IReadOnlyDictionary<string, object> insertValues, NpgsqlTransaction withinTx )
-		{
-			XQuery xQuery = query as XQuery;
-
-			if ( xQuery == null )
-				throw new ArgumentNullException( nameof( query ), "Query is null or not of XQuery type" );
-
-			SqlResult compiled = xQuery.Compiler
-				.Compile( query.AsInsert( insertValues ) );
-
-			xQuery.Logger( compiled );
-
-			return await xQuery.Connection.ExecuteAsync( compiled.Sql,
-				param: compiled.NamedBindings,
-				transaction: withinTx );
 		}
 
 		public static async Task NotifyAsync ( this NpgsqlConnection db, string channel, NpgsqlTransaction withinTx )

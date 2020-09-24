@@ -2,7 +2,6 @@
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Setup;
-using SqlKata.Compilers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +14,7 @@ using System.Timers;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class DefaultExecutionPerformanceMonitor : IExecutionPerformanceMonitor, IDisposable
+	public class StandardExecutionPerformanceMonitor : IExecutionPerformanceMonitor, IDisposable
 	{
 		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
 			.GetCurrentMethod()
@@ -46,7 +45,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultExecutionPerformanceMonitor ),
+				throw new ObjectDisposedException( nameof( StandardExecutionPerformanceMonitor ),
 					"Cannot reuse a disposed execution performance monitor" );
 		}
 

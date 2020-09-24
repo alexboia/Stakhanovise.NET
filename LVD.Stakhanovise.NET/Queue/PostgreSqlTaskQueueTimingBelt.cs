@@ -81,10 +81,12 @@ namespace LVD.Stakhanovise.NET.Queue
 			mOptions = options 
 				?? throw new ArgumentNullException( nameof( options ) );
 
-			mLocalWallclockTimeCostSinceLastTick = mOptions.InitialWallclockTimeCost;
-			mTotalLocalWallclockTimeCost = mOptions.InitialWallclockTimeCost;
+			mTotalLocalWallclockTimeCost 
+				= mLocalWallclockTimeCostSinceLastTick 
+				= mOptions.InitialWallclockTimeCost;
 
-			mLastTime = new AbstractTimestamp( 0, mOptions.InitialWallclockTimeCost );
+			mLastTime = new AbstractTimestamp( 0, 
+				mOptions.InitialWallclockTimeCost );
 		}
 
 		private void CheckNotDisposedOrThrow ()

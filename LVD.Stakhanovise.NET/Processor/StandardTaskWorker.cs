@@ -45,7 +45,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class DefaultTaskWorker : ITaskWorker
+	public class StandardTaskWorker : ITaskWorker
 	{
 		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
 			.GetCurrentMethod()
@@ -75,7 +75,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private TaskProcessingOptions mOptions;
 
-		public DefaultTaskWorker (
+		public StandardTaskWorker (
 			TaskProcessingOptions options,
 			ITaskBuffer taskBuffer,
 			ITaskExecutorRegistry executorRegistry,
@@ -97,7 +97,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultTaskWorker ),
+				throw new ObjectDisposedException( nameof( StandardTaskWorker ),
 					"Cannot reuse a disposed task worker" );
 		}
 

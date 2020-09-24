@@ -43,7 +43,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class DefaultTaskPoller : ITaskPoller
+	public class StandardTaskPoller : ITaskPoller
 	{
 		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
 			.GetCurrentMethod()
@@ -76,7 +76,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private TaskProcessingOptions mOptions;
 
-		public DefaultTaskPoller ( TaskProcessingOptions options, 
+		public StandardTaskPoller ( TaskProcessingOptions options, 
 			ITaskQueueConsumer taskQueueConsumer,
 			ITaskBuffer taskBuffer,
 			IExecutionPerformanceMonitor executionPerformanceMonitor,
@@ -97,7 +97,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckNotDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultTaskPoller ),
+				throw new ObjectDisposedException( nameof( StandardTaskPoller ),
 					"Cannot reuse a disposed task poller" );
 		}
 

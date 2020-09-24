@@ -44,7 +44,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class DefaultTaskEngine : ITaskEngine
+	public class StandardTaskEngine : ITaskEngine
 	{
 		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
 			.GetCurrentMethod()
@@ -75,7 +75,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private TaskEngineOptions mOptions;
 
-		public DefaultTaskEngine ( TaskEngineOptions options,
+		public StandardTaskEngine ( TaskEngineOptions options,
 			IExecutionPerformanceMonitorWriter execeutionPerfMonWriter,
 			ITaskQueueTimingBelt timingBelt,
 			IKernel kernel )
@@ -91,11 +91,11 @@ namespace LVD.Stakhanovise.NET.Processor
 			mExecutionPerfMonWriter = execeutionPerfMonWriter
 				?? throw new ArgumentNullException( nameof( execeutionPerfMonWriter ) );
 
-			mExecutionPerfMon = new DefaultExecutionPerformanceMonitor();
+			mExecutionPerfMon = new StandardExecutionPerformanceMonitor();
 			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( options.TaskQueueOptions );
 
-			mTaskBuffer = new DefaultTaskBuffer( options.WorkerCount );
-			mTaskPoller = new DefaultTaskPoller( options.TaskProcessingOptions,
+			mTaskBuffer = new StandardTaskBuffer( options.WorkerCount );
+			mTaskPoller = new StandardTaskPoller( options.TaskProcessingOptions,
 					mTaskQueueConsumer,
 					mTaskBuffer,
 					mExecutionPerfMon,
@@ -108,7 +108,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultTaskEngine ),
+				throw new ObjectDisposedException( nameof( StandardTaskEngine ),
 					"Cannot reuse a disposed task result queue" );
 		}
 
@@ -228,7 +228,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			for ( int i = 0; i < mOptions.WorkerCount; i++ )
 			{
-				ITaskWorker taskWorker = new DefaultTaskWorker( mOptions.TaskProcessingOptions,
+				ITaskWorker taskWorker = new StandardTaskWorker( mOptions.TaskProcessingOptions,
 					mTaskBuffer,
 					mExecutorRegistry,
 					mExecutionPerfMon,
