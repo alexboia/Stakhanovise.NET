@@ -21,13 +21,13 @@ namespace LVD.Stakhanovise.NET.Model
 			NumberOfExecutionCycles = numberOfExecutionCycles;
 		}
 
-		public static TaskExecutionStats Initial(long executionTime)
+		public static TaskExecutionStats Initial ( long executionTime )
 		{
-			return new TaskExecutionStats( lastExecutionTime: executionTime, 
-				averageExecutionTime: executionTime, 
-				longestExecutionTime: executionTime, 
-				fastestExecutionTime: executionTime, 
-				totalExecutionTime: executionTime, 
+			return new TaskExecutionStats( lastExecutionTime: executionTime,
+				averageExecutionTime: executionTime,
+				longestExecutionTime: executionTime,
+				fastestExecutionTime: executionTime,
+				totalExecutionTime: executionTime,
 				numberOfExecutionCycles: 1 );
 		}
 
@@ -45,6 +45,36 @@ namespace LVD.Stakhanovise.NET.Model
 				longestExecutionTime,
 				totalExecutionTime,
 				numberOfExecutionCycles );
+		}
+
+		public TaskExecutionStats Since ( TaskExecutionStats previous )
+		{
+			if ( previous == null )
+				throw new ArgumentNullException( nameof( previous ) );
+
+			return new TaskExecutionStats( lastExecutionTime: LastExecutionTime,
+				averageExecutionTime: ( long )Math.Ceiling(
+					( double )( TotalExecutionTime - previous.TotalExecutionTime )
+						/ ( NumberOfExecutionCycles - previous.NumberOfExecutionCycles )
+				),
+				fastestExecutionTime: Math.Min( FastestExecutionTime,
+					previous.FastestExecutionTime ),
+				longestExecutionTime: Math.Max( LongestExecutionTime,
+					previous.LongestExecutionTime ),
+				totalExecutionTime: ( TotalExecutionTime
+					- previous.TotalExecutionTime ),
+				numberOfExecutionCycles: ( NumberOfExecutionCycles
+					- previous.NumberOfExecutionCycles ) );
+		}
+
+		public TaskExecutionStats Copy ()
+		{
+			return new TaskExecutionStats( LastExecutionTime,
+				averageExecutionTime: AverageExecutionTime,
+				fastestExecutionTime: FastestExecutionTime,
+				longestExecutionTime: LongestExecutionTime,
+				totalExecutionTime: TotalExecutionTime,
+				numberOfExecutionCycles: NumberOfExecutionCycles );
 		}
 
 		public static TaskExecutionStats Zero ()

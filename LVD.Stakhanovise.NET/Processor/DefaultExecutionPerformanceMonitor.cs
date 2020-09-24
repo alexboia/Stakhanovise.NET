@@ -34,8 +34,10 @@ namespace LVD.Stakhanovise.NET.Processor
 		private StateController mFlushStateController =
 			new StateController();
 
-		private ConcurrentDictionary<string, TaskExecutionStats> mExecutionTimeInfo =
+		private ConcurrentDictionary<string, TaskExecutionStats> mExecutionStats =
 			new ConcurrentDictionary<string, TaskExecutionStats>();
+
+		private IReadOnlyDictionary<string, TaskExecutionStats> mLastFlushedStats = null;
 
 		private IExecutionPerformanceMonitorWriter mFlushWriter;
 
@@ -48,12 +50,12 @@ namespace LVD.Stakhanovise.NET.Processor
 					"Cannot reuse a disposed execution performance monitor" );
 		}
 
-		public TaskExecutionStats GetExecutionTimeInfo ( string payloadType )
+		public TaskExecutionStats GetExecutionStats ( string payloadType )
 		{
 			if ( payloadType == null )
 				throw new ArgumentNullException( nameof( payloadType ) );
 
-			if ( !mExecutionTimeInfo.TryGetValue( payloadType, out TaskExecutionStats executionTimeInfo ) )
+			if ( !mExecutionStats.TryGetValue( payloadType, out TaskExecutionStats executionTimeInfo ) )
 				executionTimeInfo = TaskExecutionStats.Zero();
 
 			return executionTimeInfo;
@@ -64,7 +66,11 @@ namespace LVD.Stakhanovise.NET.Processor
 			if ( payloadType == null )
 				throw new ArgumentNullException( nameof( payloadType ) );
 
-			mExecutionTimeInfo.AddOrUpdate( payloadType,
+			mLogger.DebugFormat( "Execution time {0} reported for payload {1}",
+				durationMilliseconds,
+				payloadType );
+
+			mExecutionStats.AddOrUpdate( payloadType,
 				addValueFactory: key => TaskExecutionStats.Initial( durationMilliseconds ),
 				updateValueFactory: ( key, lastStats ) => lastStats.UpdateWithNewCycleExecutionTime( durationMilliseconds ) );
 
@@ -87,7 +93,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					await mFlushThresholdCountHandle.ToTask( mFlushOptions.WriteIntervalThresholdMilliseconds );
 					stopToken.ThrowIfCancellationRequested();
 
-					await mFlushWriter.WriteAsync( ExecutionTimeInfo );
+					await mFlushWriter.WriteAsync( GetExecutionStatsChangesSinceLastFlush() );
 					stopToken.ThrowIfCancellationRequested();
 
 					mFlushThresholdCountHandle.Reset();
@@ -110,6 +116,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mFlushOptions = options;
 			mFlushStopTokenSource = new CancellationTokenSource();
 			mFlushThresholdCountHandle = new ManualResetEvent( initialState: false );
+			mReportCount = 0;
 
 			await mFlushWriter.SetupIfNeededAsync();
 			mFlushTask = Task.Run( async () => await RunFlushLoopAsync( mFlushStopTokenSource.Token ) );
@@ -135,12 +142,14 @@ namespace LVD.Stakhanovise.NET.Processor
 			mFlushTask.Dispose();
 			mFlushStopTokenSource.Dispose();
 			mFlushThresholdCountHandle.Dispose();
+			mReportCount = 0;
 
 			mFlushTask = null;
 			mFlushStopTokenSource = null;
 			mFlushThresholdCountHandle = null;
 			mFlushOptions = null;
 			mFlushWriter = null;
+			mLastFlushedStats = null;
 		}
 
 		public async Task StopFlushingAsync ()
@@ -162,8 +171,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				{
 					StopFlushingAsync().Wait();
 
-					mExecutionTimeInfo.Clear();
-					mExecutionTimeInfo = null;
+					mExecutionStats.Clear();
+					mExecutionStats = null;
 					mFlushStateController = null;
 				}
 
@@ -177,7 +186,44 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
-		public IReadOnlyDictionary<string, TaskExecutionStats> ExecutionTimeInfo =>
-			new ReadOnlyDictionary<string, TaskExecutionStats>( mExecutionTimeInfo );
+		private IReadOnlyDictionary<string, TaskExecutionStats> GetExecutionStatsChangesSinceLastFlush ()
+		{
+
+			Dictionary<string, TaskExecutionStats> statsDelta =
+				new Dictionary<string, TaskExecutionStats>();
+
+			IReadOnlyDictionary<string, TaskExecutionStats> currentStats =
+				GetExecutionStatsSnpashot();
+
+			IReadOnlyDictionary<string, TaskExecutionStats> prevStats = mLastFlushedStats == null
+				? new ReadOnlyDictionary<string, TaskExecutionStats>( new Dictionary<string, TaskExecutionStats>() )
+				: mLastFlushedStats;
+
+
+			foreach ( KeyValuePair<string, TaskExecutionStats> tsPair in currentStats )
+			{
+				if ( !prevStats.TryGetValue( tsPair.Key, out TaskExecutionStats prevTs ) )
+					prevTs = TaskExecutionStats.Zero();
+
+				statsDelta.Add( tsPair.Key, tsPair.Value.Since( prevTs ) );
+			}
+
+			mLastFlushedStats = currentStats;
+			return statsDelta;
+		}
+
+		private IReadOnlyDictionary<string, TaskExecutionStats> GetExecutionStatsSnpashot ()
+		{
+			Dictionary<string, TaskExecutionStats> snapshot =
+				new Dictionary<string, TaskExecutionStats>();
+
+			foreach ( KeyValuePair<string, TaskExecutionStats> tsInfo in mExecutionStats )
+				snapshot.Add( tsInfo.Key, tsInfo.Value.Copy() );
+
+			return new ReadOnlyDictionary<string, TaskExecutionStats>( snapshot );
+		}
+
+		public IReadOnlyDictionary<string, TaskExecutionStats> ExecutionStats =>
+			GetExecutionStatsSnpashot();
 	}
 }

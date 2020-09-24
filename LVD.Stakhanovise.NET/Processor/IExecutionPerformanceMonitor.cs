@@ -12,12 +12,12 @@ namespace LVD.Stakhanovise.NET.Processor
 	{
 		void ReportExecutionTime ( string payloadType, long durationMilliseconds );
 
-		TaskExecutionStats GetExecutionTimeInfo ( string payloadType );
+		TaskExecutionStats GetExecutionStats ( string payloadType );
 
 		Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer, ExecutionPerformanceMonitorWriteOptions options );
 
 		Task StopFlushingAsync ();
 
-		IReadOnlyDictionary<string, TaskExecutionStats> ExecutionTimeInfo { get; }
+		IReadOnlyDictionary<string, TaskExecutionStats> ExecutionStats { get; }
 	}
 }

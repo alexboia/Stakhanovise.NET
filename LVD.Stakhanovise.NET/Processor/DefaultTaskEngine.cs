@@ -91,9 +91,9 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( kernel ) );
 
 			mTaskBuffer = new DefaultTaskBuffer( options.WorkerCount );
-			mTaskPoller = new DefaultTaskPoller( mTaskQueueConsumer, 
-				mTaskBuffer, 
-				mExecutionPerformanceMonitor, 
+			mTaskPoller = new DefaultTaskPoller( mTaskQueueConsumer,
+				mTaskBuffer,
+				mExecutionPerformanceMonitor,
 				timingBelt );
 
 			mExecutorRegistry = new DefaultTaskExecutorRegistry( ResolveExecutorDependency );
@@ -103,19 +103,22 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( DefaultTaskEngine ), 
+				throw new ObjectDisposedException( nameof( DefaultTaskEngine ),
 					"Cannot reuse a disposed task result queue" );
 		}
 
 		private async Task DoStartupSequenceAsync ()
 		{
+			mLogger.DebugFormat( "Attempting to start the task engine with {0} workers",
+				mOptions.WorkerCount );
+
 			string[] requiredPayloadTypes =
 				GetRequiredPayloadTypeNames();
 
-			mLogger.DebugFormat( "Attempting to start the task engine with {0} workers and payload types: {1}.",
-				mOptions.WorkerCount,
+			mLogger.DebugFormat( "Found payload types: {0}.",
 				string.Join( ",", requiredPayloadTypes ) );
 
+			//TODO: add option of whether to flush execution performance stats or not
 			//Start the task poller and then start workers
 			await StartTimingBeltAsync();
 			await StartPollerAsync( requiredPayloadTypes );
@@ -139,7 +142,6 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			mLogger.Debug( "Attempting to stop the task engine." );
 
-			//TODO: add option of whether to flush execution performance stats or not
 			//Stop the task poller and then stop the workers
 			await StopPollerAsync();
 			await StopWorkersAsync();

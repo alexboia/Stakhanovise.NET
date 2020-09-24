@@ -123,10 +123,11 @@ namespace LVD.Stakhanovise.NET.Processor
 		private async Task TryReserveAndAddToBufferAsync ( IQueuedTaskToken queuedTaskToken )
 		{
 			TaskExecutionStats execStats = mExecutionPerformanceMonitor
-				.GetExecutionTimeInfo( queuedTaskToken.QueuedTask.Type )
+				.GetExecutionStats( queuedTaskToken.QueuedTask.Type )
 				?? TaskExecutionStats.Zero();
 
-			//TODO: default estimated processing time should be configurabe
+			//TODO: default estimated processing time should be configurable
+			//TODO: estimating processing time should be configurable Func<IQueuedTask, TaskExecutionStats, long>
 			long estimatedProcessingTime = execStats.AverageExecutionTime > 0 
 				? execStats.LongestExecutionTime 
 				: 1000;
