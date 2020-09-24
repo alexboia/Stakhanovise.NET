@@ -29,89 +29,19 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Processor;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Logging
+namespace LVD.Stakhanovise.NET.Setup
 {
-	public class NoOpLogger : IStakhanoviseLogger
+	public interface IExecutionPerformanceMonitorWriterSetup
 	{
-		public static readonly NoOpLogger Instance = new NoOpLogger();
+		IExecutionPerformanceMonitorWriterSetup UseWriter ( IExecutionPerformanceMonitorWriter writer );
 
-		private NoOpLogger()
-		{
-			return;
-		}
-		public void Trace ( string message )
-		{
-			return;
-		}
+		IExecutionPerformanceMonitorWriterSetup UseWriterFactory ( Func<IExecutionPerformanceMonitorWriter> writerFactory );
 
-		public void TraceFormat ( string messageFormat, params object[] args )
-		{
-			return;
-		}
-
-
-		public void Debug ( string message )
-		{
-			return;
-		}
-
-		public void DebugFormat ( string messageFormat, params object[] args )
-		{
-			return;
-		}
-
-		public void Error ( string message )
-		{
-			return;
-		}
-
-		public void Error ( string message, Exception exception )
-		{
-			return;
-		}
-
-		public void Fatal ( string message )
-		{
-			return;
-		}
-
-		public void Fatal ( string message, Exception exception )
-		{
-			return;
-		}
-
-		public void Info ( string message )
-		{
-			return;
-		}
-
-		public void InfoFormat ( string messageFormat, params object[] args )
-		{
-			return;
-		}
-
-		public void Warn ( string message )
-		{
-			return;
-		}
-
-		public void Warn ( string message, Exception exception )
-		{
-			return;
-		}
-
-		public void WarnFormat ( string message, params object[] args )
-		{
-			return;
-		}
-
-		public bool IsEnabled ( StakhanoviseLogLevel level )
-		{
-			return true;
-		}
+		IExecutionPerformanceMonitorWriterSetup SetupBuiltInWriter ( Action<IPostgreSqlExecutionPerformanceMonitorWriterSetup> setupAction );
 	}
 }

@@ -35,60 +35,60 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET
 {
-   public class StepResult
-   {
-      protected StepResult(Exception exception, string message)
-      {
-         Success = false;
-         Exception = exception;
-         Message = message;
-      }
+	public class StepResult
+	{
+		protected StepResult ( Exception exception, string message )
+		{
+			Success = false;
+			Exception = exception;
+			Message = message;
+		}
 
-      protected StepResult(object data)
-          : this()
-      {
-         Data = data;
-      }
+		protected StepResult ( object data )
+			: this()
+		{
+			Data = data;
+		}
 
-      protected StepResult()
-      {
-         Success = true;
-      }
+		protected StepResult ()
+		{
+			Success = true;
+		}
 
-      public bool DataIs<T>()
-      {
-         return Data != null && Data is T;
-      }
+		public bool DataIs<T> ()
+		{
+			return Data != null && Data is T;
+		}
 
-      public T DataAs<T>()
-      {
-         if (Data is T)
-            return (T)Data;
-         else
-            return default(T);
-      }
+		public T DataAs<T> ()
+		{
+			if ( Data is T )
+				return ( T )Data;
+			else
+				return default( T );
+		}
 
-      public static StepResult Successful()
-          => new StepResult();
+		public static StepResult Successful ()
+			=> new StepResult();
 
-      public static StepResult Successful(object data)
-          => new StepResult(data);
+		public static StepResult Successful ( object data )
+			=> new StepResult( data );
 
-      public static StepResult FromErrorFormat(string message, params object[] args)
-          => new StepResult(null, string.Format(message, args));
+		public static StepResult FromErrorFormat ( string message, params object[] args )
+			=> new StepResult( null, string.Format( message, args ) );
 
-      public static StepResult FromError(string message = null)
-          => new StepResult(null, message);
+		public static StepResult FromError ( string message = null )
+			=> new StepResult( null, message );
 
-      public static StepResult FromException(Exception exc)
-          => new StepResult(exc, null);
+		public static StepResult FromException ( Exception exc )
+			=> new StepResult( exc, null );
 
-      public bool Success { get; protected set; }
+		public bool Success { get; protected set; }
 
-      public Exception Exception { get; protected set; }
+		public Exception Exception { get; protected set; }
 
-      public string Message { get; protected set; }
+		public string Message { get; protected set; }
 
-      public object Data { get; protected set; }
-   }
+		public object Data { get; protected set; }
+	}
 }

@@ -29,89 +29,31 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Setup;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Logging
+namespace LVD.Stakhanovise.NET
 {
-	public class NoOpLogger : IStakhanoviseLogger
+	public sealed class Stakhanovise
 	{
-		public static readonly NoOpLogger Instance = new NoOpLogger();
+		public static readonly Stakhanovise Instance =
+			new Stakhanovise();
 
-		private NoOpLogger()
-		{
-			return;
-		}
-		public void Trace ( string message )
-		{
-			return;
-		}
-
-		public void TraceFormat ( string messageFormat, params object[] args )
+		private Stakhanovise ()
 		{
 			return;
 		}
 
-
-		public void Debug ( string message )
+		public Stakhanovise Setup ( Action<IStakhanoviseSetup> setupAction )
 		{
-			return;
+			return this;
 		}
 
-		public void DebugFormat ( string messageFormat, params object[] args )
+		public void Run ()
 		{
 			return;
-		}
-
-		public void Error ( string message )
-		{
-			return;
-		}
-
-		public void Error ( string message, Exception exception )
-		{
-			return;
-		}
-
-		public void Fatal ( string message )
-		{
-			return;
-		}
-
-		public void Fatal ( string message, Exception exception )
-		{
-			return;
-		}
-
-		public void Info ( string message )
-		{
-			return;
-		}
-
-		public void InfoFormat ( string messageFormat, params object[] args )
-		{
-			return;
-		}
-
-		public void Warn ( string message )
-		{
-			return;
-		}
-
-		public void Warn ( string message, Exception exception )
-		{
-			return;
-		}
-
-		public void WarnFormat ( string message, params object[] args )
-		{
-			return;
-		}
-
-		public bool IsEnabled ( StakhanoviseLogLevel level )
-		{
-			return true;
 		}
 	}
 }
