@@ -12,6 +12,16 @@ namespace LVD.Stakhanovise.NET.Logging
 		{
 			return;
 		}
+		public void Trace ( string message )
+		{
+			return;
+		}
+
+		public void TraceFormat ( string messageFormat, params object[] args )
+		{
+			return;
+		}
+
 
 		public void Debug ( string message )
 		{
@@ -66,6 +76,11 @@ namespace LVD.Stakhanovise.NET.Logging
 		public void WarnFormat ( string message, params object[] args )
 		{
 			return;
+		}
+
+		public bool IsEnabled ( StakhanoviseLogLevel level )
+		{
+			return true;
 		}
 	}
 }

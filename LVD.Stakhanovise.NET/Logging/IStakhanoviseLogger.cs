@@ -6,6 +6,10 @@ namespace LVD.Stakhanovise.NET.Logging
 {
 	public interface IStakhanoviseLogger
 	{
+		void Trace ( string message );
+
+		void TraceFormat ( string messageFormat, params object[] args );
+
 		void Debug ( string message );
 
 		void DebugFormat ( string messageFormat, params object[] args );
@@ -27,5 +31,7 @@ namespace LVD.Stakhanovise.NET.Logging
 		void Fatal ( string message );
 
 		void Fatal ( string message, Exception exception );
+
+		bool IsEnabled ( StakhanoviseLogLevel level );
 	}
 }

@@ -30,9 +30,10 @@ namespace LVD.Stakhanovise.NET.Logging
 			set
 			{
 				if ( mProviderRetrieved )
-					throw new InvalidOperationException( "The logging provider must be set before any Npgsql action is taken" );
+					throw new InvalidOperationException( "The logging provider must be set before any Stakhanovise action is taken" );
 
-				mProvider = value ?? throw new ArgumentNullException( nameof( value ) );
+				mProvider = value 
+					?? throw new ArgumentNullException( nameof( value ) );
 			}
 		}
 	}
