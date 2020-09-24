@@ -29,26 +29,25 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using log4net;
 using LVD.Stakhanovise.NET.Executors;
-using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Options;
+using LVD.Stakhanovise.NET.Queue;
 using Ninject;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
 	public class StandardTaskEngine : ITaskEngine
 	{
-		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
-			.GetCurrentMethod()
-			.DeclaringType );
+		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
+			.GetLogger( MethodBase
+				.GetCurrentMethod()
+				.DeclaringType );
 
 		private ITaskQueueConsumer mTaskQueueConsumer;
 
@@ -101,7 +100,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					mExecutionPerfMon,
 					mTimingBelt );
 
-			mExecutorRegistry = new DefaultTaskExecutorRegistry( ResolveExecutorDependency );
+			mExecutorRegistry = new StandardTaskExecutorRegistry( ResolveExecutorDependency );
 			mOptions = options;
 		}
 

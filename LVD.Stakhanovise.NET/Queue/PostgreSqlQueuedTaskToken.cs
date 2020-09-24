@@ -29,8 +29,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using log4net;
 using LVD.Stakhanovise.NET.Helpers;
+using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using Npgsql;
@@ -46,9 +46,10 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public sealed class PostgreSqlQueuedTaskToken : IQueuedTaskToken
 	{
-		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
-			.GetCurrentMethod()
-			.DeclaringType );
+		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
+			.GetLogger( MethodBase
+				.GetCurrentMethod()
+				.DeclaringType );
 
 		public event EventHandler<TokenReleasedEventArgs> TokenReleased;
 

@@ -14,7 +14,6 @@ namespace LVD.Stakhanovise.NET.Processor
 	{
 		private PostgreSqlExecutionPerformanceMonitorWriterOptions mOptions;
 
-
 		public PostgreSqlExecutionPerformanceMonitorWriter ( PostgreSqlExecutionPerformanceMonitorWriterOptions options )
 		{
 			mOptions = options 

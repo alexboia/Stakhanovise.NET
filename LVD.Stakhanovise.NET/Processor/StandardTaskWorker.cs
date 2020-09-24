@@ -29,17 +29,14 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using log4net;
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Helpers;
+using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Options;
+using LVD.Stakhanovise.NET.Queue;
 using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,9 +44,10 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public class StandardTaskWorker : ITaskWorker
 	{
-		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
-			.GetCurrentMethod()
-			.DeclaringType );
+		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
+			.GetLogger( MethodBase
+				.GetCurrentMethod()
+				.DeclaringType );
 
 		private bool mIsDisposed = false;
 
@@ -190,7 +188,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Error( "Error executing queued task",
 					exception: exc );
 
-				bool isRecoverable = mOptions.IsTaskErrorRecoverable( queuedTask, 
+				bool isRecoverable = mOptions.IsTaskErrorRecoverable( queuedTask,
 					exc );
 
 				executionContext.NotifyTaskErrored( new QueuedTaskError( exc ),

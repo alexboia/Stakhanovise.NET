@@ -1,5 +1,5 @@
-﻿using log4net;
-using LVD.Stakhanovise.NET.Helpers;
+﻿using LVD.Stakhanovise.NET.Helpers;
+using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using System;
@@ -7,18 +7,17 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
 	public class StandardExecutionPerformanceMonitor : IExecutionPerformanceMonitor, IDisposable
 	{
-		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
-			.GetCurrentMethod()
-			.DeclaringType );
+		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
+			.GetLogger( MethodBase
+				.GetCurrentMethod()
+				.DeclaringType );
 
 		private bool mIsDisposed = false;
 

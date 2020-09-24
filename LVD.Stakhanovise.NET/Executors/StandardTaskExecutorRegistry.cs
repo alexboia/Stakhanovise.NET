@@ -37,7 +37,7 @@ using System.Linq;
 
 namespace LVD.Stakhanovise.NET.Executors
 {
-	public class DefaultTaskExecutorRegistry : ITaskExecutorRegistry
+	public class StandardTaskExecutorRegistry : ITaskExecutorRegistry
 	{
 		private Dictionary<Type, Type> mMessageExecutorTypes
 			  = new Dictionary<Type, Type>();
@@ -53,7 +53,7 @@ namespace LVD.Stakhanovise.NET.Executors
 		private static Type mExecutorInterface =
 		   typeof( ITaskExecutor<> );
 
-		public DefaultTaskExecutorRegistry ( Func<Type, object> dependencyResolverFn )
+		public StandardTaskExecutorRegistry ( Func<Type, object> dependencyResolverFn )
 		{
 			mDependencyResolverFn = dependencyResolverFn 
 				?? throw new ArgumentNullException( nameof( dependencyResolverFn ) );

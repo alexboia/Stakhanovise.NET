@@ -29,30 +29,27 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using log4net;
 using LVD.Stakhanovise.NET.Helpers;
+using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using NpgsqlTypes;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueueTimingBelt : ITaskQueueTimingBelt, IDisposable
 	{
-		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
-			.GetCurrentMethod()
-			.DeclaringType );
+		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
+			.GetLogger( MethodBase
+				.GetCurrentMethod()
+				.DeclaringType );
 
 		private long mLocalWallclockTimeCostSinceLastTick;
 
