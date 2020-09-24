@@ -53,14 +53,19 @@ namespace LVD.Stakhanovise.NET.Queue
 				throw new ArgumentNullException( nameof( options ) );
 
 			mOptions = options;
-			mQueueConnectionString = options.ConnectionString
+			mQueueConnectionString = options.GeneralConnectionOptions
+				.ConnectionString
 				.DeriveQueueConnectionString( options );
 		}
 
 		private async Task<NpgsqlConnection> TryOpenConnectionAsync ()
 		{
-			return await mQueueConnectionString.TryOpenConnectionAsync( mOptions.ConnectionRetryCount,
-				mOptions.ConnectionRetryDelay );
+			return await mQueueConnectionString.TryOpenConnectionAsync( 
+				mOptions.GeneralConnectionOptions
+					.ConnectionRetryCount,
+				mOptions.GeneralConnectionOptions
+					.ConnectionRetryDelayMilliseconds
+			);
 		}
 
 		public async Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload,

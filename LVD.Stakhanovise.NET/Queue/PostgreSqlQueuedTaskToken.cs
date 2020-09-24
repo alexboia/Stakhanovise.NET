@@ -29,6 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using log4net;
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Setup;
@@ -36,14 +37,10 @@ using Npgsql;
 using NpgsqlTypes;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
-using System.Text;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using log4net;
-using System.Reflection;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
@@ -112,30 +109,14 @@ namespace LVD.Stakhanovise.NET.Queue
 				handler( this, new TokenReleasedEventArgs( mQueuedTask.Id ) );
 		}
 
-		private async Task<NpgsqlConnection> TryReopenSourceConnectionAsync ( int retryCount )
+		private async Task<NpgsqlConnection> TryReopenSourceConnectionAsync ()
 		{
-			NpgsqlConnection newConnection = null;
-
-			while ( retryCount > 0 )
-			{
-				try
-				{
-					newConnection = new NpgsqlConnection( mSourceConnectionString );
-					await newConnection.OpenAsync();
-				}
-				catch ( Exception exc )
-				{
-					mLogger.Error( "Failed to re-establish source token connection.", exc );
-					newConnection = null;
-					await Task.Delay( 100 );
-				}
-				finally
-				{
-					retryCount--;
-				}
-			}
-
-			return newConnection;
+			return await mSourceConnectionString.TryOpenConnectionAsync(
+				mOptions.GeneralConnectionOptions
+					.ConnectionRetryCount,
+				mOptions.GeneralConnectionOptions
+					.ConnectionRetryDelayMilliseconds
+			);
 		}
 
 		private async Task<bool> SetTaskCompletedAsync ( TaskExecutionResult result )
@@ -229,7 +210,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				mSourceConnection = null;
 
 				//Attempt to open a new one and to reacquire the lock
-				mSourceConnection = await TryReopenSourceConnectionAsync( 3 );
+				mSourceConnection = await TryReopenSourceConnectionAsync();
 				if ( mSourceConnection == null || !await mSourceConnection.LockAsync( mQueuedTask.LockHandleId ) )
 				{
 					//If we cannot open the connection OR we cannot acquire the lock

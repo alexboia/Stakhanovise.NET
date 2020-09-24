@@ -80,9 +80,11 @@ namespace LVD.Stakhanovise.NET.Queue
 				.Select( s => ( int )s )
 				.ToArray();
 
-			mSignalingConnectionString = options.ConnectionString
+			mSignalingConnectionString = options.GeneralConnectionOptions
+				.ConnectionString
 				.DeriveSignalingConnectionString( options );
-			mQueueConnectionString = options.ConnectionString
+			mQueueConnectionString = options.GeneralConnectionOptions
+				.ConnectionString
 				.DeriveQueueConnectionString( options );
 
 			mNotificationListener = new PostgreSqlTaskQueueNotificationListener( mSignalingConnectionString,
@@ -98,14 +100,22 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<NpgsqlConnection> OpenSignalingConnectionAsync ()
 		{
-			return await mSignalingConnectionString.TryOpenConnectionAsync( mOptions.ConnectionRetryCount,
-				mOptions.ConnectionRetryDelay );
+			return await mSignalingConnectionString.TryOpenConnectionAsync( 
+				mOptions.GeneralConnectionOptions
+					.ConnectionRetryCount,
+				mOptions.GeneralConnectionOptions
+					.ConnectionRetryDelayMilliseconds 
+			);
 		}
 
 		private async Task<NpgsqlConnection> OpenQueueConnectionAsync ()
 		{
-			return await mQueueConnectionString.TryOpenConnectionAsync( mOptions.ConnectionRetryCount,
-				mOptions.ConnectionRetryDelay );
+			return await mQueueConnectionString.TryOpenConnectionAsync( 
+				mOptions.GeneralConnectionOptions
+					.ConnectionRetryCount,
+				mOptions.GeneralConnectionOptions
+					.ConnectionRetryDelayMilliseconds
+			);
 		}
 
 		private void NotifyClearForDequeue ( ClearForDequeReason reason )
@@ -150,11 +160,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			Guid[] excludeLockedTaskIds = mDequeuedTokens.Keys
 				.ToArray();
-
-			//We have reached the maximum allowed lock pool size,
-			//  exit without even trying to acquire a new task
-			if ( excludeLockedTaskIds.Length >= mOptions.DequeuePoolSize )
-				return null;
 
 			try
 			{

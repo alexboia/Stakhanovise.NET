@@ -33,6 +33,7 @@ using log4net;
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Setup;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -73,11 +74,16 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private Task mPollTask;
 
-		public DefaultTaskPoller ( ITaskQueueConsumer taskQueueConsumer,
+		private TaskProcessingOptions mOptions;
+
+		public DefaultTaskPoller ( TaskProcessingOptions options, 
+			ITaskQueueConsumer taskQueueConsumer,
 			ITaskBuffer taskBuffer,
 			IExecutionPerformanceMonitor executionPerformanceMonitor,
 			ITaskQueueTimingBelt timingBelt )
 		{
+			mOptions = options
+				?? throw new ArgumentNullException( nameof( options ) );
 			mTaskBuffer = taskBuffer
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mTaskQueueConsumer = taskQueueConsumer
@@ -110,8 +116,8 @@ namespace LVD.Stakhanovise.NET.Processor
 		private async Task<IQueuedTaskToken> DequeueAsync ()
 		{
 			//Tick time and fetch current
-			//TODO: abstract time tick timeout -> make configurable
-			AbstractTimestamp now = await mTimingBelt.TickAbstractTimeAsync( 1000 );
+			AbstractTimestamp now = await mTimingBelt.TickAbstractTimeAsync( mOptions
+				.AbstractTimeTickTimeoutMilliseconds );
 
 			mLogger.DebugFormat( "Current abstract time is: {0}. Wallclock time cost is {1}.",
 				now.Ticks,
@@ -126,11 +132,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				.GetExecutionStats( queuedTaskToken.QueuedTask.Type )
 				?? TaskExecutionStats.Zero();
 
-			//TODO: default estimated processing time should be configurable
-			//TODO: estimating processing time should be configurable Func<IQueuedTask, TaskExecutionStats, long>
-			long estimatedProcessingTime = execStats.AverageExecutionTime > 0 
-				? execStats.LongestExecutionTime 
-				: 1000;
+			long estimatedProcessingTime = mOptions.CalculateEstimatedProcessingTimeMilliseconds( queuedTaskToken.QueuedTask, 
+				execStats );
 
 			if ( await queuedTaskToken.TrySetStartedAsync( estimatedProcessingTime ) )
 			{

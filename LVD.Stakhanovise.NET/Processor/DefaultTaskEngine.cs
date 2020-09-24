@@ -38,6 +38,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -59,7 +60,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskQueueTimingBelt mTimingBelt;
 
-		private IExecutionPerformanceMonitor mExecutionPerformanceMonitor;
+		private IExecutionPerformanceMonitor mExecutionPerfMon;
+
+		private IExecutionPerformanceMonitorWriter mExecutionPerfMonWriter;
 
 		private List<ITaskWorker> mWorkers = new List<ITaskWorker>();
 
@@ -70,31 +73,33 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private bool mIsDisposed;
 
-		private TaskQueueOptions mOptions;
+		private TaskEngineOptions mOptions;
 
-		public DefaultTaskEngine ( TaskQueueOptions options,
-			ITaskQueueConsumer taskQueueConsumer,
-			IExecutionPerformanceMonitor executionPerformanceMonitor,
+		public DefaultTaskEngine ( TaskEngineOptions options,
+			IExecutionPerformanceMonitorWriter execeutionPerfMonWriter,
 			ITaskQueueTimingBelt timingBelt,
 			IKernel kernel )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
 
-			mTaskQueueConsumer = taskQueueConsumer
-				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
-			mExecutionPerformanceMonitor = executionPerformanceMonitor
-				?? throw new ArgumentNullException( nameof( executionPerformanceMonitor ) );
-			mTimingBelt = timingBelt
-				?? throw new ArgumentNullException( nameof( timingBelt ) );
 			mKernel = kernel
 				?? throw new ArgumentNullException( nameof( kernel ) );
 
+			mTimingBelt = timingBelt
+				?? throw new ArgumentNullException( nameof( timingBelt ) );
+			mExecutionPerfMonWriter = execeutionPerfMonWriter
+				?? throw new ArgumentNullException( nameof( execeutionPerfMonWriter ) );
+
+			mExecutionPerfMon = new DefaultExecutionPerformanceMonitor();
+			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( options.TaskQueueOptions );
+
 			mTaskBuffer = new DefaultTaskBuffer( options.WorkerCount );
-			mTaskPoller = new DefaultTaskPoller( mTaskQueueConsumer,
-				mTaskBuffer,
-				mExecutionPerformanceMonitor,
-				timingBelt );
+			mTaskPoller = new DefaultTaskPoller( options.TaskProcessingOptions,
+					mTaskQueueConsumer,
+					mTaskBuffer,
+					mExecutionPerfMon,
+					mTimingBelt );
 
 			mExecutorRegistry = new DefaultTaskExecutorRegistry( ResolveExecutorDependency );
 			mOptions = options;
@@ -118,11 +123,11 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.DebugFormat( "Found payload types: {0}.",
 				string.Join( ",", requiredPayloadTypes ) );
 
-			//TODO: add option of whether to flush execution performance stats or not
 			//Start the task poller and then start workers
 			await StartTimingBeltAsync();
 			await StartPollerAsync( requiredPayloadTypes );
 			await StartWorkersAsync( requiredPayloadTypes );
+			await StartFlushingPerformanceStatsAsync();
 
 			mLogger.Debug( "The task engine has been successfully started." );
 		}
@@ -146,6 +151,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			await StopPollerAsync();
 			await StopWorkersAsync();
 			await StopTimingBeltAsync();
+			await StopFlushingPerformanceStatsAsync();
 
 			mLogger.Debug( "The task engine has been successfully stopped." );
 		}
@@ -174,6 +180,18 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Scanning given assemblies for task executors..." );
 			mExecutorRegistry.ScanAssemblies( assemblies );
 			mLogger.Debug( "Done scanning given assemblies for task executors." );
+		}
+
+		private async Task StartFlushingPerformanceStatsAsync ()
+		{
+			if ( mOptions.PerfMonOptions.FlushStats )
+				await mExecutionPerfMon.StartFlushingAsync( mExecutionPerfMonWriter, mOptions.PerfMonOptions.FlushOptions );
+		}
+
+		private async Task StopFlushingPerformanceStatsAsync ()
+		{
+			if ( mOptions.PerfMonOptions.FlushStats )
+				await mExecutionPerfMon.StopFlushingAsync();
 		}
 
 		private async Task StartPollerAsync ( string[] requiredPayloadTypes )
@@ -210,10 +228,10 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			for ( int i = 0; i < mOptions.WorkerCount; i++ )
 			{
-				ITaskWorker taskWorker = new DefaultTaskWorker( mOptions,
+				ITaskWorker taskWorker = new DefaultTaskWorker( mOptions.TaskProcessingOptions,
 					mTaskBuffer,
 					mExecutorRegistry,
-					mExecutionPerformanceMonitor,
+					mExecutionPerfMon,
 					mTimingBelt );
 
 				await taskWorker.StartAsync( requiredPayloadTypes );

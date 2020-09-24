@@ -42,6 +42,7 @@ using System.Threading.Tasks;
 using log4net;
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Setup;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -52,14 +53,6 @@ namespace LVD.Stakhanovise.NET.Queue
 		private static readonly ILog mLogger = LogManager.GetLogger( MethodBase
 			.GetCurrentMethod()
 			.DeclaringType );
-
-		private string mTimeConnectionString;
-
-		private int mTimeTickBatchSize;
-
-		private int mTimeTickRequestMaxFailCount = 3;
-
-		private Guid mTimeId;
 
 		private long mLocalWallclockTimeCostSinceLastTick;
 
@@ -80,21 +73,18 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private long mLastRequestId;
 
-		public PostgreSqlTaskQueueTimingBelt ( Guid timeId,
-			string timeConnectionString,
-			int initialWallclockTimeCost,
-			int timeTickBatchSize,
-			int timeTickMaxFailCount )
+		private PostgreSqlTaskQueueTimingBeltOptions mOptions;
+
+		public PostgreSqlTaskQueueTimingBelt ( PostgreSqlTaskQueueTimingBeltOptions options )
 		{
-			mTimeId = timeId;
-			mTimeConnectionString = timeConnectionString;
-			mTimeTickBatchSize = timeTickBatchSize;
-			mTimeTickRequestMaxFailCount = timeTickMaxFailCount;
 
-			mLocalWallclockTimeCostSinceLastTick = initialWallclockTimeCost;
-			mTotalLocalWallclockTimeCost = initialWallclockTimeCost;
+			mOptions = options 
+				?? throw new ArgumentNullException( nameof( options ) );
 
-			mLastTime = new AbstractTimestamp( 0, initialWallclockTimeCost );
+			mLocalWallclockTimeCostSinceLastTick = mOptions.InitialWallclockTimeCost;
+			mTotalLocalWallclockTimeCost = mOptions.InitialWallclockTimeCost;
+
+			mLastTime = new AbstractTimestamp( 0, mOptions.InitialWallclockTimeCost );
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -106,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ( CancellationToken cancellationToken )
 		{
-			return await mTimeConnectionString.TryOpenConnectionAsync( cancellationToken );
+			return await mOptions.ConnectionOptions.TryOpenConnectionAsync();
 		}
 
 		private async Task PrepConnectionPoolAsync ( CancellationToken cancellationToken )
@@ -137,7 +127,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				tickCmd.Parameters.AddWithValue( "t_id",
 					NpgsqlDbType.Uuid,
-					mTimeId );
+					mOptions.TimeId );
 				tickCmd.Parameters.AddWithValue( "t_add_ticks",
 					NpgsqlDbType.Bigint,
 					ticksCount );
@@ -202,7 +192,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 						//See if there are other items available 
 						//	and add them to current batch
-						while ( currentBatch.Count < mTimeTickBatchSize && mTickingQueue.TryTake( out tickRqBatchItem ) )
+						while ( currentBatch.Count < mOptions.TimeTickBatchSize && mTickingQueue.TryTake( out tickRqBatchItem ) )
 							currentBatch.Add( tickRqBatchItem );
 
 						stopToken.ThrowIfCancellationRequested();
@@ -314,7 +304,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			PostgreSqlTaskQueueTimingBeltTickRequest tickRequest =
 				new PostgreSqlTaskQueueTimingBeltTickRequest( requestId,
 					completionToken,
-					timeoutMilliseconds, mTimeTickRequestMaxFailCount );
+					timeoutMilliseconds, 
+					mOptions.TimeTickMaxFailCount );
 
 			mTickingQueue.Add( tickRequest );
 
@@ -332,7 +323,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				using ( NpgsqlCommand computeCmd = new NpgsqlCommand( computeSql, conn ) )
 				{
 					computeCmd.Parameters.AddWithValue( "s_time_id", NpgsqlDbType.Uuid,
-						mTimeId );
+						mOptions.TimeId );
 					computeCmd.Parameters.AddWithValue( "s_time_ticks_to_add", NpgsqlDbType.Bigint,
 						timeTicksToAdd );
 

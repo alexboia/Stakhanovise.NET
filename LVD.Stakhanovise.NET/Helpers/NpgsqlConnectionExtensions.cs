@@ -36,18 +36,29 @@ using Npgsql;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Runtime.InteropServices;
+using LVD.Stakhanovise.NET.Setup;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
 	public static class NpgsqlConnectionExtensions
 	{
+		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this ConnectionOptions connectionOptions )
+		{
+			if ( connectionOptions == null )
+				throw new ArgumentNullException( nameof( connectionOptions ) );
+
+			return await connectionOptions.ConnectionString.TryOpenConnectionAsync( CancellationToken.None,
+				connectionOptions.ConnectionRetryCount,
+				connectionOptions.ConnectionRetryDelayMilliseconds );
+		}
+
 		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this string connectionString,
 			int maxRetryCount = 3,
-			int retryDelay = 100 )
+			int retryDelayMilliseconds = 100 )
 		{
 			return await connectionString.TryOpenConnectionAsync( CancellationToken.None,
 				maxRetryCount,
-				retryDelay );
+				retryDelayMilliseconds );
 		}
 
 		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this string connectionString,

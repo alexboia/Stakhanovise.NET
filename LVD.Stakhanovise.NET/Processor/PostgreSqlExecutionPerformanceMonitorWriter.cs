@@ -17,13 +17,13 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public PostgreSqlExecutionPerformanceMonitorWriter ( PostgreSqlExecutionPerformanceMonitorWriterOptions options )
 		{
-			mOptions = options ?? throw new ArgumentNullException( nameof( options ) );
+			mOptions = options 
+				?? throw new ArgumentNullException( nameof( options ) );
 		}
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ()
 		{
-			return await mOptions.ConnectionString.TryOpenConnectionAsync( mOptions.ConnectionRetryCount,
-				mOptions.ConnectionRetryDelay );
+			return await mOptions.ConnectionOptions.TryOpenConnectionAsync();
 		}
 
 		public async Task SetupIfNeededAsync ()

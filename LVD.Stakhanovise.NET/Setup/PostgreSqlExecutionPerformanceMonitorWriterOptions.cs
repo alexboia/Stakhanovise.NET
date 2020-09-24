@@ -6,21 +6,12 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class PostgreSqlExecutionPerformanceMonitorWriterOptions
 	{
-		public PostgreSqlExecutionPerformanceMonitorWriterOptions ( string connectionString, 
-			int connectionRetryDelay, 
-			int connectionRetryCount )
+		public PostgreSqlExecutionPerformanceMonitorWriterOptions ( ConnectionOptions connectionOptions )
 		{
-			ConnectionString = connectionString 
-				?? throw new ArgumentNullException( nameof( connectionString ) );
-
-			ConnectionRetryCount = connectionRetryCount;
-			ConnectionRetryDelay = connectionRetryDelay;
+			ConnectionOptions = connectionOptions 
+				?? throw new ArgumentNullException( nameof( connectionOptions ) );
 		}
 
-		public string ConnectionString { get; private set; }
-
-		public int ConnectionRetryCount { get; private set; }
-
-		public int ConnectionRetryDelay { get; private set; }
+		public ConnectionOptions ConnectionOptions { get; private set; }
 	}
 }

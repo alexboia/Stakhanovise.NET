@@ -80,8 +80,8 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 			signalingConnectionStringInfo.Pooling = true;
 			signalingConnectionStringInfo.MinPoolSize = 1;
-			signalingConnectionStringInfo.MaxPoolSize = 1;
-			signalingConnectionStringInfo.KeepAlive = options.ConnectionKeepAlive;
+			signalingConnectionStringInfo.MaxPoolSize = 2;
+			signalingConnectionStringInfo.KeepAlive = options.GeneralConnectionOptions.ConnectionKeepAlive;
 
 			return signalingConnectionStringInfo.ToString();
 		}
@@ -95,10 +95,10 @@ namespace LVD.Stakhanovise.NET.Helpers
 				throw new ArgumentNullException( nameof( options ) );
 
 			NpgsqlConnectionStringBuilder builder = new NpgsqlConnectionStringBuilder( connectionString );
-			return builder.DeriveManagementConnectionString( options );
+			return builder.DeriveQueueConnectionString( options );
 		}
 
-		public static string DeriveManagementConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueOptions options )
+		public static string DeriveQueueConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueOptions options )
 		{
 			if ( info == null )
 				throw new ArgumentNullException( nameof( info ) );
@@ -112,13 +112,12 @@ namespace LVD.Stakhanovise.NET.Helpers
 			//  a) we need  to activate the Npgsql keepalive mechanism (see: http://www.npgsql.org/doc/keepalive.html)
 			//  b) we need to configure the connection pool to match the required lock pool size
 
-			int poolSize = options.WorkerCount * 2;
 			NpgsqlConnectionStringBuilder managementConnectionStringInfo = info.Copy();
 
 			managementConnectionStringInfo.Pooling = true;
-			managementConnectionStringInfo.MinPoolSize = poolSize;
-			managementConnectionStringInfo.MaxPoolSize = poolSize;
-			managementConnectionStringInfo.KeepAlive = options.ConnectionKeepAlive;
+			managementConnectionStringInfo.MinPoolSize = options.QueueConsumerConnectionPoolSize;
+			managementConnectionStringInfo.MaxPoolSize = options.QueueConsumerConnectionPoolSize;
+			managementConnectionStringInfo.KeepAlive = options.GeneralConnectionOptions.ConnectionKeepAlive;
 
 			return managementConnectionStringInfo.ToString();
 		}

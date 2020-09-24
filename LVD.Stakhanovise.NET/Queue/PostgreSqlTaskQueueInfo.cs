@@ -45,13 +45,11 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueueInfo : ITaskQueueInfo
 	{
-		private string mReadOnlyConnectionString;
-
-		private bool mIsDisposed = false;
-
 		private TaskQueueOptions mOptions;
 
 		private int[] mDequeueWithStatuses;
+
+		private bool mIsDisposed = false;
 
 		public PostgreSqlTaskQueueInfo ( TaskQueueOptions options )
 		{
@@ -59,7 +57,6 @@ namespace LVD.Stakhanovise.NET.Queue
 				throw new ArgumentNullException( nameof( options ) );
 
 			mOptions = options;
-			mReadOnlyConnectionString = mOptions.ConnectionString;
 			mDequeueWithStatuses = mOptions.DequeueWithStatuses
 				.Select( s => ( int )s )
 				.ToArray();
@@ -74,8 +71,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ()
 		{
-			return await mReadOnlyConnectionString.TryOpenConnectionAsync( mOptions.ConnectionRetryCount,
-				mOptions.ConnectionRetryDelay );
+			return await mOptions.GeneralConnectionOptions.TryOpenConnectionAsync();
 		}
 
 		public async Task<TaskQueueMetrics> ComputeMetricsAsync ()

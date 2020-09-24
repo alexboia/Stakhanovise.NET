@@ -73,10 +73,10 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private Task mWorkerTask;
 
-		private TaskQueueOptions mOptions;
+		private TaskProcessingOptions mOptions;
 
 		public DefaultTaskWorker (
-			TaskQueueOptions options,
+			TaskProcessingOptions options,
 			ITaskBuffer taskBuffer,
 			ITaskExecutorRegistry executorRegistry,
 			IExecutionPerformanceMonitor executionPerformanceMonitor,
@@ -190,10 +190,11 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Error( "Error executing queued task",
 					exception: exc );
 
-				//TODO allow a user provided hook to decide 
-				//	whether the error is recoverable or not
+				bool isRecoverable = mOptions.IsTaskErrorRecoverable( queuedTask, 
+					exc );
+
 				executionContext.NotifyTaskErrored( new QueuedTaskError( exc ),
-					isRecoverable: false );
+					isRecoverable: isRecoverable );
 			}
 
 			return taskExecutor != null
@@ -216,7 +217,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Debug( "Will compute task execution delay." );
 
 				//Compute the amount of ticks to delay task execution
-				long delayTicks = mOptions.CalculateDelayTaskAfterFailure( queuedTaskToken
+				long delayTicks = mOptions.CalculateDelayTicksTaskAfterFailure( queuedTaskToken
 					.QueuedTask
 					.ErrorCount );
 
