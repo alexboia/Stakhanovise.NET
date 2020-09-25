@@ -29,6 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Executors;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -37,6 +38,8 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public interface IStandardTaskExecutorRegistrySetup
 	{
+		IStandardTaskExecutorRegistrySetup WithResolver ( IDependencyResolver resolver );
 
+		IStandardTaskExecutorRegistrySetup SetupDependencies ( Action<IDependencySetup> setupAction );
 	}
 }

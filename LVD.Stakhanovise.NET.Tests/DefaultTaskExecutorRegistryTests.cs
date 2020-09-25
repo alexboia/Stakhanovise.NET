@@ -148,7 +148,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private ITaskExecutorRegistry CreateTaskExecutorRegistry ()
 		{
-			return new DefaultTaskExecutorRegistry( type => mKernel.TryGet( type ) );
+			return new StandardTaskExecutorRegistry( type => mKernel.TryGet( type ) );
 		}
 	}
 }

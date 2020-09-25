@@ -48,9 +48,9 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Test]
 		public async Task Test_CanStartStop ()
 		{
-			using ( DefaultTaskBuffer taskBuffer = new DefaultTaskBuffer( 100 ) )
+			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( 100 ) )
 			using ( DequeueOnlyMockTaskQueue taskQueue = new DequeueOnlyMockTaskQueue( 0 ) )
-			using ( DefaultTaskPoller poller = new DefaultTaskPoller( taskQueue, taskBuffer ) )
+			using ( StandardTaskPoller poller = new StandardTaskPoller( taskQueue, taskBuffer ) )
 			{
 				await poller.StartAsync();
 
@@ -77,9 +77,9 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<QueuedTask> consumedTasks;
 			Task<List<QueuedTask>> consumedTasksReadyHandle;
 
-			using ( DefaultTaskBuffer taskBuffer = new DefaultTaskBuffer( bufferCapacity ) )
+			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
 			using ( DequeueOnlyMockTaskQueue taskQueue = new DequeueOnlyMockTaskQueue( numberOfTasks ) )
-			using ( DefaultTaskPoller poller = new DefaultTaskPoller( taskQueue, taskBuffer ) )
+			using ( StandardTaskPoller poller = new StandardTaskPoller( taskQueue, taskBuffer ) )
 			{
 				await poller.StartAsync();
 

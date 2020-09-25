@@ -33,7 +33,6 @@ using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
-using Ninject;
 using System;
 using System.Collections.Generic;
 using System.Linq;

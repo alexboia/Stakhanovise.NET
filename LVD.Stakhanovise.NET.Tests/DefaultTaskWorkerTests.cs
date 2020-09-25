@@ -66,7 +66,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<ITaskResultQueue> resultQueueMock =
 				new Mock<ITaskResultQueue>( MockBehavior.Loose );
 
-			using ( DefaultTaskWorker worker = new DefaultTaskWorker( bufferMock.Object,
+			using ( StandardTaskWorker worker = new StandardTaskWorker( bufferMock.Object,
 				executorRegistryMock.Object,
 				resultQueueMock.Object ) )
 			{
@@ -88,28 +88,28 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			List<QueuedTask> producedTasks;
 			ITaskExecutorRegistry executorRegistry
-				= new DefaultTaskExecutorRegistry( type => mKernel.TryGet( type ) );
-			List<DefaultTaskWorker> workers
-				= new List<DefaultTaskWorker>();
+				= new StandardTaskExecutorRegistry( type => mKernel.TryGet( type ) );
+			List<StandardTaskWorker> workers
+				= new List<StandardTaskWorker>();
 
 			executorRegistry.ScanAssemblies( GetType().Assembly );
 
-			using ( DefaultTaskBuffer taskBuffer = new DefaultTaskBuffer( bufferCapacity ) )
+			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
 			using ( InMemoryMockTaskResultQueue taskResultQueue = new InMemoryMockTaskResultQueue() )
 			{
 				for ( int i = 0; i < workerCount; i++ )
-					workers.Add( new DefaultTaskWorker( taskBuffer,
+					workers.Add( new StandardTaskWorker( taskBuffer,
 						executorRegistry,
 						taskResultQueue ) );
 
-				foreach ( DefaultTaskWorker w in workers )
+				foreach ( StandardTaskWorker w in workers )
 					await w.StartAsync();
 
 				producedTasks = await ProduceBuffer( taskBuffer, numberOfTasks );
 				while ( !taskBuffer.IsCompleted )
 					await Task.Delay( 25 );
 
-				foreach ( DefaultTaskWorker w in workers )
+				foreach ( StandardTaskWorker w in workers )
 					await w.StopAync();
 
 				Assert.AreEqual( producedTasks.Count,
@@ -118,7 +118,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				foreach ( QueuedTask produced in producedTasks )
 					Assert.IsTrue( taskResultQueue.TaskResults.ContainsKey( produced ) );
 
-				foreach ( DefaultTaskWorker w in workers )
+				foreach ( StandardTaskWorker w in workers )
 					w.Dispose();
 			}
 		}

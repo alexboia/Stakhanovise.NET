@@ -68,6 +68,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			if ( timingBeltFactory == null )
 				throw new ArgumentNullException( nameof( timingBeltFactory ) );
 
+			mTimingBeltFactory = timingBeltFactory;
 			return this;
 		}
 

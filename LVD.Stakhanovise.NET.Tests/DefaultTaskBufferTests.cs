@@ -51,7 +51,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 100 )]
 		public void Test_DefaultTaskBuffer_InitialStateIsCorrect ( int capacity )
 		{
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( capacity ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( capacity ) )
 			{
 				Assert.IsFalse( buffer.HasTasks );
 				Assert.IsFalse( buffer.IsFull );
@@ -66,7 +66,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 100 )]
 		public void Test_CanAdd_NonFullBuffer ( int capacity )
 		{
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( capacity ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( capacity ) )
 			{
 				for ( int i = 0; i < buffer.Capacity; i++ )
 					Assert.IsTrue( buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) ) );
@@ -84,7 +84,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 10 )]
 		public void Test_CanGet_FromNonEmptyBuffer ( int capacity )
 		{
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( capacity ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( capacity ) )
 			{
 				//Add some items
 				int actualItemNumber = ProduceItemNumber( capacity );
@@ -115,7 +115,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 100 )]
 		public void Test_TryGet_FromEmptyBuffer ( int capacity )
 		{
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( capacity ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( capacity ) )
 			{
 				Assert.IsNull( buffer.TryGetNextTask() );
 			}
@@ -127,7 +127,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 100 )]
 		public void Test_TryAdd_ToFullBuffer ( int capacity )
 		{
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( capacity ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( capacity ) )
 			{
 				//Fill buffer
 				for ( int i = 0; i < buffer.Capacity; i++ )
@@ -144,7 +144,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 100 )]
 		public void Test_CanCompleteAdding ( int capacity )
 		{
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( capacity ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( capacity ) )
 			{
 				int actualItemNumber = ProduceItemNumber( capacity );
 
@@ -188,7 +188,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			int expectedTotal = 0;
 			ConcurrentBag<QueuedTask> processedTasks = new ConcurrentBag<QueuedTask>();
 
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( 10 ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( 10 ) )
 			{
 				for ( int iProducer = 0; iProducer < nProducers; iProducer++ )
 				{
@@ -259,7 +259,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			bool handlerCalled = false;
 
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( 10 ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( 10 ) )
 			{
 				buffer.QueuedTaskAdded += ( s, e ) => handlerCalled = true;
 				buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) );
@@ -273,7 +273,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			bool handlerCalled = false;
 
-			using ( DefaultTaskBuffer buffer = new DefaultTaskBuffer( 10 ) )
+			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( 10 ) )
 			{
 				buffer.QueuedTaskRetrieved += ( s, e ) => handlerCalled = true;
 
