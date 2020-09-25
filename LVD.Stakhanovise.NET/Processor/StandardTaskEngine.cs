@@ -68,8 +68,6 @@ namespace LVD.Stakhanovise.NET.Processor
 		private StateController mStateController
 			= new StateController();
 
-		private IKernel mKernel;
-
 		private bool mIsDisposed;
 
 		private TaskEngineOptions mOptions;
@@ -77,13 +75,13 @@ namespace LVD.Stakhanovise.NET.Processor
 		public StandardTaskEngine ( TaskEngineOptions options,
 			IExecutionPerformanceMonitorWriter execeutionPerfMonWriter,
 			ITaskQueueTimingBelt timingBelt,
-			IKernel kernel )
+			ITaskExecutorRegistry executorRegistry )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
 
-			mKernel = kernel
-				?? throw new ArgumentNullException( nameof( kernel ) );
+			mExecutorRegistry = executorRegistry
+				?? throw new ArgumentNullException( nameof( executorRegistry ) );
 
 			mTimingBelt = timingBelt
 				?? throw new ArgumentNullException( nameof( timingBelt ) );
@@ -100,7 +98,6 @@ namespace LVD.Stakhanovise.NET.Processor
 					mExecutionPerfMon,
 					mTimingBelt );
 
-			mExecutorRegistry = new StandardTaskExecutorRegistry( ResolveExecutorDependency );
 			mOptions = options;
 		}
 
@@ -257,11 +254,6 @@ namespace LVD.Stakhanovise.NET.Processor
 				await worker.StopAync();
 		}
 
-		private object ResolveExecutorDependency ( Type type )
-		{
-			return mKernel.TryGet( type );
-		}
-
 		protected void Dispose ( bool disposing )
 		{
 			if ( !mIsDisposed )
@@ -278,7 +270,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					mTimingBelt = null;
 
 					mTaskQueueConsumer = null;
-					mKernel = null;
+					mExecutorRegistry = null;
 				}
 
 				mIsDisposed = true;

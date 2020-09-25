@@ -48,15 +48,15 @@ namespace LVD.Stakhanovise.NET.Executors
 		private Dictionary<string, Type> mPayloadTypes
 			= new Dictionary<string, Type>();
 
-		private Func<Type, object> mDependencyResolverFn;
+		private IDependencyResolver mDependencyResolver;
 
 		private static Type mExecutorInterface =
 		   typeof( ITaskExecutor<> );
 
-		public StandardTaskExecutorRegistry ( Func<Type, object> dependencyResolverFn )
+		public StandardTaskExecutorRegistry ( IDependencyResolver dependencyResolver )
 		{
-			mDependencyResolverFn = dependencyResolverFn 
-				?? throw new ArgumentNullException( nameof( dependencyResolverFn ) );
+			mDependencyResolver = dependencyResolver
+				?? throw new ArgumentNullException( nameof( dependencyResolver ) );
 		}
 
 		private Type GetImplementedExecutorInterface ( Type type )
@@ -149,7 +149,7 @@ namespace LVD.Stakhanovise.NET.Executors
 				if ( mMessageExecutorInjectableProperties.TryGetValue( executorType, out injectableProperties ) )
 				{
 					foreach ( PropertyInfo prop in injectableProperties )
-						prop.SetValue( executorInstance, mDependencyResolverFn.Invoke( prop.PropertyType ) );
+						prop.SetValue( executorInstance, mDependencyResolver.TryResolve( prop.PropertyType ) );
 				}
 			}
 			else
@@ -171,7 +171,7 @@ namespace LVD.Stakhanovise.NET.Executors
 			return type;
 		}
 
-		public IEnumerable<Type> DetectedPayloadTypes 
+		public IEnumerable<Type> DetectedPayloadTypes
 			=> mPayloadTypes.Values;
 	}
 }

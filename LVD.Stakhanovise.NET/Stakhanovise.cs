@@ -46,12 +46,12 @@ namespace LVD.Stakhanovise.NET
 			return;
 		}
 
-		public Stakhanovise Setup ( Action<IStakhanoviseSetup> setupAction )
+		public Stakhanovise SetupWorkingPeoplesCommittee ( Action<IStakhanoviseSetup> setupAction )
 		{
 			return this;
 		}
 
-		public void Run ()
+		public void FulfillFiveYearPlan ()
 		{
 			return;
 		}

@@ -92,7 +92,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				throw new ArgumentNullException( nameof( timingBelt ) );
 		}
 
-		private void CheckDisposedOrThrow ()
+		private void CheckNotDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( StandardTaskWorker ),
@@ -389,7 +389,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public Task StartAsync ( params string[] requiredPayloadTypes )
 		{
-			CheckDisposedOrThrow();
+			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
 				mStateController.TryRequestStart( ()
@@ -432,7 +432,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public async Task StopAync ()
 		{
-			CheckDisposedOrThrow();
+			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
 				await mStateController.TryRequestStopASync( async ()
@@ -477,7 +477,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			get
 			{
-				CheckDisposedOrThrow();
+				CheckNotDisposedOrThrow();
 				return mStateController.IsStarted;
 			}
 		}
