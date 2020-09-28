@@ -31,6 +31,7 @@
 // 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace LVD.Stakhanovise.NET.Setup
@@ -42,5 +43,17 @@ namespace LVD.Stakhanovise.NET.Setup
 		IStakhanoviseSetup SetupPerformanceMonitorWriter ( Action<IExecutionPerformanceMonitorWriterSetup> setupAction );
 
 		IStakhanoviseSetup SetupEngine ( Action<ITaskEngineSetup> setupAction );
+
+		IStakhanoviseSetup SetupTaskExecutorRegistry ( Action<ITaskExecutorRegistrySetup> setupAction );
+
+		IStakhanoviseSetup WithExecutorAssemblies ( params Assembly[] assemblies );
+
+		IStakhanoviseSetup SetupTaskQueueConnection ( Action<IConnectionSetup> setupAction );
+
+		IStakhanoviseSetup SetupTaskQueueConsumer ( Action<ITaskQueueConsumerSetup> setupAction );
+
+		IStakhanoviseSetup SetupTaskQueueProducer ( Action<ITaskQueueProducerSetup> setupAction );
+
+		IStakhanoviseSetup SetupTaskQueueInfo ( Action<ITaskQueueInfoSetup> setupAction );
 	}
 }

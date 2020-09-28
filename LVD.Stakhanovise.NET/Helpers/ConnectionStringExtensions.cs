@@ -81,7 +81,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 			signalingConnectionStringInfo.Pooling = true;
 			signalingConnectionStringInfo.MinPoolSize = 1;
 			signalingConnectionStringInfo.MaxPoolSize = 2;
-			signalingConnectionStringInfo.KeepAlive = options.GeneralConnectionOptions.ConnectionKeepAlive;
+			signalingConnectionStringInfo.KeepAlive = options.ConnectionOptions.ConnectionKeepAliveSeconds;
 
 			return signalingConnectionStringInfo.ToString();
 		}
@@ -117,7 +117,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 			managementConnectionStringInfo.Pooling = true;
 			managementConnectionStringInfo.MinPoolSize = options.QueueConsumerConnectionPoolSize;
 			managementConnectionStringInfo.MaxPoolSize = options.QueueConsumerConnectionPoolSize;
-			managementConnectionStringInfo.KeepAlive = options.GeneralConnectionOptions.ConnectionKeepAlive;
+			managementConnectionStringInfo.KeepAlive = options.ConnectionOptions.ConnectionKeepAliveSeconds;
 
 			return managementConnectionStringInfo.ToString();
 		}

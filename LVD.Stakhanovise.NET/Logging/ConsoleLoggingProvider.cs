@@ -33,29 +33,23 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Options
+namespace LVD.Stakhanovise.NET.Logging
 {
-	public class ConnectionOptions
+	public class ConsoleLoggingProvider : IStakhanoviseLoggingProvider
 	{
-		public ConnectionOptions ( string connectionString,
-			int keepAliveSeconds = 0,
-			int retryCount = 3,
-			int retryDelayMilliseconds = 100 )
-		{
-			ConnectionString = connectionString
-				?? throw new ArgumentNullException( nameof( connectionString ) );
+		private StakhanoviseLogLevel mMinLevel;
 
-			ConnectionRetryCount = retryCount;
-			ConnectionRetryDelayMilliseconds = retryDelayMilliseconds;
-			ConnectionKeepAliveSeconds = keepAliveSeconds;
+		private bool mWriteToStdOut = false;
+
+		public ConsoleLoggingProvider( StakhanoviseLogLevel minLevel, bool writeToStdOut = false )
+		{
+			mMinLevel = minLevel;
+			mWriteToStdOut = writeToStdOut;
 		}
 
-		public int ConnectionRetryCount { get; private set; }
-
-		public int ConnectionRetryDelayMilliseconds { get; private set; }
-
-		public int ConnectionKeepAliveSeconds { get; private set; }
-
-		public string ConnectionString { get; private set; }
+		public IStakhanoviseLogger CreateLogger ( string name )
+		{
+			return new ConsoleLogger( mMinLevel, name, mWriteToStdOut );
+		}
 	}
 }

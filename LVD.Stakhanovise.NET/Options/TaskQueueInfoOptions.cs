@@ -29,33 +29,32 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace LVD.Stakhanovise.NET.Options
 {
-	public class ConnectionOptions
+	public class TaskQueueInfoOptions : TaskQueueOptions
 	{
-		public ConnectionOptions ( string connectionString,
-			int keepAliveSeconds = 0,
-			int retryCount = 3,
-			int retryDelayMilliseconds = 100 )
+		public TaskQueueInfoOptions ( ConnectionOptions connectionOptions )
+			: base( connectionOptions )
 		{
-			ConnectionString = connectionString
-				?? throw new ArgumentNullException( nameof( connectionString ) );
-
-			ConnectionRetryCount = retryCount;
-			ConnectionRetryDelayMilliseconds = retryDelayMilliseconds;
-			ConnectionKeepAliveSeconds = keepAliveSeconds;
+			ProcessWithStatuses = new QueuedTaskStatus[] {
+				QueuedTaskStatus.Unprocessed,
+				QueuedTaskStatus.Error,
+				QueuedTaskStatus.Faulted,
+				QueuedTaskStatus.Processing
+			};
 		}
 
-		public int ConnectionRetryCount { get; private set; }
+		public TaskQueueInfoOptions ( ConnectionOptions connectionOptions, QueuedTaskStatus[] processWithStatuses )
+			: this( connectionOptions )
+		{
+			ProcessWithStatuses = processWithStatuses;
+		}
 
-		public int ConnectionRetryDelayMilliseconds { get; private set; }
-
-		public int ConnectionKeepAliveSeconds { get; private set; }
-
-		public string ConnectionString { get; private set; }
+		public IEnumerable<QueuedTaskStatus> ProcessWithStatuses { get; private set; }
 	}
 }

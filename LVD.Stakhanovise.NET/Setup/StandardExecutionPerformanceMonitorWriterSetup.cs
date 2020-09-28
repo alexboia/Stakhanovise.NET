@@ -38,19 +38,51 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StandardExecutionPerformanceMonitorWriterSetup : IExecutionPerformanceMonitorWriterSetup
 	{
+		private Func<IExecutionPerformanceMonitorWriter> mWriterFactory;
+
+		private StandardPostgreSqlExecutionPerformanceMonitorWriterSetup mBuiltInWriterSetup;
+
+		public StandardExecutionPerformanceMonitorWriterSetup ( StandardConnectionSetup builtInWriterConnectionSetup )
+		{
+			mBuiltInWriterSetup = new StandardPostgreSqlExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup );
+		}
+
 		public IExecutionPerformanceMonitorWriterSetup SetupBuiltInWriter ( Action<IPostgreSqlExecutionPerformanceMonitorWriterSetup> setupAction )
 		{
-			throw new NotImplementedException();
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			if ( mWriterFactory != null )
+				throw new InvalidOperationException( "Setting up the built-in writer is not supported when a custom writer has been provided" );
+
+			setupAction.Invoke( mBuiltInWriterSetup );
+			return this;
 		}
 
 		public IExecutionPerformanceMonitorWriterSetup UseWriter ( IExecutionPerformanceMonitorWriter writer )
 		{
-			throw new NotImplementedException();
+			if ( writer == null )
+				throw new ArgumentNullException( nameof( writer ) );
+
+			return UseWriterFactory( () => writer );
 		}
 
 		public IExecutionPerformanceMonitorWriterSetup UseWriterFactory ( Func<IExecutionPerformanceMonitorWriter> writerFactory )
 		{
-			throw new NotImplementedException();
+			if ( writerFactory == null )
+				throw new ArgumentNullException( nameof( writerFactory ) );
+
+			mWriterFactory = writerFactory;
+			return this;
+		}
+
+		public IExecutionPerformanceMonitorWriter BuildWriter()
+		{
+			if ( mWriterFactory == null )
+				return new PostgreSqlExecutionPerformanceMonitorWriter( mBuiltInWriterSetup
+					.BuildOptions() );
+			else
+				return mWriterFactory.Invoke();
 		}
 	}
 }

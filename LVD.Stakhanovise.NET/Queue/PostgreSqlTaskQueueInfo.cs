@@ -29,29 +29,26 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using Npgsql;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using LVD.Stakhanovise.NET.Helpers;
-using System.Linq;
 using NpgsqlTypes;
-using System.Net.Http.Headers;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueueInfo : ITaskQueueInfo
 	{
-		private TaskQueueOptions mOptions;
+		private TaskQueueInfoOptions mOptions;
 
 		private int[] mDequeueWithStatuses;
 
 		private bool mIsDisposed = false;
 
-		public PostgreSqlTaskQueueInfo ( TaskQueueOptions options )
+		public PostgreSqlTaskQueueInfo ( TaskQueueInfoOptions options )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
@@ -72,7 +69,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private async Task<NpgsqlConnection> OpenConnectionAsync ()
 		{
 			return await mOptions
-				.GeneralConnectionOptions
+				.ConnectionOptions
 				.TryOpenConnectionAsync();
 		}
 

@@ -29,33 +29,56 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Executors;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Options
+namespace LVD.Stakhanovise.NET.Setup
 {
-	public class ConnectionOptions
+	public class StandardTaskExecutorRegistrySetup : ITaskExecutorRegistrySetup
 	{
-		public ConnectionOptions ( string connectionString,
-			int keepAliveSeconds = 0,
-			int retryCount = 3,
-			int retryDelayMilliseconds = 100 )
-		{
-			ConnectionString = connectionString
-				?? throw new ArgumentNullException( nameof( connectionString ) );
+		private Func<ITaskExecutorRegistry> mTaskExecutorRegistryFactory;
 
-			ConnectionRetryCount = retryCount;
-			ConnectionRetryDelayMilliseconds = retryDelayMilliseconds;
-			ConnectionKeepAliveSeconds = keepAliveSeconds;
+		private StandardStandardTaskExecutorRegistrySetup mBuiltInTaskExecutorRegistrySetup =
+			new StandardStandardTaskExecutorRegistrySetup();
+
+		public ITaskExecutorRegistrySetup SetupBuiltInTaskExecutorRegistry ( Action<IStandardTaskExecutorRegistrySetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			if ( mBuiltInTaskExecutorRegistrySetup == null )
+				throw new InvalidOperationException( "Setting up the built-in executor registry is not supported when a custom executor registry has been provided" );
+
+			setupAction.Invoke( mBuiltInTaskExecutorRegistrySetup );
+			return this;
 		}
 
-		public int ConnectionRetryCount { get; private set; }
+		public ITaskExecutorRegistrySetup UseTaskExecutorRegistry ( ITaskExecutorRegistry registry )
+		{
+			if ( registry == null )
+				throw new ArgumentNullException( nameof( registry ) );
 
-		public int ConnectionRetryDelayMilliseconds { get; private set; }
+			return UseTaskExecutorRegistryFactory( () => registry );
+		}
 
-		public int ConnectionKeepAliveSeconds { get; private set; }
+		public ITaskExecutorRegistrySetup UseTaskExecutorRegistryFactory ( Func<ITaskExecutorRegistry> registryFactory )
+		{
+			if ( registryFactory == null )
+				throw new ArgumentNullException( nameof( registryFactory ) );
 
-		public string ConnectionString { get; private set; }
+			mTaskExecutorRegistryFactory = registryFactory;
+			return this;
+		}
+
+		public ITaskExecutorRegistry BuildTaskExecutorRegistry ()
+		{
+			if ( mTaskExecutorRegistryFactory == null )
+				return new StandardTaskExecutorRegistry( mBuiltInTaskExecutorRegistrySetup
+					.BuildDependencyResolver() );
+			else
+				return mTaskExecutorRegistryFactory.Invoke();
+		}
 	}
 }

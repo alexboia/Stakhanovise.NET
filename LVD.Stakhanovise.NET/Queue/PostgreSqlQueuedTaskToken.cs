@@ -113,9 +113,9 @@ namespace LVD.Stakhanovise.NET.Queue
 		private async Task<NpgsqlConnection> TryReopenSourceConnectionAsync ()
 		{
 			return await mSourceConnectionString.TryOpenConnectionAsync(
-				mOptions.GeneralConnectionOptions
+				mOptions.ConnectionOptions
 					.ConnectionRetryCount,
-				mOptions.GeneralConnectionOptions
+				mOptions.ConnectionOptions
 					.ConnectionRetryDelayMilliseconds
 			);
 		}

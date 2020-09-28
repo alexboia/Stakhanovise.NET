@@ -37,15 +37,15 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskEngineOptions
 	{
-		public TaskEngineOptions ( ConnectionOptions generalQueueConnectionOptions )
+		public TaskEngineOptions ( int workerCount,
+			ExecutionPerformanceMonitorOptions perfMonOptions,
+			TaskProcessingOptions taskProcessingOptions )
 		{
-			if ( generalQueueConnectionOptions == null )
-				throw new ArgumentNullException( nameof( generalQueueConnectionOptions ) );
-
-			WorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
-			TaskProcessingOptions = new TaskProcessingOptions();
-			PerfMonOptions = new ExecutionPerformanceMonitorOptions();
-			TaskQueueConsumerOptions = new TaskQueueConsumerOptions( generalQueueConnectionOptions, WorkerCount * 2 );
+			WorkerCount = workerCount;
+			TaskProcessingOptions = taskProcessingOptions
+				?? throw new ArgumentNullException( nameof( taskProcessingOptions ) );
+			PerfMonOptions = perfMonOptions
+				?? throw new ArgumentNullException( nameof( perfMonOptions ) );
 		}
 
 		public int WorkerCount { get; private set; }
@@ -53,7 +53,5 @@ namespace LVD.Stakhanovise.NET.Options
 		public ExecutionPerformanceMonitorOptions PerfMonOptions { get; private set; }
 
 		public TaskProcessingOptions TaskProcessingOptions { get; private set; }
-
-		public TaskQueueConsumerOptions TaskQueueConsumerOptions { get; private set; }
 	}
 }

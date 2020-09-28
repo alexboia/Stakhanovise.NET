@@ -46,8 +46,13 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private int mTimeTickMaxFailCount = 3;
 
-		private StandardConnectionSetup mConnectionSetup =
-			new StandardConnectionSetup();
+		private StandardConnectionSetup mConnectionSetup;
+
+		public StandardPostgreSqlTaskQueueTimingBeltSetup ( StandardConnectionSetup connectionSetup )
+		{
+			mConnectionSetup = connectionSetup
+				?? throw new ArgumentNullException( nameof( connectionSetup ) );
+		}
 
 		public IPostgreSqlTaskQueueTimingBeltSetup SetupConnection ( Action<IConnectionSetup> setupAction )
 		{

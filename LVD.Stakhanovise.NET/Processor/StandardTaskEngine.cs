@@ -71,33 +71,37 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private TaskEngineOptions mOptions;
 
-		public StandardTaskEngine ( TaskEngineOptions options,
-			IExecutionPerformanceMonitorWriter execeutionPerfMonWriter,
+		public StandardTaskEngine ( TaskEngineOptions engineOptions,
+			TaskQueueConsumerOptions consumerOptions,
+			ITaskExecutorRegistry executorRegistry,
 			ITaskQueueTimingBelt timingBelt,
-			ITaskExecutorRegistry executorRegistry )
+			IExecutionPerformanceMonitorWriter executionPerfMonWriter )
 		{
-			if ( options == null )
-				throw new ArgumentNullException( nameof( options ) );
+			if ( engineOptions == null )
+				throw new ArgumentNullException( nameof( engineOptions ) );
+
+			if ( consumerOptions == null )
+				throw new ArgumentNullException( nameof( consumerOptions ) );
 
 			mExecutorRegistry = executorRegistry
 				?? throw new ArgumentNullException( nameof( executorRegistry ) );
 
 			mTimingBelt = timingBelt
 				?? throw new ArgumentNullException( nameof( timingBelt ) );
-			mExecutionPerfMonWriter = execeutionPerfMonWriter
-				?? throw new ArgumentNullException( nameof( execeutionPerfMonWriter ) );
+			mExecutionPerfMonWriter = executionPerfMonWriter
+				?? throw new ArgumentNullException( nameof( executionPerfMonWriter ) );
 
 			mExecutionPerfMon = new StandardExecutionPerformanceMonitor();
-			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( options.TaskQueueConsumerOptions );
+			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( consumerOptions );
 
-			mTaskBuffer = new StandardTaskBuffer( options.WorkerCount );
-			mTaskPoller = new StandardTaskPoller( options.TaskProcessingOptions,
+			mTaskBuffer = new StandardTaskBuffer( engineOptions.WorkerCount );
+			mTaskPoller = new StandardTaskPoller( engineOptions.TaskProcessingOptions,
 					mTaskQueueConsumer,
 					mTaskBuffer,
 					mExecutionPerfMon,
 					mTimingBelt );
 
-			mOptions = options;
+			mOptions = engineOptions;
 		}
 
 		private void CheckDisposedOrThrow ()

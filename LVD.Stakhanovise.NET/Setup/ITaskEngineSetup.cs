@@ -29,6 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
 using System;
@@ -40,16 +41,10 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public interface ITaskEngineSetup
 	{
-		ITaskEngine WithWorkerCount ( int workerCount );
+		ITaskEngineSetup WithWorkerCount ( int workerCount );
 
-		ITaskEngine WithExecutorAssemblies ( params Assembly[] assemblies );
+		ITaskEngineSetup SetupPerformanceMonitor ( Action<IExecutionPerformanceMonitorSetup> setupAction );
 
-		ITaskEngine SetupPerformanceMonitor ( Action<IExecutionPerformanceMonitorSetup> setupAction );
-
-		ITaskEngine SetupTaskProcessing ( Action<ITaskProcessingSetup> setupAction );
-
-		ITaskEngine SetupTaskQueueConsumer ( Action<ITaskQueueConsumerSetup> setupAction );
-
-		ITaskEngine SetupTaskExecutorRegistry ( Action<ITaskExecutorRegistrySetup> setupAction );
+		ITaskEngineSetup SetupTaskProcessing ( Action<ITaskProcessingSetup> setupAction );
 	}
 }

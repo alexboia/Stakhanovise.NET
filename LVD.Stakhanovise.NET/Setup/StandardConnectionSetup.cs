@@ -40,27 +40,38 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		private string mConnectionString;
 
-		private int mConnectionKeepAlive;
+		private bool mIsConnectionStringUserConfigured = false;
+
+		private int mConnectionKeepAliveSeconds = 0;
+
+		private bool mIsConnectionKeepAliveSecondsUserConfigured = false;
 
 		private int mConnectionRetryCount = 3;
 
+		private bool mIsConnectionRetryCountUserConfigured = false;
+
 		private int mConnectionRetryDelayMilliseconds = 100;
-		
-		public IConnectionSetup WithConnectionKeepAlive ( int connectionKeepAlive )
+
+		private bool mIsConnectionRetryDelayMillisecondsUserConfigured = false;
+
+		public IConnectionSetup WithConnectionKeepAlive ( int connectionKeepAliveSeconds )
 		{
-			mConnectionKeepAlive = connectionKeepAlive;
+			mConnectionKeepAliveSeconds = connectionKeepAliveSeconds;
+			mIsConnectionKeepAliveSecondsUserConfigured = true;
 			return this;
 		}
 
 		public IConnectionSetup WithConnectionRetryCount ( int connectionRetryCount )
 		{
 			mConnectionRetryCount = connectionRetryCount;
+			mIsConnectionRetryCountUserConfigured = true;
 			return this;
 		}
 
 		public IConnectionSetup WithConnectionRetryDelayMilliseconds ( int connectionRetryDelayMilliseconds )
 		{
 			mConnectionRetryDelayMilliseconds = connectionRetryDelayMilliseconds;
+			mIsConnectionRetryDelayMillisecondsUserConfigured = true;
 			return this;
 		}
 
@@ -70,15 +81,28 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( connectionString ) );
 
 			mConnectionString = connectionString;
+			mIsConnectionStringUserConfigured = true;
 			return this;
 		}
 
 		public ConnectionOptions BuildOptions()
 		{
 			return new ConnectionOptions( mConnectionString, 
-				mConnectionKeepAlive, 
+				mConnectionKeepAliveSeconds, 
 				mConnectionRetryCount, 
 				mConnectionRetryDelayMilliseconds );
 		}
+
+		public bool IsConnectionStringUserConfigured 
+			=> mIsConnectionStringUserConfigured;
+
+		public bool IsConnectionKeepAliveSecondsUserConfigured
+			=> mIsConnectionKeepAliveSecondsUserConfigured;
+
+		public bool IsConnectionRetryCountUserConfigured 
+			=> mIsConnectionRetryCountUserConfigured;
+
+		public bool IsConnectionRetryDelayMillisecondsUserConfigured
+			=> mIsConnectionRetryDelayMillisecondsUserConfigured;
 	}
 }

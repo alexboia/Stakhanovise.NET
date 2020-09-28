@@ -40,10 +40,10 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		ITaskQueueConsumerSetup WithProcessWithStatuses ( params QueuedTaskStatus[] statuses );
 
-		ITaskQueueConsumerSetup SetupGeneralConnection ( Action<IConnectionSetup> setupAction );
+		ITaskQueueConsumerSetup SetupConnection ( Action<IConnectionSetup> setupAction );
 
-		ITaskQueueConsumerSetup WithMapping ( QueuedTaskMapping mapping );
+		ITaskQueueConsumerSetup WithQueueConsumerConnectionPoolSize ( int queueConsumerConnectionPoolSize );
 
-		ITaskQueueConsumerSetup WithConnectionPoolSize ( int connectionPoolSize );
+		ITaskQueueConsumerSetup WithFaultErrorThresholCount ( int faultErrorThresholdCount );
 	}
 }

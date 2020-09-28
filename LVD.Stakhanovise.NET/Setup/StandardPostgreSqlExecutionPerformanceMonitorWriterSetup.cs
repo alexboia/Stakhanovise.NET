@@ -29,27 +29,37 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Logging
+namespace LVD.Stakhanovise.NET.Setup
 {
-	public class ConsoleLoggerProvider : IStakhanoviseLoggingProvider
+	public class StandardPostgreSqlExecutionPerformanceMonitorWriterSetup : IPostgreSqlExecutionPerformanceMonitorWriterSetup
 	{
-		private StakhanoviseLogLevel mMinLevel;
+		private StandardConnectionSetup mConnectionSetup;
 
-		private bool mWriteToStdOut = false;
-
-		public ConsoleLoggerProvider( StakhanoviseLogLevel minLevel, bool writeToStdOut = false )
+		public StandardPostgreSqlExecutionPerformanceMonitorWriterSetup ( StandardConnectionSetup connectionSetup )
 		{
-			mMinLevel = minLevel;
-			mWriteToStdOut = writeToStdOut;
+			mConnectionSetup = connectionSetup
+				?? throw new ArgumentNullException( nameof( connectionSetup ) );
 		}
 
-		public IStakhanoviseLogger CreateLogger ( string name )
+
+		public IPostgreSqlExecutionPerformanceMonitorWriterSetup WithConnectionOptions ( Action<IConnectionSetup> setupAction )
 		{
-			return new ConsoleLogger( mMinLevel, name, mWriteToStdOut );
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mConnectionSetup );
+			return this;
+		}
+
+		public PostgreSqlExecutionPerformanceMonitorWriterOptions BuildOptions ()
+		{
+			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( mConnectionSetup
+				.BuildOptions() );
 		}
 	}
 }

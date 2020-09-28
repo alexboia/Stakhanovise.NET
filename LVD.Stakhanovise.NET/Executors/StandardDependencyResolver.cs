@@ -64,6 +64,9 @@ namespace LVD.Stakhanovise.NET.Executors
 		{
 			foreach ( DependencyRegistration registration in registrations )
 			{
+				if ( mContainer.CanResolve( registration.Target ) )
+					continue;
+
 				if ( registration.AsImplementationType != null )
 				{
 					mContainer.Register( registration.Target, registration.AsImplementationType )

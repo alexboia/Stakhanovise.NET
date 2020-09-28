@@ -44,6 +44,8 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		ITaskExecutor ResolveExecutor ( Type payloadType );
 
+		void LoadDependencies ( IDictionary<Type, object> deps );
+
 		Type ResolvePayloadType ( string type );
 
 		IEnumerable<Type> DetectedPayloadTypes { get; }

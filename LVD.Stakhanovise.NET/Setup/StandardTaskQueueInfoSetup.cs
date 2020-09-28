@@ -29,56 +29,71 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Processor;
-using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET
+namespace LVD.Stakhanovise.NET.Setup
 {
-	public sealed class Stakhanovise
+	public class StandardTaskQueueInfoSetup : ITaskQueueInfoSetup
 	{
-		public static readonly Stakhanovise Instance =
-			new Stakhanovise();
+		private StandardConnectionSetup mConnectionSetup;
+		
+		private QueuedTaskMapping mMapping;
 
-		private StakhanoviseSetup mStakhanoviseSetup;
+		private QueuedTaskStatus[] mProcessWithStatuses;
 
-
-		private ITaskEngine mEngine;
-
-		private Stakhanovise ()
+		public StandardTaskQueueInfoSetup ( StandardConnectionSetup connectionSetup, 
+			QueuedTaskMapping defaultMapping,
+			QueuedTaskStatus[] defaultProcessWithStatuses )
 		{
-			mStakhanoviseSetup = new StakhanoviseSetup();
+			if ( connectionSetup == null )
+				throw new ArgumentNullException( nameof( connectionSetup ) );
+
+			if ( defaultMapping == null )
+				throw new ArgumentNullException( nameof( defaultMapping ) );
+
+			if ( defaultProcessWithStatuses == null || defaultProcessWithStatuses.Length == 0 )
+				throw new ArgumentNullException( nameof( defaultProcessWithStatuses ) );
+
+			mConnectionSetup = connectionSetup;
+			mProcessWithStatuses = defaultProcessWithStatuses;
+			mMapping = defaultMapping;
 		}
 
-		public Stakhanovise SetupWorkingPeoplesCommittee ( Action<IStakhanoviseSetup> setupAction )
+		public ITaskQueueInfoSetup SetupConnection ( Action<IConnectionSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
 
-			setupAction.Invoke( mStakhanoviseSetup );
+			setupAction.Invoke( mConnectionSetup );
 			return this;
 		}
 
-		public async Task<Stakhanovise> StartFulfillingFiveYearPlanAsync ()
+		public ITaskQueueInfoSetup WithProcessWithStatuses ( params QueuedTaskStatus[] statuses )
 		{
-			if ( mEngine == null )
-				mEngine = mStakhanoviseSetup.Build();
+			if ( statuses == null || statuses.Length == 0 )
+				throw new ArgumentNullException( nameof( statuses ) );
 
-			if ( !mEngine.IsRunning )
-				await mEngine.StartAsync();
-
+			mProcessWithStatuses = statuses;
 			return this;
 		}
 
-		public async Task<Stakhanovise> StopFulfillingFiveYearPlanAsync ()
+		public ITaskQueueInfoSetup WithMapping ( QueuedTaskMapping mapping )
 		{
-			if ( mEngine != null && mEngine.IsRunning )
-				await mEngine.StopAync();
+			if ( mapping == null )
+				throw new ArgumentNullException( nameof( mapping ) );
 
+			mMapping = mapping;
 			return this;
+		}
+
+		public TaskQueueInfoOptions BuiltOptions()
+		{
+			return new TaskQueueInfoOptions( mConnectionSetup.BuildOptions(), 
+				mProcessWithStatuses );
 		}
 	}
 }

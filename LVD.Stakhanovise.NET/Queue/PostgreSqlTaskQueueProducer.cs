@@ -47,6 +47,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public PostgreSqlTaskQueueProducer ( TaskQueueOptions options )
 		{
+			//TODO: use task queue producer options
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
 
@@ -56,7 +57,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private async Task<NpgsqlConnection> TryOpenConnectionAsync ()
 		{
 			return await mOptions
-				.GeneralConnectionOptions
+				.ConnectionOptions
 				.TryOpenConnectionAsync();
 		}
 

@@ -39,25 +39,23 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskQueueOptions
 	{
-		public TaskQueueOptions ( ConnectionOptions generalConnectionOptions )
+		public TaskQueueOptions ( ConnectionOptions connectionOptions )
 		{
-			if ( generalConnectionOptions == null )
-				throw new ArgumentNullException( nameof( generalConnectionOptions ) );
+			if ( connectionOptions == null )
+				throw new ArgumentNullException( nameof( connectionOptions ) );
 
-			GeneralConnectionOptions = generalConnectionOptions;
+			ConnectionOptions = connectionOptions;
 			Mapping = new QueuedTaskMapping();
-
-			ProcessWithStatuses = new QueuedTaskStatus[] {
-				QueuedTaskStatus.Unprocessed,
-				QueuedTaskStatus.Error,
-				QueuedTaskStatus.Faulted,
-				QueuedTaskStatus.Processing
-			};
 		}
 
-		public IEnumerable<QueuedTaskStatus> ProcessWithStatuses { get; private set; }
+		public TaskQueueOptions ( ConnectionOptions generalConnectionOptions,
+			QueuedTaskMapping mapping )
+			: this( generalConnectionOptions )
+		{
+			Mapping = mapping;
+		}
 
-		public ConnectionOptions GeneralConnectionOptions { get; private set; }
+		public ConnectionOptions ConnectionOptions { get; private set; }
 
 		public QueuedTaskMapping Mapping { get; private set; }
 

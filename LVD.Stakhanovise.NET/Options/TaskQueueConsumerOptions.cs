@@ -38,15 +38,46 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskQueueConsumerOptions : TaskQueueOptions
 	{
-		public TaskQueueConsumerOptions ( ConnectionOptions generalConnectionOptions, int queueConsumerConnectionPoolSize )
-			: base( generalConnectionOptions )
+		public TaskQueueConsumerOptions ( ConnectionOptions connectionOptions, int queueConsumerConnectionPoolSize )
+			: base( connectionOptions )
 		{
 			if ( queueConsumerConnectionPoolSize < 1 )
 				throw new ArgumentOutOfRangeException( nameof( queueConsumerConnectionPoolSize ),
 					"Queue consumer connection pool size must be greater than or equal to 1" );
 
 			QueueConsumerConnectionPoolSize = queueConsumerConnectionPoolSize;
+			FaultErrorThresholdCount = 5;
+
+			ProcessWithStatuses = new QueuedTaskStatus[] {
+				QueuedTaskStatus.Unprocessed,
+				QueuedTaskStatus.Error,
+				QueuedTaskStatus.Faulted,
+				QueuedTaskStatus.Processing
+			};
 		}
+
+		public TaskQueueConsumerOptions ( ConnectionOptions connectionOptions,
+			QueuedTaskStatus[] processWithStatuses,
+			QueuedTaskMapping mapping,
+			int queueConsumerConnectionPoolSize,
+			int faultErrorThresholdCount )
+			: base( connectionOptions,
+				  mapping )
+		{
+			if ( queueConsumerConnectionPoolSize < 1 )
+				throw new ArgumentOutOfRangeException( nameof( queueConsumerConnectionPoolSize ),
+					"Queue consumer connection pool size must be greater than or equal to 1" );
+
+			if ( faultErrorThresholdCount < 1 )
+				throw new ArgumentOutOfRangeException( nameof( faultErrorThresholdCount ),
+					"Fault error threshold count must be greater than or equal to 1" );
+
+			QueueConsumerConnectionPoolSize = queueConsumerConnectionPoolSize;
+			FaultErrorThresholdCount = faultErrorThresholdCount;
+			ProcessWithStatuses = processWithStatuses;
+		}
+
+		public IEnumerable<QueuedTaskStatus> ProcessWithStatuses { get; private set; }
 
 		public int QueueConsumerConnectionPoolSize { get; private set; }
 

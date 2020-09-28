@@ -113,6 +113,20 @@ namespace LVD.Stakhanovise.NET.Executors
 			}
 		}
 
+		public void LoadDependencies ( IDictionary<Type, object> deps )
+		{
+			if ( deps == null )
+				throw new ArgumentNullException( nameof( deps ) );
+
+			List<DependencyRegistration> regs = 
+				new List<DependencyRegistration>();
+
+			foreach (KeyValuePair<Type, object> depPair in deps)
+				regs.Add( DependencyRegistration.BindToInstance( depPair.Key, depPair.Value ) );
+
+			mDependencyResolver.Load( regs );
+		}
+
 		public void ScanAssemblies ( params Assembly[] assemblies )
 		{
 			if ( assemblies != null && assemblies.Length > 0 )

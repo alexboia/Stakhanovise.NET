@@ -30,65 +30,94 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Options
+namespace LVD.Stakhanovise.NET.Setup
 {
-	public class TaskProcessingOptions
+	public class StadardTaskProcessingSetup : ITaskProcessingSetup
 	{
-		public TaskProcessingOptions ()
-		{
-			AbstractTimeTickTimeoutMilliseconds = 1000;
-			CalculateDelayTicksTaskAfterFailure = errorCount => ( long )Math.Pow( 10, errorCount );
-			DefaultEstimatedProcessingTimeMilliseconds = 1000;
-			CalculateEstimatedProcessingTimeMilliseconds = ( task, stats ) => stats.LongestExecutionTime > 0
-				? stats.LongestExecutionTime
-				: DefaultEstimatedProcessingTimeMilliseconds;
+		private int mAbstractTimeTickTimeoutMilliseconds = 1000;
 
-			IsTaskErrorRecoverable = ( task, exc ) => !( exc is NullReferenceException )
-				&& !( exc is ArgumentException );
+		private long mDefaultEstimatedProcessingTimeMilliseconds = 1000;
+
+		private Func<int, long> mCalculateDelayTicksTaskAfterFailure;
+
+		private Func<IQueuedTask, TaskExecutionStats, long> mCalculateEstimatedProcessingTimeMilliseconds;
+
+		private Func<IQueuedTask, Exception, bool> mIsTaskErrorRecoverable;
+
+		public StadardTaskProcessingSetup ()
+		{
+			mCalculateDelayTicksTaskAfterFailure =
+				errorCount => ( long )Math.Pow( 10, errorCount );
+
+			mCalculateEstimatedProcessingTimeMilliseconds =
+				( task, stats ) => stats.LongestExecutionTime > 0
+					? stats.LongestExecutionTime
+					: mDefaultEstimatedProcessingTimeMilliseconds;
+
+			mIsTaskErrorRecoverable =
+				( task, exc ) => !( exc is NullReferenceException )
+					&& !( exc is ArgumentException );
 		}
 
-		public TaskProcessingOptions ( int abstractTimeTickTimeoutMilliseconds,
-			long defaultEstimatedProcessingTimeMilliseconds,
-			Func<int, long> calculateDelayTicksTaskAfterFailure,
-			Func<IQueuedTask, TaskExecutionStats, long> calculateEstimatedProcessingTimeMilliseconds,
-			Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable )
+		public ITaskProcessingSetup WithAbstractTimeTickTimeoutMilliseconds ( int abstractTimeTickTimeoutMilliseconds )
 		{
 			if ( abstractTimeTickTimeoutMilliseconds <= 0 )
 				throw new ArgumentOutOfRangeException( nameof( abstractTimeTickTimeoutMilliseconds ),
 					"The timeout for the abstract time tick operation must be greater than or equal to 0" );
 
+			mAbstractTimeTickTimeoutMilliseconds = abstractTimeTickTimeoutMilliseconds;
+			return this;
+		}
+
+		public ITaskProcessingSetup WithDefaultEstimatedProcessingTimeMilliseconds ( long defaultEstimatedProcessingTimeMilliseconds )
+		{
 			if ( defaultEstimatedProcessingTimeMilliseconds < 1 )
 				throw new ArgumentOutOfRangeException( nameof( defaultEstimatedProcessingTimeMilliseconds ),
 					"The default estimated processing time must be greater than 1" );
 
+			mDefaultEstimatedProcessingTimeMilliseconds = defaultEstimatedProcessingTimeMilliseconds;
+			return this;
+		}
+
+		public ITaskProcessingSetup WithDelayTicksTaskAfterFailureCalculator ( Func<int, long> calculateDelayTicksTaskAfterFailure )
+		{
 			if ( calculateDelayTicksTaskAfterFailure == null )
 				throw new ArgumentNullException( nameof( calculateDelayTicksTaskAfterFailure ) );
 
+			mCalculateDelayTicksTaskAfterFailure = calculateDelayTicksTaskAfterFailure;
+			return this;
+		}
+
+		public ITaskProcessingSetup WithEstimatedProcessingTimeMillisecondsCalculator ( Func<IQueuedTask, TaskExecutionStats, long> calculateEstimatedProcessingTimeMilliseconds )
+		{
 			if ( calculateEstimatedProcessingTimeMilliseconds == null )
 				throw new ArgumentNullException( nameof( calculateEstimatedProcessingTimeMilliseconds ) );
 
+			mCalculateEstimatedProcessingTimeMilliseconds = calculateEstimatedProcessingTimeMilliseconds;
+			return this;
+		}
+
+		public ITaskProcessingSetup WithTaskErrorRecoverabilityCallback ( Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable )
+		{
 			if ( isTaskErrorRecoverable == null )
 				throw new ArgumentNullException( nameof( isTaskErrorRecoverable ) );
 
-			AbstractTimeTickTimeoutMilliseconds = abstractTimeTickTimeoutMilliseconds;
-			DefaultEstimatedProcessingTimeMilliseconds = defaultEstimatedProcessingTimeMilliseconds;
-			CalculateDelayTicksTaskAfterFailure = calculateDelayTicksTaskAfterFailure;
-			CalculateEstimatedProcessingTimeMilliseconds = calculateEstimatedProcessingTimeMilliseconds;
-			IsTaskErrorRecoverable = isTaskErrorRecoverable;
+			mIsTaskErrorRecoverable = isTaskErrorRecoverable;
+			return this;
 		}
 
-		public int AbstractTimeTickTimeoutMilliseconds { get; private set; }
-
-		public Func<int, long> CalculateDelayTicksTaskAfterFailure { get; private set; }
-
-		public long DefaultEstimatedProcessingTimeMilliseconds { get; private set; }
-
-		public Func<IQueuedTask, TaskExecutionStats, long> CalculateEstimatedProcessingTimeMilliseconds { get; private set; }
-
-		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; private set; }
+		public TaskProcessingOptions BuildOptions ()
+		{
+			return new TaskProcessingOptions( mAbstractTimeTickTimeoutMilliseconds,
+				defaultEstimatedProcessingTimeMilliseconds: mDefaultEstimatedProcessingTimeMilliseconds,
+				calculateDelayTicksTaskAfterFailure: mCalculateDelayTicksTaskAfterFailure,
+				calculateEstimatedProcessingTimeMilliseconds: mCalculateEstimatedProcessingTimeMilliseconds,
+				isTaskErrorRecoverable: mIsTaskErrorRecoverable );
+		}
 	}
 }

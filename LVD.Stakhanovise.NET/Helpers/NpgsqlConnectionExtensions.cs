@@ -44,10 +44,15 @@ namespace LVD.Stakhanovise.NET.Helpers
 	{
 		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this ConnectionOptions connectionOptions )
 		{
+			return await connectionOptions.TryOpenConnectionAsync( CancellationToken.None );
+		}
+
+		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this ConnectionOptions connectionOptions, CancellationToken cancellationToken )
+		{
 			if ( connectionOptions == null )
 				throw new ArgumentNullException( nameof( connectionOptions ) );
 
-			return await connectionOptions.ConnectionString.TryOpenConnectionAsync( CancellationToken.None,
+			return await connectionOptions.ConnectionString.TryOpenConnectionAsync( cancellationToken,
 				connectionOptions.ConnectionRetryCount,
 				connectionOptions.ConnectionRetryDelayMilliseconds );
 		}
@@ -68,6 +73,14 @@ namespace LVD.Stakhanovise.NET.Helpers
 		{
 			if ( string.IsNullOrEmpty( connectionString ) )
 				throw new ArgumentNullException( nameof( connectionString ) );
+
+			if ( maxRetryCount < 1 )
+				throw new ArgumentOutOfRangeException( nameof( maxRetryCount ),
+					"Max retry count must be greater than 1" );
+
+			if ( retryDelay < 1 )
+				throw new ArgumentOutOfRangeException( nameof( retryDelay ),
+					"Retry delay must be greater than 1" );
 
 			int retryCount = 0;
 			NpgsqlConnection conn = null;

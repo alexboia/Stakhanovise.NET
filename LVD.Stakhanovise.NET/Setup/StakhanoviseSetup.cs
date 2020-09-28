@@ -1,0 +1,281 @@
+﻿// 
+// BSD 3-Clause License
+// 
+// Copyright (c) 2020, Boia Alexandru
+// All rights reserved.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+// 
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+using LVD.Stakhanovise.NET.Executors;
+using LVD.Stakhanovise.NET.Logging;
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
+using LVD.Stakhanovise.NET.Processor;
+using LVD.Stakhanovise.NET.Queue;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Reflection;
+using System.Text;
+
+namespace LVD.Stakhanovise.NET.Setup
+{
+	public class StakhanoviseSetup : IStakhanoviseSetup
+	{
+		private Assembly[] mExecutorAssemblies = null;
+
+		private StandardTaskExecutorRegistrySetup mTaskExecutorRegistrySetup =
+			new StandardTaskExecutorRegistrySetup();
+
+		private StandardTaskQueueConsumerSetup mTaskQueueConsumerSetup;
+
+		private StandardTaskQueueProducerSetup mTaskQueueProducerSetup;
+
+		private StandardTaskQueueInfoSetup mTaskQueueInfoSetup;
+
+		private CollectiveConnectionSetup mCommonTaskQueueConnectionSetup;
+
+		private StandardTaskEngineSetup mTaskEngineSetup;
+
+		private StandardExecutionPerformanceMonitorWriterSetup mPerformanceMonitorWriterSetup;
+
+		private StandardTaskQueueTimingBeltSetup mTimingBeltSetup;
+
+		private IStakhanoviseLoggingProvider mLoggingProvider;
+
+		private bool mInjectOwnDependencies = true;
+
+		public StakhanoviseSetup ()
+		{
+			QueuedTaskMapping defaultMapping =
+				new QueuedTaskMapping();
+
+			StandardConnectionSetup queueConsumerConnectionSetup =
+				new StandardConnectionSetup();
+
+			StandardConnectionSetup queueProducerConnectionSetup =
+				new StandardConnectionSetup();
+
+			StandardConnectionSetup queueInfoConnectionSetup =
+				new StandardConnectionSetup();
+
+			StandardConnectionSetup builtInTimingBeltConnectionSetup =
+				new StandardConnectionSetup();
+
+			StandardConnectionSetup builtInWriterConnectionSetup =
+				new StandardConnectionSetup();
+
+			QueuedTaskStatus[] defaultProcessWithStatuses = new QueuedTaskStatus[] {
+				QueuedTaskStatus.Unprocessed,
+				QueuedTaskStatus.Error,
+				QueuedTaskStatus.Faulted,
+				QueuedTaskStatus.Processing
+			};
+
+			int defaultWorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
+
+			mTaskQueueProducerSetup = new StandardTaskQueueProducerSetup( queueProducerConnectionSetup,
+				defaultMapping: defaultMapping );
+
+			mTaskQueueInfoSetup = new StandardTaskQueueInfoSetup( queueInfoConnectionSetup,
+				defaultMapping: defaultMapping,
+				defaultProcessWithStatuses: defaultProcessWithStatuses );
+
+			mCommonTaskQueueConnectionSetup = new CollectiveConnectionSetup( queueConsumerConnectionSetup,
+				queueProducerConnectionSetup,
+				queueInfoConnectionSetup,
+				builtInTimingBeltConnectionSetup,
+				builtInWriterConnectionSetup );
+
+			mTaskQueueConsumerSetup = new StandardTaskQueueConsumerSetup( queueConsumerConnectionSetup,
+				defaultMapping: defaultMapping,
+				defaultProcessWithStatuses: defaultProcessWithStatuses,
+				defaultQueueConsumerConnectionPoolSize: defaultWorkerCount * 2 );
+
+			mTaskEngineSetup = new StandardTaskEngineSetup( mTaskQueueConsumerSetup,
+				defaultWorkerCount );
+
+			mTimingBeltSetup =
+				new StandardTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup );
+			mPerformanceMonitorWriterSetup =
+				new StandardExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup );
+		}
+
+		public IStakhanoviseSetup SetupEngine ( Action<ITaskEngineSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mTaskEngineSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupPerformanceMonitorWriter ( Action<IExecutionPerformanceMonitorWriterSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mPerformanceMonitorWriterSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupTimingBelt ( Action<ITaskQueueTimingBeltSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mTimingBeltSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupTaskExecutorRegistry ( Action<ITaskExecutorRegistrySetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mTaskExecutorRegistrySetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup WithExecutorAssemblies ( params Assembly[] assemblies )
+		{
+			if ( assemblies == null || assemblies.Length == 0 )
+				throw new ArgumentNullException( nameof( assemblies ) );
+
+			mExecutorAssemblies = assemblies;
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupTaskQueueConnection ( Action<IConnectionSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mCommonTaskQueueConnectionSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup WithTaskQueueMapping ( QueuedTaskMapping mapping )
+		{
+			if ( mapping == null )
+				throw new ArgumentNullException( nameof( mapping ) );
+
+			mTaskQueueConsumerSetup.WithMapping( mapping );
+			mTaskQueueProducerSetup.WithMapping( mapping );
+			mTaskQueueInfoSetup.WithMapping( mapping );
+
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupTaskQueueConsumer ( Action<ITaskQueueConsumerSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mTaskQueueConsumerSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupTaskQueueProducer ( Action<ITaskQueueProducerSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mTaskQueueProducerSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupTaskQueueInfo ( Action<ITaskQueueInfoSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mTaskQueueInfoSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup WithLoggingProvider ( IStakhanoviseLoggingProvider loggingProvider )
+		{
+			if ( loggingProvider == null )
+				throw new ArgumentNullException( nameof( loggingProvider ) );
+
+			mLoggingProvider = loggingProvider;
+			return this;
+		}
+
+		public IStakhanoviseSetup WithConsoleLogging ( StakhanoviseLogLevel level, bool writeToStdOut = false )
+		{
+			return WithLoggingProvider( new ConsoleLoggingProvider( level,
+				writeToStdOut ) );
+		}
+
+		public IStakhanoviseSetup DontInjectOwnDependencies()
+		{
+			mInjectOwnDependencies = false;
+			return this;
+		}
+
+		public ITaskEngine Build ()
+		{
+			ITaskExecutorRegistry executorRegistry = mTaskExecutorRegistrySetup
+				.BuildTaskExecutorRegistry();
+
+			ITaskQueueTimingBelt timingBelt = mTimingBeltSetup
+				.BuildTimingBelt();
+
+			IExecutionPerformanceMonitorWriter executionPerfMonWriter = mPerformanceMonitorWriterSetup
+				.BuildWriter();
+
+			TaskQueueConsumerOptions consumerOptions = mTaskQueueConsumerSetup
+				.BuildOptions();
+
+			StakhanoviseLogManager.Provider = mLoggingProvider
+				?? new NoOpLoggingProvider();
+
+			ITaskQueueProducer taskQueueProducer = new PostgreSqlTaskQueueProducer( mTaskQueueProducerSetup
+				.BuildOptions() );
+
+			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup
+				.BuiltOptions() );
+
+			if ( mInjectOwnDependencies )
+			{
+				executorRegistry.LoadDependencies( new Dictionary<Type, object>()
+				{
+					{ typeof(ITaskQueueProducer),
+						taskQueueProducer },
+					{ typeof(ITaskQueueInfo),
+						taskQueueInfo }
+				} );
+			}
+
+			return mTaskEngineSetup.BuildTaskEngine( consumerOptions,
+				executorRegistry,
+				timingBelt,
+				executionPerfMonWriter );
+		}
+	}
+}

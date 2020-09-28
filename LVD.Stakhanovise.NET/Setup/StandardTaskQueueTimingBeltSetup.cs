@@ -40,8 +40,15 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		private Func<ITaskQueueTimingBelt> mTimingBeltFactory;
 
-		private StandardPostgreSqlTaskQueueTimingBeltSetup mBuiltInTimingBeltSetup =
-			new StandardPostgreSqlTaskQueueTimingBeltSetup();
+		private StandardPostgreSqlTaskQueueTimingBeltSetup mBuiltInTimingBeltSetup;
+
+		public StandardTaskQueueTimingBeltSetup ( StandardConnectionSetup builtInTimingBeltConnectionSetup )
+		{
+			if ( builtInTimingBeltConnectionSetup == null )
+				throw new ArgumentNullException( nameof( builtInTimingBeltConnectionSetup ) );
+			
+			mBuiltInTimingBeltSetup = new StandardPostgreSqlTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup );
+		}
 
 		public ITaskQueueTimingBeltSetup SetupBuiltInTimingBelt ( Action<IPostgreSqlTaskQueueTimingBeltSetup> setupAction )
 		{

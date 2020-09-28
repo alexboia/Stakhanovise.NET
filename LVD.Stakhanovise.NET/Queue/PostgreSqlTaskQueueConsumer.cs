@@ -78,10 +78,10 @@ namespace LVD.Stakhanovise.NET.Queue
 				.Select( s => ( int )s )
 				.ToArray();
 
-			mSignalingConnectionString = options.GeneralConnectionOptions
+			mSignalingConnectionString = options.ConnectionOptions
 				.ConnectionString
 				.DeriveSignalingConnectionString( options );
-			mQueueConnectionString = options.GeneralConnectionOptions
+			mQueueConnectionString = options.ConnectionOptions
 				.ConnectionString
 				.DeriveQueueConsumerConnectionString( options );
 
@@ -99,9 +99,9 @@ namespace LVD.Stakhanovise.NET.Queue
 		private async Task<NpgsqlConnection> OpenSignalingConnectionAsync ()
 		{
 			return await mSignalingConnectionString.TryOpenConnectionAsync( 
-				mOptions.GeneralConnectionOptions
+				mOptions.ConnectionOptions
 					.ConnectionRetryCount,
-				mOptions.GeneralConnectionOptions
+				mOptions.ConnectionOptions
 					.ConnectionRetryDelayMilliseconds 
 			);
 		}
@@ -109,9 +109,9 @@ namespace LVD.Stakhanovise.NET.Queue
 		private async Task<NpgsqlConnection> OpenQueueConnectionAsync ()
 		{
 			return await mQueueConnectionString.TryOpenConnectionAsync( 
-				mOptions.GeneralConnectionOptions
+				mOptions.ConnectionOptions
 					.ConnectionRetryCount,
-				mOptions.GeneralConnectionOptions
+				mOptions.ConnectionOptions
 					.ConnectionRetryDelayMilliseconds
 			);
 		}

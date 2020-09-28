@@ -33,29 +33,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Options
+namespace LVD.Stakhanovise.NET.Setup
 {
-	public class ConnectionOptions
+	public interface ITaskQueueProducerSetup
 	{
-		public ConnectionOptions ( string connectionString,
-			int keepAliveSeconds = 0,
-			int retryCount = 3,
-			int retryDelayMilliseconds = 100 )
-		{
-			ConnectionString = connectionString
-				?? throw new ArgumentNullException( nameof( connectionString ) );
-
-			ConnectionRetryCount = retryCount;
-			ConnectionRetryDelayMilliseconds = retryDelayMilliseconds;
-			ConnectionKeepAliveSeconds = keepAliveSeconds;
-		}
-
-		public int ConnectionRetryCount { get; private set; }
-
-		public int ConnectionRetryDelayMilliseconds { get; private set; }
-
-		public int ConnectionKeepAliveSeconds { get; private set; }
-
-		public string ConnectionString { get; private set; }
+		ITaskQueueProducerSetup SetupConnection ( Action<IConnectionSetup> setupAction );
 	}
 }

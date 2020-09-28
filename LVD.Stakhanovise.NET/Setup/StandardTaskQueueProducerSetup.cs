@@ -29,33 +29,56 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Options
+namespace LVD.Stakhanovise.NET.Setup
 {
-	public class ConnectionOptions
+	public class StandardTaskQueueProducerSetup : ITaskQueueProducerSetup
 	{
-		public ConnectionOptions ( string connectionString,
-			int keepAliveSeconds = 0,
-			int retryCount = 3,
-			int retryDelayMilliseconds = 100 )
-		{
-			ConnectionString = connectionString
-				?? throw new ArgumentNullException( nameof( connectionString ) );
+		private QueuedTaskMapping mMapping;
 
-			ConnectionRetryCount = retryCount;
-			ConnectionRetryDelayMilliseconds = retryDelayMilliseconds;
-			ConnectionKeepAliveSeconds = keepAliveSeconds;
+		private StandardConnectionSetup mConnectionSetup =
+			new StandardConnectionSetup();
+
+		public StandardTaskQueueProducerSetup(StandardConnectionSetup connectionSetup, 
+			QueuedTaskMapping defaultMapping )
+		{
+			if ( connectionSetup == null )
+				throw new ArgumentNullException( nameof( connectionSetup ) );
+
+			if ( defaultMapping == null )
+				throw new ArgumentNullException( nameof( defaultMapping ) );
+
+			mConnectionSetup = connectionSetup;
+			mMapping = default;
 		}
 
-		public int ConnectionRetryCount { get; private set; }
+		public ITaskQueueProducerSetup SetupConnection ( Action<IConnectionSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
 
-		public int ConnectionRetryDelayMilliseconds { get; private set; }
+			setupAction.Invoke( mConnectionSetup );
+			return this;
+		}
 
-		public int ConnectionKeepAliveSeconds { get; private set; }
+		public ITaskQueueProducerSetup WithMapping ( QueuedTaskMapping mapping )
+		{
+			if ( mapping == null )
+				throw new ArgumentNullException( nameof( mapping ) );
 
-		public string ConnectionString { get; private set; }
+			mMapping = mapping;
+			return this;
+		}
+
+		public TaskQueueOptions BuildOptions()
+		{
+			return new TaskQueueOptions( mConnectionSetup.BuildOptions(), 
+				mMapping );
+		}
 	}
 }
