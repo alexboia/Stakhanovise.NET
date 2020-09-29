@@ -38,20 +38,14 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskQueueInfoOptions : TaskQueueOptions
 	{
-		public TaskQueueInfoOptions ( ConnectionOptions connectionOptions )
-			: base( connectionOptions )
+		public TaskQueueInfoOptions ( ConnectionOptions connectionOptions,
+			QueuedTaskMapping mapping,
+			QueuedTaskStatus[] processWithStatuses )
+			: base( connectionOptions, mapping )
 		{
-			ProcessWithStatuses = new QueuedTaskStatus[] {
-				QueuedTaskStatus.Unprocessed,
-				QueuedTaskStatus.Error,
-				QueuedTaskStatus.Faulted,
-				QueuedTaskStatus.Processing
-			};
-		}
+			if ( processWithStatuses == null || processWithStatuses.Length == 0 )
+				throw new ArgumentNullException( nameof( processWithStatuses ) );
 
-		public TaskQueueInfoOptions ( ConnectionOptions connectionOptions, QueuedTaskStatus[] processWithStatuses )
-			: this( connectionOptions )
-		{
 			ProcessWithStatuses = processWithStatuses;
 		}
 

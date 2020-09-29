@@ -40,12 +40,12 @@ namespace LVD.Stakhanovise.NET.Setup
 	public class StandardTaskQueueInfoSetup : ITaskQueueInfoSetup
 	{
 		private StandardConnectionSetup mConnectionSetup;
-		
+
 		private QueuedTaskMapping mMapping;
 
 		private QueuedTaskStatus[] mProcessWithStatuses;
 
-		public StandardTaskQueueInfoSetup ( StandardConnectionSetup connectionSetup, 
+		public StandardTaskQueueInfoSetup ( StandardConnectionSetup connectionSetup,
 			QueuedTaskMapping defaultMapping,
 			QueuedTaskStatus[] defaultProcessWithStatuses )
 		{
@@ -90,9 +90,10 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public TaskQueueInfoOptions BuiltOptions()
+		public TaskQueueInfoOptions BuiltOptions ()
 		{
-			return new TaskQueueInfoOptions( mConnectionSetup.BuildOptions(), 
+			return new TaskQueueInfoOptions( mConnectionSetup.BuildOptions(),
+				mMapping,
 				mProcessWithStatuses );
 		}
 	}

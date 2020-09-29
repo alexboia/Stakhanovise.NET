@@ -47,21 +47,24 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		private int mWorkerCount;
 
-		private StadardTaskProcessingSetup mTaskProcessingSetup =
-			new StadardTaskProcessingSetup();
+		private StadardTaskProcessingSetup mTaskProcessingSetup;
 
-		private StandardExecutionPerformanceMonitorSetup mExecutionPerformanceMonitorSetup =
-			 new StandardExecutionPerformanceMonitorSetup();
+		private StandardExecutionPerformanceMonitorSetup mExecutionPerformanceMonitorSetup;
 
 		private StandardTaskQueueConsumerSetup mTaskQueueConsumerSetup;
 
-		public StandardTaskEngineSetup ( StandardTaskQueueConsumerSetup taskQueueConsumerSetup, int defaultWorkerCount )
+		public StandardTaskEngineSetup ( StandardTaskQueueConsumerSetup taskQueueConsumerSetup, StakhanoviseSetupDefaults defaults )
 		{
 			if ( taskQueueConsumerSetup == null )
 				throw new ArgumentNullException( nameof( taskQueueConsumerSetup ) );
 
-			mWorkerCount = defaultWorkerCount;
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
+
+			mWorkerCount = defaults.WorkerCount;
+			mTaskProcessingSetup = new StadardTaskProcessingSetup( defaults );
 			mTaskQueueConsumerSetup = taskQueueConsumerSetup;
+			mExecutionPerformanceMonitorSetup = new StandardExecutionPerformanceMonitorSetup( defaults );
 		}
 
 		public ITaskEngineSetup SetupPerformanceMonitor ( Action<IExecutionPerformanceMonitorSetup> setupAction )

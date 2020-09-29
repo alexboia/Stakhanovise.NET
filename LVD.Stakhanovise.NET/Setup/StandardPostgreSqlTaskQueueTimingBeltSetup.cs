@@ -40,18 +40,28 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		private Guid mTimeId;
 
-		private int mInitialWallclockTimeCost = 1000;
+		private int mInitialWallclockTimeCost;
 
-		private int mTimeTickBatchSize = 5;
+		private int mTimeTickBatchSize;
 
-		private int mTimeTickMaxFailCount = 3;
+		private int mTimeTickMaxFailCount;
 
 		private StandardConnectionSetup mConnectionSetup;
 
-		public StandardPostgreSqlTaskQueueTimingBeltSetup ( StandardConnectionSetup connectionSetup )
+		public StandardPostgreSqlTaskQueueTimingBeltSetup ( StandardConnectionSetup connectionSetup, StakhanoviseSetupDefaults defaults )
 		{
 			mConnectionSetup = connectionSetup
 				?? throw new ArgumentNullException( nameof( connectionSetup ) );
+
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
+
+			mInitialWallclockTimeCost = defaults
+				.BuiltInTimingBeltInitialWallclockTimeCost;
+			mTimeTickBatchSize = defaults
+				.BuiltInTimingBeltTimeTickBatchSize;
+			mTimeTickMaxFailCount = defaults
+				.BuiltInTimingBeltTimeTickMaxFailCount;
 		}
 
 		public IPostgreSqlTaskQueueTimingBeltSetup SetupConnection ( Action<IConnectionSetup> setupAction )

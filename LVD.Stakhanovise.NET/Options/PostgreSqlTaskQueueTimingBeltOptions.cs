@@ -37,15 +37,6 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class PostgreSqlTaskQueueTimingBeltOptions
 	{
-		public PostgreSqlTaskQueueTimingBeltOptions ( Guid timeId, ConnectionOptions connectionOptions )
-			: this( timeId, connectionOptions,
-				  initialWallclockTimeCost: 1000,
-				  timeTickBatchSize: 5,
-				  timeTickMaxFailCount: 3 )
-		{
-			return;
-		}
-
 		public PostgreSqlTaskQueueTimingBeltOptions ( Guid timeId,
 			ConnectionOptions connectionOptions,
 			int initialWallclockTimeCost,

@@ -37,12 +37,6 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class ExecutionPerformanceMonitorOptions
 	{
-		public ExecutionPerformanceMonitorOptions ()
-			: this( true, new ExecutionPerformanceMonitorWriteOptions( 1000, 10 ) )
-		{
-			return;
-		}
-
 		public ExecutionPerformanceMonitorOptions ( bool flushStats, ExecutionPerformanceMonitorWriteOptions flushOptions )
 		{
 			FlushStats = flushStats;

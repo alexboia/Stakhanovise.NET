@@ -39,9 +39,9 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StadardTaskProcessingSetup : ITaskProcessingSetup
 	{
-		private int mAbstractTimeTickTimeoutMilliseconds = 1000;
+		private int mAbstractTimeTickTimeoutMilliseconds;
 
-		private long mDefaultEstimatedProcessingTimeMilliseconds = 1000;
+		private long mDefaultEstimatedProcessingTimeMilliseconds;
 
 		private Func<int, long> mCalculateDelayTicksTaskAfterFailure;
 
@@ -49,19 +49,22 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private Func<IQueuedTask, Exception, bool> mIsTaskErrorRecoverable;
 
-		public StadardTaskProcessingSetup ()
+		public StadardTaskProcessingSetup ( StakhanoviseSetupDefaults defaults )
 		{
-			mCalculateDelayTicksTaskAfterFailure =
-				errorCount => ( long )Math.Pow( 10, errorCount );
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
 
-			mCalculateEstimatedProcessingTimeMilliseconds =
-				( task, stats ) => stats.LongestExecutionTime > 0
-					? stats.LongestExecutionTime
-					: mDefaultEstimatedProcessingTimeMilliseconds;
+			mAbstractTimeTickTimeoutMilliseconds = defaults
+				.AbstractTimeTickTimeoutMilliseconds;
+			mDefaultEstimatedProcessingTimeMilliseconds = defaults
+				.DefaultEstimatedProcessingTimeMilliseconds;
 
-			mIsTaskErrorRecoverable =
-				( task, exc ) => !( exc is NullReferenceException )
-					&& !( exc is ArgumentException );
+			mCalculateDelayTicksTaskAfterFailure = defaults
+				.CalculateDelayTicksTaskAfterFailure;
+			mCalculateEstimatedProcessingTimeMilliseconds = defaults
+				.CalculateEstimatedProcessingTimeMilliseconds;
+			mIsTaskErrorRecoverable = defaults
+				.IsTaskErrorRecoverable;
 		}
 
 		public ITaskProcessingSetup WithAbstractTimeTickTimeoutMilliseconds ( int abstractTimeTickTimeoutMilliseconds )

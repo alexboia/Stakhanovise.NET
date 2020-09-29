@@ -66,12 +66,12 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private IStakhanoviseLoggingProvider mLoggingProvider;
 
-		private bool mInjectOwnDependencies = true;
+		private bool mRegisterOwnDependencies = true;
 
-		public StakhanoviseSetup ()
+		public StakhanoviseSetup ( StakhanoviseSetupDefaults defaults )
 		{
-			QueuedTaskMapping defaultMapping =
-				new QueuedTaskMapping();
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
 
 			StandardConnectionSetup queueConsumerConnectionSetup =
 				new StandardConnectionSetup();
@@ -88,21 +88,12 @@ namespace LVD.Stakhanovise.NET.Setup
 			StandardConnectionSetup builtInWriterConnectionSetup =
 				new StandardConnectionSetup();
 
-			QueuedTaskStatus[] defaultProcessWithStatuses = new QueuedTaskStatus[] {
-				QueuedTaskStatus.Unprocessed,
-				QueuedTaskStatus.Error,
-				QueuedTaskStatus.Faulted,
-				QueuedTaskStatus.Processing
-			};
-
-			int defaultWorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
-
 			mTaskQueueProducerSetup = new StandardTaskQueueProducerSetup( queueProducerConnectionSetup,
-				defaultMapping: defaultMapping );
+				defaultMapping: defaults.Mapping );
 
 			mTaskQueueInfoSetup = new StandardTaskQueueInfoSetup( queueInfoConnectionSetup,
-				defaultMapping: defaultMapping,
-				defaultProcessWithStatuses: defaultProcessWithStatuses );
+				defaultMapping: defaults.Mapping,
+				defaultProcessWithStatuses: defaults.ProcessWithStatuses );
 
 			mCommonTaskQueueConnectionSetup = new CollectiveConnectionSetup( queueConsumerConnectionSetup,
 				queueProducerConnectionSetup,
@@ -111,17 +102,17 @@ namespace LVD.Stakhanovise.NET.Setup
 				builtInWriterConnectionSetup );
 
 			mTaskQueueConsumerSetup = new StandardTaskQueueConsumerSetup( queueConsumerConnectionSetup,
-				defaultMapping: defaultMapping,
-				defaultProcessWithStatuses: defaultProcessWithStatuses,
-				defaultQueueConsumerConnectionPoolSize: defaultWorkerCount * 2 );
+				defaultMapping: defaults.Mapping,
+				defaultProcessWithStatuses: defaults.ProcessWithStatuses,
+				defaultQueueConsumerConnectionPoolSize: defaults.QueueConsumerConnectionPoolSize );
 
 			mTaskEngineSetup = new StandardTaskEngineSetup( mTaskQueueConsumerSetup,
-				defaultWorkerCount );
+				defaults );
 
-			mTimingBeltSetup =
-				new StandardTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup );
-			mPerformanceMonitorWriterSetup =
-				new StandardExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup );
+			mTimingBeltSetup = new StandardTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup, 
+				defaults );
+
+			mPerformanceMonitorWriterSetup = new StandardExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup );
 		}
 
 		public IStakhanoviseSetup SetupEngine ( Action<ITaskEngineSetup> setupAction )
@@ -232,9 +223,9 @@ namespace LVD.Stakhanovise.NET.Setup
 				writeToStdOut ) );
 		}
 
-		public IStakhanoviseSetup DontInjectOwnDependencies()
+		public IStakhanoviseSetup DontRegisterOwnDependencies ()
 		{
-			mInjectOwnDependencies = false;
+			mRegisterOwnDependencies = false;
 			return this;
 		}
 
@@ -261,7 +252,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup
 				.BuiltOptions() );
 
-			if ( mInjectOwnDependencies )
+			if ( mRegisterOwnDependencies )
 			{
 				executorRegistry.LoadDependencies( new Dictionary<Type, object>()
 				{

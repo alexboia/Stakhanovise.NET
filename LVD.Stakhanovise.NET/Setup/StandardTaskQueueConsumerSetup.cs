@@ -124,8 +124,8 @@ namespace LVD.Stakhanovise.NET.Setup
 		public TaskQueueConsumerOptions BuildOptions ()
 		{
 			return new TaskQueueConsumerOptions( mConnectionSetup.BuildOptions(),
-				mProcessWithStatuses,
 				mMapping,
+				mProcessWithStatuses,
 				mQueueConsumerConnectionPoolSize,
 				mFaultErrorThresholdCount );
 		}

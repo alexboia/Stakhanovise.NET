@@ -38,11 +38,24 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StandardExecutionPerformanceMonitorSetup : IExecutionPerformanceMonitorSetup
 	{
-		private bool mFlushStats = true;
+		private bool mFlushStats;
 
-		private int mWriteCountThreshold = 10;
+		private int mWriteCountThreshold;
 
-		private int mWriteIntervalThresholdMilliseconds = 1000;
+		private int mWriteIntervalThresholdMilliseconds;
+
+		public StandardExecutionPerformanceMonitorSetup ( StakhanoviseSetupDefaults defaults )
+		{
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
+
+			mFlushStats = defaults
+				.ExecutionPerformanceMonitorFlushStats;
+			mWriteCountThreshold = defaults
+				.ExecutionPerformanceMonitorWriteCountThreshold;
+			mWriteIntervalThresholdMilliseconds = defaults
+				.ExecutionPerformanceMonitorWriteIntervalThresholdMilliseconds;
+		}
 
 		public IExecutionPerformanceMonitorSetup FlushStats ( bool enabled )
 		{
@@ -52,12 +65,20 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public IExecutionPerformanceMonitorSetup WithWriteCountThreshold ( int writeCountThreshold )
 		{
+			if ( writeCountThreshold < 1 )
+				throw new ArgumentOutOfRangeException( nameof( writeCountThreshold ),
+					"The write count threshold must be greater than or equal to 1" );
+
 			mWriteCountThreshold = writeCountThreshold;
 			return this;
 		}
 
 		public IExecutionPerformanceMonitorSetup WithWriteIntervalThresholdMilliseconds ( int writeIntervalThresholdMilliseconds )
 		{
+			if ( writeIntervalThresholdMilliseconds < 0 )
+				throw new ArgumentOutOfRangeException( nameof( writeIntervalThresholdMilliseconds ), 
+					"The write interval threshold must be greater than or equal to 0" );
+
 			mWriteIntervalThresholdMilliseconds = writeIntervalThresholdMilliseconds;
 			return this;
 		}

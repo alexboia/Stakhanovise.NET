@@ -38,9 +38,9 @@ namespace LVD.Stakhanovise.NET.Options
 	public class ConnectionOptions
 	{
 		public ConnectionOptions ( string connectionString,
-			int keepAliveSeconds = 0,
-			int retryCount = 3,
-			int retryDelayMilliseconds = 100 )
+			int keepAliveSeconds,
+			int retryCount,
+			int retryDelayMilliseconds )
 		{
 			ConnectionString = connectionString
 				?? throw new ArgumentNullException( nameof( connectionString ) );

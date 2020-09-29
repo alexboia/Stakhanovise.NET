@@ -29,32 +29,97 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Setup;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET
 {
-	public sealed class Stakhanovise
+	public sealed class Stakhanovise : IDisposable
 	{
-		public static readonly Stakhanovise Instance =
-			new Stakhanovise();
+		private bool mIsDisposed;
 
 		private StakhanoviseSetup mStakhanoviseSetup;
 
 
 		private ITaskEngine mEngine;
 
-		private Stakhanovise ()
+		public Stakhanovise ()
 		{
-			mStakhanoviseSetup = new StakhanoviseSetup();
+			long defaultEstimatedProcessingTimeMilliseconds = 1000;
+			int defaultWorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
+
+			//Define default values that will be fed to the setup API
+			StakhanoviseSetupDefaults defaults = new StakhanoviseSetupDefaults()
+			{
+				Mapping = new QueuedTaskMapping(),
+				ExecutorAssemblies = GetDefaultAssembliesToScan(),
+				WorkerCount = defaultWorkerCount,
+				QueueConsumerConnectionPoolSize = defaultWorkerCount * 2,
+				ProcessWithStatuses = new QueuedTaskStatus[] {
+					QueuedTaskStatus.Unprocessed,
+					QueuedTaskStatus.Error,
+					QueuedTaskStatus.Faulted,
+					QueuedTaskStatus.Processing
+				},
+
+				AbstractTimeTickTimeoutMilliseconds = 1000,
+				DefaultEstimatedProcessingTimeMilliseconds = defaultEstimatedProcessingTimeMilliseconds,
+
+				CalculateDelayTicksTaskAfterFailure = errorCount
+					=> ( long )Math.Pow( 10, errorCount ),
+
+				CalculateEstimatedProcessingTimeMilliseconds = ( task, stats )
+					=> stats.LongestExecutionTime > 0
+						? stats.LongestExecutionTime
+						: defaultEstimatedProcessingTimeMilliseconds,
+
+				IsTaskErrorRecoverable = ( task, exc )
+					=> !( exc is NullReferenceException )
+						&& !( exc is ArgumentException ),
+
+				ExecutionPerformanceMonitorFlushStats = true,
+				ExecutionPerformanceMonitorWriteCountThreshold = 10,
+				ExecutionPerformanceMonitorWriteIntervalThresholdMilliseconds = 1000,
+
+				BuiltInTimingBeltInitialWallclockTimeCost = 1000,
+				BuiltInTimingBeltTimeTickBatchSize = 5,
+				BuiltInTimingBeltTimeTickMaxFailCount = 3
+			};
+
+			//Init setup API
+			mStakhanoviseSetup = new StakhanoviseSetup( defaults );
+		}
+
+		private void CheckNotDisposedOrThrow ()
+		{
+			if ( mIsDisposed )
+				throw new ObjectDisposedException( nameof( Stakhanovise ),
+					"Cannot reuse a Stakhanovise instance" );
+		}
+
+		private Assembly[] GetDefaultAssembliesToScan ()
+		{
+			return new Assembly[]
+			{
+				Assembly.GetExecutingAssembly()
+			};
+		}
+
+		public static Stakhanovise CreateForTheMotherland ()
+		{
+			return new Stakhanovise();
 		}
 
 		public Stakhanovise SetupWorkingPeoplesCommittee ( Action<IStakhanoviseSetup> setupAction )
 		{
+			CheckNotDisposedOrThrow();
+
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
 
@@ -64,6 +129,8 @@ namespace LVD.Stakhanovise.NET
 
 		public async Task<Stakhanovise> StartFulfillingFiveYearPlanAsync ()
 		{
+			CheckNotDisposedOrThrow();
+
 			if ( mEngine == null )
 				mEngine = mStakhanoviseSetup.Build();
 
@@ -75,10 +142,33 @@ namespace LVD.Stakhanovise.NET
 
 		public async Task<Stakhanovise> StopFulfillingFiveYearPlanAsync ()
 		{
+			CheckNotDisposedOrThrow();
+
 			if ( mEngine != null && mEngine.IsRunning )
 				await mEngine.StopAync();
 
 			return this;
+		}
+
+		private void Dispose ( bool disposing )
+		{
+			if ( !mIsDisposed )
+			{
+				if ( disposing )
+				{
+					StopFulfillingFiveYearPlanAsync().Wait();
+					mEngine.Dispose();
+					mEngine = null;
+				}
+
+				mIsDisposed = true;
+			}
+		}
+
+		public void Dispose ()
+		{
+			Dispose( true );
+			GC.SuppressFinalize( this );
 		}
 	}
 }

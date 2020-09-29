@@ -38,27 +38,9 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskQueueConsumerOptions : TaskQueueOptions
 	{
-		public TaskQueueConsumerOptions ( ConnectionOptions connectionOptions, int queueConsumerConnectionPoolSize )
-			: base( connectionOptions )
-		{
-			if ( queueConsumerConnectionPoolSize < 1 )
-				throw new ArgumentOutOfRangeException( nameof( queueConsumerConnectionPoolSize ),
-					"Queue consumer connection pool size must be greater than or equal to 1" );
-
-			QueueConsumerConnectionPoolSize = queueConsumerConnectionPoolSize;
-			FaultErrorThresholdCount = 5;
-
-			ProcessWithStatuses = new QueuedTaskStatus[] {
-				QueuedTaskStatus.Unprocessed,
-				QueuedTaskStatus.Error,
-				QueuedTaskStatus.Faulted,
-				QueuedTaskStatus.Processing
-			};
-		}
-
 		public TaskQueueConsumerOptions ( ConnectionOptions connectionOptions,
-			QueuedTaskStatus[] processWithStatuses,
 			QueuedTaskMapping mapping,
+			QueuedTaskStatus[] processWithStatuses,
 			int queueConsumerConnectionPoolSize,
 			int faultErrorThresholdCount )
 			: base( connectionOptions,

@@ -38,19 +38,6 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskProcessingOptions
 	{
-		public TaskProcessingOptions ()
-		{
-			AbstractTimeTickTimeoutMilliseconds = 1000;
-			CalculateDelayTicksTaskAfterFailure = errorCount => ( long )Math.Pow( 10, errorCount );
-			DefaultEstimatedProcessingTimeMilliseconds = 1000;
-			CalculateEstimatedProcessingTimeMilliseconds = ( task, stats ) => stats.LongestExecutionTime > 0
-				? stats.LongestExecutionTime
-				: DefaultEstimatedProcessingTimeMilliseconds;
-
-			IsTaskErrorRecoverable = ( task, exc ) => !( exc is NullReferenceException )
-				&& !( exc is ArgumentException );
-		}
-
 		public TaskProcessingOptions ( int abstractTimeTickTimeoutMilliseconds,
 			long defaultEstimatedProcessingTimeMilliseconds,
 			Func<int, long> calculateDelayTicksTaskAfterFailure,

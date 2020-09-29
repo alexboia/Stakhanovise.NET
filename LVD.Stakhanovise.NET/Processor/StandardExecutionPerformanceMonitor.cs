@@ -54,11 +54,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private Task mFlushTask = null;
 
-		private ManualResetEvent mFlushThresholdCountHandle = null;
-
 		private CancellationTokenSource mFlushStopTokenSource = null;
 
-		private int mReportCount = 0;
+		private CountdownEvent mFlushCountdownHandle = null;
 
 		private StateController mFlushStateController =
 			new StateController();
@@ -104,11 +102,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				updateValueFactory: ( key, lastStats ) => lastStats.UpdateWithNewCycleExecutionTime( durationMilliseconds ) );
 
 			if ( mFlushStateController.IsStarted )
-			{
-				int newReportCount = Interlocked.Increment( ref mReportCount );
-				if ( newReportCount % mFlushOptions.WriteCountThreshold == 0 )
-					mFlushThresholdCountHandle.Set();
-			}
+				mFlushCountdownHandle.Signal();
 		}
 
 		private async Task RunFlushLoopAsync ( CancellationToken stopToken )
@@ -119,13 +113,16 @@ namespace LVD.Stakhanovise.NET.Processor
 				{
 					stopToken.ThrowIfCancellationRequested();
 
-					await mFlushThresholdCountHandle.ToTask( mFlushOptions.WriteIntervalThresholdMilliseconds );
+					if ( mFlushOptions.WriteIntervalThresholdMilliseconds > 0 )
+						mFlushCountdownHandle.Wait( mFlushOptions.WriteIntervalThresholdMilliseconds, stopToken );
+					else
+						mFlushCountdownHandle.Wait( stopToken );
+
 					stopToken.ThrowIfCancellationRequested();
+					mFlushCountdownHandle.Reset();
 
 					await mFlushWriter.WriteAsync( GetExecutionStatsChangesSinceLastFlush() );
 					stopToken.ThrowIfCancellationRequested();
-
-					mFlushThresholdCountHandle.Reset();
 				}
 				catch ( OperationCanceledException )
 				{
@@ -144,8 +141,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mFlushWriter = writer;
 			mFlushOptions = options;
 			mFlushStopTokenSource = new CancellationTokenSource();
-			mFlushThresholdCountHandle = new ManualResetEvent( initialState: false );
-			mReportCount = 0;
+			mFlushCountdownHandle = new CountdownEvent( options.WriteCountThreshold );
 
 			await mFlushWriter.SetupIfNeededAsync();
 			mFlushTask = Task.Run( async () => await RunFlushLoopAsync( mFlushStopTokenSource.Token ) );
@@ -170,12 +166,11 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			mFlushTask.Dispose();
 			mFlushStopTokenSource.Dispose();
-			mFlushThresholdCountHandle.Dispose();
-			mReportCount = 0;
+			mFlushCountdownHandle.Dispose();
 
 			mFlushTask = null;
 			mFlushStopTokenSource = null;
-			mFlushThresholdCountHandle = null;
+			mFlushCountdownHandle = null;
 			mFlushOptions = null;
 			mFlushWriter = null;
 			mLastFlushedStats = null;

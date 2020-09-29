@@ -42,12 +42,16 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardPostgreSqlTaskQueueTimingBeltSetup mBuiltInTimingBeltSetup;
 
-		public StandardTaskQueueTimingBeltSetup ( StandardConnectionSetup builtInTimingBeltConnectionSetup )
+		public StandardTaskQueueTimingBeltSetup ( StandardConnectionSetup builtInTimingBeltConnectionSetup, StakhanoviseSetupDefaults defaults )
 		{
 			if ( builtInTimingBeltConnectionSetup == null )
 				throw new ArgumentNullException( nameof( builtInTimingBeltConnectionSetup ) );
-			
-			mBuiltInTimingBeltSetup = new StandardPostgreSqlTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup );
+
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
+
+			mBuiltInTimingBeltSetup = new StandardPostgreSqlTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup, 
+				defaults );
 		}
 
 		public ITaskQueueTimingBeltSetup SetupBuiltInTimingBelt ( Action<IPostgreSqlTaskQueueTimingBeltSetup> setupAction )

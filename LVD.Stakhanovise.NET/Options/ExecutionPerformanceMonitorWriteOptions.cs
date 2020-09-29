@@ -37,9 +37,17 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class ExecutionPerformanceMonitorWriteOptions
 	{
-		public ExecutionPerformanceMonitorWriteOptions ( int writeIntervalThresholdMilliseconds, 
+		public ExecutionPerformanceMonitorWriteOptions ( int writeIntervalThresholdMilliseconds,
 			int writeCountThreshold )
 		{
+			if ( writeIntervalThresholdMilliseconds < 0 )
+				throw new ArgumentOutOfRangeException( nameof( writeIntervalThresholdMilliseconds ),
+					"The write interval threshold must be greater than or equal to 0" );
+
+			if ( writeCountThreshold < 1 )
+				throw new ArgumentOutOfRangeException( nameof( writeCountThreshold ),
+					"The write count threshold must be greater than or equal to 1" );
+
 			WriteIntervalThresholdMilliseconds = writeIntervalThresholdMilliseconds;
 			WriteCountThreshold = writeCountThreshold;
 		}
