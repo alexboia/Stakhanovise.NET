@@ -38,9 +38,12 @@ using Npgsql;
 using NpgsqlTypes;
 using LVD.Stakhanovise.NET.Queue;
 using NUnit.Framework;
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
+	//TODO: add tests for ComputeAbsoluteTimeTicksAsync
 	[TestFixture]
 	public class PostgreSqlTaskQueueTimingBeltTests : BaseTestWithConfiguration
 	{
@@ -113,7 +116,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 					Assert.NotNull( time );
 					Assert.AreEqual( i + 1, time.Ticks );
-					Assert.AreEqual( currentWallclockTimeCost, time.TicksWallclockTimeCost );
+					Assert.AreEqual( currentWallclockTimeCost, time.WallclockTimeCost );
 					Assert.AreEqual( ( long )Math.Ceiling( ( double )currentWallclockTimeCost / ( i + 1 ) ), time.TickDuration );
 
 					if ( i < nRequests - 1 )
@@ -191,8 +194,8 @@ namespace LVD.Stakhanovise.NET.Tests
 							Assert.NotNull( time );
 							Assert.GreaterOrEqual( time.Ticks,
 								lastThreadTime.Ticks );
-							Assert.GreaterOrEqual( time.TicksWallclockTimeCost,
-								lastThreadTime.TicksWallclockTimeCost );
+							Assert.GreaterOrEqual( time.WallclockTimeCost,
+								lastThreadTime.WallclockTimeCost );
 
 							if ( iRequest < nRequestsPerThread - 1 )
 							{
@@ -215,7 +218,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				Assert.AreEqual( nThreads * nRequestsPerThread,
 					lastTime.Ticks );
 				Assert.AreEqual( currentWallclockTimeCost,
-					lastTime.TicksWallclockTimeCost );
+					lastTime.WallclockTimeCost );
 
 				await tb.StopAsync();
 				Assert.IsFalse( tb.IsRunning );
@@ -325,7 +328,16 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private PostgreSqlTaskQueueTimingBelt GetTimingBelt ()
 		{
-			return new PostgreSqlTaskQueueTimingBelt( TimeId, timeConnectionString: ConnectionString,
+			return new PostgreSqlTaskQueueTimingBelt( GetTimingBeltOptions() );
+		}
+
+		private PostgreSqlTaskQueueTimingBeltOptions GetTimingBeltOptions ()
+		{
+			return new PostgreSqlTaskQueueTimingBeltOptions( TimeId,
+				connectionOptions: new ConnectionOptions( ConnectionString,
+					keepAliveSeconds: 0,
+					retryCount: 3,
+					retryDelayMilliseconds: 100 ),
 				initialWallclockTimeCost: 1000,
 				timeTickBatchSize: 10,
 				timeTickMaxFailCount: 3 );
