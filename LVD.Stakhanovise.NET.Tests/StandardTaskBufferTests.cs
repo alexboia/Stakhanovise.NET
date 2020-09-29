@@ -29,21 +29,21 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Processor;
+using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Tests.Support;
+using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
-using LVD.Stakhanovise.NET.Processor;
-using LVD.Stakhanovise.NET.Model;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class DefaultTaskBufferTests
+	public class StandardTaskBufferTests
 	{
 		[Test]
 		[TestCase( 1 )]
@@ -69,7 +69,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( capacity ) )
 			{
 				for ( int i = 0; i < buffer.Capacity; i++ )
-					Assert.IsTrue( buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) ) );
+					Assert.IsTrue( buffer.TryAddNewTask( new MockQueuedTaskToken( Guid.NewGuid() ) ) );
 
 				Assert.AreEqual( buffer.Capacity, buffer.Count );
 				Assert.IsTrue( buffer.IsFull );
@@ -88,20 +88,20 @@ namespace LVD.Stakhanovise.NET.Tests
 			{
 				//Add some items
 				int actualItemNumber = ProduceItemNumber( capacity );
-				List<QueuedTask> addedTasks = new List<QueuedTask>();
+				List<IQueuedTaskToken> addedTasks = new List<IQueuedTaskToken>();
 
 				for ( int i = 0; i < actualItemNumber; i++ )
 				{
-					addedTasks.Add( new QueuedTask( Guid.NewGuid() ) );
+					addedTasks.Add( new MockQueuedTaskToken( Guid.NewGuid() ) );
 					buffer.TryAddNewTask( addedTasks[ i ] );
 				}
 
 				for ( int i = 0; i < actualItemNumber; i++ )
 				{
-					QueuedTask queuedTask = buffer.TryGetNextTask();
+					IQueuedTaskToken queuedTaskToken = buffer.TryGetNextTask();
 
-					Assert.NotNull( queuedTask );
-					Assert.IsTrue( addedTasks.Any( t => t.Id == queuedTask.Id ) );
+					Assert.NotNull( queuedTaskToken );
+					Assert.IsTrue( addedTasks.Any( t => t.QueuedTask.Id == queuedTaskToken.QueuedTask.Id ) );
 				}
 
 				Assert.IsFalse( buffer.IsFull );
@@ -131,10 +131,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			{
 				//Fill buffer
 				for ( int i = 0; i < buffer.Capacity; i++ )
-					buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) );
+					buffer.TryAddNewTask( new MockQueuedTaskToken( Guid.NewGuid() ) );
 
 				//Now attempt to add one more
-				Assert.IsFalse( buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) ) );
+				Assert.IsFalse( buffer.TryAddNewTask( new MockQueuedTaskToken( Guid.NewGuid() ) ) );
 			}
 		}
 
@@ -149,7 +149,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				int actualItemNumber = ProduceItemNumber( capacity );
 
 				for ( int i = 0; i < actualItemNumber; i++ )
-					Assert.IsTrue( buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) ) );
+					Assert.IsTrue( buffer.TryAddNewTask( new MockQueuedTaskToken( Guid.NewGuid() ) ) );
 
 				//Complete adding
 				buffer.CompleteAdding();
@@ -160,7 +160,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.IsTrue( buffer.IsCompleted );
 
 				//We can no longer add items
-				Assert.IsFalse( buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) ) );
+				Assert.IsFalse( buffer.TryAddNewTask( new MockQueuedTaskToken( Guid.NewGuid() ) ) );
 
 				//We must be able to retrieve the other items
 				for ( int i = 0; i < actualItemNumber; i++ )
@@ -186,7 +186,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Task[] allConsumers = new Task[ nConsumers ];
 
 			int expectedTotal = 0;
-			ConcurrentBag<QueuedTask> processedTasks = new ConcurrentBag<QueuedTask>();
+			ConcurrentBag<IQueuedTaskToken> processedTasks = new ConcurrentBag<IQueuedTaskToken>();
 
 			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( 10 ) )
 			{
@@ -201,7 +201,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 						while ( nItems > 0 )
 						{
-							bool isAdded = buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) );
+							bool isAdded = buffer.TryAddNewTask( new MockQueuedTaskToken( Guid.NewGuid() ) );
 							if ( isAdded )
 								nItems--;
 							else
@@ -220,9 +220,9 @@ namespace LVD.Stakhanovise.NET.Tests
 						//  - has no more items
 						while ( !buffer.IsCompleted )
 						{
-							QueuedTask queuedTask = buffer.TryGetNextTask();
-							if ( queuedTask != null )
-								processedTasks.Add( queuedTask );
+							IQueuedTaskToken queuedTaskToken = buffer.TryGetNextTask();
+							if ( queuedTaskToken != null )
+								processedTasks.Add( queuedTaskToken );
 							else
 								Task.Delay( 10 ).Wait();
 						}
@@ -249,8 +249,8 @@ namespace LVD.Stakhanovise.NET.Tests
 				Assert.AreEqual( expectedTotal,
 					processedTasks.Count );
 
-				foreach ( QueuedTask queuedTask in processedTasks )
-					Assert.AreEqual( 1, processedTasks.Count( t => t.Id == queuedTask.Id ) );
+				foreach ( IQueuedTaskToken queuedTaskToken in processedTasks )
+					Assert.AreEqual( 1, processedTasks.Count( t => t.QueuedTask.Id == queuedTaskToken.QueuedTask.Id ) );
 			}
 		}
 
@@ -262,7 +262,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( StandardTaskBuffer buffer = new StandardTaskBuffer( 10 ) )
 			{
 				buffer.QueuedTaskAdded += ( s, e ) => handlerCalled = true;
-				buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) );
+				buffer.TryAddNewTask( new MockQueuedTaskToken( Guid.NewGuid() ) );
 			}
 
 			Assert.IsTrue( handlerCalled );
@@ -277,7 +277,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			{
 				buffer.QueuedTaskRetrieved += ( s, e ) => handlerCalled = true;
 
-				buffer.TryAddNewTask( new QueuedTask( Guid.NewGuid() ) );
+				buffer.TryAddNewTask( new MockQueuedTaskToken( Guid.NewGuid() ) );
 				buffer.TryGetNextTask();
 			}
 

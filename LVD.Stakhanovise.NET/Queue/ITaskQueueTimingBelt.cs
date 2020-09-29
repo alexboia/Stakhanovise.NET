@@ -45,7 +45,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		Task<AbstractTimestamp> TickAbstractTimeAsync ( int timeout );
 
-		Task<long> ComputeAbsolutetTimeTicksAsync ( long timeTicksToAdd );
+		Task<long> ComputeAbsoluteTimeTicksAsync ( long timeTicksToAdd );
 
 		Task StartAsync ();
 

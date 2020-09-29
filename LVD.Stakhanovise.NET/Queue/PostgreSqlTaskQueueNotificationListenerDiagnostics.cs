@@ -44,6 +44,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			NotificationCount = notificationCount;
 			ReconnectCount = reconnectCount;
 			ConnectionBackendProcessId = processId;
+			//TODO: also set WaitTimeoutCount
 		}
 
 		public static PostgreSqlTaskQueueNotificationListenerDiagnostics Zero

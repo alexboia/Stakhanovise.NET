@@ -184,6 +184,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				//  to be able to stop the listener when requested
 				try
 				{
+					//TODO: timeout should be configurable
 					bool hadNotification = signalingConn.Wait( 250 );
 					if ( !hadNotification )
 					{

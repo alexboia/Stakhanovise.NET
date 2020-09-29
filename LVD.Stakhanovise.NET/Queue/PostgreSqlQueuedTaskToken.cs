@@ -387,6 +387,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task ReleaseLockAsync ()
 		{
+			//TODO: make impossible to reuse after being released
 			CheckNotDisposedOrThrow();
 
 			if ( !IsLocked )

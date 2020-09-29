@@ -223,7 +223,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				{
 					//Compute the absolute time, in ticks, 
 					//	until the task execution is delayed.
-					retrtyAtTicks = await mTimingBelt.ComputeAbsolutetTimeTicksAsync( delayTicks );
+					retrtyAtTicks = await mTimingBelt.ComputeAbsoluteTimeTicksAsync( delayTicks );
 				}
 				catch ( Exception exc )
 				{

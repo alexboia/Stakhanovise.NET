@@ -312,7 +312,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				=> tickRequest.Dispose() );
 		}
 
-		public async Task<long> ComputeAbsolutetTimeTicksAsync ( long timeTicksToAdd )
+		public async Task<long> ComputeAbsoluteTimeTicksAsync ( long timeTicksToAdd )
 		{
 			CheckNotDisposedOrThrow();
 
