@@ -29,29 +29,18 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using Ninject;
-using LVD.Stakhanovise.NET.Tests.Support;
-using LVD.Stakhanovise.NET.Tests.Executors;
 using LVD.Stakhanovise.NET.Executors;
+using LVD.Stakhanovise.NET.Tests.Executors;
 using LVD.Stakhanovise.NET.Tests.Payloads;
+using NUnit.Framework;
 using System.Linq;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
+	//TODO: add tests for loading dependencies directly into the task executor registry
 	[TestFixture]
-	public class DefaultTaskExecutorRegistryTests
+	public class StandardTaskExecutorRegistryTests
 	{
-		private IKernel mKernel;
-
-		public DefaultTaskExecutorRegistryTests ()
-		{
-			mKernel = new StandardKernel( new NinjectTasksTestModule() );
-		}
-
 		[Test]
 		public void Test_CanScanAssemblies ()
 		{
@@ -148,7 +137,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private ITaskExecutorRegistry CreateTaskExecutorRegistry ()
 		{
-			return new StandardTaskExecutorRegistry( type => mKernel.TryGet( type ) );
+			return new StandardTaskExecutorRegistry( new StandardDependencyResolver() );
 		}
 	}
 }

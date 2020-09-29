@@ -39,18 +39,28 @@ using NUnit.Framework;
 using LVD.Stakhanovise.NET.Tests.Support;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Options;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class DefaultTaskPollerTests
+	public class StandardTaskPollerTests
 	{
 		[Test]
 		public async Task Test_CanStartStop ()
 		{
+			TaskProcessingOptions processingOpts = GetTaskProcessingOptions();
+			Mock<IExecutionPerformanceMonitor> perfMonMock = new Mock<IExecutionPerformanceMonitor>();
+			Mock<ITaskQueueTimingBelt> timingBeltMock = new Mock<ITaskQueueTimingBelt>();
+
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( 100 ) )
-			using ( DequeueOnlyMockTaskQueue taskQueue = new DequeueOnlyMockTaskQueue( 0 ) )
-			using ( StandardTaskPoller poller = new StandardTaskPoller( taskQueue, taskBuffer ) )
+			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( 0 ) )
+			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
+				taskQueue,
+				taskBuffer,
+				perfMonMock.Object,
+				timingBeltMock.Object ) )
 			{
 				await poller.StartAsync();
 
@@ -73,16 +83,33 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10, 1 )]
 		public async Task Test_PollingScenario ( int bufferCapacity, int numberOfTasks )
 		{
-			List<QueuedTask> producedTasks;
-			List<QueuedTask> consumedTasks;
-			Task<List<QueuedTask>> consumedTasksReadyHandle;
+			List<IQueuedTaskToken> producedTasks;
+			List<IQueuedTaskToken> consumedTasks;
+			Task<List<IQueuedTaskToken>> consumedTasksReadyHandle;
+
+			TaskProcessingOptions processingOpts = GetTaskProcessingOptions();
+			Mock<IExecutionPerformanceMonitor> perfMonMock = new Mock<IExecutionPerformanceMonitor>();
+			Mock<ITaskQueueTimingBelt> timingBeltMock = new Mock<ITaskQueueTimingBelt>();
+
+			perfMonMock.Setup( p => p.GetExecutionStats( It.IsAny<string>() ) )
+				.Returns( new TaskExecutionStats( 100, 100, 100, 100, 100, 1 ) );
+
+			timingBeltMock.Setup( t => t.TickAbstractTimeAsync( It.IsAny<int>() ) )
+				.ReturnsAsync( new AbstractTimestamp( 100, 1000 ) );
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( DequeueOnlyMockTaskQueue taskQueue = new DequeueOnlyMockTaskQueue( numberOfTasks ) )
-			using ( StandardTaskPoller poller = new StandardTaskPoller( taskQueue, taskBuffer ) )
+			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( numberOfTasks ) )
+			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
+				taskQueue,
+				taskBuffer,
+				perfMonMock.Object,
+				timingBeltMock.Object ) )
 			{
 				await poller.StartAsync();
 
+				//Poller is filling up the buffer.
+				//We need to check the buffer to see whether 
+				//	the poller produced the appropriate data
 				consumedTasksReadyHandle = ConsumeBuffer( taskBuffer );
 
 				await taskQueue.QueueDepletedHandle;
@@ -96,26 +123,29 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				Assert.AreEqual( producedTasks.Count, consumedTasks.Count );
 
-				foreach ( QueuedTask pt in producedTasks )
-					Assert.AreEqual( 1, consumedTasks.Count( ct => ct.Id == pt.Id ) );
+				foreach ( IQueuedTaskToken pt in producedTasks )
+					Assert.AreEqual( 1, consumedTasks.Count( ct => ct.QueuedTask.Id == pt.QueuedTask.Id ) );
+
+				perfMonMock.Verify();
+				timingBeltMock.Verify();
 			}
 		}
 
-		private Task<List<QueuedTask>> ConsumeBuffer ( ITaskBuffer taskBuffer )
+		private Task<List<IQueuedTaskToken>> ConsumeBuffer ( ITaskBuffer taskBuffer )
 		{
-			List<QueuedTask> consumedTasks
-				= new List<QueuedTask>();
+			List<IQueuedTaskToken> consumedTasks
+				= new List<IQueuedTaskToken>();
 
-			TaskCompletionSource<List<QueuedTask>> consumedTasksCompletionSource
-				= new TaskCompletionSource<List<QueuedTask>>();
+			TaskCompletionSource<List<IQueuedTaskToken>> consumedTasksCompletionSource
+				= new TaskCompletionSource<List<IQueuedTaskToken>>();
 
 			Task.Run( () =>
 			{
 				while ( !taskBuffer.IsCompleted )
 				{
-					QueuedTask queuedTask = taskBuffer.TryGetNextTask();
-					if ( queuedTask != null )
-						consumedTasks.Add( queuedTask );
+					IQueuedTaskToken queuedTaskToken = taskBuffer.TryGetNextTask();
+					if ( queuedTaskToken != null )
+						consumedTasks.Add( queuedTaskToken );
 					else
 						Task.Delay( 10 ).Wait();
 				}
@@ -125,6 +155,21 @@ namespace LVD.Stakhanovise.NET.Tests
 			} );
 
 			return consumedTasksCompletionSource.Task;
+		}
+
+		private TaskProcessingOptions GetTaskProcessingOptions ()
+		{
+			return new TaskProcessingOptions( 1000,
+				defaultEstimatedProcessingTimeMilliseconds: 1000,
+				calculateDelayTicksTaskAfterFailure: errorCount
+					=> ( long )Math.Pow( 10, errorCount ),
+				calculateEstimatedProcessingTimeMilliseconds: ( task, stats )
+					=> stats.LongestExecutionTime > 0
+						? stats.LongestExecutionTime
+						: 1000,
+				isTaskErrorRecoverable: ( task, exc )
+					 => !( exc is NullReferenceException )
+						 && !( exc is ArgumentException ) );
 		}
 	}
 }
