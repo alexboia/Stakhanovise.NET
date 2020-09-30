@@ -43,5 +43,15 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				queueConsumerConnectionPoolSize: 10,
 				faultErrorThresholdCount: 5 );
 		}
+
+		public static TaskQueueInfoOptions GetDefaultTaskQueueInfoOptions ( string connectionString )
+		{
+			return new TaskQueueInfoOptions( new ConnectionOptions( connectionString,
+					keepAliveSeconds: 0,
+					retryCount: 3,
+					retryDelayMilliseconds: 100 ),
+				new QueuedTaskMapping(),
+				ProcessWithStatuses );
+		}
 	}
 }

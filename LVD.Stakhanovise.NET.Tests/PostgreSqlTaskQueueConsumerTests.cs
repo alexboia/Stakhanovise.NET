@@ -16,6 +16,7 @@ using System.Linq;
 namespace LVD.Stakhanovise.NET.Tests
 {
 	//TODO: also test dequeue with tasks still being locked
+	//TODO: test correct handling of connection dropouts (notifications being emitted by queue consumer)
 	[TestFixture]
 	public class PostgreSqlTaskQueueConsumerTests : BaseTestWithConfiguration
 	{

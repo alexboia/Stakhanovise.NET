@@ -248,5 +248,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public IEnumerable<QueuedTask> SeededTasks
 			=> mSeededTasks.AsReadOnly();
+
+		public int NumUnProcessedTasks => mNumUnProcessedTasks;
+
+		public int NumErroredTasks => mNumErroredTasks;
+
+		public int NumFaultedTasks => mNumFaultedTasks;
+
+		public int NumFatalTasks => mNumFatalTasks;
 	}
 }
