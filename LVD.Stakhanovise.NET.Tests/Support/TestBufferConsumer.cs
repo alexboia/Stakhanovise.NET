@@ -1,7 +1,9 @@
 ﻿using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Queue;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -35,7 +37,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			} );
 		}
 
-		public void WaitForBufferToBeConsumed()
+		public void WaitForBufferToBeConsumed ()
 		{
 			if ( mConsumeBufferTask == null )
 				return;
@@ -43,7 +45,14 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mConsumeBufferTask.Wait();
 		}
 
-		public List<IQueuedTaskToken> ConsumedTasks 
-			=> mConsumedTasks;
+		public void AssertMatchesProducedTasks ( IEnumerable<IQueuedTaskToken> producedTasks )
+		{
+			Assert.AreEqual( producedTasks.Count(),
+				mConsumedTasks.Count );
+
+			foreach ( IQueuedTaskToken pt in producedTasks )
+				Assert.AreEqual( 1, mConsumedTasks.Count( ct => ct.QueuedTask.Id
+					== pt.QueuedTask.Id ) );
+		}
 	}
 }

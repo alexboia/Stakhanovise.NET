@@ -44,6 +44,7 @@ using LVD.Stakhanovise.NET.Options;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
+	//TODO: make test scenarios with and without new task notification updates
 	[TestFixture]
 	public class StandardTaskPollerTests
 	{
@@ -89,11 +90,8 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10, 150 )]
 		[TestCase( 150, 150 )]
 		[TestCase( 10, 1 )]
-		public async Task Test_CanPoll_WithNoTaskUpdates ( int bufferCapacity, int numberOfTasks )
+		public async Task Test_CanPoll ( int bufferCapacity, int numberOfTasks )
 		{
-			List<IQueuedTaskToken> producedTasks;
-			List<IQueuedTaskToken> consumedTasks;
-
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetTaskProcessingOptions();
 
@@ -129,18 +127,13 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				consumer.WaitForBufferToBeConsumed();
 
-				producedTasks = taskQueue.DequeuedTasksHistory;
-				consumedTasks = consumer.ConsumedTasks;
-
 				Assert.IsFalse( taskBuffer.HasTasks );
 				Assert.IsTrue( taskBuffer.IsCompleted );
 
-				Assert.AreEqual( producedTasks.Count, consumedTasks.Count );
+				consumer.AssertMatchesProducedTasks( taskQueue
+					.DequeuedTasksHistory );
 
-				foreach ( IQueuedTaskToken pt in producedTasks )
-					Assert.AreEqual( 1, consumedTasks.Count( ct => ct.QueuedTask.Id == pt.QueuedTask.Id ) );
-
-				perfMonMock.Verify();
+				perfMonMock.VerifyAll();
 			}
 		}
 	}

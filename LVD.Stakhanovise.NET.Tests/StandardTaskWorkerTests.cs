@@ -97,7 +97,6 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 100, 10, 10 )]
 		public async Task Test_CanWork ( int bufferCapacity, int workerCount, int numberOfTasks )
 		{
-			List<IQueuedTaskToken> producedTaskTokens;
 			ConcurrentBag<IQueuedTaskToken> processedTaskTokens =
 				new ConcurrentBag<IQueuedTaskToken>();
 
@@ -120,6 +119,9 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
 			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			{
+				TestBufferProducer producer = 
+					new TestBufferProducer( taskBuffer, mPayloadTypes );
+				
 				for ( int i = 0; i < workerCount; i++ )
 					workers.Add( new StandardTaskWorker( processingOpts,
 						taskBuffer,
@@ -131,8 +133,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				foreach ( StandardTaskWorker w in workers )
 					await w.StartAsync();
 
-				producedTaskTokens = await ProduceBuffer( taskBuffer,
-					numberOfTasks,
+				await producer.ProduceTasksAsync( numberOfTasks,
 					handleTokenReleased );
 
 				while ( !taskBuffer.IsCompleted )
@@ -142,86 +143,12 @@ namespace LVD.Stakhanovise.NET.Tests
 					await w.StopAync();
 
 				await timingBelt.StopAsync();
-
-				Assert.AreEqual( producedTaskTokens.Count,
-					processedTaskTokens.Count );
-
-				foreach ( IQueuedTaskToken produced in producedTaskTokens )
-					Assert.NotNull( processedTaskTokens.FirstOrDefault(
-						t => t.QueuedTask.Id == produced.QueuedTask.Id
-						&& ( t.QueuedTask.Status == QueuedTaskStatus.Processed
-							|| t.QueuedTask.Status == QueuedTaskStatus.Error
-							|| t.QueuedTask.Status == QueuedTaskStatus.Faulted
-							|| t.QueuedTask.Status == QueuedTaskStatus.Fatal ) ) );
-
 				foreach ( StandardTaskWorker w in workers )
 					w.Dispose();
 
+				producer.AssertMatchesProcessedTasks( processedTaskTokens );
 				executionPerformanceMonitorMock.VerifyAll();
 			}
-		}
-
-		private Task<List<IQueuedTaskToken>> ProduceBuffer ( ITaskBuffer taskBuffer,
-			int numberOfTasks,
-			Action<object, TokenReleasedEventArgs> onTokenReleased )
-		{
-			List<IQueuedTaskToken> producedTasks =
-				new List<IQueuedTaskToken>();
-
-			TaskCompletionSource<List<IQueuedTaskToken>> producedTasksCompletionSource =
-				new TaskCompletionSource<List<IQueuedTaskToken>>();
-
-			ManualResetEvent bufferSpaceAvailableWaitHandle =
-				new ManualResetEvent( false );
-
-			Queue<Type> taskPayloadTypes =
-				new Queue<Type>( mPayloadTypes );
-
-			Task.Run( () =>
-			{
-				Type currentPayloadType;
-				IQueuedTaskToken newTaskToken;
-
-				EventHandler handleBufferElementRemoved
-					= ( s, e ) => bufferSpaceAvailableWaitHandle.Set();
-				EventHandler<TokenReleasedEventArgs> handleTokenReleased
-					= ( s, e ) => onTokenReleased( s, e );
-
-				taskBuffer.QueuedTaskRetrieved
-					+= handleBufferElementRemoved;
-
-				while ( taskPayloadTypes.TryDequeue( out currentPayloadType ) )
-				{
-					for ( int i = 0; i < numberOfTasks; i++ )
-					{
-						newTaskToken = new MockQueuedTaskToken( new QueuedTask( Guid.NewGuid() )
-						{
-							Payload = Activator.CreateInstance( currentPayloadType ),
-							Status = QueuedTaskStatus.Unprocessed,
-							Type = currentPayloadType.FullName
-						} );
-
-						newTaskToken.TokenReleased += handleTokenReleased;
-						producedTasks.Add( newTaskToken );
-
-						while ( !taskBuffer.TryAddNewTask( newTaskToken ) )
-						{
-							bufferSpaceAvailableWaitHandle.WaitOne();
-							bufferSpaceAvailableWaitHandle.Reset();
-						}
-					}
-				}
-
-				taskBuffer.CompleteAdding();
-
-				producedTasksCompletionSource
-					.TrySetResult( producedTasks );
-
-				taskBuffer.QueuedTaskRetrieved
-					-= handleBufferElementRemoved;
-			} );
-
-			return producedTasksCompletionSource.Task;
 		}
 
 		private ITaskExecutorRegistry CreateTaskExecutorRegistry ()

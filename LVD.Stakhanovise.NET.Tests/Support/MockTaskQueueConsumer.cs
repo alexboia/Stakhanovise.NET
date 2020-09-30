@@ -31,6 +31,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public MockTaskQueueConsumer ( int numberOfTasks )
 		{
+			//TODO: also add task type
 			mQueueDepletedTaskCompletionSource = new TaskCompletionSource<bool>();
 			mQueueDepletedHandle = mQueueDepletedTaskCompletionSource.Task;
 
