@@ -27,7 +27,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		public PostgreSqlTaskQueueConsumerTests ()
 		{
 			mConsumerOptions = TestOptions.GetDefaultTaskQueueConsumerOptions( ConnectionString );
-			mDataSource = new PostgreSqlTaskQueueDataSource( ConnectionString,
+			mDataSource = new PostgreSqlTaskQueueDataSource( mConsumerOptions.ConnectionOptions.ConnectionString,
 				mConsumerOptions.Mapping,
 				mConsumerOptions.FaultErrorThresholdCount );
 		}
@@ -64,7 +64,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				try
 				{
 					AbstractTimestamp now =
-					new AbstractTimestamp( 2, 2000 );
+						new AbstractTimestamp( 2, 2000 );
 
 					for ( int i = 0; i < mConsumerOptions.QueueConsumerConnectionPoolSize; i++ )
 					{

@@ -53,5 +53,14 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				new QueuedTaskMapping(),
 				ProcessWithStatuses );
 		}
+
+		public static TaskQueueOptions GetDefaultTaskQueueProducerOptions ( string connectionString )
+		{
+			return new TaskQueueOptions( new ConnectionOptions( connectionString,
+					keepAliveSeconds: 0,
+					retryCount: 3,
+					retryDelayMilliseconds: 100 ),
+				new QueuedTaskMapping() );
+		}
 	}
 }

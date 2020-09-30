@@ -98,17 +98,17 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<NpgsqlConnection> OpenSignalingConnectionAsync ()
 		{
-			return await mSignalingConnectionString.TryOpenConnectionAsync( 
+			return await mSignalingConnectionString.TryOpenConnectionAsync(
 				mOptions.ConnectionOptions
 					.ConnectionRetryCount,
 				mOptions.ConnectionOptions
-					.ConnectionRetryDelayMilliseconds 
+					.ConnectionRetryDelayMilliseconds
 			);
 		}
 
 		private async Task<NpgsqlConnection> OpenQueueConnectionAsync ()
 		{
-			return await mQueueConnectionString.TryOpenConnectionAsync( 
+			return await mQueueConnectionString.TryOpenConnectionAsync(
 				mOptions.ConnectionOptions
 					.ConnectionRetryCount,
 				mOptions.ConnectionOptions
@@ -263,6 +263,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				if ( disposing )
 				{
+					ClearForDequeue = null;
+
 					StopReceivingNewTaskUpdatesAsync()
 						.Wait();
 

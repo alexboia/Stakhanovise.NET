@@ -91,6 +91,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			queuedTask.PostedAtTs = DateTimeOffset.UtcNow;
 			queuedTask.RepostedAtTs = DateTimeOffset.UtcNow;
 			queuedTask.ErrorCount = 0;
+			queuedTask.LockedUntil = 0;
+			queuedTask.ProcessingTimeMilliseconds = 0;
 
 			using ( NpgsqlConnection conn = await TryOpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
@@ -102,8 +104,10 @@ namespace LVD.Stakhanovise.NET.Queue
 						{mOptions.Mapping.SourceColumnName},
 						{mOptions.Mapping.PriorityColumnName},
 						{mOptions.Mapping.PostedAtColumnName},
+						{mOptions.Mapping.LockedUntilColumnName},
 						{mOptions.Mapping.PostedAtTsColumnName},
 						{mOptions.Mapping.RepostedAtTsColumnName},
+						{mOptions.Mapping.ProcessingTimeMillisecondsColumnName},
 						{mOptions.Mapping.ErrorCountColumnName},
 						{mOptions.Mapping.LastErrorIsRecoverableColumnName},
 						{mOptions.Mapping.StatusColumnName}
@@ -114,8 +118,10 @@ namespace LVD.Stakhanovise.NET.Queue
 						@t_source,
 						@t_priority,
 						@t_posted_at,
+						@t_locked_until,
 						@t_posted_at_ts,
 						@t_reposted_at_ts,
+						@t_processing_time_milliseconds,
 						@t_error_count,
 						@t_last_error_is_recoverable,
 						@t_status
@@ -135,10 +141,14 @@ namespace LVD.Stakhanovise.NET.Queue
 						queuedTask.Priority );
 					insertCmd.Parameters.AddWithValue( "t_posted_at", NpgsqlDbType.Bigint,
 						queuedTask.PostedAt );
+					insertCmd.Parameters.AddWithValue( "t_locked_until", NpgsqlDbType.Bigint,
+						queuedTask.LockedUntil );
 					insertCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
 						queuedTask.PostedAtTs );
 					insertCmd.Parameters.AddWithValue( "t_reposted_at_ts", NpgsqlDbType.TimestampTz,
 						queuedTask.RepostedAtTs );
+					insertCmd.Parameters.AddWithValue( "t_processing_time_milliseconds", NpgsqlDbType.Bigint,
+						queuedTask.ProcessingTimeMilliseconds );
 					insertCmd.Parameters.AddWithValue( "t_error_count", NpgsqlDbType.Integer,
 						queuedTask.ErrorCount );
 					insertCmd.Parameters.AddWithValue( "t_last_error_is_recoverable", NpgsqlDbType.Boolean,

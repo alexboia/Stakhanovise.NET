@@ -22,7 +22,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		public PostgreSqlTaskQueueInfoTests ()
 		{
 			mInfoOptions = TestOptions.GetDefaultTaskQueueInfoOptions( ConnectionString );
-			mDataSource = new PostgreSqlTaskQueueDataSource( ConnectionString,
+			mDataSource = new PostgreSqlTaskQueueDataSource( mInfoOptions.ConnectionOptions.ConnectionString,
 				mInfoOptions.Mapping,
 				queueFaultErrorThrehsoldCount: 5 );
 		}
