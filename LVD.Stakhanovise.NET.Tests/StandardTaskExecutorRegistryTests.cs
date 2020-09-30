@@ -33,6 +33,7 @@ using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Tests.Executors;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using NUnit.Framework;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace LVD.Stakhanovise.NET.Tests
@@ -137,7 +138,18 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private ITaskExecutorRegistry CreateTaskExecutorRegistry ()
 		{
-			return new StandardTaskExecutorRegistry( new StandardDependencyResolver() );
+			return new StandardTaskExecutorRegistry( GetDependencyResolver() );
+		}
+
+		private IDependencyResolver GetDependencyResolver ()
+		{
+			IDependencyResolver dependencyResolver = new StandardDependencyResolver();
+			dependencyResolver.Load( new List<DependencyRegistration>()
+			{
+				DependencyRegistration.BindToInstance( typeof( ISampleExecutorDependency ),
+					new SampleExecutorDependencyImpl() )
+			} );
+			return dependencyResolver;
 		}
 	}
 }

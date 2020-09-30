@@ -75,7 +75,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private TaskProcessingOptions mOptions;
 
-		public StandardTaskPoller ( TaskProcessingOptions options, 
+		public StandardTaskPoller ( TaskProcessingOptions options,
 			ITaskQueueConsumer taskQueueConsumer,
 			ITaskBuffer taskBuffer,
 			IExecutionPerformanceMonitor executionPerformanceMonitor,
@@ -131,7 +131,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				.GetExecutionStats( queuedTaskToken.QueuedTask.Type )
 				?? TaskExecutionStats.Zero();
 
-			long estimatedProcessingTime = mOptions.CalculateEstimatedProcessingTimeMilliseconds( queuedTaskToken.QueuedTask, 
+			long estimatedProcessingTime = mOptions.CalculateEstimatedProcessingTimeMilliseconds( queuedTaskToken.QueuedTask,
 				execStats );
 
 			if ( await queuedTaskToken.TrySetStartedAsync( estimatedProcessingTime ) )

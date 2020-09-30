@@ -86,8 +86,7 @@ namespace LVD.Stakhanovise.NET.Executors
 				}
 				else if ( registration.AsInstance != null )
 				{
-					mContainer.Register( registration.Target, registration.AsInstance )
-						.AsSingleton();
+					mContainer.Register( registration.Target, registration.AsInstance );
 				}
 			}
 		}

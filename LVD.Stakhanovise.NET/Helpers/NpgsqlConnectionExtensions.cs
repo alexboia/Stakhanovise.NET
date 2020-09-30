@@ -52,9 +52,10 @@ namespace LVD.Stakhanovise.NET.Helpers
 			if ( connectionOptions == null )
 				throw new ArgumentNullException( nameof( connectionOptions ) );
 
-			return await connectionOptions.ConnectionString.TryOpenConnectionAsync( cancellationToken,
-				connectionOptions.ConnectionRetryCount,
-				connectionOptions.ConnectionRetryDelayMilliseconds );
+			return await connectionOptions.ConnectionString
+				.TryOpenConnectionAsync( cancellationToken,
+					connectionOptions.ConnectionRetryCount,
+					connectionOptions.ConnectionRetryDelayMilliseconds );
 		}
 
 		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this string connectionString,
@@ -98,6 +99,8 @@ namespace LVD.Stakhanovise.NET.Helpers
 						await conn.OpenAsync( cancellationToken );
 					else
 						await conn.OpenAsync();
+
+					break;
 				}
 				catch ( Exception )
 				{

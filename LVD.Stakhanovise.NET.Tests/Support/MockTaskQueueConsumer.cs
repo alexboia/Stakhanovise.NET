@@ -49,7 +49,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		{
 			return Task.Delay( 150 ).ContinueWith( ante =>
 			{
-				IQueuedTask queuedTask;
+				QueuedTask queuedTask;
 				int count = Math.Min( mRemainingTaskCount, 2 );
 
 				for ( int iTask = 0; iTask < count; iTask++ )

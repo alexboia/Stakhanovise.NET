@@ -10,11 +10,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 {
 	public class MockQueuedTaskToken : IQueuedTaskToken
 	{
+		private QueuedTask mQueuedTask;
+		
 		public event EventHandler<TokenReleasedEventArgs> TokenReleased;
 
-		public MockQueuedTaskToken ( IQueuedTask queuedTask )
+		public MockQueuedTaskToken ( QueuedTask queuedTask )
 		{
-			QueuedTask = queuedTask;
+			mQueuedTask = queuedTask;
 			IsPending = true;
 			IsLocked = true;
 		}
@@ -25,16 +27,20 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			return;
 		}
 
-		public Task ReleaseLockAsync ()
+		private void NotityTokenReleased()
 		{
 			EventHandler<TokenReleasedEventArgs> h = TokenReleased;
 			if ( h != null )
 				h( this, new TokenReleasedEventArgs( QueuedTask.Id ) );
+		}
 
+		public Task ReleaseLockAsync ()
+		{
 			IsLocked = false;
 			IsActive = false;
 			IsPending = false;
 
+			NotityTokenReleased();
 			return Task.CompletedTask;
 		}
 
@@ -43,6 +49,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			IsActive = false;
 			IsPending = false;
 			IsLocked = false;
+
+			if ( !result.ExecutedSuccessfully )
+				mQueuedTask.Status = QueuedTaskStatus.Error;
+			else
+				mQueuedTask.Status = QueuedTaskStatus.Processed;
+
+			NotityTokenReleased();
 			return Task.FromResult( true );
 		}
 
@@ -55,10 +68,10 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public void Dispose ()
 		{
-			return;
+			TokenReleased = null;
 		}
 
-		public IQueuedTask QueuedTask { get; private set; }
+		public IQueuedTask QueuedTask => mQueuedTask;
 
 		public CancellationToken CancellationToken => CancellationToken.None;
 

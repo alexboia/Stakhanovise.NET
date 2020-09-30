@@ -75,14 +75,14 @@ namespace LVD.Stakhanovise.NET.Queue
 		public PostgreSqlTaskQueueTimingBelt ( PostgreSqlTaskQueueTimingBeltOptions options )
 		{
 
-			mOptions = options 
+			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
 
-			mTotalLocalWallclockTimeCost 
-				= mLocalWallclockTimeCostSinceLastTick 
+			mTotalLocalWallclockTimeCost
+				= mLocalWallclockTimeCostSinceLastTick
 				= mOptions.InitialWallclockTimeCost;
 
-			mLastTime = new AbstractTimestamp( 0, 
+			mLastTime = new AbstractTimestamp( 0,
 				mOptions.InitialWallclockTimeCost );
 		}
 
@@ -93,17 +93,25 @@ namespace LVD.Stakhanovise.NET.Queue
 					"Cannot reuse a disposed postgre sql task queue timing belt" );
 		}
 
+		private void CheckRunningOrThrow()
+		{
+			if ( !IsRunning )
+				throw new InvalidOperationException( "The timing belt is not running." );
+		}
+
 		private async Task<NpgsqlConnection> OpenConnectionAsync ( CancellationToken cancellationToken )
 		{
-			return await mOptions.ConnectionOptions.TryOpenConnectionAsync();
+			return await mOptions
+				.ConnectionOptions
+				.TryOpenConnectionAsync( cancellationToken );
 		}
 
 		private async Task PrepConnectionPoolAsync ( CancellationToken cancellationToken )
 		{
 			using ( NpgsqlConnection conn = await OpenConnectionAsync( cancellationToken ) )
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT NULL as sk_connection_prep", conn ) )
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT 'ok' as sk_connection_prep", conn ) )
 			{
-				await cmd.ExecuteNonQueryAsync( cancellationToken );
+				await cmd.ExecuteScalarAsync( cancellationToken );
 				await conn.CloseAsync();
 			}
 		}
@@ -134,25 +142,23 @@ namespace LVD.Stakhanovise.NET.Queue
 					NpgsqlDbType.Bigint,
 					tickLastCost );
 
-				using ( NpgsqlDataReader rdr = await tickCmd.ExecuteReaderAsync( cancellationToken ) )
+				await tickCmd.PrepareAsync();
+				using ( NpgsqlDataReader tickRdr = await tickCmd.ExecuteReaderAsync( cancellationToken ) )
 				{
-					if ( await rdr.ReadAsync() )
+					if ( await tickRdr.ReadAsync() )
 					{
-						long newTotalTicks = rdr.GetInt64( rdr.GetOrdinal(
+						long newTotalTicks = tickRdr.GetInt64( tickRdr.GetOrdinal(
 							"new_t_total_ticks"
 						) );
 
-						long newTotalTicksCost = rdr.GetInt64( rdr.GetOrdinal(
+						long newTotalTicksCost = tickRdr.GetInt64( tickRdr.GetOrdinal(
 							"new_t_total_ticks_cost"
 						) );
 
 						lastTime = new AbstractTimestamp( newTotalTicks,
 							newTotalTicksCost );
 
-						Interlocked.Exchange( ref mLastTime,
-							lastTime );
-
-						await rdr.CloseAsync();
+						await tickRdr.CloseAsync();
 					}
 				}
 
@@ -162,7 +168,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			return lastTime;
 		}
 
-		private async Task StartTimeTickingTask ()
+		private async Task StartTimeTickingTaskAsync ()
 		{
 			await PrepConnectionPoolAsync( CancellationToken.None );
 
@@ -174,7 +180,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				CancellationToken stopToken = mTimeTickingStopRequest
 				   .Token;
 
-				while ( !mTickingQueue.IsCompleted )
+				while ( true )
 				{
 					List<PostgreSqlTaskQueueTimingBeltTickRequest> currentBatch =
 						new List<PostgreSqlTaskQueueTimingBeltTickRequest>();
@@ -202,10 +208,13 @@ namespace LVD.Stakhanovise.NET.Queue
 
 						//And distribute the result to each tick request
 						foreach ( PostgreSqlTaskQueueTimingBeltTickRequest processedTickRq in currentBatch )
-							processedTickRq.SetCompleted( lastTime );
+							processedTickRq.SetCompleted( lastTime.Copy() );
 
 						//Clear batch and start over
 						currentBatch.Clear();
+
+						//Update last known time
+						mLastTime = lastTime.Copy();
 					}
 					catch ( OperationCanceledException )
 					{
@@ -239,7 +248,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			} );
 		}
 
-		private async Task StopTimeTickingTask ()
+		private async Task StopTimeTickingTaskAsync ()
 		{
 			mTickingQueue.CompleteAdding();
 			mTimeTickingStopRequest.Cancel();
@@ -259,7 +268,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			if ( mStateController.IsStopped )
 				await mStateController.TryRequestStartAsync( async ()
-					=> await StartTimeTickingTask() );
+					=> await StartTimeTickingTaskAsync() );
 			else
 				mLogger.Debug( "Timing belt is already started or in the process of starting." );
 		}
@@ -270,7 +279,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			if ( mStateController.IsStarted )
 				await mStateController.TryRequestStopASync( async ()
-					=> await StopTimeTickingTask() );
+					=> await StopTimeTickingTaskAsync() );
 			else
 				mLogger.Debug( "Timing belt is already stopped or in the process of stopping." );
 		}
@@ -278,6 +287,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		public void AddWallclockTimeCost ( long milliseconds )
 		{
 			CheckNotDisposedOrThrow();
+			CheckRunningOrThrow();
 
 			Interlocked.Add( ref mLocalWallclockTimeCostSinceLastTick,
 				milliseconds );
@@ -293,17 +303,19 @@ namespace LVD.Stakhanovise.NET.Queue
 		public Task<AbstractTimestamp> TickAbstractTimeAsync ( int timeoutMilliseconds )
 		{
 			CheckNotDisposedOrThrow();
+			CheckRunningOrThrow();
 
 			long requestId = Interlocked.Increment( ref mLastRequestId );
 			AbstractTimestamp lastTime = mLastTime.Copy();
 
 			TaskCompletionSource<AbstractTimestamp> completionToken =
-				new TaskCompletionSource<AbstractTimestamp>( TaskCreationOptions.RunContinuationsAsynchronously );
+				new TaskCompletionSource<AbstractTimestamp>( TaskCreationOptions
+					.RunContinuationsAsynchronously );
 
 			PostgreSqlTaskQueueTimingBeltTickRequest tickRequest =
 				new PostgreSqlTaskQueueTimingBeltTickRequest( requestId,
 					completionToken,
-					timeoutMilliseconds, 
+					timeoutMilliseconds,
 					mOptions.TimeTickMaxFailCount );
 
 			mTickingQueue.Add( tickRequest );
@@ -315,6 +327,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		public async Task<long> ComputeAbsoluteTimeTicksAsync ( long timeTicksToAdd )
 		{
 			CheckNotDisposedOrThrow();
+			CheckRunningOrThrow();
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync( CancellationToken.None ) )
 			{

@@ -50,24 +50,32 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Test]
 		public async Task Test_CanStartStop ()
 		{
-			TaskProcessingOptions processingOpts = GetTaskProcessingOptions();
-			Mock<IExecutionPerformanceMonitor> perfMonMock = new Mock<IExecutionPerformanceMonitor>();
-			Mock<ITaskQueueTimingBelt> timingBeltMock = new Mock<ITaskQueueTimingBelt>();
+			TaskProcessingOptions processingOpts =
+				TestOptions.GetTaskProcessingOptions();
+
+			Mock<IExecutionPerformanceMonitor> perfMonMock = new
+				Mock<IExecutionPerformanceMonitor>();
+
+			perfMonMock.Setup( p => p.GetExecutionStats( It.IsAny<string>() ) )
+				.Returns( new TaskExecutionStats( 100, 100, 100, 100, 100, 1 ) );
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( 100 ) )
 			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( 0 ) )
+			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueue,
 				taskBuffer,
 				perfMonMock.Object,
-				timingBeltMock.Object ) )
+				timingBelt ) )
 			{
+				await timingBelt.StartAsync();
 				await poller.StartAsync();
 
 				Assert.IsTrue( poller.IsRunning );
 				Assert.IsTrue( taskQueue.IsReceivingNewTaskUpdates );
 
 				await poller.StopAync();
+				await timingBelt.StopAsync();
 
 				Assert.IsFalse( poller.IsRunning );
 				Assert.IsFalse( taskQueue.IsReceivingNewTaskUpdates );
@@ -87,24 +95,24 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<IQueuedTaskToken> consumedTasks;
 			Task<List<IQueuedTaskToken>> consumedTasksReadyHandle;
 
-			TaskProcessingOptions processingOpts = GetTaskProcessingOptions();
-			Mock<IExecutionPerformanceMonitor> perfMonMock = new Mock<IExecutionPerformanceMonitor>();
-			Mock<ITaskQueueTimingBelt> timingBeltMock = new Mock<ITaskQueueTimingBelt>();
-
+			TaskProcessingOptions processingOpts =
+				TestOptions.GetTaskProcessingOptions();
+			Mock<IExecutionPerformanceMonitor> perfMonMock = 
+				new Mock<IExecutionPerformanceMonitor>();
+			
 			perfMonMock.Setup( p => p.GetExecutionStats( It.IsAny<string>() ) )
 				.Returns( new TaskExecutionStats( 100, 100, 100, 100, 100, 1 ) );
 
-			timingBeltMock.Setup( t => t.TickAbstractTimeAsync( It.IsAny<int>() ) )
-				.ReturnsAsync( new AbstractTimestamp( 100, 1000 ) );
-
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
 			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( numberOfTasks ) )
+			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueue,
 				taskBuffer,
 				perfMonMock.Object,
-				timingBeltMock.Object ) )
+				timingBelt ) )
 			{
+				await timingBelt.StartAsync();
 				await poller.StartAsync();
 
 				//Poller is filling up the buffer.
@@ -114,6 +122,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				await taskQueue.QueueDepletedHandle;
 				await poller.StopAync();
+				await timingBelt.StopAsync();
 
 				producedTasks = taskQueue.DequeuedTasksHistory;
 				consumedTasks = await consumedTasksReadyHandle;
@@ -127,7 +136,6 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.AreEqual( 1, consumedTasks.Count( ct => ct.QueuedTask.Id == pt.QueuedTask.Id ) );
 
 				perfMonMock.Verify();
-				timingBeltMock.Verify();
 			}
 		}
 
@@ -155,21 +163,6 @@ namespace LVD.Stakhanovise.NET.Tests
 			} );
 
 			return consumedTasksCompletionSource.Task;
-		}
-
-		private TaskProcessingOptions GetTaskProcessingOptions ()
-		{
-			return new TaskProcessingOptions( 1000,
-				defaultEstimatedProcessingTimeMilliseconds: 1000,
-				calculateDelayTicksTaskAfterFailure: errorCount
-					=> ( long )Math.Pow( 10, errorCount ),
-				calculateEstimatedProcessingTimeMilliseconds: ( task, stats )
-					=> stats.LongestExecutionTime > 0
-						? stats.LongestExecutionTime
-						: 1000,
-				isTaskErrorRecoverable: ( task, exc )
-					 => !( exc is NullReferenceException )
-						 && !( exc is ArgumentException ) );
 		}
 	}
 }

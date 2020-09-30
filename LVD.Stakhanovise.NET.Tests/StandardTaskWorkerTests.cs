@@ -30,45 +30,45 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Executors;
+using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
+using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Moq;
-using Ninject;
 using NUnit.Framework;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class DefaultTaskWorkerTests
-	{
-		private IKernel mKernel;
-
-		public DefaultTaskWorkerTests ()
-		{
-			mKernel = new StandardKernel( new NinjectTasksTestModule() );
-		}
-
+	public class StandardTaskWorkerTests
+	{	
 		[Test]
 		public async Task Test_CanStartStop ()
 		{
+			TaskProcessingOptions processingOpts =
+				TestOptions.GetTaskProcessingOptions();
 			Mock<ITaskBuffer> bufferMock =
 				new Mock<ITaskBuffer>( MockBehavior.Loose );
 			Mock<ITaskExecutorRegistry> executorRegistryMock =
 				new Mock<ITaskExecutorRegistry>( MockBehavior.Loose );
-			Mock<IKernel> kernelMock =
-				new Mock<IKernel>( MockBehavior.Loose );
-			Mock<ITaskResultQueue> resultQueueMock =
-				new Mock<ITaskResultQueue>( MockBehavior.Loose );
+			Mock<IExecutionPerformanceMonitor> executionPerformanceMonitorMock =
+				new Mock<IExecutionPerformanceMonitor>( MockBehavior.Loose );
 
-			using ( StandardTaskWorker worker = new StandardTaskWorker( bufferMock.Object,
+			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
+			using ( StandardTaskWorker worker = new StandardTaskWorker( processingOpts, 
+				bufferMock.Object,
 				executorRegistryMock.Object,
-				resultQueueMock.Object ) )
+				executionPerformanceMonitorMock.Object,
+				timingBelt ) )
 			{
 				await worker.StartAsync();
 				Assert.IsTrue( worker.IsRunning );
@@ -86,50 +86,78 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 100, 10, 10 )]
 		public async Task Test_CanWork ( int bufferCapacity, int workerCount, int numberOfTasks )
 		{
-			List<QueuedTask> producedTasks;
-			ITaskExecutorRegistry executorRegistry
-				= new StandardTaskExecutorRegistry( type => mKernel.TryGet( type ) );
+			List<IQueuedTaskToken> producedTaskTokens;
+			ConcurrentBag<IQueuedTaskToken> processedTaskTokens =
+				new ConcurrentBag<IQueuedTaskToken>();
+
+			TaskProcessingOptions processingOpts =
+				TestOptions.GetTaskProcessingOptions();
+
+			ITaskExecutorRegistry executorRegistry =
+				new StandardTaskExecutorRegistry( new StandardDependencyResolver() );
+
+			Mock<IExecutionPerformanceMonitor> executionPerformanceMonitorMock =
+				new Mock<IExecutionPerformanceMonitor>();
+
 			List<StandardTaskWorker> workers
 				= new List<StandardTaskWorker>();
+
+			Action<object, TokenReleasedEventArgs> handleTokenReleased = 
+				( s, e ) => processedTaskTokens.Add( ( IQueuedTaskToken )s );
 
 			executorRegistry.ScanAssemblies( GetType().Assembly );
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( InMemoryMockTaskResultQueue taskResultQueue = new InMemoryMockTaskResultQueue() )
+			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			{
 				for ( int i = 0; i < workerCount; i++ )
-					workers.Add( new StandardTaskWorker( taskBuffer,
+					workers.Add( new StandardTaskWorker( processingOpts,
+						taskBuffer,
 						executorRegistry,
-						taskResultQueue ) );
+						executionPerformanceMonitorMock.Object,
+						timingBelt ) );
 
+				await timingBelt.StartAsync();
 				foreach ( StandardTaskWorker w in workers )
 					await w.StartAsync();
 
-				producedTasks = await ProduceBuffer( taskBuffer, numberOfTasks );
+				producedTaskTokens = await ProduceBuffer( taskBuffer,
+					numberOfTasks,
+					handleTokenReleased );
+
 				while ( !taskBuffer.IsCompleted )
 					await Task.Delay( 25 );
 
 				foreach ( StandardTaskWorker w in workers )
 					await w.StopAync();
 
-				Assert.AreEqual( producedTasks.Count,
-					taskResultQueue.TaskResults.Count );
+				await timingBelt.StopAsync();
 
-				foreach ( QueuedTask produced in producedTasks )
-					Assert.IsTrue( taskResultQueue.TaskResults.ContainsKey( produced ) );
+				Assert.AreEqual( producedTaskTokens.Count,
+					processedTaskTokens.Count );
+
+				foreach ( IQueuedTaskToken produced in producedTaskTokens )
+					Assert.NotNull( processedTaskTokens.FirstOrDefault(
+						t => t.QueuedTask.Id == produced.QueuedTask.Id
+						&& ( t.QueuedTask.Status == QueuedTaskStatus.Processed
+							|| t.QueuedTask.Status == QueuedTaskStatus.Error
+							|| t.QueuedTask.Status == QueuedTaskStatus.Faulted
+							|| t.QueuedTask.Status == QueuedTaskStatus.Fatal ) ) );
 
 				foreach ( StandardTaskWorker w in workers )
 					w.Dispose();
 			}
 		}
 
-		private Task<List<QueuedTask>> ProduceBuffer ( ITaskBuffer taskBuffer, int numberOfTasks )
+		private Task<List<IQueuedTaskToken>> ProduceBuffer ( ITaskBuffer taskBuffer,
+			int numberOfTasks,
+			Action<object, TokenReleasedEventArgs> onTokenReleased )
 		{
-			List<QueuedTask> producedTasks
-				= new List<QueuedTask>();
+			List<IQueuedTaskToken> producedTasks
+				= new List<IQueuedTaskToken>();
 
-			TaskCompletionSource<List<QueuedTask>> producedTasksCompletionSource
-				= new TaskCompletionSource<List<QueuedTask>>();
+			TaskCompletionSource<List<IQueuedTaskToken>> producedTasksCompletionSource
+				= new TaskCompletionSource<List<IQueuedTaskToken>>();
 
 			ManualResetEvent bufferSpaceAvailableWaitHandle =
 				new ManualResetEvent( false );
@@ -144,29 +172,32 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			Task.Run( () =>
 			{
-				QueuedTask newTask;
 				Type currentPayloadType;
+				IQueuedTaskToken newTaskToken;
 
-				EventHandler onBufferElementRemoved
+				EventHandler handleBufferElementRemoved
 					= ( s, e ) => bufferSpaceAvailableWaitHandle.Set();
+				EventHandler<TokenReleasedEventArgs> handleTokenReleased
+					= ( s, e ) => onTokenReleased( s, e );
 
 				taskBuffer.QueuedTaskRetrieved
-					+= onBufferElementRemoved;
+					+= handleBufferElementRemoved;
 
 				while ( taskPayloadTypes.TryDequeue( out currentPayloadType ) )
 				{
 					for ( int i = 0; i < numberOfTasks; i++ )
 					{
-						newTask = new QueuedTask( Guid.NewGuid() )
+						newTaskToken = new MockQueuedTaskToken( new QueuedTask( Guid.NewGuid() )
 						{
 							Payload = Activator.CreateInstance( currentPayloadType ),
 							Status = QueuedTaskStatus.Unprocessed,
 							Type = currentPayloadType.FullName
-						};
+						} );
 
-						producedTasks.Add( newTask );
+						newTaskToken.TokenReleased += handleTokenReleased;
+						producedTasks.Add( newTaskToken );
 
-						while ( !taskBuffer.TryAddNewTask( newTask ) )
+						while ( !taskBuffer.TryAddNewTask( newTaskToken ) )
 						{
 							bufferSpaceAvailableWaitHandle.WaitOne();
 							bufferSpaceAvailableWaitHandle.Reset();
@@ -180,7 +211,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					.TrySetResult( producedTasks );
 
 				taskBuffer.QueuedTaskRetrieved
-					-= onBufferElementRemoved;
+					-= handleBufferElementRemoved;
 			} );
 
 			return producedTasksCompletionSource.Task;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Model;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -20,7 +21,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			AbstractTimestamp ts = new AbstractTimestamp( currentTicks, currentTicksWallclockTimeCost );
 
 			Assert.AreEqual( currentTicks, ts.Ticks );
-			Assert.AreEqual( currentTicksWallclockTimeCost, ts.TicksWallclockTimeCost );
+			Assert.AreEqual( currentTicksWallclockTimeCost, ts.WallclockTimeCost );
 			Assert.AreEqual( excpectedTickDuration, ts.TickDuration );
 		}
 
@@ -33,7 +34,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			AbstractTimestamp ts = new AbstractTimestamp( currentTicks, currentTicksWallclockTimeCost );
 
-			long abstractTimeDuration = ts.GetAbstractTimeDurationForWallclockDuration( 1000 );
+			long abstractTimeDuration = ts.GetTicksDurationForWallclockDuration( 1000 );
 
 			Assert.AreEqual( ( long )Math.Ceiling( ( double )1000 * currentTicks / currentTicksWallclockTimeCost ),
 				abstractTimeDuration );

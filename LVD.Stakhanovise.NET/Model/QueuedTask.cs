@@ -39,7 +39,7 @@ namespace LVD.Stakhanovise.NET.Model
 	{
 		public QueuedTask ()
 		{
-			return;
+			Status = QueuedTaskStatus.Unprocessed;
 		}
 
 		public QueuedTask ( Guid taskId )
