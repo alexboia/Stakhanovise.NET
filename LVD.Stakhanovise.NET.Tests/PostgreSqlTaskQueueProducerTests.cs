@@ -33,7 +33,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				.GetDefaultTaskQueueConsumerOptions( ConnectionString );
 
 			mDataSource = new PostgreSqlTaskQueueDataSource( mProducerOptions.ConnectionOptions.ConnectionString,
-				mProducerOptions.Mapping,
+				TestOptions.DefaultMapping,
 				queueFaultErrorThrehsoldCount: 5 );
 		}
 

@@ -24,6 +24,10 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private int mNumFatalTasks = 1;
 
+		private int mNumProcessedTasks = 10;
+
+		private int mNumProcessingTasks = 5;
+
 		private List<QueuedTask> mSeededTasks =
 			new List<QueuedTask>();
 
@@ -189,6 +193,20 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			}
 
 			return faultedTasks;
+		}
+
+		private List<QueuedTask> GenerateProcessedTasks ( DateTimeOffset now )
+		{
+			List<QueuedTask> processedTasks = new List<QueuedTask>();
+
+			return processedTasks;
+		}
+
+		private List<QueuedTask> GenerateProcessingTasks ( DateTimeOffset now )
+		{
+			List<QueuedTask> processedTasks = new List<QueuedTask>();
+
+			return processedTasks;
 		}
 
 		private async Task InsertTaskDataAsync ( NpgsqlConnection conn, IEnumerable<QueuedTask> queuedTasks, NpgsqlTransaction tx )

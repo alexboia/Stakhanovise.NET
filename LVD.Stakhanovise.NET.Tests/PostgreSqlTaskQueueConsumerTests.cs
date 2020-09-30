@@ -17,6 +17,7 @@ namespace LVD.Stakhanovise.NET.Tests
 {
 	//TODO: also test dequeue with tasks still being locked
 	//TODO: test correct handling of connection dropouts (notifications being emitted by queue consumer)
+	//TODO: also test without a given task type/s
 	[TestFixture]
 	public class PostgreSqlTaskQueueConsumerTests : BaseTestWithConfiguration
 	{
@@ -26,9 +27,11 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		public PostgreSqlTaskQueueConsumerTests ()
 		{
-			mConsumerOptions = TestOptions.GetDefaultTaskQueueConsumerOptions( ConnectionString );
+			mConsumerOptions = TestOptions
+				.GetDefaultTaskQueueConsumerOptions( ConnectionString );
+
 			mDataSource = new PostgreSqlTaskQueueDataSource( mConsumerOptions.ConnectionOptions.ConnectionString,
-				mConsumerOptions.Mapping,
+				TestOptions.DefaultMapping,
 				mConsumerOptions.FaultErrorThresholdCount );
 		}
 
@@ -48,7 +51,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
-		public async Task Test_CanDequeue ()
+		public async Task Test_CanDequeue_WithTaskTypes ()
 		{
 			List<IQueuedTaskToken> dequedTokens =
 				new List<IQueuedTaskToken>();

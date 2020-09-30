@@ -15,6 +15,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			QueuedTaskStatus.Processing
 		};
 
+		public static readonly QueuedTaskMapping DefaultMapping = 
+			new QueuedTaskMapping();
 
 		public static TaskProcessingOptions GetDefaultTaskProcessingOptions ()
 		{
@@ -38,7 +40,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					retryCount: 3,
 					retryDelayMilliseconds: 100 ),
 
-				new QueuedTaskMapping(),
+				DefaultMapping,
 				ProcessWithStatuses,
 				queueConsumerConnectionPoolSize: 10,
 				faultErrorThresholdCount: 5 );
@@ -50,7 +52,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					keepAliveSeconds: 0,
 					retryCount: 3,
 					retryDelayMilliseconds: 100 ),
-				new QueuedTaskMapping(),
+				DefaultMapping,
 				ProcessWithStatuses );
 		}
 
@@ -60,7 +62,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					keepAliveSeconds: 0,
 					retryCount: 3,
 					retryDelayMilliseconds: 100 ),
-				new QueuedTaskMapping() );
+				DefaultMapping );
 		}
 	}
 }
