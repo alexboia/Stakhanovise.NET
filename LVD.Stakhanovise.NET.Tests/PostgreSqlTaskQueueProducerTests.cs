@@ -13,7 +13,7 @@ using NUnit.Framework;
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class PostgreSqlTaskProducerTests : BaseTestWithConfiguration
+	public class PostgreSqlTaskQueueProducerTests : BaseTestWithConfiguration
 	{
 		private TaskQueueOptions mProducerOptions;
 
@@ -23,7 +23,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private PostgreSqlTaskQueueDataSource mDataSource;
 
-		public PostgreSqlTaskProducerTests ()
+		public PostgreSqlTaskQueueProducerTests ()
 		{
 			mInfoOptions = TestOptions
 				.GetDefaultTaskQueueInfoOptions( ConnectionString );
@@ -64,8 +64,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			string taskType = typeof( SampleTaskPayload )
 				.FullName;
 
-			AbstractTimestamp postedAt =
-				new AbstractTimestamp( 1, 1000 );
+			AbstractTimestamp postedAt = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick + 1,
+				( mDataSource.LastPostedAtTimeTick + 1 ) * 1000 );
 
 			PostgreSqlTaskQueueProducer taskQueueProducer =
 				CreateTaskQueueProducer();
@@ -131,14 +131,14 @@ namespace LVD.Stakhanovise.NET.Tests
 			string taskType = typeof( SampleTaskPayload )
 				.FullName;
 
-			AbstractTimestamp initialPeekAt =
-				new AbstractTimestamp( 2, 1000 );
+			AbstractTimestamp initialPeekAt = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick + 1,
+				( mDataSource.LastPostedAtTimeTick + 1 ) * 1000 );
 
-			AbstractTimestamp postedAt =
-				new AbstractTimestamp( 2, 1000 );
+			AbstractTimestamp postedAt = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick + 1,
+				( mDataSource.LastPostedAtTimeTick + 1 ) * 1000 );
 
-			AbstractTimestamp peekAt =
-				new AbstractTimestamp( 3, 2000 );
+			AbstractTimestamp peekAt = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick + 2,
+				( mDataSource.LastPostedAtTimeTick + 2 ) * 1000 );
 
 			PostgreSqlTaskQueueProducer taskQueueProducer =
 				CreateTaskQueueProducer();

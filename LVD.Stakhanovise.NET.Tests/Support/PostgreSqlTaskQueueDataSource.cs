@@ -31,6 +31,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private int mQueueFaultErrorThrehsoldCount;
 
+		private long mPostedAtTimeTick = 1;
+
 		public PostgreSqlTaskQueueDataSource ( string connectionString,
 			QueuedTaskMapping mapping,
 			int queueFaultErrorThrehsoldCount )
@@ -93,7 +95,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					RepostedAtTs = now,
 					Source = GetType().FullName,
 					Status = QueuedTaskStatus.Unprocessed,
-					PostedAt = 1,
+					PostedAt = mPostedAtTimeTick++,
 					LockedUntil = 1,
 					Priority = 0
 				} );
@@ -122,7 +124,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					LastErrorIsRecoverable = i % 2 == 0,
 					LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: error" ) ),
 					ErrorCount = Math.Abs( mQueueFaultErrorThrehsoldCount - i ),
-					PostedAt = 1,
+					PostedAt = mPostedAtTimeTick++,
 					LockedUntil = 1,
 					Priority = 0
 				} );
@@ -151,7 +153,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					LastErrorIsRecoverable = i % 2 == 0,
 					LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: fatal" ) ),
 					ErrorCount = mQueueFaultErrorThrehsoldCount + i,
-					PostedAt = 1,
+					PostedAt = mPostedAtTimeTick++,
 					LockedUntil = 1,
 					Priority = 0
 				} );
@@ -180,7 +182,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					LastErrorIsRecoverable = i % 2 == 0,
 					LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: faulted" ) ),
 					ErrorCount = mQueueFaultErrorThrehsoldCount,
-					PostedAt = 1,
+					PostedAt = mPostedAtTimeTick++,
 					LockedUntil = 1,
 					Priority = 0
 				} );
@@ -196,47 +198,47 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			foreach ( QueuedTask queuedTask in queuedTasks )
 			{
 				insertData = new Dictionary<string, object>()
-					{
-						{ mMapping.IdColumnName,
-							queuedTask.Id },
-						{ mMapping.PayloadColumnName,
-							queuedTask.Payload.ToJson(includeTypeInformation: true) },
-						{ mMapping.TypeColumnName,
-							queuedTask.Type },
+				{
+					{ mMapping.IdColumnName,
+						queuedTask.Id },
+					{ mMapping.PayloadColumnName,
+						queuedTask.Payload.ToJson(includeTypeInformation: true) },
+					{ mMapping.TypeColumnName,
+						queuedTask.Type },
 
-						{ mMapping.StatusColumnName,
-							queuedTask.Status },
-						{ mMapping.SourceColumnName,
-							queuedTask.Source },
-						{ mMapping.PriorityColumnName,
-							queuedTask.Priority },
+					{ mMapping.StatusColumnName,
+						queuedTask.Status },
+					{ mMapping.SourceColumnName,
+						queuedTask.Source },
+					{ mMapping.PriorityColumnName,
+						queuedTask.Priority },
 
-						{ mMapping.PostedAtColumnName,
-							queuedTask.PostedAt },
-						{ mMapping.LockedUntilColumnName,
-							queuedTask.LockedUntil },
+					{ mMapping.PostedAtColumnName,
+						queuedTask.PostedAt },
+					{ mMapping.LockedUntilColumnName,
+						queuedTask.LockedUntil },
 
-						{ mMapping.PostedAtTsColumnName,
-							queuedTask.PostedAtTs },
-						{ mMapping.RepostedAtTsColumnName,
-							queuedTask.RepostedAtTs },
-						{ mMapping.ProcessingTimeMillisecondsColumnName,
-							queuedTask.ProcessingTimeMilliseconds },
+					{ mMapping.PostedAtTsColumnName,
+						queuedTask.PostedAtTs },
+					{ mMapping.RepostedAtTsColumnName,
+						queuedTask.RepostedAtTs },
+					{ mMapping.ProcessingTimeMillisecondsColumnName,
+						queuedTask.ProcessingTimeMilliseconds },
 
-						{ mMapping.ErrorCountColumnName,
-							queuedTask.ErrorCount },
-						{ mMapping.LastErrorColumnName,
-							queuedTask.LastError.ToJson() },
-						{ mMapping.LastErrorIsRecoverableColumnName,
-							queuedTask.LastErrorIsRecoverable },
+					{ mMapping.ErrorCountColumnName,
+						queuedTask.ErrorCount },
+					{ mMapping.LastErrorColumnName,
+						queuedTask.LastError.ToJson() },
+					{ mMapping.LastErrorIsRecoverableColumnName,
+						queuedTask.LastErrorIsRecoverable },
 
-						{ mMapping.FirstProcessingAttemptedAtTsColumnName,
-							queuedTask.FirstProcessingAttemptedAtTs },
-						{ mMapping.LastProcessingAttemptedAtTsColumnName,
-							queuedTask.LastProcessingAttemptedAtTs },
-						{ mMapping.ProcessingFinalizedAtTsColumnName,
-							queuedTask.ProcessingFinalizedAtTs }
-					};
+					{ mMapping.FirstProcessingAttemptedAtTsColumnName,
+						queuedTask.FirstProcessingAttemptedAtTs },
+					{ mMapping.LastProcessingAttemptedAtTsColumnName,
+						queuedTask.LastProcessingAttemptedAtTs },
+					{ mMapping.ProcessingFinalizedAtTsColumnName,
+						queuedTask.ProcessingFinalizedAtTs }
+				};
 
 				await new QueryFactory( conn, new PostgresCompiler() )
 					.Query( mMapping.TableName )
@@ -249,12 +251,19 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public IEnumerable<QueuedTask> SeededTasks
 			=> mSeededTasks.AsReadOnly();
 
-		public int NumUnProcessedTasks => mNumUnProcessedTasks;
+		public int NumUnProcessedTasks
+			=> mNumUnProcessedTasks;
 
-		public int NumErroredTasks => mNumErroredTasks;
+		public int NumErroredTasks
+			=> mNumErroredTasks;
 
-		public int NumFaultedTasks => mNumFaultedTasks;
+		public int NumFaultedTasks
+			=> mNumFaultedTasks;
 
-		public int NumFatalTasks => mNumFatalTasks;
+		public int NumFatalTasks
+			=> mNumFatalTasks;
+
+		public long LastPostedAtTimeTick
+			=> mPostedAtTimeTick;
 	}
 }

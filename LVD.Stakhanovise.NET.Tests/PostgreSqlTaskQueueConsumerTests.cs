@@ -63,8 +63,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			{
 				try
 				{
-					AbstractTimestamp now =
-						new AbstractTimestamp( 2, 2000 );
+					AbstractTimestamp now = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick,
+						mDataSource.LastPostedAtTimeTick * 1000 );
 
 					for ( int i = 0; i < mConsumerOptions.QueueConsumerConnectionPoolSize; i++ )
 					{

@@ -48,8 +48,9 @@ namespace LVD.Stakhanovise.NET.Tests
 			IQueuedTask actualTopOfQueue;
 			IQueuedTask expectedTopOfQueue = ExpectedTopOfQueueTask;
 
-			AbstractTimestamp now =
-				new AbstractTimestamp( 2, 2000 );
+			AbstractTimestamp now = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick,
+				mDataSource.LastPostedAtTimeTick * 1000 );
+
 			PostgreSqlTaskQueueInfo taskQueue =
 				CreateTaskQueue();
 
@@ -60,6 +61,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
+		[Repeat( 5 )]
 		public async Task Test_CanComputeQueueMetrics ()
 		{
 			PostgreSqlTaskQueueInfo taskQueue = CreateTaskQueue();
@@ -85,7 +87,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			=> mDataSource.SeededTasks.Where( t => mInfoOptions.ProcessWithStatuses
 				.Contains( t.Status ) )
 				.OrderByDescending( t => t.Priority )
-				.OrderBy( t => t.PostedAtTs )
+				.OrderBy( t => t.PostedAt )
 				.OrderBy( t => t.LockHandleId )
 				.FirstOrDefault();
 
