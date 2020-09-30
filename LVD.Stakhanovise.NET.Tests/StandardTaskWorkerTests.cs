@@ -35,6 +35,7 @@ using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Tests.Executors;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Moq;
@@ -43,6 +44,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -50,7 +52,16 @@ namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
 	public class StandardTaskWorkerTests
-	{	
+	{
+		private Type[] mPayloadTypes = new Type[]
+		{
+			typeof(ErroredTaskPayload),
+			typeof(ImplicitSuccessfulTaskPayload),
+			typeof(SuccessfulTaskPayload),
+			typeof(ThrowsExceptionTaskPayload),
+			typeof(AnotherSampleTaskPayload)
+		};
+
 		[Test]
 		public async Task Test_CanStartStop ()
 		{
@@ -64,7 +75,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				new Mock<IExecutionPerformanceMonitor>( MockBehavior.Loose );
 
 			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
-			using ( StandardTaskWorker worker = new StandardTaskWorker( processingOpts, 
+			using ( StandardTaskWorker worker = new StandardTaskWorker( processingOpts,
 				bufferMock.Object,
 				executorRegistryMock.Object,
 				executionPerformanceMonitorMock.Object,
@@ -93,19 +104,18 @@ namespace LVD.Stakhanovise.NET.Tests
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetTaskProcessingOptions();
 
-			ITaskExecutorRegistry executorRegistry =
-				new StandardTaskExecutorRegistry( new StandardDependencyResolver() );
-
 			Mock<IExecutionPerformanceMonitor> executionPerformanceMonitorMock =
 				new Mock<IExecutionPerformanceMonitor>();
 
 			List<StandardTaskWorker> workers
 				= new List<StandardTaskWorker>();
 
-			Action<object, TokenReleasedEventArgs> handleTokenReleased = 
+			Action<object, TokenReleasedEventArgs> handleTokenReleased =
 				( s, e ) => processedTaskTokens.Add( ( IQueuedTaskToken )s );
 
-			executorRegistry.ScanAssemblies( GetType().Assembly );
+			executionPerformanceMonitorMock.Setup( m => m.ReportExecutionTime(
+				It.IsIn( mPayloadTypes.Select( t => t.FullName ).ToArray() ),
+				It.IsAny<long>() ) );
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
 			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
@@ -113,7 +123,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				for ( int i = 0; i < workerCount; i++ )
 					workers.Add( new StandardTaskWorker( processingOpts,
 						taskBuffer,
-						executorRegistry,
+						CreateTaskExecutorRegistry(),
 						executionPerformanceMonitorMock.Object,
 						timingBelt ) );
 
@@ -146,6 +156,8 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				foreach ( StandardTaskWorker w in workers )
 					w.Dispose();
+
+				executionPerformanceMonitorMock.VerifyAll();
 			}
 		}
 
@@ -153,22 +165,17 @@ namespace LVD.Stakhanovise.NET.Tests
 			int numberOfTasks,
 			Action<object, TokenReleasedEventArgs> onTokenReleased )
 		{
-			List<IQueuedTaskToken> producedTasks
-				= new List<IQueuedTaskToken>();
+			List<IQueuedTaskToken> producedTasks =
+				new List<IQueuedTaskToken>();
 
-			TaskCompletionSource<List<IQueuedTaskToken>> producedTasksCompletionSource
-				= new TaskCompletionSource<List<IQueuedTaskToken>>();
+			TaskCompletionSource<List<IQueuedTaskToken>> producedTasksCompletionSource =
+				new TaskCompletionSource<List<IQueuedTaskToken>>();
 
 			ManualResetEvent bufferSpaceAvailableWaitHandle =
 				new ManualResetEvent( false );
 
-			Queue<Type> taskPayloadTypes = new Queue<Type>( new Type[]
-			{
-				typeof(ErroredTaskPayload),
-				typeof(ImplicitSuccessfulTaskPayload),
-				typeof(SuccessfulTaskPayload),
-				typeof(ThrowsExceptionTaskPayload)
-			} );
+			Queue<Type> taskPayloadTypes =
+				new Queue<Type>( mPayloadTypes );
 
 			Task.Run( () =>
 			{
@@ -216,5 +223,26 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			return producedTasksCompletionSource.Task;
 		}
+
+		private ITaskExecutorRegistry CreateTaskExecutorRegistry ()
+		{
+			ITaskExecutorRegistry registry = new StandardTaskExecutorRegistry( GetDependencyResolver() );
+			registry.ScanAssemblies( CurrentAssembly );
+			return registry;
+		}
+
+		private IDependencyResolver GetDependencyResolver ()
+		{
+			IDependencyResolver dependencyResolver =
+				new StandardDependencyResolver();
+
+			dependencyResolver.Load( TestDependencyRegistrations
+				.GetAll() );
+
+			return dependencyResolver;
+		}
+
+		private Assembly CurrentAssembly
+			=> GetType().Assembly;
 	}
 }

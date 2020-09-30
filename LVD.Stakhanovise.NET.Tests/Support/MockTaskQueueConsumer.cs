@@ -74,7 +74,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				return mProducedTasksBuffer.Dequeue();
 
 			if ( mRemainingTaskCount <= 0 )
-				mQueueDepletedTaskCompletionSource.TrySetResult( false );
+				mQueueDepletedTaskCompletionSource.TrySetResult( true );
 			else
 				mGenerationCompletedTask = GenerateNewTasksAsync();
 
@@ -93,13 +93,16 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			return Task.Delay( 150 );
 		}
 
+		public void WaitForQueueToBeDepleted()
+		{
+			mQueueDepletedHandle.Wait();
+		}
+
 		public void Dispose ()
 		{
 			mProducedTasksBuffer.Clear();
 			mDequeuedTasksHistory.Clear();
 		}
-
-		public Task<bool> QueueDepletedHandle => mQueueDepletedHandle;
 
 		public List<IQueuedTaskToken> DequeuedTasksHistory => mDequeuedTasksHistory;
 

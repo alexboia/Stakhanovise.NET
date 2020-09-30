@@ -89,14 +89,14 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10, 150 )]
 		[TestCase( 150, 150 )]
 		[TestCase( 10, 1 )]
-		public async Task Test_PollingScenario ( int bufferCapacity, int numberOfTasks )
+		public async Task Test_CanPoll_WithNoTaskUpdates ( int bufferCapacity, int numberOfTasks )
 		{
 			List<IQueuedTaskToken> producedTasks;
 			List<IQueuedTaskToken> consumedTasks;
-			Task<List<IQueuedTaskToken>> consumedTasksReadyHandle;
 
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetTaskProcessingOptions();
+
 			Mock<IExecutionPerformanceMonitor> perfMonMock = 
 				new Mock<IExecutionPerformanceMonitor>();
 			
@@ -112,20 +112,25 @@ namespace LVD.Stakhanovise.NET.Tests
 				perfMonMock.Object,
 				timingBelt ) )
 			{
+				TestBufferConsumer consumer = 
+					new TestBufferConsumer( taskBuffer );
+				
 				await timingBelt.StartAsync();
 				await poller.StartAsync();
 
 				//Poller is filling up the buffer.
 				//We need to check the buffer to see whether 
 				//	the poller produced the appropriate data
-				consumedTasksReadyHandle = ConsumeBuffer( taskBuffer );
+				consumer.ConsumeBuffer();
 
-				await taskQueue.QueueDepletedHandle;
+				taskQueue.WaitForQueueToBeDepleted();
 				await poller.StopAync();
 				await timingBelt.StopAsync();
 
+				consumer.WaitForBufferToBeConsumed();
+
 				producedTasks = taskQueue.DequeuedTasksHistory;
-				consumedTasks = await consumedTasksReadyHandle;
+				consumedTasks = consumer.ConsumedTasks;
 
 				Assert.IsFalse( taskBuffer.HasTasks );
 				Assert.IsTrue( taskBuffer.IsCompleted );
@@ -137,32 +142,6 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				perfMonMock.Verify();
 			}
-		}
-
-		private Task<List<IQueuedTaskToken>> ConsumeBuffer ( ITaskBuffer taskBuffer )
-		{
-			List<IQueuedTaskToken> consumedTasks
-				= new List<IQueuedTaskToken>();
-
-			TaskCompletionSource<List<IQueuedTaskToken>> consumedTasksCompletionSource
-				= new TaskCompletionSource<List<IQueuedTaskToken>>();
-
-			Task.Run( () =>
-			{
-				while ( !taskBuffer.IsCompleted )
-				{
-					IQueuedTaskToken queuedTaskToken = taskBuffer.TryGetNextTask();
-					if ( queuedTaskToken != null )
-						consumedTasks.Add( queuedTaskToken );
-					else
-						Task.Delay( 10 ).Wait();
-				}
-
-				consumedTasksCompletionSource
-					.TrySetResult( consumedTasks );
-			} );
-
-			return consumedTasksCompletionSource.Task;
 		}
 	}
 }

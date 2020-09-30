@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Tests.Executors;
 using LVD.Stakhanovise.NET.Tests.Payloads;
+using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
@@ -143,12 +144,12 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private IDependencyResolver GetDependencyResolver ()
 		{
-			IDependencyResolver dependencyResolver = new StandardDependencyResolver();
-			dependencyResolver.Load( new List<DependencyRegistration>()
-			{
-				DependencyRegistration.BindToInstance( typeof( ISampleExecutorDependency ),
-					new SampleExecutorDependencyImpl() )
-			} );
+			IDependencyResolver dependencyResolver =
+				new StandardDependencyResolver();
+
+			dependencyResolver.Load( TestDependencyRegistrations
+				.GetAll() );
+
 			return dependencyResolver;
 		}
 	}
