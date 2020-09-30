@@ -52,7 +52,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		public async Task Test_CanStartStop ()
 		{
 			TaskProcessingOptions processingOpts =
-				TestOptions.GetTaskProcessingOptions();
+				TestOptions.GetDefaultTaskProcessingOptions();
 
 			Mock<IExecutionPerformanceMonitor> perfMonMock = new
 				Mock<IExecutionPerformanceMonitor>();
@@ -93,7 +93,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		public async Task Test_CanPoll ( int bufferCapacity, int numberOfTasks )
 		{
 			TaskProcessingOptions processingOpts =
-				TestOptions.GetTaskProcessingOptions();
+				TestOptions.GetDefaultTaskProcessingOptions();
 
 			Mock<IExecutionPerformanceMonitor> perfMonMock = 
 				new Mock<IExecutionPerformanceMonitor>();

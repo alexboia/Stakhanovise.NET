@@ -399,8 +399,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				return;
 
 			mSourceConnection.StateChange -= HandleSourceConnectionStateChanged;
-			mWatchdogCancellationTokenSource.Cancel();
-			mWatchdogEventsQueue.CompleteAdding();
+
+			if ( mWatchdogCancellationTokenSource != null )
+				mWatchdogCancellationTokenSource.Cancel();
+
+			if ( mWatchdogEventsQueue != null )
+				mWatchdogEventsQueue.CompleteAdding();
 
 			await mSourceConnection.UnlockAsync( mQueuedTask.LockHandleId );
 			await mSourceConnection.CloseAsync();

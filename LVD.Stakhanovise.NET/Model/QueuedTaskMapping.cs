@@ -49,6 +49,7 @@ namespace LVD.Stakhanovise.NET.Model
 			LastErrorColumnName = "task_last_error";
 			LastErrorIsRecoverableColumnName = "task_last_error_is_recoverable";
 			ErrorCountColumnName = "task_error_count";
+			PostedAtColumnName = "task_posted_at";
 			PostedAtTsColumnName = "task_posted_at_ts";
 			RepostedAtTsColumnName = "task_reposted_at_ts";
 			FirstProcessingAttemptedAtTsColumnName = "task_first_processing_attempted_at_ts";

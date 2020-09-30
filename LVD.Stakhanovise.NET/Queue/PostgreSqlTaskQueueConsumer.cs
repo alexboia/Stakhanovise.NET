@@ -167,6 +167,8 @@ namespace LVD.Stakhanovise.NET.Queue
 					string.Join<Guid>( ",", excludeLockedTaskIds ) );
 
 				conn = await OpenQueueConnectionAsync();
+				if ( conn == null )
+					return null;
 
 				using ( NpgsqlCommand dequeueCmd = new NpgsqlCommand() )
 				{
@@ -189,7 +191,7 @@ namespace LVD.Stakhanovise.NET.Queue
 						parameterType: NpgsqlDbType.Bigint,
 						value: now.Ticks );
 
-					dequeueCmd.Prepare();
+					await dequeueCmd.PrepareAsync();
 
 					using ( NpgsqlDataReader taskReader = await dequeueCmd.ExecuteReaderAsync() )
 					{
