@@ -62,7 +62,7 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public static AbstractTimestamp Zero ()
 		{
-			return new AbstractTimestamp( 0, 0 );
+			return new AbstractTimestamp( 0, 0, 0 );
 		}
 
 		public long GetTicksDurationForWallclockDuration ( TimeSpan duration )

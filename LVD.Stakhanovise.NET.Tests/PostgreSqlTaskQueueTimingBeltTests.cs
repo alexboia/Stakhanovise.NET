@@ -40,6 +40,7 @@ using LVD.Stakhanovise.NET.Queue;
 using NUnit.Framework;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
+using LVD.Stakhanovise.NET.Tests.Support;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -320,7 +321,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( resetSql, conn ) )
 			{
-				cmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid, TimeId );
+				cmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid, 
+					TimeId );
+
+				await cmd.PrepareAsync();
 				await cmd.ExecuteNonQueryAsync();
 				await conn.CloseAsync();
 			}
@@ -333,14 +337,8 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private PostgreSqlTaskQueueTimingBeltOptions GetTimingBeltOptions ()
 		{
-			return new PostgreSqlTaskQueueTimingBeltOptions( TimeId,
-				connectionOptions: new ConnectionOptions( ConnectionString,
-					keepAliveSeconds: 0,
-					retryCount: 3,
-					retryDelayMilliseconds: 100 ),
-				initialWallclockTimeCost: 1000,
-				timeTickBatchSize: 10,
-				timeTickMaxFailCount: 3 );
+			return TestOptions.GetDefaultPostgreSqlTaskQueueTimingBeltOptions( TimeId, 
+				ConnectionString );
 		}
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ()

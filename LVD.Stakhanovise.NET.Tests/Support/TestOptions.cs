@@ -15,8 +15,20 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			QueuedTaskStatus.Processing
 		};
 
-		public static readonly QueuedTaskMapping DefaultMapping = 
+		public static readonly QueuedTaskMapping DefaultMapping =
 			new QueuedTaskMapping();
+
+		public static PostgreSqlTaskQueueTimingBeltOptions GetDefaultPostgreSqlTaskQueueTimingBeltOptions ( Guid timeId, string connectionString )
+		{
+			return new PostgreSqlTaskQueueTimingBeltOptions( timeId,
+				connectionOptions: new ConnectionOptions( connectionString,
+					keepAliveSeconds: 0,
+					retryCount: 3,
+					retryDelayMilliseconds: 100 ),
+				initialWallclockTimeCost: 1000,
+				timeTickBatchSize: 10,
+				timeTickMaxFailCount: 3 );
+		}
 
 		public static TaskProcessingOptions GetDefaultTaskProcessingOptions ()
 		{

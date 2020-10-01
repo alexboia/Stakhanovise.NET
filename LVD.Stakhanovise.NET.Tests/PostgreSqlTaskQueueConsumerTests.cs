@@ -18,6 +18,7 @@ namespace LVD.Stakhanovise.NET.Tests
 	//TODO: also test dequeue with tasks still being locked
 	//TODO: test correct handling of connection dropouts (notifications being emitted by queue consumer)
 	//TODO: also test without a given task type/s
+	//TODO: test for all test task types/payload types
 	[TestFixture]
 	public class PostgreSqlTaskQueueConsumerTests : BaseTestWithConfiguration
 	{
@@ -62,7 +63,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			string taskType = typeof( SampleTaskPayload )
 				.FullName;
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = 
+			using ( PostgreSqlTaskQueueConsumer taskQueue =
 				CreateTaskQueue( () => mDataSource.LastPostedAt ) )
 			{
 				try
@@ -111,23 +112,20 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanStartStopReceivingNewTaskNotificationUpdates ()
 		{
-			bool notificationReceived = false;
-			ManualResetEvent notificationWaitHandle = new ManualResetEvent( false );
+			ManualResetEvent notificationWaitHandle = new
+				ManualResetEvent( false );
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => mDataSource.LastPostedAt ) )
+			using ( PostgreSqlTaskQueueConsumer taskQueue =
+				CreateTaskQueue( () => mDataSource.LastPostedAt ) )
 			{
 				taskQueue.ClearForDequeue += ( s, e ) =>
-				{
-					notificationReceived = true;
 					notificationWaitHandle.Set();
-				};
 
 				await taskQueue.StartReceivingNewTaskUpdatesAsync();
 				Assert.IsTrue( taskQueue.IsReceivingNewTaskUpdates );
 
 				await SendNewTaskNotificationAsync();
 				notificationWaitHandle.WaitOne();
-				Assert.IsTrue( notificationReceived );
 
 				await taskQueue.StopReceivingNewTaskUpdatesAsync();
 				Assert.IsFalse( taskQueue.IsReceivingNewTaskUpdates );
