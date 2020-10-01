@@ -67,12 +67,18 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private int[] mDequeueWithStatuses;
 
-		public PostgreSqlTaskQueueConsumer ( TaskQueueConsumerOptions options )
+		private ITaskQueueAbstractTimeProvider mTimeProvider;
+
+		public PostgreSqlTaskQueueConsumer ( TaskQueueConsumerOptions options, ITaskQueueAbstractTimeProvider timeProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
 
+			if ( timeProvider == null )
+				throw new ArgumentNullException( nameof( timeProvider ) );
+
 			mOptions = options;
+			mTimeProvider = timeProvider;
 
 			mDequeueWithStatuses = mOptions.ProcessWithStatuses
 				.Select( s => ( int )s )
@@ -148,7 +154,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					"Cannot reuse a disposed postgre sql task queue consumer" );
 		}
 
-		public async Task<IQueuedTaskToken> DequeueAsync ( AbstractTimestamp now, params string[] selectTaskTypes )
+		public async Task<IQueuedTaskToken> DequeueAsync ( params string[] selectTaskTypes )
 		{
 			NpgsqlConnection conn = null;
 			QueuedTask dequedTask = null;
@@ -165,6 +171,9 @@ namespace LVD.Stakhanovise.NET.Queue
 					string.Join<string>( ",", selectTaskTypes ),
 					string.Join<int>( ",", mDequeueWithStatuses ),
 					string.Join<Guid>( ",", excludeLockedTaskIds ) );
+
+				AbstractTimestamp now = await mTimeProvider
+					.GetCurrentTimeAsync();
 
 				conn = await OpenQueueConnectionAsync();
 				if ( conn == null )
@@ -298,6 +307,15 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				CheckNotDisposedOrThrow();
 				return mNotificationListener.IsStarted;
+			}
+		}
+
+		public ITaskQueueAbstractTimeProvider TimeProvider 
+		{ 
+			get
+			{
+				CheckNotDisposedOrThrow();
+				return mTimeProvider;
 			}
 		}
 	}

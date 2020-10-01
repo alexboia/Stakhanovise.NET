@@ -122,7 +122,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				now.Ticks,
 				now.WallclockTimeCost );
 
-			return await mTaskQueueConsumer.DequeueAsync( now, mRequiredPayloadTypes );
+			return await mTaskQueueConsumer.DequeueAsync( mRequiredPayloadTypes );
 		}
 
 		private async Task TryReserveAndAddToBufferAsync ( IQueuedTaskToken queuedTaskToken )

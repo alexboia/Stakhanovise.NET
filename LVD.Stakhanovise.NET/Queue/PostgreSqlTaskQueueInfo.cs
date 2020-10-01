@@ -46,14 +46,20 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private int[] mDequeueWithStatuses;
 
+		private ITaskQueueAbstractTimeProvider mTimeProvider;
+
 		private bool mIsDisposed = false;
 
-		public PostgreSqlTaskQueueInfo ( TaskQueueInfoOptions options )
+		public PostgreSqlTaskQueueInfo ( TaskQueueInfoOptions options, ITaskQueueAbstractTimeProvider timeProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
 
+			if ( timeProvider == null )
+				throw new ArgumentNullException( nameof( timeProvider ) );
+
 			mOptions = options;
+			mTimeProvider = timeProvider;
 			mDequeueWithStatuses = mOptions.ProcessWithStatuses
 				.Select( s => ( int )s )
 				.ToArray();
@@ -136,17 +142,18 @@ namespace LVD.Stakhanovise.NET.Queue
 				totalProcessed );
 		}
 
-		public async Task<IQueuedTask> PeekAsync ( AbstractTimestamp now )
+		public async Task<IQueuedTask> PeekAsync ( )
 		{
+			AbstractTimestamp now;
 			IQueuedTask peekedTask = null;
-
-			if ( now == null )
-				throw new ArgumentNullException( nameof( now ) );
 
 			CheckNotDisposedOrThrow();
 
 			//This simply returns the latest item on top of the queue,
 			//  without acquiring any lock
+
+			now = await mTimeProvider
+				.GetCurrentTimeAsync();
 
 			string peekSql = $@"SELECT q.*
 				FROM {mOptions.Mapping.TableName} as q
@@ -182,6 +189,15 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 
 			return peekedTask;
+		}
+
+		public ITaskQueueAbstractTimeProvider TimeProvider
+		{
+			get
+			{
+				CheckNotDisposedOrThrow();
+				return mTimeProvider;
+			}
 		}
 	}
 }

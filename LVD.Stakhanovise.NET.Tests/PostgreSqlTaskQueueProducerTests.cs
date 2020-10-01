@@ -55,8 +55,8 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanEnqueue ()
 		{
-			bool notificationReceived = false;
-			ManualResetEvent notificationWaitHandle = new ManualResetEvent( false );
+			ManualResetEvent notificationWaitHandle =
+				new ManualResetEvent( false );
 
 			TaskQueueMetrics previousMetrics,
 				newMetrics;
@@ -64,23 +64,20 @@ namespace LVD.Stakhanovise.NET.Tests
 			string taskType = typeof( SampleTaskPayload )
 				.FullName;
 
-			AbstractTimestamp postedAt = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick + 1,
-				( mDataSource.LastPostedAtTimeTick + 1 ) * 1000 );
+			AbstractTimestamp postedAt = mDataSource.LastPostedAt
+				.AddTicks( 1 );
 
 			PostgreSqlTaskQueueProducer taskQueueProducer =
-				CreateTaskQueueProducer();
+				CreateTaskQueueProducer( () => postedAt );
 
 			PostgreSqlTaskQueueInfo taskQueueInfo =
-				CreateTaskQueueInfo();
+				CreateTaskQueueInfo( () => postedAt );
 
 			EventHandler<ClearForDequeueEventArgs> handleClearForDequeue = ( s, e ) =>
-			{
-				notificationReceived = true;
 				notificationWaitHandle.Set();
-			};
 
 			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer =
-				CreateTaskQueueConsumer() )
+				CreateTaskQueueConsumer( () => postedAt ) )
 			{
 				taskQueueConsumer.ClearForDequeue +=
 					handleClearForDequeue;
@@ -92,13 +89,10 @@ namespace LVD.Stakhanovise.NET.Tests
 				Assert.NotNull( previousMetrics );
 
 				await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
-					now: postedAt,
 					source: nameof( Test_CanEnqueue ),
 					priority: 0 );
 
 				notificationWaitHandle.WaitOne();
-				Assert.IsTrue( notificationReceived );
-
 				newMetrics = await taskQueueInfo.ComputeMetricsAsync();
 				Assert.NotNull( newMetrics );
 
@@ -110,6 +104,8 @@ namespace LVD.Stakhanovise.NET.Tests
 					newMetrics.TotalFataled );
 				Assert.AreEqual( previousMetrics.TotalFaulted,
 					newMetrics.TotalFaulted );
+				Assert.AreEqual( previousMetrics.TotalProcessed,
+					newMetrics.TotalProcessed );
 				Assert.AreEqual( previousMetrics.TotalUnprocessed + 1,
 					newMetrics.TotalUnprocessed );
 
@@ -125,35 +121,29 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_EnqueueDoesNotChangePeekResult_SingleConsumer ()
 		{
+			int futureTicks = 1;
 			IQueuedTask peekTask = null,
 				rePeekTask = null;
 
 			string taskType = typeof( SampleTaskPayload )
 				.FullName;
 
-			AbstractTimestamp initialPeekAt = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick + 1,
-				( mDataSource.LastPostedAtTimeTick + 1 ) * 1000 );
+			PostgreSqlTaskQueueProducer taskQueueProducer = CreateTaskQueueProducer( () => mDataSource
+				.LastPostedAt
+				.AddTicks( 1 ) );
 
-			AbstractTimestamp postedAt = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick + 1,
-				( mDataSource.LastPostedAtTimeTick + 1 ) * 1000 );
+			PostgreSqlTaskQueueInfo taskQueueInfo = CreateTaskQueueInfo( () => mDataSource
+				.LastPostedAt
+				.AddTicks( futureTicks++ ) );
 
-			AbstractTimestamp peekAt = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick + 2,
-				( mDataSource.LastPostedAtTimeTick + 2 ) * 1000 );
-
-			PostgreSqlTaskQueueProducer taskQueueProducer =
-				CreateTaskQueueProducer();
-			PostgreSqlTaskQueueInfo taskQueueInfo =
-				CreateTaskQueueInfo();
-
-			peekTask = await taskQueueInfo.PeekAsync( initialPeekAt );
+			peekTask = await taskQueueInfo.PeekAsync();
 			Assert.NotNull( peekTask );
 
 			await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
-					now: postedAt,
 					source: nameof( Test_EnqueueDoesNotChangePeekResult_SingleConsumer ),
 					priority: 0 );
 
-			rePeekTask = await taskQueueInfo.PeekAsync( peekAt );
+			rePeekTask = await taskQueueInfo.PeekAsync();
 			Assert.NotNull( rePeekTask );
 
 			//Placing a new element in a queue occurs at its end, 
@@ -164,19 +154,22 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		}
 
-		private PostgreSqlTaskQueueProducer CreateTaskQueueProducer ()
+		private PostgreSqlTaskQueueProducer CreateTaskQueueProducer ( Func<AbstractTimestamp> currentTimeProvider )
 		{
-			return new PostgreSqlTaskQueueProducer( mProducerOptions );
+			return new PostgreSqlTaskQueueProducer( mProducerOptions,
+				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
-		private PostgreSqlTaskQueueInfo CreateTaskQueueInfo ()
+		private PostgreSqlTaskQueueInfo CreateTaskQueueInfo ( Func<AbstractTimestamp> currentTimeProvider )
 		{
-			return new PostgreSqlTaskQueueInfo( mInfoOptions );
+			return new PostgreSqlTaskQueueInfo( mInfoOptions,
+				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
-		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ()
+		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ( Func<AbstractTimestamp> currentTimeProvider )
 		{
-			return new PostgreSqlTaskQueueConsumer( mConsumerOptions );
+			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
+				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
 		private string ConnectionString

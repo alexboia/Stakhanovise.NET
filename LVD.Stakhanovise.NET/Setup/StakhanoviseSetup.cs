@@ -109,7 +109,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			mTaskEngineSetup = new StandardTaskEngineSetup( mTaskQueueConsumerSetup,
 				defaults );
 
-			mTimingBeltSetup = new StandardTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup, 
+			mTimingBeltSetup = new StandardTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup,
 				defaults );
 
 			mPerformanceMonitorWriterSetup = new StandardExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup );
@@ -247,10 +247,10 @@ namespace LVD.Stakhanovise.NET.Setup
 				?? new NoOpLoggingProvider();
 
 			ITaskQueueProducer taskQueueProducer = new PostgreSqlTaskQueueProducer( mTaskQueueProducerSetup
-				.BuildOptions() );
+				.BuildOptions(), timingBelt );
 
 			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup
-				.BuiltOptions() );
+				.BuiltOptions(), timingBelt );
 
 			if ( mRegisterOwnDependencies )
 			{

@@ -45,7 +45,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		Task StopReceivingNewTaskUpdatesAsync ();
 
-		Task<IQueuedTaskToken> DequeueAsync ( AbstractTimestamp now, params string[] supportedTypes );
+		Task<IQueuedTaskToken> DequeueAsync ( params string[] supportedTypes );
+
+		ITaskQueueAbstractTimeProvider TimeProvider { get; }
 
 		bool IsReceivingNewTaskUpdates { get; }
 	}

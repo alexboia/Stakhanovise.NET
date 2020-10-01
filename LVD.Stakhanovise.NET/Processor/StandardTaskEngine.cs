@@ -92,7 +92,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( executionPerfMonWriter ) );
 
 			mExecutionPerfMon = new StandardExecutionPerformanceMonitor();
-			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( consumerOptions );
+			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( consumerOptions, 
+				timingBelt );
 
 			mTaskBuffer = new StandardTaskBuffer( engineOptions.WorkerCount );
 			mTaskPoller = new StandardTaskPoller( engineOptions.TaskProcessingOptions,

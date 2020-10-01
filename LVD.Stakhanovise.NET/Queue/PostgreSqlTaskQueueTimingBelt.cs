@@ -72,6 +72,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private PostgreSqlTaskQueueTimingBeltOptions mOptions;
 
+		private PostgreSqlTaskQueueAbstractTimeProvider mTimeProvider;
+
 		public PostgreSqlTaskQueueTimingBelt ( PostgreSqlTaskQueueTimingBeltOptions options )
 		{
 
@@ -84,6 +86,10 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			mLastTime = new AbstractTimestamp( 0,
 				mOptions.InitialWallclockTimeCost );
+
+			mTimeProvider = new PostgreSqlTaskQueueAbstractTimeProvider( new PostgreSqlTaskQueueAbstractTimeProviderOptions( 
+				options.TimeId, 
+				options.ConnectionOptions ) );
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -326,27 +332,12 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task<long> ComputeAbsoluteTimeTicksAsync ( long timeTicksToAdd )
 		{
-			CheckNotDisposedOrThrow();
-			CheckRunningOrThrow();
+			return await mTimeProvider.ComputeAbsoluteTimeTicksAsync( timeTicksToAdd );
+		}
 
-			using ( NpgsqlConnection conn = await OpenConnectionAsync( CancellationToken.None ) )
-			{
-				string computeSql = "SELECT sk_compute_absolute_time_ticks(@s_time_id, @s_time_ticks_to_add)";
-				using ( NpgsqlCommand computeCmd = new NpgsqlCommand( computeSql, conn ) )
-				{
-					computeCmd.Parameters.AddWithValue( "s_time_id", NpgsqlDbType.Uuid,
-						mOptions.TimeId );
-					computeCmd.Parameters.AddWithValue( "s_time_ticks_to_add", NpgsqlDbType.Bigint,
-						timeTicksToAdd );
-
-					await computeCmd.PrepareAsync();
-					object result = await computeCmd.ExecuteScalarAsync();
-
-					return result is long
-						? ( long )result
-						: 0;
-				}
-			}
+		public async Task<AbstractTimestamp> GetCurrentTimeAsync ()
+		{
+			return await mTimeProvider.GetCurrentTimeAsync();
 		}
 
 		protected virtual void Dispose ( bool disposing )

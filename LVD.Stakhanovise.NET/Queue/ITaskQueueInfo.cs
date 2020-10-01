@@ -41,6 +41,8 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		Task<TaskQueueMetrics> ComputeMetricsAsync ();
 
-		Task<IQueuedTask> PeekAsync ( AbstractTimestamp now );
+		Task<IQueuedTask> PeekAsync ();
+
+		ITaskQueueAbstractTimeProvider TimeProvider { get; }
 	}
 }

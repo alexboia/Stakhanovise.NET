@@ -45,13 +45,17 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		private TaskQueueOptions mOptions;
 
-		public PostgreSqlTaskQueueProducer ( TaskQueueOptions options )
+		private ITaskQueueAbstractTimeProvider mTimeProvider;
+
+		public PostgreSqlTaskQueueProducer ( TaskQueueOptions options, ITaskQueueAbstractTimeProvider timeProvider )
 		{
-			//TODO: use task queue producer options
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
+			if ( timeProvider == null )
+				throw new ArgumentNullException( nameof( timeProvider ) );
 
 			mOptions = options;
+			mTimeProvider = timeProvider;
 		}
 
 		private async Task<NpgsqlConnection> TryOpenConnectionAsync ()
@@ -62,23 +66,23 @@ namespace LVD.Stakhanovise.NET.Queue
 		}
 
 		public async Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload,
-			AbstractTimestamp now,
 			string source,
 			int priority )
 		{
+			AbstractTimestamp now;
 			QueuedTask queuedTask = null;
 
 			if ( EqualityComparer<TPayload>.Default.Equals( payload, default( TPayload ) ) )
 				throw new ArgumentNullException( nameof( payload ) );
-
-			if ( now == null )
-				throw new ArgumentNullException( nameof( now ) );
 
 			if ( string.IsNullOrEmpty( source ) )
 				throw new ArgumentNullException( nameof( source ) );
 
 			if ( priority < 0 )
 				throw new ArgumentOutOfRangeException( nameof( priority ), "Priority must be greater than or equal to 0" );
+
+			now = await mTimeProvider
+				.GetCurrentTimeAsync();
 
 			queuedTask = new QueuedTask();
 			queuedTask.Id = Guid.NewGuid();
@@ -165,6 +169,14 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 
 			return queuedTask;
+		}
+
+		public ITaskQueueAbstractTimeProvider TimeProvider
+		{
+			get
+			{
+				return mTimeProvider;
+			}
 		}
 	}
 }

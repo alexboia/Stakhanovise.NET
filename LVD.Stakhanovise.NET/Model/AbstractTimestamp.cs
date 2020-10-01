@@ -82,13 +82,13 @@ namespace LVD.Stakhanovise.NET.Model
 			return AddWallclockTimeDuration( ( long )Math.Ceiling( duration.TotalMilliseconds ) );
 		}
 
-		public AbstractTimestamp AddWallclockTimeDuration ( long duration )
+		public AbstractTimestamp AddWallclockTimeDuration ( long durationMilliseconds )
 		{
 			long ticksForWallclockMilliseconds = 
-				GetTicksDurationForWallclockDuration( duration );
+				GetTicksDurationForWallclockDuration( durationMilliseconds );
 
 			return new AbstractTimestamp( mTicks + ticksForWallclockMilliseconds,
-				mWallclockTimeCost + duration );
+				mWallclockTimeCost + durationMilliseconds );
 		}
 
 		public AbstractTimestamp FromTicks ( long ticks )

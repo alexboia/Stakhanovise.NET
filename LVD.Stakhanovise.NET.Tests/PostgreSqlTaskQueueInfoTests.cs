@@ -43,45 +43,59 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
+		[TestCase( 0 )]
+		[TestCase( 1 )]
+		[TestCase( 10 )]
 		[Repeat( 10 )]
-		public async Task Test_CanPeek ()
+		public async Task Test_CanPeek ( int futureTicks )
 		{
 			IQueuedTask actualTopOfQueue;
 			IQueuedTask expectedTopOfQueue = ExpectedTopOfQueueTask;
 
-			AbstractTimestamp now = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick,
-				mDataSource.LastPostedAtTimeTick * 1000 );
+			for ( int i = 0; i <= futureTicks; i++ )
+			{
+				PostgreSqlTaskQueueInfo taskQueue = CreateTaskQueue( () => mDataSource
+					.LastPostedAt
+					.AddTicks( futureTicks ) );
 
-			PostgreSqlTaskQueueInfo taskQueue =
-				CreateTaskQueue();
+				actualTopOfQueue = await taskQueue.PeekAsync();
 
-			actualTopOfQueue = await taskQueue.PeekAsync( now );
-
-			Assert.NotNull( actualTopOfQueue );
-			Assert.AreEqual( expectedTopOfQueue.Id, actualTopOfQueue.Id );
+				Assert.NotNull( actualTopOfQueue );
+				Assert.AreEqual( expectedTopOfQueue.Id,
+					actualTopOfQueue.Id );
+			}
 		}
 
 		[Test]
+		[TestCase( 0 )]
+		[TestCase( 1 )]
+		[TestCase( 10 )]
 		[Repeat( 5 )]
-		public async Task Test_CanComputeQueueMetrics ()
+		public async Task Test_CanComputeQueueMetrics ( int futureTicks )
 		{
-			PostgreSqlTaskQueueInfo taskQueue = CreateTaskQueue();
+			for ( int i = 0; i <= futureTicks; i++ )
+			{
+				PostgreSqlTaskQueueInfo taskQueue = CreateTaskQueue( () => mDataSource
+					.LastPostedAt
+					.AddTicks( futureTicks ) );
 
-			//TODO: also add processing and processed tasks
-			TaskQueueMetrics metrics = await taskQueue
-				.ComputeMetricsAsync();
+				TaskQueueMetrics metrics = await taskQueue
+					.ComputeMetricsAsync();
 
-			Assert.NotNull( metrics );
-			Assert.AreEqual( mDataSource.NumUnProcessedTasks, metrics.TotalUnprocessed );
-			Assert.AreEqual( mDataSource.NumErroredTasks, metrics.TotalErrored );
-			Assert.AreEqual( mDataSource.NumFaultedTasks, metrics.TotalFaulted );
-			Assert.AreEqual( mDataSource.NumFatalTasks, metrics.TotalFataled );
+				Assert.NotNull( metrics );
+				Assert.AreEqual( mDataSource.NumUnProcessedTasks, metrics.TotalUnprocessed );
+				Assert.AreEqual( mDataSource.NumErroredTasks, metrics.TotalErrored );
+				Assert.AreEqual( mDataSource.NumFaultedTasks, metrics.TotalFaulted );
+				Assert.AreEqual( mDataSource.NumFatalTasks, metrics.TotalFataled );
+				Assert.AreEqual( mDataSource.NumProcessedTasks, metrics.TotalProcessed );
+			}
 
 		}
 
-		private PostgreSqlTaskQueueInfo CreateTaskQueue ()
+		private PostgreSqlTaskQueueInfo CreateTaskQueue ( Func<AbstractTimestamp> currentTimeProvider )
 		{
-			return new PostgreSqlTaskQueueInfo( mInfoOptions );
+			return new PostgreSqlTaskQueueInfo( mInfoOptions,
+				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
 		private IQueuedTask ExpectedTopOfQueueTask

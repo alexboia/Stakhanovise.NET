@@ -29,7 +29,9 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private int mRemainingTaskCount;
 
-		public MockTaskQueueConsumer ( int numberOfTasks )
+		private ITaskQueueAbstractTimeProvider mTimeProvider;
+
+		public MockTaskQueueConsumer ( int numberOfTasks, ITaskQueueAbstractTimeProvider timeProvider )
 		{
 			//TODO: also add task type
 			mQueueDepletedTaskCompletionSource = new TaskCompletionSource<bool>();
@@ -37,6 +39,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 			mNumberOfTasks = numberOfTasks;
 			mRemainingTaskCount = numberOfTasks;
+			mTimeProvider = timeProvider;
 		}
 
 		private void NotifyClearToDequeue ()
@@ -67,7 +70,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			} );
 		}
 
-		public async Task<IQueuedTaskToken> DequeueAsync ( AbstractTimestamp now, params string[] supportedTypes )
+		public async Task<IQueuedTaskToken> DequeueAsync ( params string[] supportedTypes )
 		{
 			await mGenerationCompletedTask;
 
@@ -105,8 +108,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mDequeuedTasksHistory.Clear();
 		}
 
-		public List<IQueuedTaskToken> DequeuedTasksHistory => mDequeuedTasksHistory;
+		public ITaskQueueAbstractTimeProvider TimeProvider 
+			=> mTimeProvider;
 
-		public bool IsReceivingNewTaskUpdates => mIsReceivingNewTaskUpdates;
+		public List<IQueuedTaskToken> DequeuedTasksHistory 
+			=> mDequeuedTasksHistory;
+
+		public bool IsReceivingNewTaskUpdates 
+			=> mIsReceivingNewTaskUpdates;
 	}
 }

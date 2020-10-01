@@ -53,19 +53,17 @@ namespace LVD.Stakhanovise.NET.Tests
 			IQueuedTaskToken dequeuedTaskToken = null;
 
 			PostgreSqlTaskQueueInfo taskQueueInfo =
-				CreateTaskQueueInfo();
+				CreateTaskQueueInfo( () => mDataSource.LastPostedAt );
 
-			AbstractTimestamp now = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick,
-				mDataSource.LastPostedAtTimeTick * 1000 );
-
-			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueueConsumer() )
+			using ( PostgreSqlTaskQueueConsumer taskQueue = 
+				CreateTaskQueueConsumer( () => mDataSource.LastPostedAt ) )
 			{
 				try
 				{
-					peekTask = await taskQueueInfo.PeekAsync( now );
+					peekTask = await taskQueueInfo.PeekAsync();
 					Assert.NotNull( peekTask );
 
-					dequeuedTaskToken = await taskQueue.DequeueAsync( now );
+					dequeuedTaskToken = await taskQueue.DequeueAsync();
 					Assert.NotNull( dequeuedTaskToken );
 
 					Assert.AreEqual( peekTask.Id,
@@ -87,40 +85,41 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			IQueuedTaskToken dequeuedTaskToken = null;
 
+
 			PostgreSqlTaskQueueInfo taskQueueInfo =
-				CreateTaskQueueInfo();
+				CreateTaskQueueInfo( () => mDataSource.LastPostedAt );
 
-			AbstractTimestamp now = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick,
-				mDataSource.LastPostedAtTimeTick * 1000 );
-
-			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer = CreateTaskQueueConsumer() )
+			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer = 
+				CreateTaskQueueConsumer( () => mDataSource.LastPostedAt ) )
 			{
-				peekTask = await taskQueueInfo.PeekAsync( now );
+				peekTask = await taskQueueInfo.PeekAsync();
 				Assert.NotNull( peekTask );
 
-				dequeuedTaskToken = await taskQueueConsumer.DequeueAsync( now );
+				dequeuedTaskToken = await taskQueueConsumer.DequeueAsync();
 				Assert.NotNull( dequeuedTaskToken );
 
-				rePeekTask = await taskQueueInfo.PeekAsync( now );
+				rePeekTask = await taskQueueInfo.PeekAsync();
 				Assert.NotNull( rePeekTask );
 
 				//Removing a new element from the queue 
 				//  occurs at the beginning of the queue,
 				//  so peeking must yield a different result
 				//  than before dequeue-ing
-				Assert.AreNotEqual( rePeekTask.Id, 
+				Assert.AreNotEqual( rePeekTask.Id,
 					peekTask.Id );
 			}
 		}
 
-		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ()
+		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ( Func<AbstractTimestamp> currentTimeProvider )
 		{
-			return new PostgreSqlTaskQueueConsumer( mConsumerOptions );
+			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
+				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
-		private PostgreSqlTaskQueueInfo CreateTaskQueueInfo ()
+		private PostgreSqlTaskQueueInfo CreateTaskQueueInfo ( Func<AbstractTimestamp> currentTimeProvider )
 		{
-			return new PostgreSqlTaskQueueInfo( mInfoOptions );
+			return new PostgreSqlTaskQueueInfo( mInfoOptions,
+				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
 		private string ConnectionString

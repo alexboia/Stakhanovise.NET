@@ -37,15 +37,13 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public interface ITaskQueueTimingBelt
+	public interface ITaskQueueTimingBelt : ITaskQueueAbstractTimeProvider
 	{
-		void AddWallclockTimeCost ( long milliseconds );
+		void AddWallclockTimeCost ( long durationMilliseconds );
 
 		void AddWallclockTimeCost ( TimeSpan duration );
 
 		Task<AbstractTimestamp> TickAbstractTimeAsync ( int timeout );
-
-		Task<long> ComputeAbsoluteTimeTicksAsync ( long timeTicksToAdd );
 
 		Task StartAsync ();
 

@@ -61,8 +61,8 @@ namespace LVD.Stakhanovise.NET.Tests
 				.Returns( new TaskExecutionStats( 100, 100, 100, 100, 100, 1 ) );
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( 100 ) )
-			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( 0 ) )
 			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
+			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( 0, timingBelt ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueue,
 				taskBuffer,
@@ -95,24 +95,24 @@ namespace LVD.Stakhanovise.NET.Tests
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetDefaultTaskProcessingOptions();
 
-			Mock<IExecutionPerformanceMonitor> perfMonMock = 
+			Mock<IExecutionPerformanceMonitor> perfMonMock =
 				new Mock<IExecutionPerformanceMonitor>();
-			
+
 			perfMonMock.Setup( p => p.GetExecutionStats( It.IsAny<string>() ) )
 				.Returns( new TaskExecutionStats( 100, 100, 100, 100, 100, 1 ) );
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( numberOfTasks ) )
 			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
+			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( numberOfTasks, timingBelt ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueue,
 				taskBuffer,
 				perfMonMock.Object,
 				timingBelt ) )
 			{
-				TestBufferConsumer consumer = 
+				TestBufferConsumer consumer =
 					new TestBufferConsumer( taskBuffer );
-				
+
 				await timingBelt.StartAsync();
 				await poller.StartAsync();
 

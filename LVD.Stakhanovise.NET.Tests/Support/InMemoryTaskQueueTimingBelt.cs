@@ -72,7 +72,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 						request.SetCompleted( lastTime.Copy() );
 						mLastTime = lastTime.Copy();
 					}
-					catch (OperationCanceledException)
+					catch ( OperationCanceledException )
 					{
 						break;
 					}
@@ -111,9 +111,15 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public Task<long> ComputeAbsoluteTimeTicksAsync ( long timeTicksToAdd )
 		{
 			CheckNotDisposedOrThrow();
+			return Task.FromResult( mLastTime.Ticks + timeTicksToAdd );
+		}
+
+		public Task<AbstractTimestamp> GetCurrentTimeAsync ()
+		{
+			CheckNotDisposedOrThrow();
 			CheckRunningOrThrow();
 
-			return Task.FromResult( mLastTime.Ticks + timeTicksToAdd );
+			return Task.FromResult( mLastTime.Copy() );
 		}
 
 		public Task StartAsync ()
@@ -154,7 +160,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 			mTickingQueue.Add( tickRequest );
 
-			return completionToken.Task.WithCleanup( ( prev ) 
+			return completionToken.Task.WithCleanup( ( prev )
 				=> tickRequest.Dispose() );
 		}
 

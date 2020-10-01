@@ -62,26 +62,28 @@ namespace LVD.Stakhanovise.NET.Tests
 			string taskType = typeof( SampleTaskPayload )
 				.FullName;
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue() )
+			using ( PostgreSqlTaskQueueConsumer taskQueue = 
+				CreateTaskQueue( () => mDataSource.LastPostedAt ) )
 			{
 				try
 				{
-					AbstractTimestamp now = new AbstractTimestamp( mDataSource.LastPostedAtTimeTick,
-						mDataSource.LastPostedAtTimeTick * 1000 );
-
 					for ( int i = 0; i < mConsumerOptions.QueueConsumerConnectionPoolSize; i++ )
 					{
 						newTaskToken = await taskQueue
-							.DequeueAsync( now, taskType );
+							.DequeueAsync( taskType );
 
 						Assert.NotNull( newTaskToken );
 						Assert.IsTrue( newTaskToken.IsLocked );
 						Assert.IsFalse( dequedTokens.Any( t => t.QueuedTask.Id
 							== newTaskToken.QueuedTask.Id ) );
 
+						Assert.IsTrue( newTaskToken.QueuedTask.Status == QueuedTaskStatus.Unprocessed
+							|| newTaskToken.QueuedTask.Status == QueuedTaskStatus.Error
+							|| newTaskToken.QueuedTask.Status == QueuedTaskStatus.Faulted );
+
 						if ( previousTaskToken != null )
-							Assert.GreaterOrEqual( newTaskToken.QueuedTask.PostedAtTs,
-								previousTaskToken.QueuedTask.PostedAtTs );
+							Assert.GreaterOrEqual( newTaskToken.QueuedTask.PostedAt,
+								previousTaskToken.QueuedTask.PostedAt );
 
 						previousTaskToken = newTaskToken;
 						dequedTokens.Add( newTaskToken );
@@ -112,7 +114,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			bool notificationReceived = false;
 			ManualResetEvent notificationWaitHandle = new ManualResetEvent( false );
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue() )
+			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => mDataSource.LastPostedAt ) )
 			{
 				taskQueue.ClearForDequeue += ( s, e ) =>
 				{
@@ -147,9 +149,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			return db;
 		}
 
-		private PostgreSqlTaskQueueConsumer CreateTaskQueue ()
+		private PostgreSqlTaskQueueConsumer CreateTaskQueue ( Func<AbstractTimestamp> currentTimeProvider )
 		{
-			return new PostgreSqlTaskQueueConsumer( mConsumerOptions );
+			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
+				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
 		public string ConnectionString
