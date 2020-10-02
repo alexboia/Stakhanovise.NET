@@ -45,7 +45,7 @@ namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
 	[NonParallelizable]
-	public class PostgreSqlTaskQueueNotificationListenerTests : BaseTestWithConfiguration
+	public class PostgreSqlTaskQueueNotificationListenerTests : BaseDbTests
 	{
 		[TearDown]
 		public void TestTearDown ()
@@ -113,7 +113,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					reconnectsRemaining = Math.Max( reconnectsRemaining - 1, 0 );
 					if ( reconnectsRemaining > 0 )
 					{
-						WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
+						WaitAndTerminateConnectionAsync( listener.Diagnostics.ConnectionBackendProcessId,
 							syncHandle: null,
 							timeout: RandomTimeout() );
 					}
@@ -123,7 +123,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				await listener.StartAsync();
 
-				WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
+				WaitAndTerminateConnectionAsync( listener.Diagnostics.ConnectionBackendProcessId,
 					syncHandle: null,
 					timeout: 1000 ).WithoutAwait();
 
@@ -151,7 +151,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					notificationsReceived++;
 					if ( reconnectsRemaining > 0 )
 					{
-						WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
+						WaitAndTerminateConnectionAsync( listener.Diagnostics.ConnectionBackendProcessId,
 							syncHandle: null,
 							timeout: RandomTimeout() );
 					}
@@ -167,7 +167,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				await listener.StartAsync();
 
-				WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
+				WaitAndTerminateConnectionAsync( listener.Diagnostics.ConnectionBackendProcessId,
 					syncHandle: null,
 					timeout: RandomTimeout() ).WithoutAwait();
 
@@ -192,9 +192,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private async Task<NpgsqlConnection> OpenDbConnectionAsync ()
 		{
-			NpgsqlConnection db = new NpgsqlConnection( ConnectionString );
-			await db.OpenAsync();
-			return db;
+			return await OpenDbConnectionAsync( ConnectionString );
 		}
 
 		private PostgreSqlTaskQueueNotificationListener CreateListener ()
@@ -203,27 +201,11 @@ namespace LVD.Stakhanovise.NET.Tests
 				NotificationChannelname );
 		}
 
-		private Task WaitAndTerminateConnection ( int pid, ManualResetEvent syncHandle, int timeout )
-		{
-			return Task.Run( async () =>
-			{
-				using ( NpgsqlConnection mgmtConn = new NpgsqlConnection( ManagementConnectionString ) )
-				{
-					await mgmtConn.WaitAndTerminateConnectionAsync( pid,
-						syncHandle,
-						timeout );
-				}
-			} );
-		}
-
 		private int RandomTimeout ()
 		{
 			Random rnd = new Random();
 			return rnd.Next( 100, 2000 );
 		}
-
-		private string ManagementConnectionString
-			=> GetConnectionString( "mgmtDbConnectionString" );
 
 		private string ConnectionString
 			=> GetConnectionString( "listenerTestDbConnectionString" );

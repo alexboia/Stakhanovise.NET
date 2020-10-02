@@ -20,7 +20,7 @@ namespace LVD.Stakhanovise.NET.Tests
 	//TODO: also test without a given task type/s
 	//TODO: test for all test task types/payload types
 	[TestFixture]
-	public class PostgreSqlTaskQueueConsumerTests : BaseTestWithConfiguration
+	public class PostgreSqlTaskQueueConsumerTests : BaseDbTests
 	{
 		private TaskQueueConsumerOptions mConsumerOptions;
 
@@ -147,18 +147,15 @@ namespace LVD.Stakhanovise.NET.Tests
 			await Task.Delay( 100 );
 		}
 
-
-		private async Task<NpgsqlConnection> OpenDbConnectionAsync ()
-		{
-			NpgsqlConnection db = new NpgsqlConnection( ConnectionString );
-			await db.OpenAsync();
-			return db;
-		}
-
 		private PostgreSqlTaskQueueConsumer CreateTaskQueue ( Func<AbstractTimestamp> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
 				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
+		}
+
+		private async Task<NpgsqlConnection> OpenDbConnectionAsync ()
+		{
+			return await OpenDbConnectionAsync( ConnectionString );
 		}
 
 		private string ConnectionString

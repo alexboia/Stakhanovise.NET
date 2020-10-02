@@ -46,7 +46,7 @@ namespace LVD.Stakhanovise.NET.Tests
 {
 	//TODO: add tests for ComputeAbsoluteTimeTicksAsync
 	[TestFixture]
-	public class PostgreSqlTaskQueueTimingBeltTests : BaseTestWithConfiguration
+	public class PostgreSqlTaskQueueTimingBeltTests : BaseDbTests
 	{
 		[SetUp]
 		public async Task SetUp ()
@@ -343,9 +343,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ()
 		{
-			NpgsqlConnection conn = new NpgsqlConnection( ConnectionString );
-			await conn.OpenAsync();
-			return conn;
+			return await OpenDbConnectionAsync( ConnectionString );
 		}
 
 		public string ConnectionString

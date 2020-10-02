@@ -43,7 +43,7 @@ using System.Threading.Tasks;
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class NpgsqlNotificationTests : BaseTestWithConfiguration
+	public class NpgsqlNotificationTests : BaseDbTests
 	{
 		[Test]
 		public void Test_ThrowExceptionInNonAwaitedTask ()
@@ -80,9 +80,9 @@ namespace LVD.Stakhanovise.NET.Tests
 					{
 						await conn.OpenAsync();
 
-						WaitAndTerminateConnection( conn.ProcessID,
+						WaitAndTerminateConnectionAsync( conn.ProcessID,
 							syncHandle: syncHandle,
-							timeout: 1000 );
+							timeout: 1000 ).WithoutAwait();
 
 						using ( NpgsqlCommand listenCmd = new NpgsqlCommand( "LISTEN sk_test_break_connection_queue_item_added", conn ) )
 							await listenCmd.ExecuteNonQueryAsync();
@@ -108,9 +108,9 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					await conn.OpenAsync();
 
-					WaitAndTerminateConnection( conn.ProcessID,
+					WaitAndTerminateConnectionAsync( conn.ProcessID,
 						syncHandle: syncHandle,
-						timeout: 1000 );
+						timeout: 1000 ).WithoutAwait();
 
 					using ( NpgsqlCommand listenCmd = new NpgsqlCommand( "LISTEN sk_test_break_connection_queue_item_added", conn ) )
 						await listenCmd.ExecuteNonQueryAsync();
@@ -141,9 +141,9 @@ namespace LVD.Stakhanovise.NET.Tests
 					conn.StateChange += ( sender, e ) => connectionStates.Add( e.CurrentState );
 					await conn.OpenAsync();
 
-					WaitAndTerminateConnection( conn.ProcessID,
+					WaitAndTerminateConnectionAsync( conn.ProcessID,
 						syncHandle: syncHandle,
-						timeout: 1000 );
+						timeout: 1000 ).WithoutAwait();
 
 					using ( NpgsqlCommand queryCmd = new NpgsqlCommand( "select current_timestamp", conn ) )
 						await queryCmd.ExecuteNonQueryAsync();
@@ -269,22 +269,6 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.NotNull( notificationData.Any( n => n.Payload.Equals( "4" ) ) );
 			Assert.NotNull( notificationData.Any( n => n.Payload.Equals( "5" ) ) );
 		}
-
-		private void WaitAndTerminateConnection ( int pid, ManualResetEvent syncHandle, int timeout )
-		{
-			Task.Run( async () =>
-			{
-				using ( NpgsqlConnection mgmtConn = new NpgsqlConnection( ManagementConnectionString ) )
-				{
-					await mgmtConn.WaitAndTerminateConnectionAsync( pid,
-						syncHandle,
-						timeout );
-				}
-			} );
-		}
-
-		private string ManagementConnectionString
-			=> GetConnectionString( "mgmtDbConnectionString" );
 
 		private string ConnectionString
 			=> GetConnectionString( "testDbConnectionString" );

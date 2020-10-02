@@ -15,7 +15,7 @@ using LVD.Stakhanovise.NET.Tests.Helpers;
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class PostgreSqlQueuedTaskTokenTests : BaseTestWithConfiguration
+	public class PostgreSqlQueuedTaskTokenTests : BaseDbTests
 	{
 		private TaskQueueConsumerOptions mConsumerOptions;
 
@@ -74,8 +74,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.IsFalse( await token.TrySetResultAsync( ErrorExecutionResult( now.Ticks + 100 ) ) );
 
 					//Double check that the locks are NOT being held
-					using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
-						Assert.IsFalse( await db.IsAdvisoryLockHeldAsync( token.QueuedTask.LockHandleId ) );
+					await AssertTokenLockStatus( token, expectedStatus: false );
 				}
 			}
 		}
@@ -111,8 +110,7 @@ namespace LVD.Stakhanovise.NET.Tests
 						dbTask.LockedUntil );
 
 					//Double check that the locks are being held
-					using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
-						Assert.IsTrue( await db.IsAdvisoryLockHeldAsync( token.QueuedTask.LockHandleId ) );
+					await AssertTokenLockStatus( token, expectedStatus: true );
 				}
 			}
 		}
@@ -153,8 +151,7 @@ namespace LVD.Stakhanovise.NET.Tests
 						dbTask.Status );
 
 					//Double check that the locks are NOT being held anymore
-					using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
-						Assert.IsFalse( await db.IsAdvisoryLockHeldAsync( token.QueuedTask.LockHandleId ) );
+					await AssertTokenLockStatus( token, expectedStatus: false );
 				}
 			}
 		}
@@ -206,14 +203,17 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.AreEqual( now.Ticks + 100, dbTask.LockedUntil );
 
 					//Double check that the locks are NOT being held anymore
-					using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
-						Assert.IsFalse( await db.IsAdvisoryLockHeldAsync( token.QueuedTask.LockHandleId ) );
+					await AssertTokenLockStatus( token, expectedStatus: false );
 				}
 			}
 		}
 
 		[Test]
-		public async Task Test_TokenLifeCycle_CanHandleConnectionDropouts_WithinTokenLockTimeframe ()
+		[TestCase( 1 )]
+		[TestCase( 3 )]
+		[TestCase( 5 )]
+		[Repeat( 5 )]
+		public async Task Test_TokenLifeCycle_CanHandleConnectionDropouts_WithinTokenLockTimeframe ( int nDropouts )
 		{
 			bool tokenReleasedEventCalled = false;
 			AbstractTimestamp now = mDataSource.LastPostedAt;
@@ -242,47 +242,42 @@ namespace LVD.Stakhanovise.NET.Tests
 
 					await postgreStoken.TrySetStartedAsync( 100 );
 
-					int connectionBackendProcessId = postgreStoken
-						.ConnectionBackendProcessId;
+					for ( int i = 0; i < nDropouts; i++ )
+					{
+						int connectionBackendProcessId = postgreStoken
+							.ConnectionBackendProcessId;
 
-					await WaitAndTerminateConnectionAsync( connectionBackendProcessId,
-						syncHandle: null,
-						timeout: 1000 );
+						await WaitAndTerminateConnectionAsync( connectionBackendProcessId,
+							syncHandle: null,
+							timeout: 100 );
 
-					tokenConnectionDroppedHandle.WaitOne();
-					tokenConnectionEstablishedHandle.WaitOne();
+						tokenConnectionDroppedHandle.WaitOne();
+						tokenConnectionEstablishedHandle.WaitOne();
 
-					int connectionBackendProcessIdAfterReconnect = ( ( PostgreSqlQueuedTaskToken )token )
-						.ConnectionBackendProcessId;
+						int connectionBackendProcessIdAfterReconnect = ( ( PostgreSqlQueuedTaskToken )token )
+							.ConnectionBackendProcessId;
 
-					Assert.IsFalse( tokenReleasedEventCalled );
-					Assert.GreaterOrEqual( connectionBackendProcessIdAfterReconnect, 0 );
+						Assert.IsFalse( tokenReleasedEventCalled );
+						Assert.GreaterOrEqual( connectionBackendProcessIdAfterReconnect, 0 );
 
-					Assert.IsTrue( token.IsActive );
-					Assert.IsTrue( token.IsLocked );
-					Assert.IsFalse( token.IsPending );
+						Assert.IsTrue( token.IsActive );
+						Assert.IsTrue( token.IsLocked );
+						Assert.IsFalse( token.IsPending );
+
+						tokenConnectionDroppedHandle.Reset();
+						tokenConnectionEstablishedHandle.Reset();
+
+						//Double check that the locks are being held
+						await AssertTokenLockStatus( token, expectedStatus: true );
+					}
 				}
 			}
 		}
 
-		private async Task<NpgsqlConnection> OpenDbConnectionAsync ()
+		private async Task AssertTokenLockStatus ( IQueuedTaskToken token, bool expectedStatus )
 		{
-			NpgsqlConnection db = new NpgsqlConnection( ConnectionString );
-			await db.OpenAsync();
-			return db;
-		}
-
-		private Task WaitAndTerminateConnectionAsync ( int pid, ManualResetEvent syncHandle, int timeout )
-		{
-			return Task.Run( async () =>
-			{
-				using ( NpgsqlConnection mgmtConn = new NpgsqlConnection( ManagementConnectionString ) )
-				{
-					await mgmtConn.WaitAndTerminateConnectionAsync( pid,
-						syncHandle,
-						timeout );
-				}
-			} );
+			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
+				Assert.AreEqual( expectedStatus, await db.IsAdvisoryLockHeldAsync( token.QueuedTask.LockHandleId ) );
 		}
 
 		private TaskExecutionResult SuccessfulExecutionResult ()
@@ -310,8 +305,10 @@ namespace LVD.Stakhanovise.NET.Tests
 				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
-		private string ManagementConnectionString
-			=> GetConnectionString( "mgmtDbConnectionString" );
+		private async Task<NpgsqlConnection> OpenDbConnectionAsync ()
+		{
+			return await OpenDbConnectionAsync( ConnectionString );
+		}
 
 		private string ConnectionString
 			=> GetConnectionString( "baseTestDbConnectionString" );
