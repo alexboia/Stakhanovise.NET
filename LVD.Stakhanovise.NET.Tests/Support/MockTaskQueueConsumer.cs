@@ -85,6 +85,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			return null;
 		}
 
+		public IQueuedTaskToken Dequeue ( params string[] supportedTypes )
+		{
+			return DequeueAsync( supportedTypes ).Result;
+		}
+
 		public Task StartReceivingNewTaskUpdatesAsync ()
 		{
 			mIsReceivingNewTaskUpdates = true;
@@ -97,7 +102,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			return Task.Delay( 150 );
 		}
 
-		public void WaitForQueueToBeDepleted()
+		public void WaitForQueueToBeDepleted ()
 		{
 			mQueueDepletedHandle.Wait();
 		}
@@ -108,13 +113,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mDequeuedTasksHistory.Clear();
 		}
 
-		public ITaskQueueAbstractTimeProvider TimeProvider 
+		public ITaskQueueAbstractTimeProvider TimeProvider
 			=> mTimeProvider;
 
-		public List<IQueuedTaskToken> DequeuedTasksHistory 
+		public List<IQueuedTaskToken> DequeuedTasksHistory
 			=> mDequeuedTasksHistory;
 
-		public bool IsReceivingNewTaskUpdates 
+		public bool IsReceivingNewTaskUpdates
 			=> mIsReceivingNewTaskUpdates;
 	}
 }

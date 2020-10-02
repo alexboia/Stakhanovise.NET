@@ -175,9 +175,17 @@ namespace LVD.Stakhanovise.NET.Queue
 				AbstractTimestamp now = await mTimeProvider
 					.GetCurrentTimeAsync();
 
+				//Time connection establishment - this directly influences 
+				//	how much time the lock is being held
+				MonotonicTimestamp startConnect = MonotonicTimestamp
+					.Now();
+
 				conn = await OpenQueueConnectionAsync();
 				if ( conn == null )
 					return null;
+
+				MonotonicTimestamp endConnect = MonotonicTimestamp
+					.Now();
 
 				using ( NpgsqlCommand dequeueCmd = new NpgsqlCommand() )
 				{
@@ -220,6 +228,7 @@ namespace LVD.Stakhanovise.NET.Queue
 									retryCount: mOptions.ConnectionOptions.ConnectionRetryCount,
 									retryDelayMilliseconds: mOptions.ConnectionOptions.ConnectionRetryDelayMilliseconds ),
 								dequeuedAt: now,
+								initialConnectionStats: new PostgreSqlQueuedTaskTokenConnectionStats( endConnect - startConnect ),
 								options: mOptions );
 
 							dequeuedTaskToken.TokenReleased +=
@@ -252,10 +261,18 @@ namespace LVD.Stakhanovise.NET.Queue
 			return dequeuedTaskToken;
 		}
 
+		public IQueuedTaskToken Dequeue ( params string[] supportedTypes )
+		{
+			Task<IQueuedTaskToken> asyncTask = DequeueAsync( supportedTypes );
+			return asyncTask.Result;
+		}
+
 		private void HandleTaskTokenReleased ( object sender, TokenReleasedEventArgs e )
 		{
-			mDequeuedTokens.TryRemove( e.QueuedTaskId, out IQueuedTaskToken taskToken );
-			taskToken.TokenReleased -= HandleTaskTokenReleased;
+			if ( mDequeuedTokens != null )
+				mDequeuedTokens.TryRemove( e.QueuedTaskId, out IQueuedTaskToken taskToken );
+
+			( ( PostgreSqlQueuedTaskToken )sender ).TokenReleased -= HandleTaskTokenReleased;
 		}
 
 		public async Task StartReceivingNewTaskUpdatesAsync ()

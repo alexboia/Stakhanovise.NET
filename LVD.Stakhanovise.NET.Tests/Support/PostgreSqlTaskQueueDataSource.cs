@@ -339,7 +339,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			=> mNumProcessingTasks;
 
 		public AbstractTimestamp LastPostedAt
-			=> new AbstractTimestamp( mLastPostedAtTimeTick, mLastPostedAtTimeTick * 1000 );
+			=> new AbstractTimestamp( mLastPostedAtTimeTick, mLastPostedAtTimeTick * 100 );
 
 		public long LastPostedAtTimeTick
 			=> mLastPostedAtTimeTick;

@@ -8,6 +8,7 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		Dropped = 0x01,
 		Established = 0x02,
-		FailedPermanently = 0x03
+		FailedPermanently = 0x03,
+		AttemptingToReconnect = 0x04
 	}
 }

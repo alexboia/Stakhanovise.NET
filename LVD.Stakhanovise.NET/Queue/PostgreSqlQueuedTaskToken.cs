@@ -78,6 +78,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private QueuedTaskTokenStatus mTokenStatus;
 
+		private PostgreSqlQueuedTaskTokenConnectionStats mConnectionStats;
+
 		private ManualResetEvent mReconnectWaitHandle =
 			new ManualResetEvent( true );
 
@@ -85,6 +87,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			NpgsqlConnection sourceConnection,
 			ConnectionOptions sourceConnectionOptions,
 			AbstractTimestamp dequeuedAt,
+			PostgreSqlQueuedTaskTokenConnectionStats initialConnectionStats,
 			TaskQueueConsumerOptions options )
 		{
 			mQueuedTask = queuedTask
@@ -93,11 +96,14 @@ namespace LVD.Stakhanovise.NET.Queue
 				?? throw new ArgumentNullException( nameof( options ) );
 			mSourceConnection = sourceConnection
 				?? throw new ArgumentNullException( nameof( sourceConnection ) );
+			mSourceConnectionOptions = sourceConnectionOptions
+				?? throw new ArgumentNullException( nameof( sourceConnectionOptions ) );
 			mDequeuedAt = dequeuedAt
 				?? throw new ArgumentNullException( nameof( dequeuedAt ) );
+			mConnectionStats = initialConnectionStats
+				?? throw new ArgumentNullException( nameof( initialConnectionStats ) );
 
 			mCancellationTokenSource = new CancellationTokenSource();
-			mSourceConnectionOptions = sourceConnectionOptions;
 			mTokenStatus = QueuedTaskTokenStatus.Pending;
 			mIsLocked = true;
 		}
@@ -122,7 +128,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				handler( this, new TokenReleasedEventArgs( mQueuedTask.Id ) );
 		}
 
-		private void NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState newState)
+		private void NotifyConnectionStateChanged ( PostgreSqlQueuedTaskTokenConnectionState newState )
 		{
 			EventHandler<PostgreSqlQueuedTaskTokenConnectionStateChangeArgs> handler = ConnectionStateChanged;
 			if ( handler != null )
@@ -213,6 +219,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<bool> TryReconnectAsync ()
 		{
+			MonotonicTimestamp startConnect, endConnect;
+
 			try
 			{
 				//Get rid of the the old connection
@@ -221,7 +229,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				mSourceConnection = null;
 
 				//Attempt to open a new one and to reacquire the lock
+				startConnect = MonotonicTimestamp.Now();
 				mSourceConnection = await TryReopenSourceConnectionAsync();
+
 				if ( mSourceConnection == null || !await mSourceConnection.LockAsync( mQueuedTask.LockHandleId ) )
 				{
 					//If we cannot open the connection OR we cannot acquire the lock
@@ -241,6 +251,8 @@ namespace LVD.Stakhanovise.NET.Queue
 				}
 				else
 				{
+					endConnect = MonotonicTimestamp.Now();
+					mConnectionStats.IncrementConnectCount( endConnect - startConnect );
 					mSourceConnection.StateChange += HandleSourceConnectionStateChanged;
 					mIsLocked = true;
 				}
@@ -251,6 +263,29 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 
 			return mIsLocked;
+		}
+
+		private async Task<bool> ProcessReconnectRequest ()
+		{
+			bool shouldContinueProcessing = false;
+
+			NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState
+				.AttemptingToReconnect );
+
+			if ( !await TryReconnectAsync() )
+			{
+				NotifyTokenReleased();
+				NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState
+					.FailedPermanently );
+			}
+			else
+			{
+				NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState
+					.Established );
+				shouldContinueProcessing = true;
+			}
+
+			return shouldContinueProcessing;
 		}
 
 		private void StartTokenWatchdog ()
@@ -270,22 +305,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				{
 					try
 					{
-						watchdogCancellationToken.ThrowIfCancellationRequested();
-
 						PostgreSqlQueuedTaskTokenOperation tokenOperation = mWatchdogEventsQueue
 							.Take( watchdogCancellationToken );
 
-						if ( tokenOperation != PostgreSqlQueuedTaskTokenOperation.Reconnect )
-							continue;
-
-						if ( !await TryReconnectAsync() )
-						{
-							NotifyTokenReleased();
-							NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState.FailedPermanently );
-							break;
-						}
-						else
-							NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState.Established );
+						if ( tokenOperation == PostgreSqlQueuedTaskTokenOperation.Reconnect )
+							if ( !await ProcessReconnectRequest() )
+								break;
 					}
 					catch ( OperationCanceledException )
 					{
@@ -303,7 +328,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				&& ( e.CurrentState == ConnectionState.Broken
 					|| e.CurrentState == ConnectionState.Closed ) )
 			{
-				NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState.Dropped );
+				NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState
+					.Dropped );
+
 				if ( !mWatchdogCancellationTokenSource.IsCancellationRequested )
 				{
 					//Token operations observe this handle and wait 
@@ -331,9 +358,15 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( !IsPending )
 				return false;
 
+			//Account for potential connection lost and re-establishment; Assume:
+			//	- at least 3-re-connect attempts;
+			//	- a connection establishment duration slightly worse than the average.
+			long connectionOverhead = ( long )Math.Ceiling( mConnectionStats.AvgConnectionEstDuration * 1.5 )
+				* Math.Max( 3, mConnectionStats.ConnectCount );
+
 			//Compute the aproximate moment until we need this to be locked
-			AbstractTimestamp lockUntil = mDequeuedAt
-				.AddWallclockTimeDuration( lockForMilliseconds );
+			AbstractTimestamp lockUntil = mDequeuedAt.AddWallclockTimeDuration( lockForMilliseconds
+				+ connectionOverhead );
 
 			//Update internal state
 			mQueuedTask.ProcessingStarted( lockUntil );
@@ -354,7 +387,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				updateCmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid,
 					mQueuedTask.Id );
 
+				await updateCmd.PrepareAsync();
 				int rowCount = await updateCmd.ExecuteNonQueryAsync();
+
 				if ( rowCount != 1 )
 				{
 					mIsLocked = false;
@@ -414,7 +449,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task ReleaseLockAsync ()
 		{
-			//TODO: make impossible to reuse after being released
 			CheckNotDisposedOrThrow();
 
 			if ( !IsLocked )
@@ -542,8 +576,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			get
 			{
 				CheckNotDisposedOrThrow();
-				return mSourceConnection != null 
-					? mSourceConnection.ProcessID 
+				return mSourceConnection != null
+					? mSourceConnection.ProcessID
 					: -1;
 			}
 		}
