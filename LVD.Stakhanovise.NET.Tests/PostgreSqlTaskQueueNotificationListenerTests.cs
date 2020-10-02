@@ -125,7 +125,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
 					syncHandle: null,
-					timeout: 1000 );
+					timeout: 1000 ).WithoutAwait();
 
 				maxReconnectsReachedWaitHandle.WaitOne();
 				Assert.AreEqual( 0, reconnectsRemaining );
@@ -169,7 +169,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				WaitAndTerminateConnection( listener.Diagnostics.ConnectionBackendProcessId,
 					syncHandle: null,
-					timeout: RandomTimeout() );
+					timeout: RandomTimeout() ).WithoutAwait();
 
 				maximumReconnectReachedWaitHandle.WaitOne();
 				await listener.StopAsync();
@@ -203,9 +203,9 @@ namespace LVD.Stakhanovise.NET.Tests
 				NotificationChannelname );
 		}
 
-		private void WaitAndTerminateConnection ( int pid, ManualResetEvent syncHandle, int timeout )
+		private Task WaitAndTerminateConnection ( int pid, ManualResetEvent syncHandle, int timeout )
 		{
-			Task.Run( async () =>
+			return Task.Run( async () =>
 			{
 				using ( NpgsqlConnection mgmtConn = new NpgsqlConnection( ManagementConnectionString ) )
 				{

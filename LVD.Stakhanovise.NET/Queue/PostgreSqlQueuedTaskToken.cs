@@ -53,6 +53,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public event EventHandler<TokenReleasedEventArgs> TokenReleased;
 
+		public event EventHandler<PostgreSqlQueuedTaskTokenConnectionStateChangeArgs> ConnectionStateChanged;
+
 		private bool mIsDisposed = false;
 
 		private CancellationTokenSource mCancellationTokenSource;
@@ -63,9 +65,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private NpgsqlConnection mSourceConnection;
 
-		private AbstractTimestamp mDequeuedAt;
+		private ConnectionOptions mSourceConnectionOptions;
 
-		private string mSourceConnectionString;
+		private AbstractTimestamp mDequeuedAt;
 
 		private TaskQueueConsumerOptions mOptions;
 
@@ -74,11 +76,14 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private bool mIsLocked;
 
+		private QueuedTaskTokenStatus mTokenStatus;
+
 		private ManualResetEvent mReconnectWaitHandle =
 			new ManualResetEvent( true );
 
 		public PostgreSqlQueuedTaskToken ( QueuedTask queuedTask,
 			NpgsqlConnection sourceConnection,
+			ConnectionOptions sourceConnectionOptions,
 			AbstractTimestamp dequeuedAt,
 			TaskQueueConsumerOptions options )
 		{
@@ -92,7 +97,8 @@ namespace LVD.Stakhanovise.NET.Queue
 				?? throw new ArgumentNullException( nameof( dequeuedAt ) );
 
 			mCancellationTokenSource = new CancellationTokenSource();
-			mSourceConnectionString = mSourceConnection.ConnectionString;
+			mSourceConnectionOptions = sourceConnectionOptions;
+			mTokenStatus = QueuedTaskTokenStatus.Pending;
 			mIsLocked = true;
 		}
 
@@ -103,6 +109,12 @@ namespace LVD.Stakhanovise.NET.Queue
 					"Cannot use a disposed token instance" );
 		}
 
+		private void CheckLockedOrThrow ()
+		{
+			if ( !mIsLocked )
+				throw new InvalidOperationException( "Cannot operate on a token that is not locked" );
+		}
+
 		private void NotifyTokenReleased ()
 		{
 			EventHandler<TokenReleasedEventArgs> handler = TokenReleased;
@@ -110,14 +122,16 @@ namespace LVD.Stakhanovise.NET.Queue
 				handler( this, new TokenReleasedEventArgs( mQueuedTask.Id ) );
 		}
 
+		private void NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState newState)
+		{
+			EventHandler<PostgreSqlQueuedTaskTokenConnectionStateChangeArgs> handler = ConnectionStateChanged;
+			if ( handler != null )
+				handler( this, new PostgreSqlQueuedTaskTokenConnectionStateChangeArgs( newState ) );
+		}
+
 		private async Task<NpgsqlConnection> TryReopenSourceConnectionAsync ()
 		{
-			return await mSourceConnectionString.TryOpenConnectionAsync(
-				mOptions.ConnectionOptions
-					.ConnectionRetryCount,
-				mOptions.ConnectionOptions
-					.ConnectionRetryDelayMilliseconds
-			);
+			return await mSourceConnectionOptions.TryOpenConnectionAsync();
 		}
 
 		private async Task<bool> SetTaskCompletedAsync ( TaskExecutionResult result )
@@ -201,10 +215,6 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			try
 			{
-				//Token operations observe this handle and wait 
-				//	until the reconnect attempt is completed
-				mReconnectWaitHandle.Reset();
-
 				//Get rid of the the old connection
 				mSourceConnection.StateChange -= HandleSourceConnectionStateChanged;
 				mSourceConnection.Dispose();
@@ -226,6 +236,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					mWatchdogEventsQueue.CompleteAdding();
 					mCancellationTokenSource.Cancel();
 					mWatchdogCancellationTokenSource.Cancel();
+					mTokenStatus = QueuedTaskTokenStatus.Cancelled;
 					mIsLocked = false;
 				}
 				else
@@ -259,6 +270,8 @@ namespace LVD.Stakhanovise.NET.Queue
 				{
 					try
 					{
+						watchdogCancellationToken.ThrowIfCancellationRequested();
+
 						PostgreSqlQueuedTaskTokenOperation tokenOperation = mWatchdogEventsQueue
 							.Take( watchdogCancellationToken );
 
@@ -268,8 +281,11 @@ namespace LVD.Stakhanovise.NET.Queue
 						if ( !await TryReconnectAsync() )
 						{
 							NotifyTokenReleased();
+							NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState.FailedPermanently );
 							break;
 						}
+						else
+							NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState.Established );
 					}
 					catch ( OperationCanceledException )
 					{
@@ -287,8 +303,15 @@ namespace LVD.Stakhanovise.NET.Queue
 				&& ( e.CurrentState == ConnectionState.Broken
 					|| e.CurrentState == ConnectionState.Closed ) )
 			{
+				NotifyConnectionStateChanged( PostgreSqlQueuedTaskTokenConnectionState.Dropped );
 				if ( !mWatchdogCancellationTokenSource.IsCancellationRequested )
+				{
+					//Token operations observe this handle and wait 
+					//	until the reconnect attempt is completed
+					mReconnectWaitHandle.Reset();
+					//Enqueue the reconnect operation
 					mWatchdogEventsQueue.Add( PostgreSqlQueuedTaskTokenOperation.Reconnect );
+				}
 			}
 		}
 
@@ -335,6 +358,8 @@ namespace LVD.Stakhanovise.NET.Queue
 				if ( rowCount != 1 )
 				{
 					mIsLocked = false;
+					mTokenStatus = QueuedTaskTokenStatus.Cancelled;
+					mCancellationTokenSource.Cancel();
 					await mSourceConnection.UnlockAsync( mQueuedTask.LockHandleId );
 					await mSourceConnection.CloseAsync();
 					NotifyTokenReleased();
@@ -343,6 +368,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				else
 				{
 					mIsLocked = true;
+					mTokenStatus = QueuedTaskTokenStatus.Active;
 					StartTokenWatchdog();
 					return true;
 				}
@@ -380,6 +406,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			finally
 			{
 				mIsLocked = false;
+				mTokenStatus = QueuedTaskTokenStatus.Completed;
 			}
 
 			return true;
@@ -409,8 +436,10 @@ namespace LVD.Stakhanovise.NET.Queue
 			await mSourceConnection.UnlockAsync( mQueuedTask.LockHandleId );
 			await mSourceConnection.CloseAsync();
 
-			mCancellationTokenSource.Cancel();
 			mIsLocked = false;
+			if ( mTokenStatus == QueuedTaskTokenStatus.Pending
+				|| mTokenStatus == QueuedTaskTokenStatus.Active )
+				mTokenStatus = QueuedTaskTokenStatus.Cancelled;
 
 			NotifyTokenReleased();
 		}
@@ -422,6 +451,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				if ( disposing )
 				{
 					TokenReleased = null;
+					ConnectionStateChanged = null;
 
 					if ( mSourceConnection != null )
 						mSourceConnection.Dispose();
@@ -467,8 +497,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			get
 			{
 				CheckNotDisposedOrThrow();
-				return mQueuedTask.Status == QueuedTaskStatus.Unprocessed
-					&& !mCancellationTokenSource.IsCancellationRequested;
+				return mTokenStatus == QueuedTaskTokenStatus.Pending;
 			}
 		}
 
@@ -477,8 +506,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			get
 			{
 				CheckNotDisposedOrThrow();
-				return mQueuedTask.Status == QueuedTaskStatus.Processing
-					&& !mCancellationTokenSource.IsCancellationRequested;
+				return mTokenStatus == QueuedTaskTokenStatus.Active;
 			}
 		}
 
@@ -487,8 +515,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			get
 			{
 				CheckNotDisposedOrThrow();
-				return mIsLocked
-					&& !mCancellationTokenSource.IsCancellationRequested;
+				return mIsLocked;
 			}
 		}
 
@@ -498,6 +525,26 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				CheckNotDisposedOrThrow();
 				return mCancellationTokenSource.Token;
+			}
+		}
+
+		public AbstractTimestamp DequeuedAt
+		{
+			get
+			{
+				CheckNotDisposedOrThrow();
+				return mDequeuedAt;
+			}
+		}
+
+		public int ConnectionBackendProcessId
+		{
+			get
+			{
+				CheckNotDisposedOrThrow();
+				return mSourceConnection != null 
+					? mSourceConnection.ProcessID 
+					: -1;
 			}
 		}
 	}

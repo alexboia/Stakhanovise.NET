@@ -215,6 +215,10 @@ namespace LVD.Stakhanovise.NET.Queue
 						{
 							dequeuedTaskToken = new PostgreSqlQueuedTaskToken( dequedTask,
 								sourceConnection: conn,
+								sourceConnectionOptions: new ConnectionOptions( mQueueConnectionString,
+									mOptions.ConnectionOptions.ConnectionKeepAliveSeconds,
+									retryCount: mOptions.ConnectionOptions.ConnectionRetryCount,
+									retryDelayMilliseconds: mOptions.ConnectionOptions.ConnectionRetryDelayMilliseconds ),
 								dequeuedAt: now,
 								options: mOptions );
 
@@ -310,8 +314,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		public ITaskQueueAbstractTimeProvider TimeProvider 
-		{ 
+		public ITaskQueueAbstractTimeProvider TimeProvider
+		{
 			get
 			{
 				CheckNotDisposedOrThrow();

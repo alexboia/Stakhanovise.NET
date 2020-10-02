@@ -35,7 +35,7 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public class AbstractTimestamp
+	public class AbstractTimestamp : IEquatable<AbstractTimestamp>
 	{
 		private long mTicks;
 
@@ -84,7 +84,7 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public AbstractTimestamp AddWallclockTimeDuration ( long durationMilliseconds )
 		{
-			long ticksForWallclockMilliseconds = 
+			long ticksForWallclockMilliseconds =
 				GetTicksDurationForWallclockDuration( durationMilliseconds );
 
 			return new AbstractTimestamp( mTicks + ticksForWallclockMilliseconds,
@@ -93,12 +93,12 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public AbstractTimestamp FromTicks ( long ticks )
 		{
-			return new AbstractTimestamp( ticks, 
-				mTickDuration * ticks, 
+			return new AbstractTimestamp( ticks,
+				mTickDuration * ticks,
 				mTickDuration );
 		}
 
-		public AbstractTimestamp AddTicks(long ticksToAdd)
+		public AbstractTimestamp AddTicks ( long ticksToAdd )
 		{
 			return FromTicks( mTicks + ticksToAdd );
 		}
@@ -107,6 +107,30 @@ namespace LVD.Stakhanovise.NET.Model
 		{
 			return new AbstractTimestamp( mTicks,
 				mWallclockTimeCost );
+		}
+
+		public bool Equals ( AbstractTimestamp other )
+		{
+			return other != null
+				&& other.Ticks == Ticks
+				&& other.TickDuration == TickDuration
+				&& other.WallclockTimeCost == WallclockTimeCost;
+		}
+
+		public override bool Equals ( object obj )
+		{
+			return Equals( obj as AbstractTimestamp );
+		}
+
+		public override int GetHashCode ()
+		{
+			int result = 1;
+
+			result = result * 13 + mTicks.GetHashCode();
+			result = result * 13 + mTickDuration.GetHashCode();
+			result = result * 13 + mWallclockTimeCost.GetHashCode();
+
+			return result;
 		}
 
 		public long Ticks

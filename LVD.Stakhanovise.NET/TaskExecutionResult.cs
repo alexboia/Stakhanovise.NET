@@ -87,14 +87,19 @@ namespace LVD.Stakhanovise.NET
 			return result;
 		}
 
-		public bool ExecutedSuccessfully => mResultInfo.ExecutedSuccessfully;
+		public bool ExecutedSuccessfully 
+			=> mResultInfo.ExecutedSuccessfully;
 
-		public long RetryAtTicks => mRetryAtTicks;
+		public long RetryAtTicks 
+			=> mRetryAtTicks;
 
-		public long ProcessingTimeMilliseconds => mProcessingTimeMilliseconds;
+		public long ProcessingTimeMilliseconds 
+			=> mProcessingTimeMilliseconds;
 
-		public QueuedTaskError Error => mResultInfo.Error;
+		public QueuedTaskError Error 
+			=> mResultInfo.Error;
 
-		public bool IsRecoverable => mResultInfo.IsRecoverable;
+		public bool IsRecoverable 
+			=> mResultInfo.IsRecoverable;
 	}
 }

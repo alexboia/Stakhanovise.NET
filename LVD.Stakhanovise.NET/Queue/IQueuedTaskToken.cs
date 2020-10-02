@@ -52,6 +52,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		CancellationToken CancellationToken { get; }
 
+		AbstractTimestamp DequeuedAt { get; }
+
 		bool IsPending { get; }
 
 		bool IsActive { get; }

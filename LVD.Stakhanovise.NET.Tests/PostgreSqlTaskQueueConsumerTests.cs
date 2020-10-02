@@ -63,8 +63,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			string taskType = typeof( SampleTaskPayload )
 				.FullName;
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue =
-				CreateTaskQueue( () => mDataSource.LastPostedAt ) )
+			AbstractTimestamp now = mDataSource
+				.LastPostedAt;
+
+			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
 			{
 				try
 				{
@@ -74,7 +76,14 @@ namespace LVD.Stakhanovise.NET.Tests
 							.DequeueAsync( taskType );
 
 						Assert.NotNull( newTaskToken );
+						Assert.NotNull( newTaskToken.DequeuedAt );
+						Assert.NotNull( newTaskToken.QueuedTask );
+
+						Assert.AreEqual( now, newTaskToken.DequeuedAt );
+
 						Assert.IsTrue( newTaskToken.IsLocked );
+						Assert.IsTrue( newTaskToken.IsPending );
+
 						Assert.IsFalse( dequedTokens.Any( t => t.QueuedTask.Id
 							== newTaskToken.QueuedTask.Id ) );
 
@@ -115,8 +124,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			ManualResetEvent notificationWaitHandle = new
 				ManualResetEvent( false );
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue =
-				CreateTaskQueue( () => mDataSource.LastPostedAt ) )
+			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => mDataSource.LastPostedAt ) )
 			{
 				taskQueue.ClearForDequeue += ( s, e ) =>
 					notificationWaitHandle.Set();
@@ -153,7 +161,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
-		public string ConnectionString
+		private string ConnectionString
 			=> GetConnectionString( "baseTestDbConnectionString" );
 	}
 }

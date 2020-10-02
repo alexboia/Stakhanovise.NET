@@ -75,6 +75,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public CancellationToken CancellationToken => CancellationToken.None;
 
+		public AbstractTimestamp DequeuedAt => AbstractTimestamp.Zero();
+
 		public bool IsPending { get; private set; }
 
 		public bool IsActive { get; private set; }

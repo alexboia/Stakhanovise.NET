@@ -102,7 +102,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 					break;
 				}
-				catch ( Exception )
+				catch ( Exception exc )
 				{
 					conn = null;
 					retryCount++;

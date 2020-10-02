@@ -76,8 +76,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			EventHandler<ClearForDequeueEventArgs> handleClearForDequeue = ( s, e ) =>
 				notificationWaitHandle.Set();
 
-			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer =
-				CreateTaskQueueConsumer( () => postedAt ) )
+			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer = CreateTaskQueueConsumer( () => postedAt ) )
 			{
 				taskQueueConsumer.ClearForDequeue +=
 					handleClearForDequeue;
