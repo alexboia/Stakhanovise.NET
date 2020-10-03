@@ -49,30 +49,28 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_TokenLifeCycle_ReleaseBeforeSettingStarted ()
 		{
-			bool tokenReleasedEventCalled = false;
 			AbstractTimestamp now = mDataSource.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => mDataSource.LastPostedAt ) )
 			using ( IQueuedTaskToken token = await taskQueue.DequeueAsync() )
 			{
 				AssertTokenIsValidPostgresToken( token );
+				using ( PostgreSqlQueuedTaskTokenMonitor monitor = new PostgreSqlQueuedTaskTokenMonitor( ( PostgreSqlQueuedTaskToken )token ) )
+				{
+					await token.ReleaseLockAsync();
 
-				token.TokenReleased += ( s, e )
-					=> tokenReleasedEventCalled = true;
+					Assert.IsFalse( token.IsLocked );
+					Assert.IsFalse( token.IsPending );
+					Assert.IsFalse( token.IsActive );
+					Assert.IsTrue( monitor.TokenReleasedEventCalled );
 
-				await token.ReleaseLockAsync();
+					Assert.IsFalse( await token.TrySetStartedAsync( 100 ) );
+					Assert.IsFalse( await token.TrySetResultAsync( SuccessfulExecutionResult() ) );
+					Assert.IsFalse( await token.TrySetResultAsync( ErrorExecutionResult( now.Ticks + 100 ) ) );
 
-				Assert.IsFalse( token.IsLocked );
-				Assert.IsFalse( token.IsPending );
-				Assert.IsFalse( token.IsActive );
-				Assert.IsTrue( tokenReleasedEventCalled );
-
-				Assert.IsFalse( await token.TrySetStartedAsync( 100 ) );
-				Assert.IsFalse( await token.TrySetResultAsync( SuccessfulExecutionResult() ) );
-				Assert.IsFalse( await token.TrySetResultAsync( ErrorExecutionResult( now.Ticks + 100 ) ) );
-
-				//Double check that the locks are NOT being held
-				await AssertTokenLockStatus( token, expectedStatus: false );
+					//Double check that the locks are NOT being held
+					await AssertTokenLockStatus( token, expectedStatus: false );
+				}
 			}
 		}
 
@@ -80,30 +78,30 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_TokenLifeCycle_CanSetSetarted ()
 		{
-			long futureTicks = 0;
+			long futureTicks = 1;
 			AbstractTimestamp now = mDataSource.LastPostedAt;
 
-			using ( PostgreSqlTaskQueueConsumer consumerQueue = CreateTaskQueue( () => now.AddTicks( futureTicks++ ) ) )
+			List<IQueuedTaskToken> dequeuedByCompetingQueue =
+				new List<IQueuedTaskToken>();
+
+			using ( PostgreSqlTaskQueueConsumer consumerQueue = CreateTaskQueue( () => now ) )
+			using ( PostgreSqlTaskQueueConsumer competingQueue = CreateTaskQueue( () => now.AddTicks( futureTicks++ ) ) )
 			using ( IQueuedTaskToken token = await consumerQueue.DequeueAsync() )
 			{
 				AssertTokenIsValidPostgresToken( token );
 
-				Assert.IsTrue( await token
-					.TrySetStartedAsync( now.TickDuration * 10 ) );
+				Assert.IsTrue( await token.TrySetStartedAsync( now.TickDuration * 10 ) );
 
 				Assert.IsTrue( token.IsActive );
 				Assert.IsTrue( token.IsLocked );
 				Assert.IsFalse( token.IsPending );
 
 				//Check db task status
-				IQueuedTask dbTask = await mDataSource
-					.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
+				IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
 
 				Assert.NotNull( dbTask );
-				Assert.AreEqual( QueuedTaskStatus.Processing,
-					dbTask.Status );
-				Assert.AreEqual( token.QueuedTask.LockedUntil,
-					dbTask.LockedUntil );
+				Assert.AreEqual( QueuedTaskStatus.Processing, dbTask.Status );
+				Assert.AreEqual( token.QueuedTask.LockedUntil, dbTask.LockedUntil );
 
 				//Double check that the locks are being held
 				await AssertTokenLockStatus( token, expectedStatus: true );
@@ -114,9 +112,8 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				for ( long iCompete = 0; iCompete < timeDelta; iCompete++ )
 				{
-					using ( IQueuedTaskToken newToken = await consumerQueue.DequeueAsync() )
+					using ( IQueuedTaskToken newToken = await competingQueue.DequeueAsync() )
 					{
-						Assert.NotNull( newToken );
 						Assert.AreNotEqual( token.QueuedTask.Id, newToken.QueuedTask.Id );
 						await newToken.ReleaseLockAsync();
 					}
@@ -128,40 +125,35 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_TokenLifeCycle_CanSetResult_ExecutedSuccessfully ()
 		{
-			bool tokenReleasedEventCalled = false;
 			AbstractTimestamp now = mDataSource.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer consumerQueue = CreateTaskQueue( () => now ) )
 			using ( IQueuedTaskToken token = await consumerQueue.DequeueAsync() )
 			{
 				AssertTokenIsValidPostgresToken( token );
+				using ( PostgreSqlQueuedTaskTokenMonitor monitor = new PostgreSqlQueuedTaskTokenMonitor( ( PostgreSqlQueuedTaskToken )token ) )
+				{
+					Assert.IsTrue( await token.TrySetStartedAsync( now.TickDuration * 10 ) );
 
-				token.TokenReleased += ( s, e )
-					=> tokenReleasedEventCalled = true;
+					//Simulate working on task
+					await Task.Delay( 1000 );
 
-				Assert.IsTrue( await token
-					.TrySetStartedAsync( now.TickDuration * 10 ) );
+					Assert.IsTrue( await token.TrySetResultAsync( SuccessfulExecutionResult() ) );
 
-				//Simulate working on task
-				await Task.Delay( 1000 );
+					Assert.IsFalse( token.IsActive );
+					Assert.IsFalse( token.IsLocked );
+					Assert.IsFalse( token.IsPending );
+					Assert.IsTrue( monitor.TokenReleasedEventCalled );
 
-				Assert.IsTrue( await token.TrySetResultAsync( SuccessfulExecutionResult() ) );
+					//Check db task status
+					IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
 
-				Assert.IsFalse( token.IsActive );
-				Assert.IsFalse( token.IsLocked );
-				Assert.IsFalse( token.IsPending );
-				Assert.IsTrue( tokenReleasedEventCalled );
+					Assert.NotNull( dbTask );
+					Assert.AreEqual( QueuedTaskStatus.Processed, dbTask.Status );
 
-				//Check db task status
-				IQueuedTask dbTask = await mDataSource
-					.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
-
-				Assert.NotNull( dbTask );
-				Assert.AreEqual( QueuedTaskStatus.Processed,
-					dbTask.Status );
-
-				//Double check that the locks are NOT being held anymore
-				await AssertTokenLockStatus( token, expectedStatus: false );
+					//Double check that the locks are NOT being held anymore
+					await AssertTokenLockStatus( token, expectedStatus: false );
+				}
 			}
 		}
 
@@ -169,49 +161,45 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_TokenLifeCycle_CanSetResult_ExecutedWithError ()
 		{
-			bool tokenReleasedEventCalled = false;
 			AbstractTimestamp now = mDataSource.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer consumerQueue = CreateTaskQueue( () => now ) )
 			using ( IQueuedTaskToken token = await consumerQueue.DequeueAsync() )
 			{
 				AssertTokenIsValidPostgresToken( token );
+				using ( PostgreSqlQueuedTaskTokenMonitor monitor = new PostgreSqlQueuedTaskTokenMonitor( ( PostgreSqlQueuedTaskToken )token ) )
+				{
+					Assert.IsTrue( await token.TrySetStartedAsync( now.TickDuration * 10 ) );
 
-				token.TokenReleased += ( s, e )
-					=> tokenReleasedEventCalled = true;
+					//Simulate working on task
+					await Task.Delay( 1000 );
 
-				Assert.IsTrue( await token
-					.TrySetStartedAsync( now.TickDuration * 10 ) );
+					int expectedErrorCount = token.QueuedTask.ErrorCount + 1;
+					QueuedTaskStatus expectedStatus = QueuedTaskStatus.Error;
 
-				//Simulate working on task
-				await Task.Delay( 1000 );
+					if ( expectedErrorCount > mConsumerOptions.FaultErrorThresholdCount + 1 )
+						expectedStatus = QueuedTaskStatus.Fatal;
+					else if ( expectedErrorCount >= mConsumerOptions.FaultErrorThresholdCount )
+						expectedStatus = QueuedTaskStatus.Faulted;
 
-				int expectedErrorCount = token.QueuedTask.ErrorCount + 1;
-				QueuedTaskStatus expectedStatus = QueuedTaskStatus.Error;
+					Assert.IsTrue( await token.TrySetResultAsync( ErrorExecutionResult( now.Ticks + 100 ) ) );
 
-				if ( expectedErrorCount > mConsumerOptions.FaultErrorThresholdCount + 1 )
-					expectedStatus = QueuedTaskStatus.Fatal;
-				else if ( expectedErrorCount >= mConsumerOptions.FaultErrorThresholdCount )
-					expectedStatus = QueuedTaskStatus.Faulted;
+					Assert.IsFalse( token.IsActive );
+					Assert.IsFalse( token.IsLocked );
+					Assert.IsFalse( token.IsPending );
+					Assert.IsTrue( monitor.TokenReleasedEventCalled );
 
-				Assert.IsTrue( await token.TrySetResultAsync( ErrorExecutionResult( now.Ticks + 100 ) ) );
+					//Check db task status
+					IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
 
-				Assert.IsFalse( token.IsActive );
-				Assert.IsFalse( token.IsLocked );
-				Assert.IsFalse( token.IsPending );
-				Assert.IsTrue( tokenReleasedEventCalled );
+					Assert.NotNull( dbTask );
+					Assert.AreEqual( expectedStatus, dbTask.Status );
+					Assert.AreEqual( expectedErrorCount, dbTask.ErrorCount );
+					Assert.AreEqual( now.Ticks + 100, dbTask.LockedUntil );
 
-				//Check db task status
-				IQueuedTask dbTask = await mDataSource
-					.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
-
-				Assert.NotNull( dbTask );
-				Assert.AreEqual( expectedStatus, dbTask.Status );
-				Assert.AreEqual( expectedErrorCount, dbTask.ErrorCount );
-				Assert.AreEqual( now.Ticks + 100, dbTask.LockedUntil );
-
-				//Double check that the locks are NOT being held anymore
-				await AssertTokenLockStatus( token, expectedStatus: false );
+					//Double check that the locks are NOT being held anymore
+					await AssertTokenLockStatus( token, expectedStatus: false );
+				}
 			}
 		}
 
@@ -222,52 +210,33 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 3 )]
 		public async Task Test_TokenLifeCycle_CanHandleConnectionDropouts ( int nDropouts )
 		{
-			bool tokenReleasedEventCalled = false;
-			bool cancellationTokenInvoked = false;
 			AbstractTimestamp now = mDataSource.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer consumerQueue = CreateTaskQueue( () => now ) )
+			using ( IQueuedTaskToken token = await consumerQueue.DequeueAsync() )
 			{
-				using ( IQueuedTaskToken token = await consumerQueue.DequeueAsync() )
-				using ( ManualResetEvent tokenConnectionDroppedHandle = new ManualResetEvent( false ) )
-				using ( ManualResetEvent tokenConnectionEstablishedHandle = new ManualResetEvent( false ) )
+				AssertTokenIsValidPostgresToken( token );
+
+				PostgreSqlQueuedTaskToken postgresToken =
+					( PostgreSqlQueuedTaskToken )token;
+
+				using ( PostgreSqlQueuedTaskTokenMonitor monitor = new PostgreSqlQueuedTaskTokenMonitor( postgresToken ) )
 				{
-					AssertTokenIsValidPostgresToken( token );
-
-					PostgreSqlQueuedTaskToken postgresToken =
-						( PostgreSqlQueuedTaskToken )token;
-
-					postgresToken.TokenReleased += ( s, e )
-						=> tokenReleasedEventCalled = true;
-
-					postgresToken.ConnectionStateChanged += ( s, e ) =>
-					{
-						if ( e.NewState == PostgreSqlQueuedTaskTokenConnectionState.Dropped )
-							tokenConnectionDroppedHandle.Set();
-						else if ( e.NewState == PostgreSqlQueuedTaskTokenConnectionState.Established )
-							tokenConnectionEstablishedHandle.Set();
-					};
-
-					postgresToken.CancellationToken.Register( ()
-						=> cancellationTokenInvoked = true );
-
-					Assert.IsTrue( await postgresToken
-						.TrySetStartedAsync( now.TickDuration * 10 ) );
+					Assert.IsTrue( await postgresToken.TrySetStartedAsync( now.TickDuration * 10 ) );
 
 					for ( int iDropout = 0; iDropout < nDropouts; iDropout++ )
 					{
-						tokenReleasedEventCalled = false;
-						cancellationTokenInvoked = false;
+						monitor.Reset();
 
 						await WaitAndTerminateConnectionAsync( postgresToken.ConnectionBackendProcessId,
 							syncHandle: null,
 							timeout: 100 );
 
-						tokenConnectionDroppedHandle.WaitOne();
-						tokenConnectionEstablishedHandle.WaitOne();
+						monitor.WaitForTokenConnectionDroppedInvocation();
+						monitor.WaitForConnectionEstablishedInvocation();
 
-						Assert.IsFalse( tokenReleasedEventCalled );
-						Assert.IsFalse( cancellationTokenInvoked );
+						Assert.IsFalse( monitor.TokenReleasedEventCalled );
+						Assert.IsFalse( monitor.CancellationTokenInvoked );
 
 						Assert.GreaterOrEqual( postgresToken.ConnectionBackendProcessId, 0 );
 
@@ -277,9 +246,6 @@ namespace LVD.Stakhanovise.NET.Tests
 
 						//Double check that the locks are being held
 						await AssertTokenLockStatus( token, expectedStatus: true );
-
-						tokenConnectionDroppedHandle.Reset();
-						tokenConnectionEstablishedHandle.Reset();
 					}
 				}
 			}
@@ -290,63 +256,54 @@ namespace LVD.Stakhanovise.NET.Tests
 		public async Task Test_TokenLifeCycle_CorrectTokenHandover_CompetingDequeueWhileConnectionIsDown ()
 		{
 			IQueuedTaskToken newToken = null;
-			bool tokenReleasedEventCalled = false;
-			bool cancellationTokenInvoked = false;
 			AbstractTimestamp now = mDataSource.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer consumerQueue = CreateTaskQueue( () => now ) )
 			using ( PostgreSqlTaskQueueConsumer competingQueue = CreateTaskQueue( () => now ) )
+			using ( IQueuedTaskToken token = await consumerQueue.DequeueAsync() )
 			{
-				using ( IQueuedTaskToken token = await consumerQueue.DequeueAsync() )
-				using ( ManualResetEvent tokenConnectionDroppedHandle = new ManualResetEvent( false ) )
-				using ( ManualResetEvent tokenConnectionEstablishedOrFailedHandle = new ManualResetEvent( false ) )
-				{
-					AssertTokenIsValidPostgresToken( token );
+				AssertTokenIsValidPostgresToken( token );
 
-					PostgreSqlQueuedTaskToken postgresToken =
+				PostgreSqlQueuedTaskToken postgresToken =
 						( PostgreSqlQueuedTaskToken )token;
 
-					postgresToken.TokenReleased += ( s, e )
-						=> tokenReleasedEventCalled = true;
-
-					postgresToken.ConnectionStateChanged += ( s, e ) =>
+				using ( PostgreSqlQueuedTaskTokenMonitor monitor = new PostgreSqlQueuedTaskTokenMonitor( postgresToken ) )
+				{
+					monitor.SetUserCallbackForConnectionStateChange( PostgreSqlQueuedTaskTokenConnectionState.AttemptingToReconnect, () =>
 					{
-						if ( e.NewState == PostgreSqlQueuedTaskTokenConnectionState.AttemptingToReconnect )
-						{
-							//Manipulate timeline
-							now = now.FromTicks( postgresToken.QueuedTask.LockedUntil + 1 );
-							newToken = competingQueue.Dequeue();
-						}
-						else if ( e.NewState == PostgreSqlQueuedTaskTokenConnectionState.Dropped )
-							tokenConnectionDroppedHandle.Set();
-						else
-							tokenConnectionEstablishedOrFailedHandle.Set();
-					};
+						now = now.FromTicks( postgresToken.QueuedTask.LockedUntil + 1 );
+						newToken = competingQueue.Dequeue();
+					} );
 
-					postgresToken.CancellationToken.Register( ()
-						=> cancellationTokenInvoked = true );
-
-					Assert.IsTrue( await postgresToken
-						.TrySetStartedAsync( now.TickDuration * 10 ) );
+					Assert.IsTrue( await postgresToken.TrySetStartedAsync( now.TickDuration * 10 ) );
 
 					await WaitAndTerminateConnectionAsync( postgresToken.ConnectionBackendProcessId,
 						syncHandle: null,
 						timeout: 100 );
 
-					tokenConnectionDroppedHandle.WaitOne();
-					tokenConnectionEstablishedOrFailedHandle.WaitOne();
+					monitor.WaitForTokenConnectionDroppedInvocation();
+					monitor.WaitForConnectionFailedInvocation();
 
+					//Check that the new dequeue request claimed the token 
+					//	whose connection failed
 					Assert.AreEqual( postgresToken.QueuedTask.Id,
 						newToken.QueuedTask.Id );
 
-					Assert.IsTrue( tokenReleasedEventCalled );
-					Assert.IsTrue( cancellationTokenInvoked );
+					//Old token:
+					//	- check token has been released;
+					//	- check associated cancellation token has been invoked
+					//	- check its connection has been dismantled
+					//	- check not locked, not active and not pending
+					Assert.IsTrue( monitor.TokenReleasedEventCalled );
+					Assert.IsTrue( monitor.CancellationTokenInvoked );
 					Assert.AreEqual( postgresToken.ConnectionBackendProcessId, -1 );
 
-					Assert.IsFalse( token.IsActive );
-					Assert.IsFalse( token.IsLocked );
-					Assert.IsFalse( token.IsPending );
+					Assert.IsFalse( postgresToken.IsActive );
+					Assert.IsFalse( postgresToken.IsLocked );
+					Assert.IsFalse( postgresToken.IsPending );
 
+					//New token:
+					//	- must be pending, locked and not yet active
 					Assert.NotNull( newToken );
 					Assert.IsTrue( newToken.IsPending );
 					Assert.IsTrue( newToken.IsLocked );
@@ -357,9 +314,6 @@ namespace LVD.Stakhanovise.NET.Tests
 
 					await newToken.ReleaseLockAsync();
 					newToken.Dispose();
-
-					tokenConnectionDroppedHandle.Reset();
-					tokenConnectionEstablishedOrFailedHandle.Reset();
 				}
 			}
 		}
