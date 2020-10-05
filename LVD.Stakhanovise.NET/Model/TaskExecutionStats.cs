@@ -80,22 +80,44 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public TaskExecutionStats Since ( TaskExecutionStats previous )
 		{
-			if ( previous == null )
-				throw new ArgumentNullException( nameof( previous ) );
+			long prevTotalExecutionTime = 0;
+			long prevNumberOfExecutionCycles = 0;
+			long prevFastestExecutionTime = long.MaxValue;
+			long prevLongestExecutionTime = long.MinValue;
 
-			return new TaskExecutionStats( lastExecutionTime: LastExecutionTime,
-				averageExecutionTime: ( long )Math.Ceiling(
-					( double )( TotalExecutionTime - previous.TotalExecutionTime )
-						/ ( NumberOfExecutionCycles - previous.NumberOfExecutionCycles )
-				),
-				fastestExecutionTime: Math.Min( FastestExecutionTime,
-					previous.FastestExecutionTime ),
-				longestExecutionTime: Math.Max( LongestExecutionTime,
-					previous.LongestExecutionTime ),
-				totalExecutionTime: ( TotalExecutionTime
-					- previous.TotalExecutionTime ),
-				numberOfExecutionCycles: ( NumberOfExecutionCycles
-					- previous.NumberOfExecutionCycles ) );
+			if ( previous != null )
+			{
+				prevTotalExecutionTime = previous.TotalExecutionTime;
+				prevNumberOfExecutionCycles = previous.NumberOfExecutionCycles;
+				prevFastestExecutionTime = previous.FastestExecutionTime;
+				prevLongestExecutionTime = previous.LongestExecutionTime;
+			}
+
+			if ( NumberOfExecutionCycles - prevNumberOfExecutionCycles > 0 )
+			{
+				return new TaskExecutionStats( lastExecutionTime: LastExecutionTime,
+					averageExecutionTime: ( long )Math.Ceiling(
+						( double )( TotalExecutionTime - prevTotalExecutionTime )
+							/ ( NumberOfExecutionCycles - prevNumberOfExecutionCycles )
+					),
+					fastestExecutionTime: Math.Min( FastestExecutionTime,
+						prevFastestExecutionTime ),
+					longestExecutionTime: Math.Max( LongestExecutionTime,
+						prevLongestExecutionTime ),
+					totalExecutionTime: ( TotalExecutionTime
+						- prevTotalExecutionTime ),
+					numberOfExecutionCycles: ( NumberOfExecutionCycles
+						- prevNumberOfExecutionCycles ) );
+			}
+			else
+			{
+				return new TaskExecutionStats( lastExecutionTime: LastExecutionTime,
+					averageExecutionTime: 0,
+					fastestExecutionTime: FastestExecutionTime,
+					longestExecutionTime: LongestExecutionTime,
+					totalExecutionTime: TotalExecutionTime,
+					numberOfExecutionCycles: NumberOfExecutionCycles );
+			}
 		}
 
 		public TaskExecutionStats Copy ()

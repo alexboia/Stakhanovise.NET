@@ -86,6 +86,8 @@ namespace LVD.Stakhanovise.NET.Processor
 			if ( executionTimeInfo.Count == 0 )
 				return;
 
+			//TODO: adjust to avoid division by 0 when calculating average
+			//	situation may occur when nothing happens since system startup, but data is flushed anyway
 			string upsertSql = @"INSERT INTO sk_task_execution_time_stats_t (
 					et_payload_type,
 					et_n_execution_cycles,

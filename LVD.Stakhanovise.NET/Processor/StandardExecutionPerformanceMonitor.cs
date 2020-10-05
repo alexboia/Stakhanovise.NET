@@ -126,6 +126,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				}
 				catch ( OperationCanceledException )
 				{
+					await mFlushWriter.WriteAsync( GetExecutionStatsChangesSinceLastFlush() );
 					break;
 				}
 				catch ( Exception exc )
@@ -212,7 +213,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private IReadOnlyDictionary<string, TaskExecutionStats> GetExecutionStatsChangesSinceLastFlush ()
 		{
-
 			Dictionary<string, TaskExecutionStats> statsDelta =
 				new Dictionary<string, TaskExecutionStats>();
 
@@ -227,7 +227,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			foreach ( KeyValuePair<string, TaskExecutionStats> tsPair in currentStats )
 			{
 				if ( !prevStats.TryGetValue( tsPair.Key, out TaskExecutionStats prevTs ) )
-					prevTs = TaskExecutionStats.Zero();
+					prevTs = null;
 
 				statsDelta.Add( tsPair.Key, tsPair.Value.Since( prevTs ) );
 			}
