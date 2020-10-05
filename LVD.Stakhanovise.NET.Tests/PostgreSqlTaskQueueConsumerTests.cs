@@ -118,6 +118,29 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
+		public async Task Test_Dequeue_ThenRelease_ProducesSameToken ()
+		{
+			IQueuedTaskToken token;
+			Guid firstTokenId = Guid.Empty;
+
+			AbstractTimestamp now = mDataSource
+				.LastPostedAt;
+
+			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
+			{
+				using ( token = await taskQueue.DequeueAsync() )
+				{
+					if ( !firstTokenId.Equals( Guid.Empty ) )
+						Assert.AreEqual( firstTokenId, token.QueuedTask.Id );
+					else
+						firstTokenId = token.QueuedTask.Id;
+
+					await token.ReleaseLockAsync();
+				}
+			}
+		}
+
+		[Test]
 		[Repeat( 5 )]
 		public async Task Test_CanStartStopReceivingNewTaskNotificationUpdates ()
 		{

@@ -157,5 +157,14 @@ namespace LVD.Stakhanovise.NET.Executors
 		public object AsProviderInstance { get; private set; }
 
 		public DependencyScope Scope { get; internal set; }
+
+		public bool IsProviderRegistration 
+			=> AsProvider != null || AsProviderInstance != null;
+
+		public bool IsTypeRegistration
+			=> AsImplementationType != null;
+
+		public bool IsInstanceRegistratin
+			=> AsInstance != null;
 	}
 }
