@@ -81,8 +81,6 @@ namespace LVD.Stakhanovise.NET
 
 		public TaskExecutionResultInfo ResultInfo => mResult;
 
-		public QueuedTaskStatus TaskStatus => mTask.Status;
-
 		public bool IsCancellationRequested => mCancellationToken.IsCancellationRequested;
 
 		public bool HasResult => mResult != null;

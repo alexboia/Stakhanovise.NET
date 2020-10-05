@@ -35,7 +35,7 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public class TaskExecutionStats
+	public class TaskExecutionStats : IEquatable<TaskExecutionStats>
 	{
 		public TaskExecutionStats ( long lastExecutionTime,
 			long averageExecutionTime,
@@ -115,8 +115,8 @@ namespace LVD.Stakhanovise.NET.Model
 					averageExecutionTime: 0,
 					fastestExecutionTime: FastestExecutionTime,
 					longestExecutionTime: LongestExecutionTime,
-					totalExecutionTime: TotalExecutionTime,
-					numberOfExecutionCycles: NumberOfExecutionCycles );
+					totalExecutionTime: 0,
+					numberOfExecutionCycles: 0 );
 			}
 		}
 
@@ -133,6 +133,36 @@ namespace LVD.Stakhanovise.NET.Model
 		public static TaskExecutionStats Zero ()
 		{
 			return new TaskExecutionStats( 0, 0, 0, 0, 0, 0 );
+		}
+
+		public bool Equals ( TaskExecutionStats other )
+		{
+			return other != null
+				&& other.NumberOfExecutionCycles == NumberOfExecutionCycles
+				&& other.LastExecutionTime == LastExecutionTime
+				&& other.AverageExecutionTime == AverageExecutionTime
+				&& other.FastestExecutionTime == FastestExecutionTime
+				&& other.TotalExecutionTime == TotalExecutionTime
+				&& other.LongestExecutionTime == LongestExecutionTime;
+		}
+
+		public override bool Equals ( object obj )
+		{
+			return Equals( obj as TaskExecutionStats );
+		}
+
+		public override int GetHashCode ()
+		{
+			int result = 1;
+
+			result = result * 13 + NumberOfExecutionCycles.GetHashCode();
+			result = result * 13 + LastExecutionTime.GetHashCode();
+			result = result * 13 + AverageExecutionTime.GetHashCode();
+			result = result * 13 + FastestExecutionTime.GetHashCode();
+			result = result * 13 + LongestExecutionTime.GetHashCode();
+			result = result * 13 + TotalExecutionTime.GetHashCode();
+
+			return result;
 		}
 
 		public long NumberOfExecutionCycles { get; private set; }

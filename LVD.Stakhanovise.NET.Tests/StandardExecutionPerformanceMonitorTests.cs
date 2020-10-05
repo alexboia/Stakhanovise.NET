@@ -256,6 +256,10 @@ namespace LVD.Stakhanovise.NET.Tests
 				} );
 
 			await perfMon.StartFlushingAsync( writerMock.Object, writeOptions );
+
+			while ( execTimesToReport.TryDequeue( out Tuple<string, long> execTime ) )
+				perfMon.ReportExecutionTime( execTime.Item1, execTime.Item2 );
+
 			await perfMon.StopFlushingAsync();
 
 			syncCount.Wait();
@@ -310,8 +314,8 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.AreEqual( expected.Value.LongestExecutionTime, stats.LongestExecutionTime );
 					Assert.AreEqual( 0, stats.AverageExecutionTime );
 					Assert.AreEqual( expected.Value.LastExecutionTime, stats.LastExecutionTime );
-					Assert.AreEqual( expected.Value.NumberOfExecutionCycles, stats.NumberOfExecutionCycles );
-					Assert.AreEqual( expected.Value.TotalExecutionTime, stats.TotalExecutionTime );
+					Assert.AreEqual( 0, stats.NumberOfExecutionCycles );
+					Assert.AreEqual( 0, stats.TotalExecutionTime );
 				}
 				else
 					Assert.Fail();

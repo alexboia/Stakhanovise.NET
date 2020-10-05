@@ -47,8 +47,6 @@ namespace LVD.Stakhanovise.NET
 
 		void ThrowIfCancellationRequested ();
 
-		QueuedTaskStatus TaskStatus { get; }
-
 		TaskExecutionResultInfo ResultInfo { get; }
 
 		bool IsCancellationRequested { get; }
