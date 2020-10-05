@@ -99,8 +99,7 @@ namespace LVD.Stakhanovise.NET.Executors.IoC
 			{
 				return CreateoObjectWithProvider( targetType,
 					provider,
-					resolver
-					);
+					resolver );
 			} );
 		}
 	}

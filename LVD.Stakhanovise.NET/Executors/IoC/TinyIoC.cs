@@ -2939,6 +2939,14 @@ namespace LVD.Stakhanovise.NET.Executors.IoC
 				this.registerType = registerType;
 			}
 
+			public override ObjectFactoryBase GetCustomObjectLifetimeVariant ( ITinyIoCObjectLifetimeProvider lifetimeProvider, string errorString )
+			{
+				return new CustomLifetimeDelegateFactory( this.registerType,
+					this,
+					lifetimeProvider,
+					errorString );
+			}
+
 			public override ObjectFactoryBase WeakReferenceVariant
 			{
 				get
@@ -2955,9 +2963,168 @@ namespace LVD.Stakhanovise.NET.Executors.IoC
 				}
 			}
 
+			public override ObjectFactoryBase SingletonVariant
+			{
+				get
+				{
+					return new SingletonDelegateFactory( this.registerType, this );
+				}
+			}
+
 			public override void SetConstructor ( ConstructorInfo constructor )
 			{
 				throw new TinyIoCConstructorResolutionException( "Constructor selection is not possible for delegate factory registrations" );
+			}
+		}
+
+		private class SingletonDelegateFactory : ObjectFactoryBase, IDisposable
+		{
+			private readonly Type registerType;
+			private readonly DelegateFactory delegateFactory;
+
+			private readonly object SingletonLock = new object();
+			private object _Current;
+
+			public SingletonDelegateFactory ( Type registerType, DelegateFactory delegateFactory )
+			{
+				this.registerType = registerType
+					?? throw new ArgumentNullException( nameof( registerType ) );
+				this.delegateFactory = delegateFactory
+					?? throw new ArgumentNullException( nameof( delegateFactory ) );
+			}
+
+			public override object GetObject ( Type requestedType,
+				TinyIoCContainer container,
+				NamedParameterOverloads parameters,
+				ResolveOptions options )
+			{
+				lock ( SingletonLock )
+				{
+					if ( _Current == null )
+					{
+						_Current = this.delegateFactory.GetObject( requestedType,
+							container,
+							parameters,
+							options );
+					}
+				}
+
+				return _Current;
+			}
+
+			public override ObjectFactoryBase GetFactoryForChildContainer ( Type type, TinyIoCContainer parent, TinyIoCContainer child )
+			{
+				// We make sure that the singleton is constructed before the child container takes the factory.
+				// Otherwise the results would vary depending on whether or not the parent container had resolved
+				// the type before the child container does.
+				GetObject( type, parent, NamedParameterOverloads.Default, ResolveOptions.Default );
+				return this;
+			}
+
+			public override void SetConstructor ( ConstructorInfo constructor )
+			{
+				throw new TinyIoCConstructorResolutionException( "Constructor selection is not possible for singleton delegate factory registrations" );
+			}
+
+			public void Dispose ()
+			{
+				if ( this._Current == null )
+					return;
+
+				IDisposable disposable = this._Current as IDisposable;
+
+				if ( disposable != null )
+					disposable.Dispose();
+			}
+
+			public override Type CreatesType
+			{
+				get
+				{
+					return this.registerType;
+				}
+			}
+
+			public override bool AssumeConstruction
+			{
+				get
+				{
+					return this.delegateFactory.AssumeConstruction;
+				}
+			}
+		}
+
+		private class CustomLifetimeDelegateFactory : ObjectFactoryBase, IDisposable
+		{
+			private readonly Type registerType;
+			private readonly DelegateFactory delegateFactory;
+			private readonly ITinyIoCObjectLifetimeProvider _LifetimeProvider;
+			private readonly object SingletonLock = new object();
+
+			public CustomLifetimeDelegateFactory ( Type registerType,
+				DelegateFactory delegateFactory,
+				ITinyIoCObjectLifetimeProvider lifetimeProvider,
+				string errorMessage )
+			{
+				this.registerType = registerType
+					?? throw new ArgumentNullException( nameof( registerType ) );
+				this.delegateFactory = delegateFactory
+					?? throw new ArgumentNullException( nameof( delegateFactory ) );
+				this._LifetimeProvider = lifetimeProvider
+					?? throw new ArgumentNullException( nameof( lifetimeProvider ) );
+			}
+
+			public override object GetObject ( Type requestedType,
+				TinyIoCContainer container,
+				NamedParameterOverloads parameters,
+				ResolveOptions options )
+			{
+				object current;
+
+				lock ( SingletonLock )
+				{
+					current = _LifetimeProvider.GetObject();
+					if ( current == null )
+					{
+						current = this.delegateFactory.GetObject( requestedType,
+							container,
+							parameters,
+							options );
+						_LifetimeProvider.SetObject( current );
+					}
+				}
+
+				return current;
+			}
+
+			public override ObjectFactoryBase GetFactoryForChildContainer ( Type type, TinyIoCContainer parent, TinyIoCContainer child )
+			{
+				// We make sure that the singleton is constructed before the child container takes the factory.
+				// Otherwise the results would vary depending on whether or not the parent container had resolved
+				// the type before the child container does.
+				GetObject( type, parent, NamedParameterOverloads.Default, ResolveOptions.Default );
+				return this;
+			}
+
+			public void Dispose ()
+			{
+				_LifetimeProvider.ReleaseObject();
+			}
+
+			public override Type CreatesType
+			{
+				get
+				{
+					return this.registerType;
+				}
+			}
+
+			public override bool AssumeConstruction
+			{
+				get
+				{
+					return this.delegateFactory.AssumeConstruction;
+				}
 			}
 		}
 

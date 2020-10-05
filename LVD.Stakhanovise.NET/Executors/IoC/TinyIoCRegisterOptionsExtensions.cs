@@ -37,7 +37,7 @@ namespace LVD.Stakhanovise.NET.Executors.IoC
 {
 	public static class TinyIoCRegisterOptionsExtensions
 	{
-		public static TinyIoCContainer.RegisterOptions WithScopeFromRegistrationInfo ( this TinyIoCContainer.RegisterOptions regOpts, 
+		public static TinyIoCContainer.RegisterOptions WithScopeFromRegistrationInfo ( this TinyIoCContainer.RegisterOptions regOpts,
 			DependencyRegistration registration )
 		{
 			if ( regOpts == null )
@@ -45,7 +45,7 @@ namespace LVD.Stakhanovise.NET.Executors.IoC
 
 			if ( registration == null )
 				throw new ArgumentNullException( nameof( registration ) );
-			
+
 			switch ( registration.Scope )
 			{
 				case DependencyScope.Singleton:
@@ -55,7 +55,8 @@ namespace LVD.Stakhanovise.NET.Executors.IoC
 					regOpts.AsPerRequestSingleton();
 					break;
 				case DependencyScope.Transient:
-					regOpts.AsMultiInstance();
+					if ( !registration.IsProviderRegistration )
+						regOpts.AsMultiInstance();
 					break;
 			}
 
