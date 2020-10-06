@@ -71,6 +71,8 @@ namespace LVD.Stakhanovise.NET.Model
 		/// <summary>
 		/// Fault state could not be handled
 		/// </summary>
-		Fatal = 0x06
+		Fatal = 0x06,
+
+		Cancelled = 0x07
 	}
 }

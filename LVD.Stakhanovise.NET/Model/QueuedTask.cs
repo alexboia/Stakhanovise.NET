@@ -39,82 +39,13 @@ namespace LVD.Stakhanovise.NET.Model
 	{
 		public QueuedTask ()
 		{
-			Status = QueuedTaskStatus.Unprocessed;
+			return;
 		}
 
 		public QueuedTask ( Guid taskId )
 			: this()
 		{
 			Id = taskId;
-		}
-
-		public virtual void ProcessingStarted ( AbstractTimestamp lockUntil )
-		{
-			Status = QueuedTaskStatus.Processing;
-			LockedUntil = lockUntil.Ticks;
-		}
-
-		public virtual void Processed ( long processingTimeMilliseconds )
-		{
-			Status = QueuedTaskStatus.Processed;
-			ProcessingFinalizedAtTs = DateTimeOffset.UtcNow;
-			ProcessingTimeMilliseconds = processingTimeMilliseconds;
-
-			if ( !FirstProcessingAttemptedAtTs.HasValue )
-				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
-
-			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
-		}
-
-		public virtual void Faulted ()
-		{
-			if ( Status == QueuedTaskStatus.Error )
-			{
-				Status = QueuedTaskStatus.Faulted;
-				LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
-				RepostedAtTs = DateTimeOffset.UtcNow;
-			}
-		}
-
-		public virtual void HadError ( QueuedTaskError error,
-			bool isRecoverable,
-			int faultErrorThresholdCount,
-			AbstractTimestamp retryAt )
-		{
-			LastError = error;
-			LastErrorIsRecoverable = isRecoverable;
-			ErrorCount += 1;
-
-			if ( !FirstProcessingAttemptedAtTs.HasValue )
-				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
-
-			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
-			RepostedAtTs = DateTimeOffset.UtcNow;
-			if ( Status != QueuedTaskStatus.Fatal &&
-				Status != QueuedTaskStatus.Faulted )
-				Status = QueuedTaskStatus.Error;
-
-			if ( ErrorCount >= faultErrorThresholdCount )
-			{
-				if ( Status == QueuedTaskStatus.Error )
-					Faulted();
-				else if ( Status == QueuedTaskStatus.Faulted )
-					ProcessingFailedPermanently();
-			}
-
-			if ( retryAt != null )
-				LockedUntil = retryAt.Ticks;
-			else
-				LockedUntil = 0;
-		}
-
-		public virtual void ProcessingFailedPermanently ()
-		{
-			if ( Status == QueuedTaskStatus.Faulted )
-			{
-				Status = QueuedTaskStatus.Fatal;
-				LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
-			}
 		}
 
 		public bool Equals ( QueuedTask other )
@@ -148,30 +79,12 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public object Payload { get; set; }
 
-		public QueuedTaskStatus Status { get; set; }
-
 		public int Priority { get; set; }
 
 		public long PostedAt { get; set; }
 
 		public long LockedUntil { get; set; }
 
-		public long ProcessingTimeMilliseconds { get; set; }
-
-		public QueuedTaskError LastError { get; set; }
-
-		public bool LastErrorIsRecoverable { get; set; }
-
-		public int ErrorCount { get; set; }
-
 		public DateTimeOffset PostedAtTs { get; set; }
-
-		public DateTimeOffset RepostedAtTs { get; set; }
-
-		public DateTimeOffset? FirstProcessingAttemptedAtTs { get; set; }
-
-		public DateTimeOffset? LastProcessingAttemptedAtTs { get; set; }
-
-		public DateTimeOffset? ProcessingFinalizedAtTs { get; set; }
 	}
 }

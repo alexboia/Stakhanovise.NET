@@ -79,7 +79,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			{
 				mSeededTasks.Clear();
 				await new QueryFactory( conn, new PostgresCompiler() )
-					.Query( mMapping.TableName )
+					.Query( mMapping.QueueTableName )
 					.DeleteAsync();
 			}
 		}
@@ -89,13 +89,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
 			{
 				Query selectTaskQuery = new QueryFactory( db, new PostgresCompiler() )
-					.Query( mMapping.TableName )
+					.Query( mMapping.QueueTableName )
 					.Select( "*" )
 					.Where( mMapping.IdColumnName, "=", taskId );
 
 				using ( NpgsqlDataReader reader = await db.ExecuteReaderAsync( selectTaskQuery ) )
 					return await reader.ReadAsync()
-						? await reader.ReadQueuedTaskAsync( mMapping )
+						? await reader.ReadQueuedTaskAsync()
 						: null;
 			}
 		}
@@ -310,7 +310,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				};
 
 				await new QueryFactory( conn, new PostgresCompiler() )
-					.Query( mMapping.TableName )
+					.Query( mMapping.QueueTableName )
 					.InsertAsync( insertData, tx );
 
 				mSeededTasks.AddRange( queuedTasks );

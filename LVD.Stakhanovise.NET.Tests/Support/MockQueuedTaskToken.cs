@@ -31,7 +31,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		{
 			EventHandler<TokenReleasedEventArgs> h = TokenReleased;
 			if ( h != null )
-				h( this, new TokenReleasedEventArgs( QueuedTask.Id ) );
+				h( this, new TokenReleasedEventArgs( DequeuedTask.Id ) );
 		}
 
 		public Task ReleaseLockAsync ()
@@ -71,7 +71,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			TokenReleased = null;
 		}
 
-		public IQueuedTask QueuedTask => mQueuedTask;
+		public IQueuedTask DequeuedTask => mQueuedTask;
 
 		public CancellationToken CancellationToken => CancellationToken.None;
 

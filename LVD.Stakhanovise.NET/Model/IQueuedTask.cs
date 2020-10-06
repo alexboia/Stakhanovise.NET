@@ -47,30 +47,12 @@ namespace LVD.Stakhanovise.NET.Model
 
 		object Payload { get; }
 
-		QueuedTaskStatus Status { get; }
-
 		int Priority { get; set; }
 
 		long PostedAt { get; }
 
-		long LockedUntil { get; }
-
-		long ProcessingTimeMilliseconds { get; }
-
-		QueuedTaskError LastError { get; }
-
-		bool LastErrorIsRecoverable { get; }
-
-		int ErrorCount { get; }
-
 		DateTimeOffset PostedAtTs { get; }
 
-		DateTimeOffset RepostedAtTs { get; }
-
-		DateTimeOffset? FirstProcessingAttemptedAtTs { get; }
-
-		DateTimeOffset? LastProcessingAttemptedAtTs { get; }
-
-		DateTimeOffset? ProcessingFinalizedAtTs { get; }
+		long LockedUntil { get; }
 	}
 }

@@ -90,10 +90,10 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			CheckNotDisposedOrThrow();
 
-			string statsSql = $@"SELECT q.{mOptions.Mapping.StatusColumnName},
-					COUNT(q.{mOptions.Mapping.StatusColumnName}) AS task_status_count 
-				FROM {mOptions.Mapping.TableName} AS q 
-				GROUP BY q.{mOptions.Mapping.StatusColumnName}";
+			string statsSql = $@"SELECT q.task_status
+					COUNT(q.task_status) AS task_status_count 
+				FROM {mOptions.Mapping.ResultsTableName} AS q 
+				GROUP BY q.task_status";
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlCommand statsCmd = new NpgsqlCommand( statsSql, conn ) )
@@ -156,13 +156,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				.GetCurrentTimeAsync();
 
 			string peekSql = $@"SELECT q.*
-				FROM {mOptions.Mapping.TableName} as q
-				WHERE {mOptions.Mapping.StatusColumnName} = ANY (@t_select_statuses)
-					AND q.{mOptions.Mapping.LockedUntilColumnName} < @t_now
-					AND sk_has_advisory_lock(q.{mOptions.Mapping.LockHandleIdColumnName}) = false
-				ORDER BY q.{mOptions.Mapping.PriorityColumnName} DESC,
-					q.{mOptions.Mapping.PostedAtColumnName},
-					q.{mOptions.Mapping.LockHandleIdColumnName} 
+				FROM {mOptions.Mapping.QueueTableName} as q
+				WHERE q.task_locked_until < @t_now
+					AND sk_has_advisory_lock(q.task_lock_handle_id) = false
+				ORDER BY q.task_priority DESC,
+					q.task_posted_at ASC,
+					q.task_lock_handle_id ASC
 				LIMIT 1";
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
@@ -180,7 +179,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				using ( NpgsqlDataReader taskReader = await peekCmd.ExecuteReaderAsync() )
 				{
 					if ( await taskReader.ReadAsync() )
-						peekedTask = await taskReader.ReadQueuedTaskAsync( mOptions.Mapping );
+						peekedTask = await taskReader.ReadQueuedTaskAsync();
 
 					await taskReader.CloseAsync();
 				}

@@ -30,23 +30,25 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
+using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class PostgreSqlTaskQueueTimingBeltTickRequest : AsyncProcessingRequest<AbstractTimestamp>
+	public class PostgreSqlTaskResultQueueProcessRequest : AsyncProcessingRequest<int>
 	{
-		public PostgreSqlTaskQueueTimingBeltTickRequest ( long requestId,
-			TaskCompletionSource<AbstractTimestamp> completionToken,
+		public PostgreSqlTaskResultQueueProcessRequest ( long requestId,
+			IQueuedTaskResult resultToUpdate,
+			TaskCompletionSource<int> completionToken,
 			int timeoutMilliseconds,
 			int maxFailCount )
-			: base( requestId,
-				  completionToken,
-				  timeoutMilliseconds,
-				  maxFailCount )
+			: base( requestId, completionToken, timeoutMilliseconds, maxFailCount )
 		{
-			return;
+			ResultToUpdate = resultToUpdate ?? throw new ArgumentNullException( nameof( resultToUpdate ) );
 		}
-	}
 
+		public IQueuedTaskResult ResultToUpdate { get; private set; }
+	}
 }

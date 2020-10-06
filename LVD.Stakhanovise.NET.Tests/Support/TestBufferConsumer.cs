@@ -51,8 +51,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				mConsumedTasks.Count );
 
 			foreach ( IQueuedTaskToken pt in producedTasks )
-				Assert.AreEqual( 1, mConsumedTasks.Count( ct => ct.QueuedTask.Id
-					== pt.QueuedTask.Id ) );
+				Assert.AreEqual( 1, mConsumedTasks.Count( ct => ct.DequeuedTask.Id
+					== pt.DequeuedTask.Id ) );
 		}
 	}
 }

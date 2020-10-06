@@ -45,6 +45,9 @@ namespace LVD.Stakhanovise.NET
 
 		private long mProcessingTimeMilliseconds;
 
+		private int mFaultErrorThresholdCount;
+
+		[Obsolete]
 		public TaskExecutionResult ( TimedExecutionResult<TaskExecutionResultInfo> resultInfo )
 		{
 			if ( resultInfo == null )
@@ -54,6 +57,7 @@ namespace LVD.Stakhanovise.NET
 			mProcessingTimeMilliseconds = resultInfo.DurationMilliseconds;
 		}
 
+		[Obsolete]
 		public TaskExecutionResult ( TimedExecutionResult<TaskExecutionResultInfo> resultInfo,
 			long retryAtTicks )
 			: this( resultInfo )
@@ -61,11 +65,22 @@ namespace LVD.Stakhanovise.NET
 			mRetryAtTicks = retryAtTicks;
 		}
 
+		public TaskExecutionResult ( TimedExecutionResult<TaskExecutionResultInfo> resultInfo,
+			long retryAtTicks,
+			int faultErrorThresholdCount )
+			: this( resultInfo, retryAtTicks )
+		{
+			mFaultErrorThresholdCount = faultErrorThresholdCount;
+		}
+
 		public bool Equals ( TaskExecutionResult other )
 		{
 			return other != null &&
 				ExecutedSuccessfully == other.ExecutedSuccessfully &&
+				ExecutionCancelled == other.ExecutionCancelled &&
 				IsRecoverable == other.IsRecoverable &&
+				RetryAtTicks == other.RetryAtTicks &&
+				FaultErrorThresholdCount == other.FaultErrorThresholdCount &&
 				object.Equals( Error, other.Error );
 		}
 
@@ -79,7 +94,11 @@ namespace LVD.Stakhanovise.NET
 			int result = 1;
 
 			result = result * 31 + mResultInfo.ExecutedSuccessfully.GetHashCode();
+			result = result * 31 + mResultInfo.ExecutionCancelled.GetHashCode();
 			result = result * 31 + mResultInfo.IsRecoverable.GetHashCode();
+
+			result = result * 31 + mRetryAtTicks.GetHashCode();
+			result = result * 31 + mFaultErrorThresholdCount.GetHashCode();
 
 			if ( mResultInfo.Error != null )
 				result = result * 31 + mResultInfo.Error.GetHashCode();
@@ -87,19 +106,25 @@ namespace LVD.Stakhanovise.NET
 			return result;
 		}
 
-		public bool ExecutedSuccessfully 
+		public int FaultErrorThresholdCount
+			=> mFaultErrorThresholdCount;
+
+		public bool ExecutedSuccessfully
 			=> mResultInfo.ExecutedSuccessfully;
 
-		public long RetryAtTicks 
+		public bool ExecutionCancelled
+			=> mResultInfo.ExecutionCancelled;
+
+		public long RetryAtTicks
 			=> mRetryAtTicks;
 
-		public long ProcessingTimeMilliseconds 
+		public long ProcessingTimeMilliseconds
 			=> mProcessingTimeMilliseconds;
 
-		public QueuedTaskError Error 
+		public QueuedTaskError Error
 			=> mResultInfo.Error;
 
-		public bool IsRecoverable 
+		public bool IsRecoverable
 			=> mResultInfo.IsRecoverable;
 	}
 }

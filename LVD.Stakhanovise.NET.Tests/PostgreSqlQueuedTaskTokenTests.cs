@@ -97,24 +97,24 @@ namespace LVD.Stakhanovise.NET.Tests
 				Assert.IsFalse( token.IsPending );
 
 				//Check db task status
-				IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
+				IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.DequeuedTask.Id );
 
 				Assert.NotNull( dbTask );
 				Assert.AreEqual( QueuedTaskStatus.Processing, dbTask.Status );
-				Assert.AreEqual( token.QueuedTask.LockedUntil, dbTask.LockedUntil );
+				Assert.AreEqual( token.DequeuedTask.LockedUntil, dbTask.LockedUntil );
 
 				//Double check that the locks are being held
 				await AssertTokenLockStatus( token, expectedStatus: true );
 
 				//Attempt some competing dequeues
-				long timeDelta = token.QueuedTask.LockedUntil
+				long timeDelta = token.DequeuedTask.LockedUntil
 					- token.DequeuedAt.Ticks;
 
 				for ( long iCompete = 0; iCompete < timeDelta; iCompete++ )
 				{
 					using ( IQueuedTaskToken newToken = await competingQueue.DequeueAsync() )
 					{
-						Assert.AreNotEqual( token.QueuedTask.Id, newToken.QueuedTask.Id );
+						Assert.AreNotEqual( token.DequeuedTask.Id, newToken.DequeuedTask.Id );
 						await newToken.ReleaseLockAsync();
 					}
 				}
@@ -146,7 +146,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.IsTrue( monitor.TokenReleasedEventCalled );
 
 					//Check db task status
-					IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
+					IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.DequeuedTask.Id );
 
 					Assert.NotNull( dbTask );
 					Assert.AreEqual( QueuedTaskStatus.Processed, dbTask.Status );
@@ -174,7 +174,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					//Simulate working on task
 					await Task.Delay( 1000 );
 
-					int expectedErrorCount = token.QueuedTask.ErrorCount + 1;
+					int expectedErrorCount = token.DequeuedTask.ErrorCount + 1;
 					QueuedTaskStatus expectedStatus = QueuedTaskStatus.Error;
 
 					if ( expectedErrorCount > mConsumerOptions.FaultErrorThresholdCount + 1 )
@@ -190,7 +190,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.IsTrue( monitor.TokenReleasedEventCalled );
 
 					//Check db task status
-					IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.QueuedTask.Id );
+					IQueuedTask dbTask = await mDataSource.GetQueuedTaskByIdAsync( token.DequeuedTask.Id );
 
 					Assert.NotNull( dbTask );
 					Assert.AreEqual( expectedStatus, dbTask.Status );
@@ -271,7 +271,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					monitor.SetUserCallbackForConnectionStateChange( PostgreSqlQueuedTaskTokenConnectionState.AttemptingToReconnect, () =>
 					{
-						now = now.FromTicks( postgresToken.QueuedTask.LockedUntil + 1 );
+						now = now.FromTicks( postgresToken.DequeuedTask.LockedUntil + 1 );
 						newToken = competingQueue.Dequeue();
 					} );
 
@@ -286,8 +286,8 @@ namespace LVD.Stakhanovise.NET.Tests
 
 					//Check that the new dequeue request claimed the token 
 					//	whose connection failed
-					Assert.AreEqual( postgresToken.QueuedTask.Id,
-						newToken.QueuedTask.Id );
+					Assert.AreEqual( postgresToken.DequeuedTask.Id,
+						newToken.DequeuedTask.Id );
 
 					//Old token:
 					//	- check token has been released;
@@ -327,7 +327,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private async Task AssertTokenLockStatus ( IQueuedTaskToken token, bool expectedStatus )
 		{
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
-				Assert.AreEqual( expectedStatus, await db.IsAdvisoryLockHeldAsync( token.QueuedTask.LockHandleId ) );
+				Assert.AreEqual( expectedStatus, await db.IsAdvisoryLockHeldAsync( token.DequeuedTask.LockHandleId ) );
 		}
 
 		private TaskExecutionResult SuccessfulExecutionResult ()

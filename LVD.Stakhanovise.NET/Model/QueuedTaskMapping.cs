@@ -58,14 +58,15 @@ namespace LVD.Stakhanovise.NET.Model
 			LockedUntilColumnName = "task_locked_until";
 			ProcessingTimeMillisecondsColumnName = "task_processing_time_milliseconds";
 
-			TableName = "sk_tasks_queue_t";
+			QueueTableName = "sk_tasks_queue_t";
+			ResultsTableName = "sk_task_results_t";
 			NewTaskNotificaionChannelName = "sk_task_queue_item_added";
 			DequeueFunctionName = "sk_try_dequeue_task";
 		}
 
 		public void AddTablePrefix ( string tablePrefix )
 		{
-			TableName = $"{tablePrefix}{TableName}";
+			QueueTableName = $"{tablePrefix}{QueueTableName}";
 		}
 
 		public string IdColumnName { get; set; }
@@ -104,7 +105,9 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public string ProcessingFinalizedAtTsColumnName { get; set; }
 
-		public string TableName { get; set; }
+		public string QueueTableName { get; set; }
+
+		public string ResultsTableName { get; set; }
 
 		public string NewTaskNotificaionChannelName { get; set; }
 

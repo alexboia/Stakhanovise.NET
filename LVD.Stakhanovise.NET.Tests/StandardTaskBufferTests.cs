@@ -101,7 +101,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					IQueuedTaskToken queuedTaskToken = buffer.TryGetNextTask();
 
 					Assert.NotNull( queuedTaskToken );
-					Assert.IsTrue( addedTasks.Any( t => t.QueuedTask.Id == queuedTaskToken.QueuedTask.Id ) );
+					Assert.IsTrue( addedTasks.Any( t => t.DequeuedTask.Id == queuedTaskToken.DequeuedTask.Id ) );
 				}
 
 				Assert.IsFalse( buffer.IsFull );
@@ -250,7 +250,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					processedTasks.Count );
 
 				foreach ( IQueuedTaskToken queuedTaskToken in processedTasks )
-					Assert.AreEqual( 1, processedTasks.Count( t => t.QueuedTask.Id == queuedTaskToken.QueuedTask.Id ) );
+					Assert.AreEqual( 1, processedTasks.Count( t => t.DequeuedTask.Id == queuedTaskToken.DequeuedTask.Id ) );
 			}
 		}
 

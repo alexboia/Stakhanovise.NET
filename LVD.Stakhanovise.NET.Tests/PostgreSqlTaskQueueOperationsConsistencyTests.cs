@@ -67,7 +67,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.NotNull( dequeuedTaskToken );
 
 					Assert.AreEqual( peekTask.Id,
-						dequeuedTaskToken.QueuedTask.Id );
+						dequeuedTaskToken.DequeuedTask.Id );
 				}
 				finally
 				{

@@ -69,9 +69,6 @@ namespace LVD.Stakhanovise.NET.Queue
 			string source,
 			int priority )
 		{
-			AbstractTimestamp now;
-			QueuedTask queuedTask = null;
-
 			if ( EqualityComparer<TPayload>.Default.Equals( payload, default( TPayload ) ) )
 				throw new ArgumentNullException( nameof( payload ) );
 
@@ -81,40 +78,55 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( priority < 0 )
 				throw new ArgumentOutOfRangeException( nameof( priority ), "Priority must be greater than or equal to 0" );
 
+			return await EnqueueAsync( new QueuedTaskInfo() 
+			{
+				Payload = payload,
+				Type = typeof( TPayload ).FullName,
+				Priority = priority,
+				Source = source,
+				LockedUntil = 0
+			} );
+		}
+
+		public async Task<IQueuedTask> EnqueueAsync ( QueuedTaskInfo queuedTaskInfo )
+		{
+			AbstractTimestamp now;
+			QueuedTask queuedTask = null;
+
+			if ( queuedTaskInfo == null )
+				throw new ArgumentNullException( nameof( queuedTaskInfo ) );
+
+			if ( queuedTaskInfo.Priority < 0 )
+				throw new ArgumentOutOfRangeException( nameof( queuedTaskInfo ), "Priority must be greater than or equal to 0" );
+
 			now = await mTimeProvider
 				.GetCurrentTimeAsync();
 
 			queuedTask = new QueuedTask();
-			queuedTask.Id = Guid.NewGuid();
+			queuedTask.Id = queuedTaskInfo.Id.Equals(Guid.Empty) 
+				? Guid.NewGuid() 
+				: queuedTaskInfo.Id;
+
+			queuedTask.Payload = queuedTaskInfo.Payload;
+			queuedTask.Type = queuedTaskInfo.Type;
+			queuedTask.Source = queuedTaskInfo.Source;
+			queuedTask.Priority = queuedTaskInfo.Priority;
 			queuedTask.PostedAt = now.Ticks;
-			queuedTask.Payload = payload;
-			queuedTask.Type = typeof( TPayload ).FullName;
-			queuedTask.Source = source;
-			queuedTask.Status = QueuedTaskStatus.Unprocessed;
-			queuedTask.Priority = priority;
 			queuedTask.PostedAtTs = DateTimeOffset.UtcNow;
-			queuedTask.RepostedAtTs = DateTimeOffset.UtcNow;
-			queuedTask.ErrorCount = 0;
-			queuedTask.LockedUntil = 0;
-			queuedTask.ProcessingTimeMilliseconds = 0;
+			queuedTask.LockedUntil = queuedTaskInfo.LockedUntil;
 
 			using ( NpgsqlConnection conn = await TryOpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
 			{
-				string insertSql = $@"INSERT INTO {mOptions.Mapping.TableName} (
-						{mOptions.Mapping.IdColumnName},
-						{mOptions.Mapping.PayloadColumnName},
-						{mOptions.Mapping.TypeColumnName},
-						{mOptions.Mapping.SourceColumnName},
-						{mOptions.Mapping.PriorityColumnName},
-						{mOptions.Mapping.PostedAtColumnName},
-						{mOptions.Mapping.LockedUntilColumnName},
-						{mOptions.Mapping.PostedAtTsColumnName},
-						{mOptions.Mapping.RepostedAtTsColumnName},
-						{mOptions.Mapping.ProcessingTimeMillisecondsColumnName},
-						{mOptions.Mapping.ErrorCountColumnName},
-						{mOptions.Mapping.LastErrorIsRecoverableColumnName},
-						{mOptions.Mapping.StatusColumnName}
+				string insertSql = $@"INSERT INTO {mOptions.Mapping.QueueTableName} (
+						task_id,
+						task_payload,
+						task_type,
+						task_source,
+						task_priority,
+						task_posted_at,
+						task_posted_at_ts,
+						task_locked_until
 					) VALUES (
 						@t_id,
 						@t_payload,
@@ -122,14 +134,9 @@ namespace LVD.Stakhanovise.NET.Queue
 						@t_source,
 						@t_priority,
 						@t_posted_at,
-						@t_locked_until,
 						@t_posted_at_ts,
-						@t_reposted_at_ts,
-						@t_processing_time_milliseconds,
-						@t_error_count,
-						@t_last_error_is_recoverable,
-						@t_status
-					)";
+						@t_locked_until
+					) RETURNING task_lock_handle_id";
 
 				using ( NpgsqlCommand insertCmd = new NpgsqlCommand( insertSql, conn, tx ) )
 				{
@@ -149,18 +156,10 @@ namespace LVD.Stakhanovise.NET.Queue
 						queuedTask.LockedUntil );
 					insertCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
 						queuedTask.PostedAtTs );
-					insertCmd.Parameters.AddWithValue( "t_reposted_at_ts", NpgsqlDbType.TimestampTz,
-						queuedTask.RepostedAtTs );
-					insertCmd.Parameters.AddWithValue( "t_processing_time_milliseconds", NpgsqlDbType.Bigint,
-						queuedTask.ProcessingTimeMilliseconds );
-					insertCmd.Parameters.AddWithValue( "t_error_count", NpgsqlDbType.Integer,
-						queuedTask.ErrorCount );
-					insertCmd.Parameters.AddWithValue( "t_last_error_is_recoverable", NpgsqlDbType.Boolean,
-						queuedTask.LastErrorIsRecoverable );
-					insertCmd.Parameters.AddWithValue( "t_status", NpgsqlDbType.Integer,
-						( int )queuedTask.Status );
 
-					await insertCmd.ExecuteNonQueryAsync();
+					queuedTask.LockedUntil = ( long )await insertCmd
+						.ExecuteScalarAsync();
+
 					await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificaionChannelName,
 						tx );
 				}

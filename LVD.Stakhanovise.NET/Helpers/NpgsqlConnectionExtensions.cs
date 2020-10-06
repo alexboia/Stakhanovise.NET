@@ -102,10 +102,14 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 					break;
 				}
-				catch ( Exception exc )
+				catch ( Exception )
 				{
 					conn = null;
 					retryCount++;
+					
+					if ( hasCancellation )
+						cancellationToken.ThrowIfCancellationRequested();
+
 					if ( retryCount > 0 )
 						await Task.Delay( retryDelay );
 				}

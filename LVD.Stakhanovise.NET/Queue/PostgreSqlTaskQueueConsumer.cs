@@ -62,11 +62,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private PostgreSqlTaskQueueNotificationListener mNotificationListener;
 
-		private ConcurrentDictionary<Guid, IQueuedTaskToken> mDequeuedTokens =
-			new ConcurrentDictionary<Guid, IQueuedTaskToken>();
-
-		private int[] mDequeueWithStatuses;
-
 		private ITaskQueueAbstractTimeProvider mTimeProvider;
 
 		public PostgreSqlTaskQueueConsumer ( TaskQueueConsumerOptions options, ITaskQueueAbstractTimeProvider timeProvider )
@@ -79,10 +74,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			mOptions = options;
 			mTimeProvider = timeProvider;
-
-			mDequeueWithStatuses = mOptions.ProcessWithStatuses
-				.Select( s => ( int )s )
-				.ToArray();
 
 			mSignalingConnectionString = options.ConnectionOptions
 				.ConnectionString
@@ -157,20 +148,19 @@ namespace LVD.Stakhanovise.NET.Queue
 		public async Task<IQueuedTaskToken> DequeueAsync ( params string[] selectTaskTypes )
 		{
 			NpgsqlConnection conn = null;
-			QueuedTask dequedTask = null;
+			QueuedTask dequeuedTask = null;
+			QueuedTaskResult dequeuedTaskResult = null;
 			IQueuedTaskToken dequeuedTaskToken = null;
 
 			CheckNotDisposedOrThrow();
 
-			Guid[] excludeLockedTaskIds = mDequeuedTokens.Keys
-				.ToArray();
+			Guid[] excludeLockedTaskIds =
+				new Guid[ 0 ];
 
 			try
 			{
-				mLogger.DebugFormat( "Begin dequeue task types: {0}; task statuses = {1}; excluded ids = {2}.",
-					string.Join<string>( ",", selectTaskTypes ),
-					string.Join<int>( ",", mDequeueWithStatuses ),
-					string.Join<Guid>( ",", excludeLockedTaskIds ) );
+				mLogger.DebugFormat( "Begin dequeue task. Looking for types: {0}.",
+					string.Join<string>( ",", selectTaskTypes ) );
 
 				AbstractTimestamp now = await mTimeProvider
 					.GetCurrentTimeAsync();
@@ -187,14 +177,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				MonotonicTimestamp endConnect = MonotonicTimestamp
 					.Now();
 
+				using ( NpgsqlTransaction dequeueTx = conn.BeginTransaction() )
 				using ( NpgsqlCommand dequeueCmd = new NpgsqlCommand() )
 				{
 					dequeueCmd.Connection = conn;
-					dequeueCmd.CommandText = $"SELECT tq.* FROM { mOptions.Mapping.DequeueFunctionName }(@statuses, @types, @excluded, @now) tq";
-
-					dequeueCmd.Parameters.AddWithValue( "statuses",
-						parameterType: NpgsqlDbType.Array | NpgsqlDbType.Integer,
-						value: mDequeueWithStatuses );
+					dequeueCmd.Transaction = dequeueTx;
+					dequeueCmd.CommandText = $"SELECT tq.* FROM { mOptions.Mapping.DequeueFunctionName }(@types, @excluded, @now) tq";
 
 					dequeueCmd.Parameters.AddWithValue( "types",
 						parameterType: NpgsqlDbType.Array | NpgsqlDbType.Varchar,
@@ -209,39 +197,122 @@ namespace LVD.Stakhanovise.NET.Queue
 						value: now.Ticks );
 
 					await dequeueCmd.PrepareAsync();
-
-					using ( NpgsqlDataReader taskReader = await dequeueCmd.ExecuteReaderAsync() )
+					using ( NpgsqlDataReader taskRdr = await dequeueCmd.ExecuteReaderAsync() )
 					{
-						dequedTask = await taskReader.ReadAsync()
-							? await taskReader.ReadQueuedTaskAsync( mOptions.Mapping )
+						dequeuedTask = await taskRdr.ReadAsync()
+							? await taskRdr.ReadQueuedTaskAsync()
 							: null;
 
 						//If a new task has been found, save it 
 						//	along with the database connection 
 						//	that holds the lock
-						if ( dequedTask != null )
+						if ( dequeuedTask != null )
 						{
-							dequeuedTaskToken = new PostgreSqlQueuedTaskToken( dequedTask,
-								sourceConnection: conn,
-								sourceConnectionOptions: new ConnectionOptions( mQueueConnectionString,
-									mOptions.ConnectionOptions.ConnectionKeepAliveSeconds,
-									retryCount: mOptions.ConnectionOptions.ConnectionRetryCount,
-									retryDelayMilliseconds: mOptions.ConnectionOptions.ConnectionRetryDelayMilliseconds ),
-								dequeuedAt: now,
-								initialConnectionStats: new PostgreSqlQueuedTaskTokenConnectionStats( endConnect - startConnect ),
-								options: mOptions );
+							mLogger.DebugFormat( "Found with id = {0} in database queue. Attempting to acquire...",
+								dequeuedTask.Id );
 
-							dequeuedTaskToken.TokenReleased +=
-								HandleTaskTokenReleased;
+							using ( NpgsqlCommand removeCmd = new NpgsqlCommand() )
+							{
+								removeCmd.Connection = conn;
+								removeCmd.Transaction = dequeueTx;
+								removeCmd.CommandText = $@"DELETE FROM {mOptions.Mapping.QueueTableName} WHERE task_id = @t_id";
 
-							mDequeuedTokens.TryAdd( dequedTask.Id,
-								dequeuedTaskToken );
+								removeCmd.Parameters.AddWithValue( "t_id",
+									NpgsqlDbType.Uuid,
+									dequeuedTask.Id );
 
-							mLogger.DebugFormat( "Found with id = {0} in database queue.",
-								dequedTask.Id );
+								await removeCmd.PrepareAsync();
+								if ( await removeCmd.ExecuteNonQueryAsync() == 1 )
+								{
+									mLogger.Debug( "Task successfully acquired. Attempting to initialize result..." );
+
+									using ( NpgsqlCommand addOrUpdateResultCmd = new NpgsqlCommand() )
+									{
+										addOrUpdateResultCmd.Connection = conn;
+										addOrUpdateResultCmd.Transaction = dequeueTx;
+										addOrUpdateResultCmd.CommandText = $@"INSERT INTO {mOptions.Mapping.ResultsTableName} (
+												task_id,
+												task_type,
+												task_source,
+												task_payload,
+												task_status,
+												task_priority,
+												task_posted_at,
+												task_posted_at_ts,
+												task_first_processing_attempted_at
+											) VALUES (
+												@t_id,
+												@t_type,
+												@t_source,
+												@t_payload,
+												@t_status,
+												@t_priority,
+												@t_posted_at,
+												@t_posted_at_ts,
+												NOW()
+											) ON CONFLICT (task_id) DO UPDATE 
+												task_status = EXCLUDED.task_status,
+												task_posted_at = EXCLUDED.task_posted_at,
+												task_posted_at_ts = EXCLUDED.task_posted_at_ts,
+												task_last_processing_attempted_at = NOW() 
+											RETURNING *";
+
+										addOrUpdateResultCmd.Parameters.AddWithValue( "t_id",
+											NpgsqlDbType.Uuid,
+											dequeuedTask.Id );
+										addOrUpdateResultCmd.Parameters.AddWithValue( "t_type",
+											NpgsqlDbType.Varchar,
+											dequeuedTask.Type );
+										addOrUpdateResultCmd.Parameters.AddWithValue( "t_source",
+											NpgsqlDbType.Varchar,
+											dequeuedTask.Source );
+										addOrUpdateResultCmd.Parameters.AddWithValue( "t_payload",
+											NpgsqlDbType.Text,
+											dequeuedTask.Payload.ToJson( includeTypeInformation: true ) );
+										addOrUpdateResultCmd.Parameters.AddWithValue( "t_status",
+											NpgsqlDbType.Integer,
+											( int )QueuedTaskStatus.Processing );
+										addOrUpdateResultCmd.Parameters.AddWithValue( "t_priority",
+											NpgsqlDbType.Integer,
+											dequeuedTask.Priority );
+										addOrUpdateResultCmd.Parameters.AddWithValue( "t_posted_at",
+											NpgsqlDbType.Bigint,
+											dequeuedTask.PostedAt );
+										addOrUpdateResultCmd.Parameters.AddWithValue( "t_posted_at_ts",
+											NpgsqlDbType.TimestampTz,
+											dequeuedTask.PostedAtTs );
+
+										await addOrUpdateResultCmd.PrepareAsync();
+										using ( NpgsqlDataReader resultRdr = await addOrUpdateResultCmd
+											.ExecuteReaderAsync() )
+										{
+											if ( await resultRdr.ReadAsync() )
+												dequeuedTaskResult = await resultRdr.ReadQueuedTaskResultAsync();
+
+											if ( dequeuedTaskResult != null )
+											{
+												await dequeueTx.CommitAsync();
+
+												dequeuedTaskToken = new PostgreSqlQueuedTaskToken( dequeuedTask,
+													dequeuedTaskResult,
+													now );
+
+												mLogger.Debug( "Successfully dequeued, acquired and initialized/updated task result." );
+											}
+											else
+											{
+												await dequeueTx.RollbackAsync();
+												mLogger.Debug( "Failed to initialize or update task result. Will release lock..." );
+											}
+										}
+									}
+								}
+								else
+									mLogger.Debug( "Could not acquire task. Will release lock..." );
+							}
 						}
 						else
-							mLogger.Debug( "No task dequeued because no task found." );
+							mLogger.Debug( "No task found to dequeue." );
 					}
 				}
 			}
@@ -250,10 +321,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				//If no task has been found, attempt to 
 				//  release all locks held by this connection 
 				//  and also close it
-				if ( dequedTask == null && conn != null )
-				{
+				if ( ( dequeuedTask == null || dequeuedTaskResult == null ) && conn != null )
 					await conn.UnlockAllAsync();
-					conn.Close();
+
+				if ( conn != null )
+				{
+					await conn.CloseAsync();
 					conn.Dispose();
 				}
 			}
@@ -265,14 +338,6 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			Task<IQueuedTaskToken> asyncTask = DequeueAsync( supportedTypes );
 			return asyncTask.Result;
-		}
-
-		private void HandleTaskTokenReleased ( object sender, TokenReleasedEventArgs e )
-		{
-			if ( mDequeuedTokens != null )
-				mDequeuedTokens.TryRemove( e.QueuedTaskId, out IQueuedTaskToken taskToken );
-
-			( ( PostgreSqlQueuedTaskToken )sender ).TokenReleased -= HandleTaskTokenReleased;
 		}
 
 		public async Task StartReceivingNewTaskUpdatesAsync ()
@@ -307,9 +372,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 					mNotificationListener.Dispose();
 					mNotificationListener = null;
-
-					mDequeuedTokens.Clear();
-					mDequeuedTokens = null;
 				}
 
 				mIsDisposed = true;

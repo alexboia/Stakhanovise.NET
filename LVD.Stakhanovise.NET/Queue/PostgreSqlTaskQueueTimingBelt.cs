@@ -87,8 +87,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			mLastTime = new AbstractTimestamp( 0,
 				mOptions.InitialWallclockTimeCost );
 
-			mTimeProvider = new PostgreSqlTaskQueueAbstractTimeProvider( new PostgreSqlTaskQueueAbstractTimeProviderOptions( 
-				options.TimeId, 
+			mTimeProvider = new PostgreSqlTaskQueueAbstractTimeProvider( new PostgreSqlTaskQueueAbstractTimeProviderOptions(
+				options.TimeId,
 				options.ConnectionOptions ) );
 		}
 
@@ -99,7 +99,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					"Cannot reuse a disposed postgre sql task queue timing belt" );
 		}
 
-		private void CheckRunningOrThrow()
+		private void CheckRunningOrThrow ()
 		{
 			if ( !IsRunning )
 				throw new InvalidOperationException( "The timing belt is not running." );
@@ -115,11 +115,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private async Task PrepConnectionPoolAsync ( CancellationToken cancellationToken )
 		{
 			using ( NpgsqlConnection conn = await OpenConnectionAsync( cancellationToken ) )
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT 'ok' as sk_connection_prep", conn ) )
-			{
-				await cmd.ExecuteScalarAsync( cancellationToken );
 				await conn.CloseAsync();
-			}
 		}
 
 		private async Task<AbstractTimestamp> TickAsync ( int ticksCount, CancellationToken cancellationToken )

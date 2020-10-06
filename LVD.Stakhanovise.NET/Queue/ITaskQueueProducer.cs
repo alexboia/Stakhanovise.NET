@@ -43,6 +43,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			string source,
 			int priority );
 
+		Task<IQueuedTask> EnqueueAsync ( QueuedTaskInfo queuedTaskInfo );
+
 		ITaskQueueAbstractTimeProvider TimeProvider { get; }
 	}
 }

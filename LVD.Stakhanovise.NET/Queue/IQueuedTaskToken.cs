@@ -38,26 +38,12 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public interface IQueuedTaskToken : IDisposable
+	public interface IQueuedTaskToken
 	{
-		event EventHandler<TokenReleasedEventArgs> TokenReleased;
+		IQueuedTask DequeuedTask { get; }
 
-		Task<bool> TrySetStartedAsync ( long estimatedProcessingTimeMillisencods );
-
-		Task<bool> TrySetResultAsync ( TaskExecutionResult result );
-
-		Task ReleaseLockAsync ();
-
-		IQueuedTask QueuedTask { get; }
-
-		CancellationToken CancellationToken { get; }
+		IQueuedTaskResult LastQueuedTaskResult { get; }
 
 		AbstractTimestamp DequeuedAt { get; }
-
-		bool IsPending { get; }
-
-		bool IsActive { get; }
-
-		bool IsLocked { get; }
 	}
 }

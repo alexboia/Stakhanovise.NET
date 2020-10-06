@@ -145,7 +145,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			ITaskExecutor taskExecutor = null;
 			ITaskExecutionContext executionContext = null;
-			IQueuedTask queuedTask = queuedTaskToken.QueuedTask;
+			IQueuedTask queuedTask = queuedTaskToken.DequeuedTask;
 
 			//Initialize execution context
 			executionContext = new TaskExecutionContext( queuedTaskToken );
@@ -216,7 +216,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 				//Compute the amount of ticks to delay task execution
 				long delayTicks = mOptions.CalculateDelayTicksTaskAfterFailure( queuedTaskToken
-					.QueuedTask
+					.DequeuedTask
 					.ErrorCount );
 
 				try
@@ -252,14 +252,14 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Debug( "Task execution result could not be posted." );
 
 			//Finally, report execution time
-			mExecutionPerformanceMonitor.ReportExecutionTime( queuedTaskToken.QueuedTask.Type,
+			mExecutionPerformanceMonitor.ReportExecutionTime( queuedTaskToken.DequeuedTask.Type,
 				resultInfo.DurationMilliseconds );
 		}
 
 		private async Task ExecuteQueuedTaskAndSetResultAsync ( IQueuedTaskToken queuedTaskToken )
 		{
 			mLogger.DebugFormat( "New task to execute retrieved from buffer: task id = {0}.",
-				queuedTaskToken.QueuedTask.Id );
+				queuedTaskToken.DequeuedTask.Id );
 
 			//Execute token and measure the execution time
 			Func<Task<TaskExecutionResultInfo>> executor =
@@ -294,7 +294,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 
 			mLogger.DebugFormat( "Done executing task with id = {0}.",
-				queuedTaskToken.QueuedTask.Id );
+				queuedTaskToken.DequeuedTask.Id );
 		}
 
 		private async Task<bool> PerformBufferCheckAsync ()

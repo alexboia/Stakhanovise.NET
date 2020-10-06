@@ -77,23 +77,23 @@ namespace LVD.Stakhanovise.NET.Tests
 
 						Assert.NotNull( newTaskToken );
 						Assert.NotNull( newTaskToken.DequeuedAt );
-						Assert.NotNull( newTaskToken.QueuedTask );
+						Assert.NotNull( newTaskToken.DequeuedTask );
 
 						Assert.AreEqual( now, newTaskToken.DequeuedAt );
 
 						Assert.IsTrue( newTaskToken.IsLocked );
 						Assert.IsTrue( newTaskToken.IsPending );
 
-						Assert.IsFalse( dequedTokens.Any( t => t.QueuedTask.Id
-							== newTaskToken.QueuedTask.Id ) );
+						Assert.IsFalse( dequedTokens.Any( t => t.DequeuedTask.Id
+							== newTaskToken.DequeuedTask.Id ) );
 
-						Assert.IsTrue( newTaskToken.QueuedTask.Status == QueuedTaskStatus.Unprocessed
-							|| newTaskToken.QueuedTask.Status == QueuedTaskStatus.Error
-							|| newTaskToken.QueuedTask.Status == QueuedTaskStatus.Faulted );
+						Assert.IsTrue( newTaskToken.DequeuedTask.Status == QueuedTaskStatus.Unprocessed
+							|| newTaskToken.DequeuedTask.Status == QueuedTaskStatus.Error
+							|| newTaskToken.DequeuedTask.Status == QueuedTaskStatus.Faulted );
 
 						if ( previousTaskToken != null )
-							Assert.GreaterOrEqual( newTaskToken.QueuedTask.PostedAt,
-								previousTaskToken.QueuedTask.PostedAt );
+							Assert.GreaterOrEqual( newTaskToken.DequeuedTask.PostedAt,
+								previousTaskToken.DequeuedTask.PostedAt );
 
 						previousTaskToken = newTaskToken;
 						dequedTokens.Add( newTaskToken );
@@ -103,7 +103,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
 					{
 						foreach ( IQueuedTaskToken t in dequedTokens )
-							Assert.IsTrue( await db.IsAdvisoryLockHeldAsync( t.QueuedTask.LockHandleId ) );
+							Assert.IsTrue( await db.IsAdvisoryLockHeldAsync( t.DequeuedTask.LockHandleId ) );
 					}
 				}
 				finally
@@ -131,9 +131,9 @@ namespace LVD.Stakhanovise.NET.Tests
 				using ( token = await taskQueue.DequeueAsync() )
 				{
 					if ( !firstTokenId.Equals( Guid.Empty ) )
-						Assert.AreEqual( firstTokenId, token.QueuedTask.Id );
+						Assert.AreEqual( firstTokenId, token.DequeuedTask.Id );
 					else
-						firstTokenId = token.QueuedTask.Id;
+						firstTokenId = token.DequeuedTask.Id;
 
 					await token.ReleaseLockAsync();
 				}

@@ -128,10 +128,10 @@ namespace LVD.Stakhanovise.NET.Processor
 		private async Task TryReserveAndAddToBufferAsync ( IQueuedTaskToken queuedTaskToken )
 		{
 			TaskExecutionStats execStats = mExecutionPerformanceMonitor
-				.GetExecutionStats( queuedTaskToken.QueuedTask.Type )
+				.GetExecutionStats( queuedTaskToken.DequeuedTask.Type )
 				?? TaskExecutionStats.Zero();
 
-			long estimatedProcessingTime = mOptions.CalculateEstimatedProcessingTimeMilliseconds( queuedTaskToken.QueuedTask,
+			long estimatedProcessingTime = mOptions.CalculateEstimatedProcessingTimeMilliseconds( queuedTaskToken.DequeuedTask,
 				execStats );
 
 			if ( await queuedTaskToken.TrySetStartedAsync( estimatedProcessingTime ) )
@@ -185,9 +185,9 @@ namespace LVD.Stakhanovise.NET.Processor
 						//	 and only then add it to buffer for processing.
 						//If not, dispose and discard the token
 						mLogger.DebugFormat( "Task found with id = {0}, type = {1}, status = {2}. Acquiring reservation...",
-							queuedTaskToken.QueuedTask.Id,
-							queuedTaskToken.QueuedTask.Type,
-							queuedTaskToken.QueuedTask.Status );
+							queuedTaskToken.DequeuedTask.Id,
+							queuedTaskToken.DequeuedTask.Type,
+							queuedTaskToken.DequeuedTask.Status );
 
 						await TryReserveAndAddToBufferAsync( queuedTaskToken );
 					}

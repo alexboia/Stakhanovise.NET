@@ -81,11 +81,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 			foreach ( IQueuedTaskToken produced in mProducedTasks )
 				Assert.NotNull( processedTaskTokens.FirstOrDefault(
-					t => t.QueuedTask.Id == produced.QueuedTask.Id
-					&& ( t.QueuedTask.Status == QueuedTaskStatus.Processed
-						|| t.QueuedTask.Status == QueuedTaskStatus.Error
-						|| t.QueuedTask.Status == QueuedTaskStatus.Faulted
-						|| t.QueuedTask.Status == QueuedTaskStatus.Fatal ) ) );
+					t => t.DequeuedTask.Id == produced.DequeuedTask.Id
+					&& ( t.DequeuedTask.Status == QueuedTaskStatus.Processed
+						|| t.DequeuedTask.Status == QueuedTaskStatus.Error
+						|| t.DequeuedTask.Status == QueuedTaskStatus.Faulted
+						|| t.DequeuedTask.Status == QueuedTaskStatus.Fatal ) ) );
 		}
 	}
 }
