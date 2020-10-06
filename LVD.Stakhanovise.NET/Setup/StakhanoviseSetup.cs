@@ -92,8 +92,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				defaultMapping: defaults.Mapping );
 
 			mTaskQueueInfoSetup = new StandardTaskQueueInfoSetup( queueInfoConnectionSetup,
-				defaultMapping: defaults.Mapping,
-				defaultProcessWithStatuses: defaults.ProcessWithStatuses );
+				defaultMapping: defaults.Mapping );
 
 			mCommonTaskQueueConnectionSetup = new CollectiveConnectionSetup( queueConsumerConnectionSetup,
 				queueProducerConnectionSetup,
@@ -103,7 +102,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 			mTaskQueueConsumerSetup = new StandardTaskQueueConsumerSetup( queueConsumerConnectionSetup,
 				defaultMapping: defaults.Mapping,
-				defaultProcessWithStatuses: defaults.ProcessWithStatuses,
 				defaultQueueConsumerConnectionPoolSize: defaults.QueueConsumerConnectionPoolSize );
 
 			mTaskEngineSetup = new StandardTaskEngineSetup( mTaskQueueConsumerSetup,
@@ -243,11 +241,14 @@ namespace LVD.Stakhanovise.NET.Setup
 			TaskQueueConsumerOptions consumerOptions = mTaskQueueConsumerSetup
 				.BuildOptions();
 
+			TaskQueueOptions producerOptions = mTaskQueueProducerSetup
+				.BuildOptions();
+
 			StakhanoviseLogManager.Provider = mLoggingProvider
 				?? new NoOpLoggingProvider();
 
-			ITaskQueueProducer taskQueueProducer = new PostgreSqlTaskQueueProducer( mTaskQueueProducerSetup
-				.BuildOptions(), timingBelt );
+			ITaskQueueProducer taskQueueProducer = new PostgreSqlTaskQueueProducer( producerOptions,
+				timingBelt );
 
 			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup
 				.BuiltOptions(), timingBelt );
@@ -264,6 +265,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			}
 
 			return mTaskEngineSetup.BuildTaskEngine( consumerOptions,
+				producerOptions,
 				executorRegistry,
 				timingBelt,
 				executionPerfMonWriter );

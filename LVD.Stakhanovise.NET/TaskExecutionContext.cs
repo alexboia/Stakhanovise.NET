@@ -45,12 +45,6 @@ namespace LVD.Stakhanovise.NET
 
 		private CancellationToken mCancellationToken;
 
-		public TaskExecutionContext ( IQueuedTaskToken taskToken )
-			: this( taskToken.DequeuedTask, taskToken.CancellationToken )
-		{
-			return;
-		}
-
 		public TaskExecutionContext ( IQueuedTask task, CancellationToken cancellationToken )
 		{
 			mTask = task ?? throw new ArgumentNullException( nameof( task ) );

@@ -49,6 +49,8 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private Func<IQueuedTask, Exception, bool> mIsTaskErrorRecoverable;
 
+		private int mFaultErrorThresholdCount;
+
 		public StadardTaskProcessingSetup ( StakhanoviseSetupDefaults defaults )
 		{
 			if ( defaults == null )
@@ -65,6 +67,8 @@ namespace LVD.Stakhanovise.NET.Setup
 				.CalculateEstimatedProcessingTimeMilliseconds;
 			mIsTaskErrorRecoverable = defaults
 				.IsTaskErrorRecoverable;
+			//TODO: add to stakhanovise defaults
+			mFaultErrorThresholdCount = 5;
 		}
 
 		public ITaskProcessingSetup WithAbstractTimeTickTimeoutMilliseconds ( int abstractTimeTickTimeoutMilliseconds )
@@ -114,13 +118,24 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
+		public ITaskProcessingSetup WithFaultErrorThresholCount ( int faultErrorThresholdCount )
+		{
+			if ( faultErrorThresholdCount < 1 )
+				throw new ArgumentOutOfRangeException( nameof( faultErrorThresholdCount ),
+					"Fault error threshold count must be greater than or equal to 1" );
+
+			mFaultErrorThresholdCount = faultErrorThresholdCount;
+			return this;
+		}
+
 		public TaskProcessingOptions BuildOptions ()
 		{
 			return new TaskProcessingOptions( mAbstractTimeTickTimeoutMilliseconds,
 				defaultEstimatedProcessingTimeMilliseconds: mDefaultEstimatedProcessingTimeMilliseconds,
 				calculateDelayTicksTaskAfterFailure: mCalculateDelayTicksTaskAfterFailure,
 				calculateEstimatedProcessingTimeMilliseconds: mCalculateEstimatedProcessingTimeMilliseconds,
-				isTaskErrorRecoverable: mIsTaskErrorRecoverable );
+				isTaskErrorRecoverable: mIsTaskErrorRecoverable,
+				faultErrorThresholdCount: mFaultErrorThresholdCount );
 		}
 	}
 }

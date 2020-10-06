@@ -10,6 +10,8 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		Task PostResultAsync ( IQueuedTaskResult result, int timeoutMilliseconds );
 
+		Task PostResultAsync ( IQueuedTaskResult result );
+
 		Task StartAsync ();
 
 		Task StopAsync ();

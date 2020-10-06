@@ -40,9 +40,7 @@ namespace LVD.Stakhanovise.NET.Options
 	{
 		public TaskQueueConsumerOptions ( ConnectionOptions connectionOptions,
 			QueuedTaskMapping mapping,
-			QueuedTaskStatus[] processWithStatuses,
-			int queueConsumerConnectionPoolSize,
-			int faultErrorThresholdCount )
+			int queueConsumerConnectionPoolSize  )
 			: base( connectionOptions,
 				  mapping )
 		{
@@ -50,19 +48,9 @@ namespace LVD.Stakhanovise.NET.Options
 				throw new ArgumentOutOfRangeException( nameof( queueConsumerConnectionPoolSize ),
 					"Queue consumer connection pool size must be greater than or equal to 1" );
 
-			if ( faultErrorThresholdCount < 1 )
-				throw new ArgumentOutOfRangeException( nameof( faultErrorThresholdCount ),
-					"Fault error threshold count must be greater than or equal to 1" );
-
 			QueueConsumerConnectionPoolSize = queueConsumerConnectionPoolSize;
-			FaultErrorThresholdCount = faultErrorThresholdCount;
-			ProcessWithStatuses = processWithStatuses;
 		}
 
-		public IEnumerable<QueuedTaskStatus> ProcessWithStatuses { get; private set; }
-
 		public int QueueConsumerConnectionPoolSize { get; private set; }
-
-		public int FaultErrorThresholdCount { get; private set; }
 	}
 }

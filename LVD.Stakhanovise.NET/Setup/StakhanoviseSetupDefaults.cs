@@ -41,8 +41,6 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		public Assembly[] ExecutorAssemblies { get; set; }
 
-		public QueuedTaskStatus[] ProcessWithStatuses { get; set; }
-
 		public int WorkerCount { get; set; }
 
 		public int QueueConsumerConnectionPoolSize { get; set; }

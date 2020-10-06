@@ -38,12 +38,8 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public interface ITaskQueueConsumerSetup
 	{
-		ITaskQueueConsumerSetup WithProcessWithStatuses ( params QueuedTaskStatus[] statuses );
-
 		ITaskQueueConsumerSetup SetupConnection ( Action<IConnectionSetup> setupAction );
 
 		ITaskQueueConsumerSetup WithQueueConsumerConnectionPoolSize ( int queueConsumerConnectionPoolSize );
-
-		ITaskQueueConsumerSetup WithFaultErrorThresholCount ( int faultErrorThresholdCount );
 	}
 }

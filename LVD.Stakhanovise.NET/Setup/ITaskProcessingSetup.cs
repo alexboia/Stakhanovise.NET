@@ -47,5 +47,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		ITaskProcessingSetup WithEstimatedProcessingTimeMillisecondsCalculator ( Func<IQueuedTask, TaskExecutionStats, long> calculateEstimatedProcessingTimeMilliseconds );
 
 		ITaskProcessingSetup WithTaskErrorRecoverabilityCallback ( Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable );
+
+		ITaskProcessingSetup WithFaultErrorThresholCount ( int faultErrorThresholdCount );
 	}
 }

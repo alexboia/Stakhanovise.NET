@@ -44,8 +44,6 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		private TaskQueueInfoOptions mOptions;
 
-		private int[] mDequeueWithStatuses;
-
 		private ITaskQueueAbstractTimeProvider mTimeProvider;
 
 		private bool mIsDisposed = false;
@@ -60,9 +58,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			mOptions = options;
 			mTimeProvider = timeProvider;
-			mDequeueWithStatuses = mOptions.ProcessWithStatuses
-				.Select( s => ( int )s )
-				.ToArray();
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -167,9 +162,6 @@ namespace LVD.Stakhanovise.NET.Queue
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlCommand peekCmd = new NpgsqlCommand( peekSql, conn ) )
 			{
-				peekCmd.Parameters.AddWithValue( "t_select_statuses",
-					NpgsqlDbType.Array | NpgsqlDbType.Integer,
-					mDequeueWithStatuses );
 				peekCmd.Parameters.AddWithValue( "t_now",
 					NpgsqlDbType.Bigint,
 					now.Ticks );

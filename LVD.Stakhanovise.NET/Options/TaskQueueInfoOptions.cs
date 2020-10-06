@@ -39,16 +39,10 @@ namespace LVD.Stakhanovise.NET.Options
 	public class TaskQueueInfoOptions : TaskQueueOptions
 	{
 		public TaskQueueInfoOptions ( ConnectionOptions connectionOptions,
-			QueuedTaskMapping mapping,
-			QueuedTaskStatus[] processWithStatuses )
+			QueuedTaskMapping mapping )
 			: base( connectionOptions, mapping )
 		{
-			if ( processWithStatuses == null || processWithStatuses.Length == 0 )
-				throw new ArgumentNullException( nameof( processWithStatuses ) );
-
-			ProcessWithStatuses = processWithStatuses;
+			return;
 		}
-
-		public IEnumerable<QueuedTaskStatus> ProcessWithStatuses { get; private set; }
 	}
 }

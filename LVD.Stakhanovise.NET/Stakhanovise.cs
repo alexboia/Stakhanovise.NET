@@ -61,12 +61,6 @@ namespace LVD.Stakhanovise.NET
 				ExecutorAssemblies = GetDefaultAssembliesToScan(),
 				WorkerCount = defaultWorkerCount,
 				QueueConsumerConnectionPoolSize = defaultWorkerCount * 2,
-				ProcessWithStatuses = new QueuedTaskStatus[] {
-					QueuedTaskStatus.Unprocessed,
-					QueuedTaskStatus.Error,
-					QueuedTaskStatus.Faulted,
-					QueuedTaskStatus.Processing
-				},
 
 				AbstractTimeTickTimeoutMilliseconds = 1000,
 				DefaultEstimatedProcessingTimeMilliseconds = defaultEstimatedProcessingTimeMilliseconds,

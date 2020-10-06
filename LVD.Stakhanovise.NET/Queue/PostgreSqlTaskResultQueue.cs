@@ -127,6 +127,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				=> processRequest.Dispose() );
 		}
 
+		public Task PostResultAsync ( IQueuedTaskResult result )
+		{
+			return PostResultAsync( result, 
+				timeoutMilliseconds: 0 );
+		}
+
 		private async Task ProcessResultBatchAsync ( Queue<PostgreSqlTaskResultQueueProcessRequest> currentBatch,
 			CancellationToken cancellationToken )
 		{

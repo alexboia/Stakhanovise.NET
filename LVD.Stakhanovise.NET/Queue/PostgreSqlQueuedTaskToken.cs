@@ -48,6 +48,11 @@ namespace LVD.Stakhanovise.NET.Queue
 				?? throw new ArgumentNullException( nameof( dequeuedAt ) );
 		}
 
+		public QueuedTaskInfo UdpateFromExecutionResult ( TaskExecutionResult result )
+		{
+			return LastQueuedTaskResult.UdpateFromExecutionResult( result );
+		}
+
 		public IQueuedTask DequeuedTask { get; private set; }
 
 		public IQueuedTaskResult LastQueuedTaskResult { get; private set; }

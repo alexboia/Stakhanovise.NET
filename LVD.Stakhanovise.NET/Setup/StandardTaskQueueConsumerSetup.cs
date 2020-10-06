@@ -43,18 +43,13 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private bool mIsQueueConsumerConnectionPoolSizeUserConfigured = false;
 
-		private int mFaultErrorThresholdCount = 5;
-
 		private QueuedTaskMapping mMapping;
-
-		private QueuedTaskStatus[] mProcessWithStatuses;
 
 		private StandardConnectionSetup mConnectionSetup =
 			new StandardConnectionSetup();
 
 		public StandardTaskQueueConsumerSetup ( StandardConnectionSetup connectionSetup,
 			QueuedTaskMapping defaultMapping,
-			QueuedTaskStatus[] defaultProcessWithStatuses,
 			int defaultQueueConsumerConnectionPoolSize )
 		{
 			if ( connectionSetup == null )
@@ -63,12 +58,8 @@ namespace LVD.Stakhanovise.NET.Setup
 			if ( defaultMapping == null )
 				throw new ArgumentNullException( nameof( defaultMapping ) );
 
-			if ( defaultProcessWithStatuses == null || defaultProcessWithStatuses.Length == 0 )
-				throw new ArgumentNullException( nameof( defaultProcessWithStatuses ) );
-
 			mConnectionSetup = connectionSetup;
 			mQueueConsumerConnectionPoolSize = defaultQueueConsumerConnectionPoolSize;
-			mProcessWithStatuses = defaultProcessWithStatuses;
 			mMapping = defaultMapping;
 		}
 
@@ -102,32 +93,11 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public ITaskQueueConsumerSetup WithProcessWithStatuses ( params QueuedTaskStatus[] statuses )
-		{
-			if ( statuses == null || statuses.Length == 0 )
-				throw new ArgumentNullException( nameof( statuses ) );
-
-			mProcessWithStatuses = statuses;
-			return this;
-		}
-
-		public ITaskQueueConsumerSetup WithFaultErrorThresholCount ( int faultErrorThresholdCount )
-		{
-			if ( faultErrorThresholdCount < 1 )
-				throw new ArgumentOutOfRangeException( nameof( faultErrorThresholdCount ),
-					"Fault error threshold count must be greater than or equal to 1" );
-
-			mFaultErrorThresholdCount = faultErrorThresholdCount;
-			return this;
-		}
-
 		public TaskQueueConsumerOptions BuildOptions ()
 		{
 			return new TaskQueueConsumerOptions( mConnectionSetup.BuildOptions(),
 				mMapping,
-				mProcessWithStatuses,
-				mQueueConsumerConnectionPoolSize,
-				mFaultErrorThresholdCount );
+				mQueueConsumerConnectionPoolSize );
 		}
 
 		public bool IsQueueConsumerConnectionPoolSizeUserConfigured

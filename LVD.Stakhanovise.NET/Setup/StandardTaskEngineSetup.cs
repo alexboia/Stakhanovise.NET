@@ -106,12 +106,16 @@ namespace LVD.Stakhanovise.NET.Setup
 		}
 
 		public ITaskEngine BuildTaskEngine ( TaskQueueConsumerOptions consumerOptions,
+			TaskQueueOptions producerAndResultOptions,
 			ITaskExecutorRegistry executorRegistry,
 			ITaskQueueTimingBelt timingBelt,
 			IExecutionPerformanceMonitorWriter executionPerfMonWriter )
 		{
 			if ( consumerOptions == null )
 				throw new ArgumentNullException( nameof( consumerOptions ) );
+
+			if ( producerAndResultOptions == null )
+				throw new ArgumentNullException( nameof( producerAndResultOptions ) );
 
 			if ( executorRegistry == null )
 				throw new ArgumentNullException( nameof( executorRegistry ) );
@@ -122,7 +126,9 @@ namespace LVD.Stakhanovise.NET.Setup
 			if ( timingBelt == null )
 				throw new ArgumentNullException( nameof( timingBelt ) );
 
-			return new StandardTaskEngine( BuildOptions(), consumerOptions,
+			return new StandardTaskEngine( BuildOptions(),
+				producerAndResultOptions,
+				consumerOptions,
 				executorRegistry,
 				timingBelt,
 				executionPerfMonWriter );

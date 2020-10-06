@@ -6,6 +6,9 @@ namespace LVD.Stakhanovise.NET.Model
 {
 	public interface IQueuedTaskResult
 	{
+		QueuedTaskInfo UdpateFromExecutionResult ( TaskExecutionResult result );
+
+
 		Guid Id { get; }
 
 		string Type { get; }

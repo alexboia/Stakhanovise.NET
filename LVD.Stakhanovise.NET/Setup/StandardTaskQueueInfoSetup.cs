@@ -43,11 +43,8 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private QueuedTaskMapping mMapping;
 
-		private QueuedTaskStatus[] mProcessWithStatuses;
-
 		public StandardTaskQueueInfoSetup ( StandardConnectionSetup connectionSetup,
-			QueuedTaskMapping defaultMapping,
-			QueuedTaskStatus[] defaultProcessWithStatuses )
+			QueuedTaskMapping defaultMapping )
 		{
 			if ( connectionSetup == null )
 				throw new ArgumentNullException( nameof( connectionSetup ) );
@@ -55,11 +52,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			if ( defaultMapping == null )
 				throw new ArgumentNullException( nameof( defaultMapping ) );
 
-			if ( defaultProcessWithStatuses == null || defaultProcessWithStatuses.Length == 0 )
-				throw new ArgumentNullException( nameof( defaultProcessWithStatuses ) );
-
 			mConnectionSetup = connectionSetup;
-			mProcessWithStatuses = defaultProcessWithStatuses;
 			mMapping = defaultMapping;
 		}
 
@@ -69,15 +62,6 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( setupAction ) );
 
 			setupAction.Invoke( mConnectionSetup );
-			return this;
-		}
-
-		public ITaskQueueInfoSetup WithProcessWithStatuses ( params QueuedTaskStatus[] statuses )
-		{
-			if ( statuses == null || statuses.Length == 0 )
-				throw new ArgumentNullException( nameof( statuses ) );
-
-			mProcessWithStatuses = statuses;
 			return this;
 		}
 
@@ -93,8 +77,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		public TaskQueueInfoOptions BuiltOptions ()
 		{
 			return new TaskQueueInfoOptions( mConnectionSetup.BuildOptions(),
-				mMapping,
-				mProcessWithStatuses );
+				mMapping );
 		}
 	}
 }

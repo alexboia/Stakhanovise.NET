@@ -39,7 +39,5 @@ namespace LVD.Stakhanovise.NET.Setup
 	public interface ITaskQueueInfoSetup
 	{
 		ITaskQueueInfoSetup SetupConnection ( Action<IConnectionSetup> setupAction );
-
-		ITaskQueueInfoSetup WithProcessWithStatuses ( params QueuedTaskStatus[] statuses );
 	}
 }

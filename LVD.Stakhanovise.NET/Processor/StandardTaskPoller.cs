@@ -52,8 +52,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskQueueConsumer mTaskQueueConsumer;
 
-		private IExecutionPerformanceMonitor mExecutionPerformanceMonitor;
-
 		private ITaskQueueTimingBelt mTimingBelt;
 
 		private bool mIsDisposed = false;
@@ -78,7 +76,6 @@ namespace LVD.Stakhanovise.NET.Processor
 		public StandardTaskPoller ( TaskProcessingOptions options,
 			ITaskQueueConsumer taskQueueConsumer,
 			ITaskBuffer taskBuffer,
-			IExecutionPerformanceMonitor executionPerformanceMonitor,
 			ITaskQueueTimingBelt timingBelt )
 		{
 			mOptions = options
@@ -87,8 +84,6 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
-			mExecutionPerformanceMonitor = executionPerformanceMonitor
-				?? throw new ArgumentNullException( nameof( executionPerformanceMonitor ) );
 			mTimingBelt = timingBelt
 				?? throw new ArgumentNullException( nameof( timingBelt ) );
 		}
@@ -123,27 +118,6 @@ namespace LVD.Stakhanovise.NET.Processor
 				now.WallclockTimeCost );
 
 			return await mTaskQueueConsumer.DequeueAsync( mRequiredPayloadTypes );
-		}
-
-		private async Task TryReserveAndAddToBufferAsync ( IQueuedTaskToken queuedTaskToken )
-		{
-			TaskExecutionStats execStats = mExecutionPerformanceMonitor
-				.GetExecutionStats( queuedTaskToken.DequeuedTask.Type )
-				?? TaskExecutionStats.Zero();
-
-			long estimatedProcessingTime = mOptions.CalculateEstimatedProcessingTimeMilliseconds( queuedTaskToken.DequeuedTask,
-				execStats );
-
-			if ( await queuedTaskToken.TrySetStartedAsync( estimatedProcessingTime ) )
-			{
-				mLogger.Debug( "Successfully acquired reservation. Adding to buffer..." );
-				mTaskBuffer.TryAddNewTask( queuedTaskToken );
-			}
-			else
-			{
-				mLogger.Debug( "Failed to acquire reservation. Token will be discarded." );
-				queuedTaskToken.Dispose();
-			}
 		}
 
 		private async Task PollForQueuedTasksAsync ( CancellationToken stopToken )
@@ -184,12 +158,11 @@ namespace LVD.Stakhanovise.NET.Processor
 						//If we have found a token, attempt to set it as started
 						//	 and only then add it to buffer for processing.
 						//If not, dispose and discard the token
-						mLogger.DebugFormat( "Task found with id = {0}, type = {1}, status = {2}. Acquiring reservation...",
+						mLogger.DebugFormat( "Task found with id = {0}, type = {1}. Acquiring reservation...",
 							queuedTaskToken.DequeuedTask.Id,
-							queuedTaskToken.DequeuedTask.Type,
-							queuedTaskToken.DequeuedTask.Status );
+							queuedTaskToken.DequeuedTask.Type );
 
-						await TryReserveAndAddToBufferAsync( queuedTaskToken );
+						mTaskBuffer.TryAddNewTask( queuedTaskToken );
 					}
 					else
 					{
