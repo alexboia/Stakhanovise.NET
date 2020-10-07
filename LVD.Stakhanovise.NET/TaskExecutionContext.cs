@@ -85,7 +85,8 @@ namespace LVD.Stakhanovise.NET
 		{
 			if ( mStart == null )
 				throw new InvalidOperationException( "Execution timing has not been started" );
-			mEnd = MonotonicTimestamp.Now();
+			if ( mEnd == null )
+				mEnd = MonotonicTimestamp.Now();
 		}
 
 		public IQueuedTaskToken TaskToken
