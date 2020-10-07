@@ -41,7 +41,8 @@ namespace LVD.Stakhanovise.NET.Model
 
 		private void Processed ( TaskExecutionResult result )
 		{
-			Status = QueuedTaskStatus.Processed;
+			LastError = null;
+			LastErrorIsRecoverable = false;
 			ProcessingFinalizedAtTs = DateTimeOffset.UtcNow;
 			ProcessingTimeMilliseconds = result.ProcessingTimeMilliseconds;
 
@@ -49,6 +50,7 @@ namespace LVD.Stakhanovise.NET.Model
 				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 
 			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
+			Status = QueuedTaskStatus.Processed;
 		}
 
 		private QueuedTaskInfo HadError ( TaskExecutionResult result )

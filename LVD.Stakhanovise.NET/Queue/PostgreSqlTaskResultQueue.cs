@@ -39,8 +39,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -68,10 +66,14 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private long mLastRequestId;
 
+		private string mUpdateSql;
+
 		public PostgreSqlTaskResultQueue ( TaskQueueOptions options )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
+
+			mUpdateSql = GetUpdateSql( options.Mapping );
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -87,6 +89,18 @@ namespace LVD.Stakhanovise.NET.Queue
 				throw new InvalidOperationException( "The task result queue is not running." );
 		}
 
+		private string GetUpdateSql ( QueuedTaskMapping mapping )
+		{
+			return $@"UPDATE {mapping.ResultsTableName} SET 
+					task_status = @t_status,
+					task_last_error = @t_last_error,
+					task_error_count = @t_error_count,
+					task_last_error_recoverable = @t_last_error_recoverable,
+					task_processing_time_milliseconds = @t_processing_time_milliseconds,
+					task_processing_finalized_at_ts = @t_processing_finalized_at_ts
+				WHERE task_id = @t_id";
+		}
+
 		private async Task<NpgsqlConnection> OpenConnectionAsync ( CancellationToken cancellationToken )
 		{
 			return await mOptions
@@ -100,7 +114,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				await conn.CloseAsync();
 		}
 
-		public Task PostResultAsync ( IQueuedTaskToken token, int timeoutMilliseconds )
+		public Task<int> PostResultAsync ( IQueuedTaskToken token, int timeoutMilliseconds )
 		{
 			CheckNotDisposedOrThrow();
 			CheckRunningOrThrow();
@@ -127,9 +141,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				=> processRequest.Dispose() );
 		}
 
-		public Task PostResultAsync ( IQueuedTaskToken token )
+		public Task<int> PostResultAsync ( IQueuedTaskToken token )
 		{
-			return PostResultAsync( token, 
+			return PostResultAsync( token,
 				timeoutMilliseconds: 0 );
 		}
 
@@ -140,66 +154,55 @@ namespace LVD.Stakhanovise.NET.Queue
 			//	since failing to update a result MUST NOT 
 			//	cause the other successful updates to be rolled back.
 			using ( NpgsqlConnection conn = await OpenConnectionAsync( cancellationToken ) )
+			using ( NpgsqlCommand updateCmd = new NpgsqlCommand( mUpdateSql, conn ) )
 			{
-				string updateSql = $@"UPDATE {mOptions.Mapping.ResultsTableName} SET 
-						task_status = @t_status,
-						task_last_error = @t_last_error,
-						task_error_count = @t_error_count,
-						task_last_error_recoverable = @t_last_error_recoverable,
-						task_processing_time_milliseconds = @t_processing_time_milliseconds,
-						task_processing_finalized_at_ts = @t_processing_finalized_at_ts
-					WHERE task_id = @t_id";
+				NpgsqlParameter pStatus = updateCmd.Parameters
+					.Add( "t_status", NpgsqlDbType.Integer );
+				NpgsqlParameter pLastError = updateCmd.Parameters
+					.Add( "t_last_error", NpgsqlDbType.Text );
+				NpgsqlParameter pErrorCount = updateCmd.Parameters
+					.Add( "t_error_count", NpgsqlDbType.Integer );
+				NpgsqlParameter pLastErrorIsRecoverable = updateCmd.Parameters
+					.Add( "t_last_error_recoverable", NpgsqlDbType.Boolean );
+				NpgsqlParameter pProcessingTime = updateCmd.Parameters
+					.Add( "t_processing_time_milliseconds", NpgsqlDbType.Bigint );
+				NpgsqlParameter pFinalizedAt = updateCmd.Parameters
+					.Add( "t_processing_finalied_at_ts", NpgsqlDbType.TimestampTz );
+				NpgsqlParameter pId = updateCmd.Parameters
+					.Add( "t_id", NpgsqlDbType.Uuid );
 
-				using ( NpgsqlCommand updateCmd = new NpgsqlCommand( updateSql, conn ) )
+				await updateCmd.PrepareAsync( cancellationToken );
+
+				while ( currentBatch.Count > 0 )
 				{
-					NpgsqlParameter pStatus = updateCmd.Parameters
-						.Add( "t_status", NpgsqlDbType.Integer );
-					NpgsqlParameter pLastError = updateCmd.Parameters
-						.Add( "t_last_error", NpgsqlDbType.Text );
-					NpgsqlParameter pErrorCount = updateCmd.Parameters
-						.Add( "t_error_count", NpgsqlDbType.Integer );
-					NpgsqlParameter pLastErrorIsRecoverable = updateCmd.Parameters
-						.Add( "t_last_error_recoverable", NpgsqlDbType.Boolean );
-					NpgsqlParameter pProcessingTime = updateCmd.Parameters
-						.Add( "t_processing_time_milliseconds", NpgsqlDbType.Bigint );
-					NpgsqlParameter pFinalizedAt = updateCmd.Parameters
-						.Add( "t_processing_finalied_at_ts", NpgsqlDbType.TimestampTz );
-					NpgsqlParameter pId = updateCmd.Parameters
-						.Add( "t_id", NpgsqlDbType.Uuid );
+					PostgreSqlTaskResultQueueProcessRequest processRq =
+						currentBatch.Dequeue();
 
-					await updateCmd.PrepareAsync( cancellationToken );
-
-					while ( currentBatch.Count > 0 )
+					try
 					{
-						PostgreSqlTaskResultQueueProcessRequest processRq =
-							currentBatch.Dequeue();
+						pStatus.Value = ( int )processRq.ResultToUpdate.Status;
+						pLastError.Value = processRq.ResultToUpdate.LastError.ToJson();
+						pErrorCount.Value = processRq.ResultToUpdate.ErrorCount;
+						pLastErrorIsRecoverable.Value = processRq.ResultToUpdate.LastErrorIsRecoverable;
+						pProcessingTime.Value = processRq.ResultToUpdate.ProcessingTimeMilliseconds;
+						pFinalizedAt.Value = processRq.ResultToUpdate.ProcessingFinalizedAtTs;
+						pId.Value = processRq.ResultToUpdate.Id;
 
-						try
-						{
-							pStatus.Value = ( int )processRq.ResultToUpdate.Status;
-							pLastError.Value = processRq.ResultToUpdate.LastError.ToJson();
-							pErrorCount.Value = processRq.ResultToUpdate.ErrorCount;
-							pLastErrorIsRecoverable.Value = processRq.ResultToUpdate.LastErrorIsRecoverable;
-							pProcessingTime.Value = processRq.ResultToUpdate.ProcessingTimeMilliseconds;
-							pFinalizedAt.Value = processRq.ResultToUpdate.ProcessingFinalizedAtTs;
-							pId.Value = processRq.ResultToUpdate.Id;
+						int affectedRows = await updateCmd.ExecuteNonQueryAsync( cancellationToken );
+						processRq.SetCompleted( affectedRows );
+					}
+					catch ( OperationCanceledException )
+					{
+						processRq.SetCancelled();
+						throw;
+					}
+					catch ( Exception exc )
+					{
+						processRq.SetFailed( exc );
+						if ( processRq.CanBeRetried )
+							mResultProcessingQueue.Add( processRq );
 
-							int affectedRows = await updateCmd.ExecuteNonQueryAsync( cancellationToken );
-							processRq.SetCompleted( affectedRows );
-						}
-						catch ( OperationCanceledException )
-						{
-							processRq.SetCancelled();
-							throw;
-						}
-						catch ( Exception exc )
-						{
-							processRq.SetFailed( exc );
-							if ( processRq.CanBeRetried )
-								mResultProcessingQueue.Add( processRq );
-
-							mLogger.Error( "Error processing result", exc );
-						}
+						mLogger.Error( "Error processing result", exc );
 					}
 				}
 

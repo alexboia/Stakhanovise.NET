@@ -61,5 +61,14 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					retryDelayMilliseconds: 100 ),
 				DefaultMapping );
 		}
+
+		public static TaskQueueOptions GetDefaultTaskResultQueueOptions ( string connectionString )
+		{
+			return new TaskQueueOptions( new ConnectionOptions( connectionString,
+					keepAliveSeconds: 0,
+					retryCount: 3,
+					retryDelayMilliseconds: 100 ),
+				DefaultMapping );
+		}
 	}
 }

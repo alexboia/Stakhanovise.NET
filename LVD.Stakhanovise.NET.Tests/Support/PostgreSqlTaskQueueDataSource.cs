@@ -10,6 +10,7 @@ using SqlKata.Execution;
 using SqlKata.Compilers;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Helpers;
+using LVD.Stakhanovise.NET.Queue;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
@@ -34,6 +35,9 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private List<QueuedTaskResult> mSeededTaskResults =
 			new List<QueuedTaskResult>();
+
+		private List<IQueuedTaskToken> mSeededTaskTokens =
+			new List<IQueuedTaskToken>();
 
 		private QueuedTaskMapping mMapping;
 
@@ -85,7 +89,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					.Query( mMapping.QueueTableName )
 					.DeleteAsync();
 				await new QueryFactory( conn, new PostgresCompiler() )
-					.Query( mMapping.ResultsTableName)
+					.Query( mMapping.ResultsTableName )
 					.DeleteAsync();
 			}
 		}
@@ -97,11 +101,27 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				Query selectTaskQuery = new QueryFactory( db, new PostgresCompiler() )
 					.Query( mMapping.QueueTableName )
 					.Select( "*" )
-					.Where( mMapping.IdColumnName, "=", taskId );
+					.Where( "task_id", "=", taskId );
 
 				using ( NpgsqlDataReader reader = await db.ExecuteReaderAsync( selectTaskQuery ) )
 					return await reader.ReadAsync()
 						? await reader.ReadQueuedTaskAsync()
+						: null;
+			}
+		}
+
+		public async Task<QueuedTaskResult> GetQueuedTaskResultByIdAsync ( Guid taskId )
+		{
+			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
+			{
+				Query selectTaskQuery = new QueryFactory( db, new PostgresCompiler() )
+					.Query( mMapping.ResultsTableName )
+					.Select( "*" )
+					.Where( "task_id", "=", taskId );
+
+				using ( NpgsqlDataReader reader = await db.ExecuteReaderAsync( selectTaskQuery ) )
+					return await reader.ReadAsync()
+						? await reader.ReadQueuedTaskResultAsync()
 						: null;
 			}
 		}
@@ -392,6 +412,10 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 				mSeededTasks.Add( queuedTaskPair.Item1 );
 				mSeededTaskResults.Add( queuedTaskPair.Item2 );
+
+				mSeededTaskTokens.Add( new MockQueuedTaskToken(
+					queuedTaskPair.Item1,
+					queuedTaskPair.Item2 ) );
 			}
 		}
 
@@ -400,6 +424,9 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public IEnumerable<QueuedTaskResult> SeededTaskResults
 			=> mSeededTaskResults.AsReadOnly();
+
+		public IEnumerable<IQueuedTaskToken> SeededTaskTokens
+			=> mSeededTaskTokens.AsReadOnly();
 
 		public int NumUnProcessedTasks
 			=> mNumUnProcessedTasks;
@@ -424,5 +451,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public long LastPostedAtTimeTick
 			=> mLastPostedAtTimeTick;
+
+		public int QueueFaultErrorThresholdCount
+			=> mQueueFaultErrorThrehsoldCount;
 	}
 }
