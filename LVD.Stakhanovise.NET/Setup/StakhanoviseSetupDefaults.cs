@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -49,11 +50,7 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public int AbstractTimeTickTimeoutMilliseconds { get; set; }
 
-		public long DefaultEstimatedProcessingTimeMilliseconds { get; set; }
-
-		public Func<int, long> CalculateDelayTicksTaskAfterFailure { get; set; }
-
-		public Func<IQueuedTask, TaskExecutionStats, long> CalculateEstimatedProcessingTimeMilliseconds { get; set; }
+		public Func<IQueuedTaskToken, long> CalculateDelayTicksTaskAfterFailure { get; set; }
 
 		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; set; }
 
@@ -68,5 +65,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		public int BuiltInTimingBeltTimeTickBatchSize { get; set; }
 
 		public int BuiltInTimingBeltTimeTickMaxFailCount { get; set; }
+
+		public int FaultErrorThresholdCount { get; set; }
 	}
 }

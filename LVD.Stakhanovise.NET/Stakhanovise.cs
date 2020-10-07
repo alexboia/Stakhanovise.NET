@@ -51,7 +51,6 @@ namespace LVD.Stakhanovise.NET
 
 		public Stakhanovise ()
 		{
-			long defaultEstimatedProcessingTimeMilliseconds = 1000;
 			int defaultWorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
 
 			//Define default values that will be fed to the setup API
@@ -63,15 +62,9 @@ namespace LVD.Stakhanovise.NET
 				QueueConsumerConnectionPoolSize = defaultWorkerCount * 2,
 
 				AbstractTimeTickTimeoutMilliseconds = 1000,
-				DefaultEstimatedProcessingTimeMilliseconds = defaultEstimatedProcessingTimeMilliseconds,
 
-				CalculateDelayTicksTaskAfterFailure = errorCount
-					=> ( long )Math.Pow( 10, errorCount ),
-
-				CalculateEstimatedProcessingTimeMilliseconds = ( task, stats )
-					=> stats.LongestExecutionTime > 0
-						? stats.LongestExecutionTime
-						: defaultEstimatedProcessingTimeMilliseconds,
+				CalculateDelayTicksTaskAfterFailure = token
+					=> ( long )Math.Pow( 10, token.LastQueuedTaskResult.ErrorCount + 1 ),
 
 				IsTaskErrorRecoverable = ( task, exc )
 					=> !( exc is NullReferenceException )
@@ -83,7 +76,9 @@ namespace LVD.Stakhanovise.NET
 
 				BuiltInTimingBeltInitialWallclockTimeCost = 1000,
 				BuiltInTimingBeltTimeTickBatchSize = 5,
-				BuiltInTimingBeltTimeTickMaxFailCount = 3
+				BuiltInTimingBeltTimeTickMaxFailCount = 3,
+
+				FaultErrorThresholdCount = 5
 			};
 
 			//Init setup API

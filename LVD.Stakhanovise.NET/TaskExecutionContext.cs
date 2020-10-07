@@ -39,16 +39,20 @@ namespace LVD.Stakhanovise.NET
 {
 	public class TaskExecutionContext : ITaskExecutionContext
 	{
-		private IQueuedTask mTask;
+		private IQueuedTaskToken mTaskToken;
 
 		private TaskExecutionResultInfo mResult;
 
 		private CancellationToken mCancellationToken;
 
-		public TaskExecutionContext ( IQueuedTask task, CancellationToken cancellationToken )
+		private MonotonicTimestamp mStart;
+
+		private MonotonicTimestamp mEnd;
+
+		public TaskExecutionContext ( IQueuedTaskToken taskToken, CancellationToken stopToken )
 		{
-			mTask = task ?? throw new ArgumentNullException( nameof( task ) );
-			mCancellationToken = cancellationToken;
+			mTaskToken = taskToken ?? throw new ArgumentNullException( nameof( taskToken ) );
+			mCancellationToken = stopToken;
 		}
 
 		public void NotifyTaskCompleted ()
@@ -71,12 +75,44 @@ namespace LVD.Stakhanovise.NET
 			mCancellationToken.ThrowIfCancellationRequested();
 		}
 
-		public IQueuedTask Task => mTask;
+		public void StartTimingExecution ()
+		{
+			mStart = MonotonicTimestamp.Now();
+			mEnd = null;
+		}
 
-		public TaskExecutionResultInfo ResultInfo => mResult;
+		public void StopTimingExecution ()
+		{
+			if ( mStart == null )
+				throw new InvalidOperationException( "Execution timing has not been started" );
+			mEnd = MonotonicTimestamp.Now();
+		}
 
-		public bool IsCancellationRequested => mCancellationToken.IsCancellationRequested;
+		public IQueuedTaskToken TaskToken
+			=> mTaskToken;
 
-		public bool HasResult => mResult != null;
+		public TaskExecutionResultInfo ResultInfo
+			=> mResult;
+
+		public TimeSpan Duration
+		{
+			get
+			{
+				StopTimingExecution();
+				return mEnd - mStart;
+			}
+		}
+
+		public bool IsCancellationRequested
+			=> mCancellationToken.IsCancellationRequested;
+
+		public bool ExecutedSuccessfully
+			=> HasResult && ResultInfo.ExecutedSuccessfully;
+
+		public bool ExecutionCancelled
+			=> HasResult && ResultInfo.ExecutionCancelled;
+
+		public bool HasResult
+			=> mResult != null;
 	}
 }

@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 
 namespace LVD.Stakhanovise.NET
 {
@@ -48,6 +49,10 @@ namespace LVD.Stakhanovise.NET
 		void ThrowIfCancellationRequested ();
 
 		TaskExecutionResultInfo ResultInfo { get; }
+
+		bool ExecutedSuccessfully { get; }
+
+		bool ExecutionCancelled { get; }
 
 		bool IsCancellationRequested { get; }
 

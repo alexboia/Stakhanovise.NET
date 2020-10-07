@@ -47,30 +47,15 @@ namespace LVD.Stakhanovise.NET
 
 		private int mFaultErrorThresholdCount;
 
-		[Obsolete]
-		public TaskExecutionResult ( TimedExecutionResult<TaskExecutionResultInfo> resultInfo )
-		{
-			if ( resultInfo == null )
-				throw new ArgumentNullException( nameof( resultInfo ) );
-
-			mResultInfo = resultInfo.Result;
-			mProcessingTimeMilliseconds = resultInfo.DurationMilliseconds;
-		}
-
-		[Obsolete]
-		public TaskExecutionResult ( TimedExecutionResult<TaskExecutionResultInfo> resultInfo,
-			long retryAtTicks )
-			: this( resultInfo )
-		{
-			mRetryAtTicks = retryAtTicks;
-		}
-
-		public TaskExecutionResult ( TimedExecutionResult<TaskExecutionResultInfo> resultInfo,
+		public TaskExecutionResult ( TaskExecutionResultInfo resultInfo,
+			TimeSpan duration,
 			long retryAtTicks,
 			int faultErrorThresholdCount )
-			: this( resultInfo, retryAtTicks )
 		{
+			mResultInfo = resultInfo;
 			mFaultErrorThresholdCount = faultErrorThresholdCount;
+			mProcessingTimeMilliseconds = ( long )Math.Ceiling( duration.TotalMilliseconds );
+			mRetryAtTicks = retryAtTicks;
 		}
 
 		public bool Equals ( TaskExecutionResult other )
@@ -105,6 +90,9 @@ namespace LVD.Stakhanovise.NET
 
 			return result;
 		}
+
+		public bool HasResult
+			=> mResultInfo != null;
 
 		public int FaultErrorThresholdCount
 			=> mFaultErrorThresholdCount;

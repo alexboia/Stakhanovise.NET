@@ -31,44 +31,37 @@
 // 
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
+using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
-	public class StadardTaskProcessingSetup : ITaskProcessingSetup
+	public class StandardTaskProcessingSetup : ITaskProcessingSetup
 	{
 		private int mAbstractTimeTickTimeoutMilliseconds;
 
-		private long mDefaultEstimatedProcessingTimeMilliseconds;
-
-		private Func<int, long> mCalculateDelayTicksTaskAfterFailure;
-
-		private Func<IQueuedTask, TaskExecutionStats, long> mCalculateEstimatedProcessingTimeMilliseconds;
+		private Func<IQueuedTaskToken, long> mCalculateDelayTicksTaskAfterFailure;
 
 		private Func<IQueuedTask, Exception, bool> mIsTaskErrorRecoverable;
 
 		private int mFaultErrorThresholdCount;
 
-		public StadardTaskProcessingSetup ( StakhanoviseSetupDefaults defaults )
+		public StandardTaskProcessingSetup ( StakhanoviseSetupDefaults defaults )
 		{
 			if ( defaults == null )
 				throw new ArgumentNullException( nameof( defaults ) );
 
 			mAbstractTimeTickTimeoutMilliseconds = defaults
 				.AbstractTimeTickTimeoutMilliseconds;
-			mDefaultEstimatedProcessingTimeMilliseconds = defaults
-				.DefaultEstimatedProcessingTimeMilliseconds;
 
 			mCalculateDelayTicksTaskAfterFailure = defaults
 				.CalculateDelayTicksTaskAfterFailure;
-			mCalculateEstimatedProcessingTimeMilliseconds = defaults
-				.CalculateEstimatedProcessingTimeMilliseconds;
 			mIsTaskErrorRecoverable = defaults
 				.IsTaskErrorRecoverable;
-			//TODO: add to stakhanovise defaults
-			mFaultErrorThresholdCount = 5;
+			mFaultErrorThresholdCount = defaults
+				.FaultErrorThresholdCount;
 		}
 
 		public ITaskProcessingSetup WithAbstractTimeTickTimeoutMilliseconds ( int abstractTimeTickTimeoutMilliseconds )
@@ -81,31 +74,12 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public ITaskProcessingSetup WithDefaultEstimatedProcessingTimeMilliseconds ( long defaultEstimatedProcessingTimeMilliseconds )
-		{
-			if ( defaultEstimatedProcessingTimeMilliseconds < 1 )
-				throw new ArgumentOutOfRangeException( nameof( defaultEstimatedProcessingTimeMilliseconds ),
-					"The default estimated processing time must be greater than 1" );
-
-			mDefaultEstimatedProcessingTimeMilliseconds = defaultEstimatedProcessingTimeMilliseconds;
-			return this;
-		}
-
-		public ITaskProcessingSetup WithDelayTicksTaskAfterFailureCalculator ( Func<int, long> calculateDelayTicksTaskAfterFailure )
+		public ITaskProcessingSetup WithDelayTicksTaskAfterFailureCalculator ( Func<IQueuedTaskToken, long> calculateDelayTicksTaskAfterFailure )
 		{
 			if ( calculateDelayTicksTaskAfterFailure == null )
 				throw new ArgumentNullException( nameof( calculateDelayTicksTaskAfterFailure ) );
 
 			mCalculateDelayTicksTaskAfterFailure = calculateDelayTicksTaskAfterFailure;
-			return this;
-		}
-
-		public ITaskProcessingSetup WithEstimatedProcessingTimeMillisecondsCalculator ( Func<IQueuedTask, TaskExecutionStats, long> calculateEstimatedProcessingTimeMilliseconds )
-		{
-			if ( calculateEstimatedProcessingTimeMilliseconds == null )
-				throw new ArgumentNullException( nameof( calculateEstimatedProcessingTimeMilliseconds ) );
-
-			mCalculateEstimatedProcessingTimeMilliseconds = calculateEstimatedProcessingTimeMilliseconds;
 			return this;
 		}
 
@@ -131,9 +105,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		public TaskProcessingOptions BuildOptions ()
 		{
 			return new TaskProcessingOptions( mAbstractTimeTickTimeoutMilliseconds,
-				defaultEstimatedProcessingTimeMilliseconds: mDefaultEstimatedProcessingTimeMilliseconds,
 				calculateDelayTicksTaskAfterFailure: mCalculateDelayTicksTaskAfterFailure,
-				calculateEstimatedProcessingTimeMilliseconds: mCalculateEstimatedProcessingTimeMilliseconds,
 				isTaskErrorRecoverable: mIsTaskErrorRecoverable,
 				faultErrorThresholdCount: mFaultErrorThresholdCount );
 		}

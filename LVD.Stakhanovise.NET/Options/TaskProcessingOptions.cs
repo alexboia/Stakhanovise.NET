@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -39,9 +40,7 @@ namespace LVD.Stakhanovise.NET.Options
 	public class TaskProcessingOptions
 	{
 		public TaskProcessingOptions ( int abstractTimeTickTimeoutMilliseconds,
-			long defaultEstimatedProcessingTimeMilliseconds,
-			Func<int, long> calculateDelayTicksTaskAfterFailure,
-			Func<IQueuedTask, TaskExecutionStats, long> calculateEstimatedProcessingTimeMilliseconds,
+			Func<IQueuedTaskToken, long> calculateDelayTicksTaskAfterFailure,
 			Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable,
 			int faultErrorThresholdCount )
 		{
@@ -49,15 +48,8 @@ namespace LVD.Stakhanovise.NET.Options
 				throw new ArgumentOutOfRangeException( nameof( abstractTimeTickTimeoutMilliseconds ),
 					"The timeout for the abstract time tick operation must be greater than or equal to 0" );
 
-			if ( defaultEstimatedProcessingTimeMilliseconds < 1 )
-				throw new ArgumentOutOfRangeException( nameof( defaultEstimatedProcessingTimeMilliseconds ),
-					"The default estimated processing time must be greater than 1" );
-
 			if ( calculateDelayTicksTaskAfterFailure == null )
 				throw new ArgumentNullException( nameof( calculateDelayTicksTaskAfterFailure ) );
-
-			if ( calculateEstimatedProcessingTimeMilliseconds == null )
-				throw new ArgumentNullException( nameof( calculateEstimatedProcessingTimeMilliseconds ) );
 
 			if ( isTaskErrorRecoverable == null )
 				throw new ArgumentNullException( nameof( isTaskErrorRecoverable ) );
@@ -67,21 +59,14 @@ namespace LVD.Stakhanovise.NET.Options
 					"Fault error threshold count must be greater than or equal to 1" );
 
 			AbstractTimeTickTimeoutMilliseconds = abstractTimeTickTimeoutMilliseconds;
-			DefaultEstimatedProcessingTimeMilliseconds = defaultEstimatedProcessingTimeMilliseconds;
 			CalculateDelayTicksTaskAfterFailure = calculateDelayTicksTaskAfterFailure;
-			CalculateEstimatedProcessingTimeMilliseconds = calculateEstimatedProcessingTimeMilliseconds;
 			IsTaskErrorRecoverable = isTaskErrorRecoverable;
 			FaultErrorThresholdCount = faultErrorThresholdCount;
 		}
 
 		public int AbstractTimeTickTimeoutMilliseconds { get; private set; }
 
-		public Func<int, long> CalculateDelayTicksTaskAfterFailure { get; private set; }
-
-		public long DefaultEstimatedProcessingTimeMilliseconds { get; private set; }
-
-		[Obsolete( "Deprecated. Will be removed" )]
-		public Func<IQueuedTask, TaskExecutionStats, long> CalculateEstimatedProcessingTimeMilliseconds { get; private set; }
+		public Func<IQueuedTaskToken, long> CalculateDelayTicksTaskAfterFailure { get; private set; }
 
 		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; private set; }
 

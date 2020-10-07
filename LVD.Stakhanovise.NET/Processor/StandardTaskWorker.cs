@@ -151,28 +151,22 @@ namespace LVD.Stakhanovise.NET.Processor
 			return taskExecutor;
 		}
 
-		private async Task<TimedExecutionResult<TaskExecutionResultInfo>> ExecuteQueuedTaskAsync ( IQueuedTaskToken queuedTaskToken,
-			CancellationToken stopToken )
+		private async Task<TaskExecutionResult> ExecuteTaskAsync ( TaskExecutionContext executionContext )
 		{
+			long retryAtTicks = 0;
 			ITaskExecutor taskExecutor = null;
-			ITaskExecutionContext executionContext = null;
-			IQueuedTask dequeuedTask = queuedTaskToken.DequeuedTask;
-
-			MonotonicTimestamp start =
-				MonotonicTimestamp.Now();
+			IQueuedTask dequeuedTask = executionContext
+				.TaskToken
+				.DequeuedTask;
 
 			try
 			{
-				//Initialize execution context
-				executionContext = new TaskExecutionContext( dequeuedTask,
-					cancellationToken: stopToken );
-
 				//Check for cancellation before we start execution
+				executionContext.StartTimingExecution();
 				executionContext.ThrowIfCancellationRequested();
 
 				//Attempt to resolve and run task executor
-				taskExecutor = ResolveTaskExecutor( dequeuedTask );
-				if ( taskExecutor != null )
+				if ( ( taskExecutor = ResolveTaskExecutor( dequeuedTask ) ) != null )
 				{
 					mLogger.DebugFormat( "Beginning task execution. Task id = {0}.",
 						dequeuedTask.Id );
@@ -191,6 +185,23 @@ namespace LVD.Stakhanovise.NET.Processor
 					//	and no result explicitly set, assume success.
 					if ( !executionContext.HasResult )
 						executionContext.NotifyTaskCompleted();
+
+					//Cancellation can also be silent, if the user-code 
+					//	checks for executionContext.IsCancellationRequested 
+					//	and then stops execution and calls 
+					//	executionContext.NotifyCancellationObserved()
+					if ( !executionContext.ExecutionCancelled
+						&& !executionContext.ExecutedSuccessfully )
+					{
+						mLogger.Debug( "Will compute task execution delay." );
+
+						//Compute the amount of ticks to delay task execution
+						retryAtTicks = await ComputeRetryAt( mOptions
+							.CalculateDelayTicksTaskAfterFailure( executionContext.TaskToken ) );
+
+						mLogger.DebugFormat( "Computed retry at ticks = {0}",
+							retryAtTicks );
+					}
 				}
 			}
 			catch ( OperationCanceledException )
@@ -209,65 +220,51 @@ namespace LVD.Stakhanovise.NET.Processor
 				executionContext?.NotifyTaskErrored( new QueuedTaskError( exc ),
 					isRecoverable: isRecoverable );
 			}
+			finally
+			{
+				executionContext.StopTimingExecution();
+			}
 
-			MonotonicTimestamp end =
-				MonotonicTimestamp.Now();
-
-			return new TimedExecutionResult<TaskExecutionResultInfo>( taskExecutor != null
-					? executionContext.ResultInfo
-					: null,
-				duration: end - start );
+			return taskExecutor != null
+				? new TaskExecutionResult( executionContext.ResultInfo,
+					duration: executionContext.Duration,
+					retryAtTicks: retryAtTicks,
+					faultErrorThresholdCount: mOptions.FaultErrorThresholdCount )
+				: null;
 		}
 
-		private async Task SetTaskExecutionResultAsync ( IQueuedTaskToken queuedTaskToken,
-			TimedExecutionResult<TaskExecutionResultInfo> resultInfo )
+		private async Task ProcessResultAsync ( IQueuedTaskToken queuedTaskToken, 
+			TaskExecutionResult result )
 		{
-			long retryAtTicks = 0;
-
 			try
 			{
-				if ( !resultInfo.HasResult )
+				//There is no result - most likely, no executor found;
+				//	nothing to process, just stop and return
+				if ( !result.HasResult )
 				{
-					mLogger.Debug( "No result info returned. Task token will be discarded." );
+					mLogger.Debug( "No result info returned. Task will be discarded." );
 					return;
 				}
 
-				if ( resultInfo.Result.ExecutionCancelled )
+				//Execution has been cancelled, usually as a response 
+				//	to a cancellation request;
+				//	nothing to process, just stop and return
+				if ( result.ExecutionCancelled )
 				{
-					mLogger.Debug( "Task execution cancelled. Task token will be discarded." );
+					mLogger.Debug( "Task execution cancelled. Task will be discarded." );
 					return;
 				}
 
-				//Task execution did not end successfully, 
-				//	so we need to see how much we should delay its next execution
-				if ( !resultInfo.Result.ExecutedSuccessfully )
-				{
-					mLogger.Debug( "Will compute task execution delay." );
+				//Update execution result and see whether 
+				//	we need to repost the task to retry its execution
+				QueuedTaskInfo repostWithInfo = queuedTaskToken.UdpateFromExecutionResult( result );
 
-					//Compute the amount of ticks to delay task execution
-					long delayTicks = mOptions.CalculateDelayTicksTaskAfterFailure( queuedTaskToken
-						.LastQueuedTaskResult
-						.ErrorCount );
-
-					retryAtTicks = await ComputeRetryAt( delayTicks );
-
-					mLogger.DebugFormat( "Computed retry at ticks = {0}",
-						retryAtTicks );
-				}
-
-				//Then try and post task execution result. 
-				//	If this fails, we have no other option 
-				//	than to discard the token
-				QueuedTaskInfo repostWithInfo = queuedTaskToken.UdpateFromExecutionResult( new TaskExecutionResult( resultInfo,
-					retryAtTicks: retryAtTicks,
-					//TODO: fault error threshold count -> Move to processing options
-					faultErrorThresholdCount: 5 ) );
-
-				//Update result
+				//Post result
 				mLogger.Debug( "Will post task execution result." );
 				await mTaskResultQueue.PostResultAsync( queuedTaskToken.LastQueuedTaskResult );
 				mLogger.Debug( "Successfully posted task execution result." );
 
+				//If the task needs to be reposted, do so
 				if ( repostWithInfo != null )
 				{
 					mLogger.Debug( "Will repost task for execution." );
@@ -279,11 +276,11 @@ namespace LVD.Stakhanovise.NET.Processor
 
 				//Finally, report execution time
 				mExecutionPerformanceMonitor.ReportExecutionTime( queuedTaskToken.DequeuedTask.Type,
-					resultInfo.DurationMilliseconds );
+					result.ProcessingTimeMilliseconds );
 			}
 			catch ( Exception exc )
 			{
-				mLogger.Error( "Failed to set queued task result. Task token will be discarded.",
+				mLogger.Error( "Failed to set queued task result. Task will be discarded.",
 					exc );
 			}
 		}
@@ -312,22 +309,26 @@ namespace LVD.Stakhanovise.NET.Processor
 			return retryAtTicks;
 		}
 
-		private async Task ExecuteQueuedTaskAndSetResultAsync ( IQueuedTaskToken queuedTaskToken, 
+		private async Task ExecuteQueuedTaskAndProcessResultAsync ( IQueuedTaskToken queuedTaskToken,
 			CancellationToken stopToken )
 		{
 			mLogger.DebugFormat( "New task to execute retrieved from buffer: task id = {0}.",
 				queuedTaskToken.DequeuedTask.Id );
 
-			TimedExecutionResult<TaskExecutionResultInfo> resultInfo = 
-				await ExecuteQueuedTaskAsync( queuedTaskToken, 
+			//Execute task
+			TaskExecutionContext executionContext = 
+				new TaskExecutionContext( queuedTaskToken,
 					stopToken );
+
+			TaskExecutionResult executionResult = 
+				await ExecuteTaskAsync( executionContext );
 
 			//We will not observe cancellation token 
 			//	during result processing:
 			//	if task executed till the end, we must at least 
 			//	attempt to set the result
-			await SetTaskExecutionResultAsync( queuedTaskToken,
-				resultInfo );
+			await ProcessResultAsync( queuedTaskToken,
+				executionResult );
 
 			mLogger.DebugFormat( "Done executing task with id = {0}.",
 				queuedTaskToken.DequeuedTask.Id );
@@ -390,7 +391,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					//  and forward the result to the result queue
 					IQueuedTaskToken queuedTaskToken = mTaskBuffer.TryGetNextTask();
 					if ( queuedTaskToken != null )
-						await ExecuteQueuedTaskAndSetResultAsync( queuedTaskToken, stopToken );
+						await ExecuteQueuedTaskAndProcessResultAsync( queuedTaskToken, stopToken );
 					else
 						mLogger.Debug( "Nothing to execute: no task was retrieved from buffer." );
 

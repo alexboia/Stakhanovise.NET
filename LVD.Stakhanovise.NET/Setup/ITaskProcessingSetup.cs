@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -40,11 +41,7 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		ITaskProcessingSetup WithAbstractTimeTickTimeoutMilliseconds ( int abstractTimeTickTimeoutMilliseconds );
 
-		ITaskProcessingSetup WithDelayTicksTaskAfterFailureCalculator ( Func<int, long> calculateDelayTicksTaskAfterFailure );
-
-		ITaskProcessingSetup WithDefaultEstimatedProcessingTimeMilliseconds ( long defaultEstimatedProcessingTimeMilliseconds );
-
-		ITaskProcessingSetup WithEstimatedProcessingTimeMillisecondsCalculator ( Func<IQueuedTask, TaskExecutionStats, long> calculateEstimatedProcessingTimeMilliseconds );
+		ITaskProcessingSetup WithDelayTicksTaskAfterFailureCalculator ( Func<IQueuedTaskToken, long> calculateDelayTicksTaskAfterFailure );
 
 		ITaskProcessingSetup WithTaskErrorRecoverabilityCallback ( Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable );
 

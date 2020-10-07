@@ -298,9 +298,13 @@ namespace LVD.Stakhanovise.NET.Processor
 					mTaskPoller.Dispose();
 					mTaskBuffer.Dispose();
 
+					if ( mTaskResultQueue is IDisposable )
+						( ( IDisposable )mTaskResultQueue ).Dispose();
+
 					mTaskPoller = null;
 					mTaskBuffer = null;
 					mTimingBelt = null;
+					mTaskResultQueue = null;
 
 					mTaskQueueConsumer = null;
 					mExecutorRegistry = null;
