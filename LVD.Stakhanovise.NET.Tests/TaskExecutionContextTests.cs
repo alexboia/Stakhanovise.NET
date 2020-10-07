@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using Bogus;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 using Moq;
 using NUnit.Framework;
 
@@ -18,11 +19,8 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			Faker faker = new Faker();
 
-			Mock<IQueuedTask> taskMock =
-				new Mock<IQueuedTask>( MockBehavior.Loose );
-
-			taskMock.SetupGet( t => t.Status )
-				.Returns( faker.Random.Enum<QueuedTaskStatus>() );
+			Mock<IQueuedTaskToken> taskMock =
+				new Mock<IQueuedTaskToken>( MockBehavior.Loose );
 
 			using ( CancellationTokenSource cts = new CancellationTokenSource() )
 			{
@@ -42,11 +40,8 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			Faker faker = new Faker();
 
-			Mock<IQueuedTask> taskMock =
-				new Mock<IQueuedTask>( MockBehavior.Loose );
-
-			taskMock.SetupGet( t => t.Status )
-				.Returns( faker.Random.Enum<QueuedTaskStatus>() );
+			Mock<IQueuedTaskToken> taskMock =
+				new Mock<IQueuedTaskToken>( MockBehavior.Loose );
 
 			using ( CancellationTokenSource cts = new CancellationTokenSource() )
 			{
@@ -78,11 +73,8 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			Faker faker = new Faker();
 
-			Mock<IQueuedTask> taskMock =
-				new Mock<IQueuedTask>( MockBehavior.Loose );
-
-			taskMock.SetupGet( t => t.Status )
-				.Returns( faker.Random.Enum<QueuedTaskStatus>() );
+			Mock<IQueuedTaskToken> taskMock =
+				new Mock<IQueuedTaskToken>( MockBehavior.Loose );
 
 			using ( CancellationTokenSource cts = new CancellationTokenSource() )
 			{
@@ -101,11 +93,8 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			Faker faker = new Faker();
 
-			Mock<IQueuedTask> taskMock =
-				new Mock<IQueuedTask>( MockBehavior.Loose );
-
-			taskMock.SetupGet( t => t.Status )
-				.Returns( faker.Random.Enum<QueuedTaskStatus>() );
+			Mock<IQueuedTaskToken> taskMock =
+				new Mock<IQueuedTaskToken>( MockBehavior.Loose );
 
 			using ( CancellationTokenSource cts = new CancellationTokenSource() )
 			{

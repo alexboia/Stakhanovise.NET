@@ -8,9 +8,9 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public interface ITaskResultQueue
 	{
-		Task PostResultAsync ( IQueuedTaskResult result, int timeoutMilliseconds );
+		Task PostResultAsync ( IQueuedTaskToken token, int timeoutMilliseconds );
 
-		Task PostResultAsync ( IQueuedTaskResult result );
+		Task PostResultAsync ( IQueuedTaskToken token );
 
 		Task StartAsync ();
 

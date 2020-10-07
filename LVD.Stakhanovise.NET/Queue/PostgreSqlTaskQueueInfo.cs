@@ -85,21 +85,21 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			CheckNotDisposedOrThrow();
 
-			string statsSql = $@"SELECT q.task_status
+			string statsResultsSql = $@"SELECT q.task_status, 
 					COUNT(q.task_status) AS task_status_count 
 				FROM {mOptions.Mapping.ResultsTableName} AS q 
 				GROUP BY q.task_status";
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
-			using ( NpgsqlCommand statsCmd = new NpgsqlCommand( statsSql, conn ) )
-			using ( NpgsqlDataReader statsReader = await statsCmd.ExecuteReaderAsync() )
+			using ( NpgsqlCommand statsResultsCmd = new NpgsqlCommand( statsResultsSql, conn ) )
+			using ( NpgsqlDataReader statsResultsRdr = await statsResultsCmd.ExecuteReaderAsync() )
 			{
-				while ( statsReader.Read() )
+				while ( statsResultsRdr.Read() )
 				{
-					long count = await statsReader.GetFieldValueAsync( "task_status_count",
+					long count = await statsResultsRdr.GetFieldValueAsync( "task_status_count",
 						defaultValue: 0 );
 
-					QueuedTaskStatus status = ( QueuedTaskStatus )( await statsReader.GetFieldValueAsync( mOptions.Mapping.StatusColumnName,
+					QueuedTaskStatus status = ( QueuedTaskStatus )( await statsResultsRdr.GetFieldValueAsync( mOptions.Mapping.StatusColumnName,
 						defaultValue: 0 ) );
 
 					switch ( status )
@@ -125,7 +125,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					}
 				}
 
-				await statsReader.CloseAsync();
+				await statsResultsRdr.CloseAsync();
 				await conn.CloseAsync();
 			}
 
@@ -137,7 +137,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				totalProcessed );
 		}
 
-		public async Task<IQueuedTask> PeekAsync ( )
+		public async Task<IQueuedTask> PeekAsync ()
 		{
 			AbstractTimestamp now;
 			IQueuedTask peekedTask = null;

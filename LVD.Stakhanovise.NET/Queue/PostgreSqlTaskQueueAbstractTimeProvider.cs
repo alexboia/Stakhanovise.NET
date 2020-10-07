@@ -58,59 +58,63 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task<long> ComputeAbsoluteTimeTicksAsync ( long timeTicksToAdd )
 		{
+			long absoluteTimeTicks = 0;
+			string computeSql = "SELECT sk_compute_absolute_time_ticks(@s_time_id, @s_time_ticks_to_add)";
+
 			using ( NpgsqlConnection conn = await OpenConnectionAsync( CancellationToken.None ) )
+			using ( NpgsqlCommand computeCmd = new NpgsqlCommand( computeSql, conn ) )
 			{
-				string computeSql = "SELECT sk_compute_absolute_time_ticks(@s_time_id, @s_time_ticks_to_add)";
-				using ( NpgsqlCommand computeCmd = new NpgsqlCommand( computeSql, conn ) )
-				{
-					computeCmd.Parameters.AddWithValue( "s_time_id", NpgsqlDbType.Uuid,
-						mProviderOptions.TimeId );
-					computeCmd.Parameters.AddWithValue( "s_time_ticks_to_add", NpgsqlDbType.Bigint,
-						timeTicksToAdd );
+				computeCmd.Parameters.AddWithValue( "s_time_id", NpgsqlDbType.Uuid,
+					mProviderOptions.TimeId );
+				computeCmd.Parameters.AddWithValue( "s_time_ticks_to_add", NpgsqlDbType.Bigint,
+					timeTicksToAdd );
 
-					await computeCmd.PrepareAsync();
-					object result = await computeCmd.ExecuteScalarAsync();
+				await computeCmd.PrepareAsync();
+				object result = await computeCmd.ExecuteScalarAsync();
 
-					return result is long
-						? ( long )result
-						: 0;
-				}
+				absoluteTimeTicks = result is long
+					? ( long )result
+					: 0;
+
+				await conn.CloseAsync();
 			}
+
+			return absoluteTimeTicks;
 		}
 
 		public async Task<AbstractTimestamp> GetCurrentTimeAsync ()
 		{
+			AbstractTimestamp now = null;
+			string selectSql = "SELECT * from sk_time_t WHERE t_id = @s_time_id";
+
 			using ( NpgsqlConnection conn = await OpenConnectionAsync( CancellationToken.None ) )
+			using ( NpgsqlCommand selectCmd = new NpgsqlCommand( selectSql, conn ) )
 			{
-				AbstractTimestamp now = null;
-				string selectSql = "SELECT * from sk_time_t WHERE t_id = @s_time_id";
+				selectCmd.Parameters.AddWithValue( "s_time_id", NpgsqlDbType.Uuid,
+					mProviderOptions.TimeId );
 
-				using ( NpgsqlCommand selectCmd = new NpgsqlCommand( selectSql, conn ) )
+				await selectCmd.PrepareAsync();
+				using ( NpgsqlDataReader selectRdr = await selectCmd.ExecuteReaderAsync() )
 				{
-					selectCmd.Parameters.AddWithValue( "s_time_id", NpgsqlDbType.Uuid,
-						mProviderOptions.TimeId );
-
-					await selectCmd.PrepareAsync();
-					using ( NpgsqlDataReader selectRdr = await selectCmd.ExecuteReaderAsync() )
+					if ( await selectRdr.ReadAsync() )
 					{
-						if ( await selectRdr.ReadAsync() )
-						{
-							long totalTicks = selectRdr.GetInt64( selectRdr.GetOrdinal(
-								"t_total_ticks"
-							) );
+						long totalTicks = selectRdr.GetInt64( selectRdr.GetOrdinal(
+							"t_total_ticks"
+						) );
 
-							long totalTicksCost = selectRdr.GetInt64( selectRdr.GetOrdinal(
-								"t_total_ticks_cost"
-							) );
+						long totalTicksCost = selectRdr.GetInt64( selectRdr.GetOrdinal(
+							"t_total_ticks_cost"
+						) );
 
-							now = new AbstractTimestamp( totalTicks, 
-								totalTicksCost );
-						}
+						now = new AbstractTimestamp( totalTicks,
+							totalTicksCost );
 					}
 				}
 
-				return now;
+				await conn.CloseAsync();
 			}
+
+			return now;
 		}
 	}
 }

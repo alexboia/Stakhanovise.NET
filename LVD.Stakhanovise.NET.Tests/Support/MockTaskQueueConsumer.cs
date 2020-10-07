@@ -60,8 +60,10 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				{
 					queuedTask = new QueuedTask( Guid.NewGuid() );
 
-					mDequeuedTasksHistory.Add( new MockQueuedTaskToken( queuedTask ) );
-					mProducedTasksBuffer.Enqueue( new MockQueuedTaskToken( queuedTask ) );
+					mDequeuedTasksHistory.Add( new MockQueuedTaskToken( queuedTask, 
+						new QueuedTaskResult( queuedTask ) ) );
+					mProducedTasksBuffer.Enqueue( new MockQueuedTaskToken( queuedTask, 
+						new QueuedTaskResult( queuedTask ) ) );
 
 					NotifyClearToDequeue();
 				}

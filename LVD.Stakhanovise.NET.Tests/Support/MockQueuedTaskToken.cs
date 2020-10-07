@@ -11,76 +11,30 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 	public class MockQueuedTaskToken : IQueuedTaskToken
 	{
 		private QueuedTask mQueuedTask;
-		
-		public event EventHandler<TokenReleasedEventArgs> TokenReleased;
 
-		public MockQueuedTaskToken ( QueuedTask queuedTask )
+		private QueuedTaskResult mLastQueuedTaskResult;
+
+		public MockQueuedTaskToken ( QueuedTask queuedTask, QueuedTaskResult lastQueuedTaskResult )
 		{
 			mQueuedTask = queuedTask;
-			IsPending = true;
-			IsLocked = true;
+			mLastQueuedTaskResult = lastQueuedTaskResult;
 		}
 
 		public MockQueuedTaskToken ( Guid queuedTaskId )
-			: this( new QueuedTask( queuedTaskId ) )
 		{
-			return;
+			mQueuedTask = new QueuedTask( queuedTaskId );
+			mLastQueuedTaskResult = new QueuedTaskResult( mQueuedTask );
 		}
 
-		private void NotityTokenReleased()
+		public QueuedTaskInfo UdpateFromExecutionResult ( TaskExecutionResult result )
 		{
-			EventHandler<TokenReleasedEventArgs> h = TokenReleased;
-			if ( h != null )
-				h( this, new TokenReleasedEventArgs( DequeuedTask.Id ) );
-		}
-
-		public Task ReleaseLockAsync ()
-		{
-			IsLocked = false;
-			IsActive = false;
-			IsPending = false;
-
-			NotityTokenReleased();
-			return Task.CompletedTask;
-		}
-
-		public Task<bool> TrySetResultAsync ( TaskExecutionResult result )
-		{
-			IsActive = false;
-			IsPending = false;
-			IsLocked = false;
-
-			if ( !result.ExecutedSuccessfully )
-				mQueuedTask.Status = QueuedTaskStatus.Error;
-			else
-				mQueuedTask.Status = QueuedTaskStatus.Processed;
-
-			NotityTokenReleased();
-			return Task.FromResult( true );
-		}
-
-		public Task<bool> TrySetStartedAsync ( long estimatedProcessingTimeMillisencods )
-		{
-			IsPending = false;
-			IsActive = true;
-			return Task.FromResult( true );
-		}
-
-		public void Dispose ()
-		{
-			TokenReleased = null;
+			return mLastQueuedTaskResult.UdpateFromExecutionResult( result );
 		}
 
 		public IQueuedTask DequeuedTask => mQueuedTask;
 
-		public CancellationToken CancellationToken => CancellationToken.None;
+		public IQueuedTaskResult LastQueuedTaskResult => mLastQueuedTaskResult;
 
 		public AbstractTimestamp DequeuedAt => AbstractTimestamp.Zero();
-
-		public bool IsPending { get; private set; }
-
-		public bool IsActive { get; private set; }
-
-		public bool IsLocked { get; private set; }
 	}
 }

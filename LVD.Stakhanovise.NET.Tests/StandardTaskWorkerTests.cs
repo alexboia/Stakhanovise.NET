@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Executors;
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Queue;
@@ -69,12 +70,18 @@ namespace LVD.Stakhanovise.NET.Tests
 				new Mock<ITaskExecutorRegistry>( MockBehavior.Loose );
 			Mock<IExecutionPerformanceMonitor> executionPerformanceMonitorMock =
 				new Mock<IExecutionPerformanceMonitor>( MockBehavior.Loose );
+			Mock<ITaskQueueProducer> producerMock =
+				new Mock<ITaskQueueProducer>( MockBehavior.Loose );
+			Mock<ITaskResultQueue> resultQueueMock =
+				new Mock<ITaskResultQueue>( MockBehavior.Loose );
 
 			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			using ( StandardTaskWorker worker = new StandardTaskWorker( processingOpts,
 				bufferMock.Object,
 				executorRegistryMock.Object,
 				executionPerformanceMonitorMock.Object,
+				producerMock.Object,
+				resultQueueMock.Object,
 				timingBelt ) )
 			{
 				await worker.StartAsync();
@@ -102,39 +109,47 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<IExecutionPerformanceMonitor> executionPerformanceMonitorMock =
 				new Mock<IExecutionPerformanceMonitor>();
 
+			Mock<ITaskQueueProducer> producerMock =
+				new Mock<ITaskQueueProducer>( MockBehavior.Loose );
+
+			Mock<ITaskResultQueue> resultQueueMock =
+				new Mock<ITaskResultQueue>( MockBehavior.Loose );
+
 			List<StandardTaskWorker> workers
 				= new List<StandardTaskWorker>();
-
-			Action<object, TokenReleasedEventArgs> handleTokenReleased =
-				( s, e ) => processedTaskTokens.Add( ( IQueuedTaskToken )s );
 
 			executionPerformanceMonitorMock.Setup( m => m.ReportExecutionTime(
 				It.IsIn( mPayloadTypes.Select( t => t.FullName ).ToArray() ),
 				It.IsAny<long>() ) );
 
+			resultQueueMock.Setup( rq => rq.PostResultAsync( It.IsAny<IQueuedTaskToken>() ) )
+				.Callback<IQueuedTaskToken>( t => processedTaskTokens.Add( t ) );
+
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
 			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			{
-				TestBufferProducer producer = 
+				TestBufferProducer producer =
 					new TestBufferProducer( taskBuffer, mPayloadTypes );
-				
+
 				for ( int i = 0; i < workerCount; i++ )
 					workers.Add( new StandardTaskWorker( processingOpts,
 						taskBuffer,
 						CreateTaskExecutorRegistry(),
 						executionPerformanceMonitorMock.Object,
+						producerMock.Object,
+						resultQueueMock.Object,
 						timingBelt ) );
 
 				await timingBelt.StartAsync();
 				foreach ( StandardTaskWorker w in workers )
 					await w.StartAsync();
 
-				await producer.ProduceTasksAsync( numberOfTasks,
-					handleTokenReleased );
+				await producer.ProduceTasksAsync( numberOfTasks );
 
 				while ( !taskBuffer.IsCompleted )
-					await Task.Delay( 25 );
+					await Task.Delay( 50 );
 
+				await Task.Delay( 250 );
 				foreach ( StandardTaskWorker w in workers )
 					await w.StopAync();
 

@@ -100,13 +100,13 @@ namespace LVD.Stakhanovise.NET.Queue
 				await conn.CloseAsync();
 		}
 
-		public Task PostResultAsync ( IQueuedTaskResult result, int timeoutMilliseconds )
+		public Task PostResultAsync ( IQueuedTaskToken token, int timeoutMilliseconds )
 		{
 			CheckNotDisposedOrThrow();
 			CheckRunningOrThrow();
 
-			if ( result == null )
-				throw new ArgumentNullException( nameof( result ) );
+			if ( token == null )
+				throw new ArgumentNullException( nameof( token ) );
 
 			long requestId = Interlocked.Increment( ref mLastRequestId );
 
@@ -116,7 +116,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			PostgreSqlTaskResultQueueProcessRequest processRequest =
 				new PostgreSqlTaskResultQueueProcessRequest( requestId,
-					result,
+					token.LastQueuedTaskResult,
 					completionToken,
 					timeoutMilliseconds: timeoutMilliseconds,
 					maxFailCount: 3 );
@@ -127,9 +127,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				=> processRequest.Dispose() );
 		}
 
-		public Task PostResultAsync ( IQueuedTaskResult result )
+		public Task PostResultAsync ( IQueuedTaskToken token )
 		{
-			return PostResultAsync( result, 
+			return PostResultAsync( token, 
 				timeoutMilliseconds: 0 );
 		}
 

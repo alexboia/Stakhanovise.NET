@@ -33,7 +33,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			mDataSource = new PostgreSqlTaskQueueDataSource( mConsumerOptions.ConnectionOptions.ConnectionString,
 				TestOptions.DefaultMapping,
-				mConsumerOptions.FaultErrorThresholdCount );
+				queueFaultErrorThrehsoldCount: 5 );
 		}
 
 		[SetUp]
@@ -66,76 +66,33 @@ namespace LVD.Stakhanovise.NET.Tests
 			AbstractTimestamp now = mDataSource
 				.LastPostedAt;
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
-			{
-				try
-				{
-					for ( int i = 0; i < mConsumerOptions.QueueConsumerConnectionPoolSize; i++ )
-					{
-						newTaskToken = await taskQueue
-							.DequeueAsync( taskType );
-
-						Assert.NotNull( newTaskToken );
-						Assert.NotNull( newTaskToken.DequeuedAt );
-						Assert.NotNull( newTaskToken.DequeuedTask );
-
-						Assert.AreEqual( now, newTaskToken.DequeuedAt );
-
-						Assert.IsTrue( newTaskToken.IsLocked );
-						Assert.IsTrue( newTaskToken.IsPending );
-
-						Assert.IsFalse( dequedTokens.Any( t => t.DequeuedTask.Id
-							== newTaskToken.DequeuedTask.Id ) );
-
-						Assert.IsTrue( newTaskToken.DequeuedTask.Status == QueuedTaskStatus.Unprocessed
-							|| newTaskToken.DequeuedTask.Status == QueuedTaskStatus.Error
-							|| newTaskToken.DequeuedTask.Status == QueuedTaskStatus.Faulted );
-
-						if ( previousTaskToken != null )
-							Assert.GreaterOrEqual( newTaskToken.DequeuedTask.PostedAt,
-								previousTaskToken.DequeuedTask.PostedAt );
-
-						previousTaskToken = newTaskToken;
-						dequedTokens.Add( newTaskToken );
-					}
-
-					//Double check that the locks are being held
-					using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
-					{
-						foreach ( IQueuedTaskToken t in dequedTokens )
-							Assert.IsTrue( await db.IsAdvisoryLockHeldAsync( t.DequeuedTask.LockHandleId ) );
-					}
-				}
-				finally
-				{
-					foreach ( IQueuedTaskToken t in dequedTokens )
-					{
-						await t.ReleaseLockAsync();
-						t.Dispose();
-					}
-				}
-			}
-		}
-
-		[Test]
-		public async Task Test_Dequeue_ThenRelease_ProducesSameToken ()
-		{
-			IQueuedTaskToken token;
-			Guid firstTokenId = Guid.Empty;
-
-			AbstractTimestamp now = mDataSource
-				.LastPostedAt;
+			int dequeueCount = mDataSource.NumUnProcessedTasks 
+				+ mDataSource.NumErroredTasks 
+				+ mDataSource.NumFaultedTasks;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
 			{
-				using ( token = await taskQueue.DequeueAsync() )
+				for ( int i = 0; i < dequeueCount; i++ )
 				{
-					if ( !firstTokenId.Equals( Guid.Empty ) )
-						Assert.AreEqual( firstTokenId, token.DequeuedTask.Id );
-					else
-						firstTokenId = token.DequeuedTask.Id;
+					newTaskToken = await taskQueue
+						.DequeueAsync( taskType );
 
-					await token.ReleaseLockAsync();
+					Assert.NotNull( newTaskToken );
+					Assert.NotNull( newTaskToken.DequeuedAt );
+					Assert.NotNull( newTaskToken.DequeuedTask );
+					Assert.NotNull( newTaskToken.LastQueuedTaskResult );
+
+					Assert.AreEqual( now, newTaskToken.DequeuedAt );
+
+					Assert.IsFalse( dequedTokens.Any( t => t.DequeuedTask.Id
+						== newTaskToken.DequeuedTask.Id ) );
+
+					if ( previousTaskToken != null )
+						Assert.GreaterOrEqual( newTaskToken.DequeuedTask.PostedAt,
+							previousTaskToken.DequeuedTask.PostedAt );
+
+					previousTaskToken = newTaskToken;
+					dequedTokens.Add( newTaskToken );
 				}
 			}
 		}

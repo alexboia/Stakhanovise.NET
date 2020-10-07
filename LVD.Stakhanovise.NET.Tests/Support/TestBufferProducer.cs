@@ -25,7 +25,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mPayloadTypes = payloadTypes;
 		}
 
-		public Task ProduceTasksAsync ( int numberOfTasks, Action<object, TokenReleasedEventArgs> onTokenReleased )
+		public Task ProduceTasksAsync ( int numberOfTasks )
 		{
 			ManualResetEvent bufferSpaceAvailableWaitHandle =
 				new ManualResetEvent( false );
@@ -37,11 +37,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			{
 				Type currentPayloadType;
 				IQueuedTaskToken newTaskToken;
+				QueuedTask newTask;
+				QueuedTaskResult newLastTaskResult;
 
 				EventHandler handleBufferElementRemoved
 					= ( s, e ) => bufferSpaceAvailableWaitHandle.Set();
-				EventHandler<TokenReleasedEventArgs> handleTokenReleased
-					= ( s, e ) => onTokenReleased( s, e );
 
 				mTaskBuffer.QueuedTaskRetrieved
 					+= handleBufferElementRemoved;
@@ -50,14 +50,19 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				{
 					for ( int i = 0; i < numberOfTasks; i++ )
 					{
-						newTaskToken = new MockQueuedTaskToken( new QueuedTask( Guid.NewGuid() )
+						newTask = new QueuedTask( Guid.NewGuid() )
 						{
 							Payload = Activator.CreateInstance( currentPayloadType ),
-							Status = QueuedTaskStatus.Unprocessed,
 							Type = currentPayloadType.FullName
-						} );
+						};
 
-						newTaskToken.TokenReleased += handleTokenReleased;
+						newLastTaskResult = new QueuedTaskResult( newTask )
+						{
+							Status = QueuedTaskStatus.Unprocessed
+						};
+
+						newTaskToken = new MockQueuedTaskToken( newTask, newLastTaskResult );
+
 						mProducedTasks.Add( newTaskToken );
 
 						while ( !mTaskBuffer.TryAddNewTask( newTaskToken ) )
@@ -81,11 +86,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 			foreach ( IQueuedTaskToken produced in mProducedTasks )
 				Assert.NotNull( processedTaskTokens.FirstOrDefault(
-					t => t.DequeuedTask.Id == produced.DequeuedTask.Id
-					&& ( t.DequeuedTask.Status == QueuedTaskStatus.Processed
-						|| t.DequeuedTask.Status == QueuedTaskStatus.Error
-						|| t.DequeuedTask.Status == QueuedTaskStatus.Faulted
-						|| t.DequeuedTask.Status == QueuedTaskStatus.Fatal ) ) );
+					t => t.DequeuedTask.Id == produced.DequeuedTask.Id ) );
 		}
 	}
 }

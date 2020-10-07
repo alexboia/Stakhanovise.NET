@@ -55,24 +55,18 @@ namespace LVD.Stakhanovise.NET.Tests
 			PostgreSqlTaskQueueInfo taskQueueInfo =
 				CreateTaskQueueInfo( () => mDataSource.LastPostedAt );
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = 
+			using ( PostgreSqlTaskQueueConsumer taskQueue =
 				CreateTaskQueueConsumer( () => mDataSource.LastPostedAt ) )
 			{
-				try
-				{
-					peekTask = await taskQueueInfo.PeekAsync();
-					Assert.NotNull( peekTask );
 
-					dequeuedTaskToken = await taskQueue.DequeueAsync();
-					Assert.NotNull( dequeuedTaskToken );
+				peekTask = await taskQueueInfo.PeekAsync();
+				Assert.NotNull( peekTask );
 
-					Assert.AreEqual( peekTask.Id,
-						dequeuedTaskToken.DequeuedTask.Id );
-				}
-				finally
-				{
-					await dequeuedTaskToken?.ReleaseLockAsync();
-				}
+				dequeuedTaskToken = await taskQueue.DequeueAsync();
+				Assert.NotNull( dequeuedTaskToken );
+
+				Assert.AreEqual( peekTask.Id,
+					dequeuedTaskToken.DequeuedTask.Id );
 			}
 		}
 
@@ -89,7 +83,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			PostgreSqlTaskQueueInfo taskQueueInfo =
 				CreateTaskQueueInfo( () => mDataSource.LastPostedAt );
 
-			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer = 
+			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer =
 				CreateTaskQueueConsumer( () => mDataSource.LastPostedAt ) )
 			{
 				peekTask = await taskQueueInfo.PeekAsync();

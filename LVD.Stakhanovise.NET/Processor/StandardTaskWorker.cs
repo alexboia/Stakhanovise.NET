@@ -178,9 +178,6 @@ namespace LVD.Stakhanovise.NET.Processor
 					mLogger.DebugFormat( "Task execution completed. Task id = {0}.",
 						dequeuedTask.Id );
 
-					//Check for cancellation after we completed execution
-					executionContext.ThrowIfCancellationRequested();
-
 					//Ensure we have a result - since no exception was thrown 
 					//	and no result explicitly set, assume success.
 					if ( !executionContext.HasResult )
@@ -233,7 +230,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				: null;
 		}
 
-		private async Task ProcessResultAsync ( IQueuedTaskToken queuedTaskToken, 
+		private async Task ProcessResultAsync ( IQueuedTaskToken queuedTaskToken,
 			TaskExecutionResult result )
 		{
 			try
@@ -261,7 +258,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 				//Post result
 				mLogger.Debug( "Will post task execution result." );
-				await mTaskResultQueue.PostResultAsync( queuedTaskToken.LastQueuedTaskResult );
+				await mTaskResultQueue.PostResultAsync( queuedTaskToken );
 				mLogger.Debug( "Successfully posted task execution result." );
 
 				//If the task needs to be reposted, do so
@@ -316,11 +313,11 @@ namespace LVD.Stakhanovise.NET.Processor
 				queuedTaskToken.DequeuedTask.Id );
 
 			//Execute task
-			TaskExecutionContext executionContext = 
+			TaskExecutionContext executionContext =
 				new TaskExecutionContext( queuedTaskToken,
 					stopToken );
 
-			TaskExecutionResult executionResult = 
+			TaskExecutionResult executionResult =
 				await ExecuteTaskAsync( executionContext );
 
 			//We will not observe cancellation token 
@@ -498,6 +495,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 					mRequiredPayloadTypes = null;
 					mStateController = null;
+					mTaskQueueProducer = null;
+					mTaskResultQueue = null;
 				}
 
 				mIsDisposed = true;

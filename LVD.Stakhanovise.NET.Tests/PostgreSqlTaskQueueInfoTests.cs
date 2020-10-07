@@ -89,7 +89,6 @@ namespace LVD.Stakhanovise.NET.Tests
 				Assert.AreEqual( mDataSource.NumFatalTasks, metrics.TotalFataled );
 				Assert.AreEqual( mDataSource.NumProcessedTasks, metrics.TotalProcessed );
 			}
-
 		}
 
 		private PostgreSqlTaskQueueInfo CreateTaskQueue ( Func<AbstractTimestamp> currentTimeProvider )
@@ -99,8 +98,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		private IQueuedTask ExpectedTopOfQueueTask
-			=> mDataSource.SeededTasks.Where( t => mInfoOptions.ProcessWithStatuses
-				.Contains( t.Status ) )
+			=> mDataSource.SeededTasks
 				.OrderByDescending( t => t.Priority )
 				.OrderBy( t => t.PostedAt )
 				.OrderBy( t => t.LockHandleId )

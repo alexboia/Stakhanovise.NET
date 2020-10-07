@@ -101,7 +101,8 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount + 1,
 				mDiagnostics.ReconnectCount,
-				mDiagnostics.ConnectionBackendProcessId );
+				mDiagnostics.ConnectionBackendProcessId,
+				mDiagnostics.WaitTimeoutCount );
 
 			EventHandler<NewTaskPostedEventArgs> eventHandler = NewTaskPosted;
 			if ( eventHandler != null )
@@ -112,7 +113,8 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount,
 				mDiagnostics.ReconnectCount + 1,
-				connectionProcessId );
+				connectionProcessId,
+				mDiagnostics.WaitTimeoutCount );
 
 			EventHandler<ListenerConnectionRestoredEventArgs> eventHandler = ListenerConnectionRestored;
 			if ( eventHandler != null )
@@ -124,7 +126,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			mWaitForFirstStartWaitHandle.Set();
 			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount,
 				mDiagnostics.ReconnectCount,
-				connectionProcessId );
+				connectionProcessId,
+				mDiagnostics.WaitTimeoutCount );
 
 			EventHandler<ListenerConnectedEventArgs> eventHandler = ListenerConnected;
 			if ( eventHandler != null )
@@ -133,6 +136,11 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void ProcessListenerTimedOutWhileWaiting ()
 		{
+			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount,
+				mDiagnostics.ReconnectCount,
+				mDiagnostics.ConnectionBackendProcessId,
+				mDiagnostics.WaitTimeoutCount + 1 );
+
 			EventHandler<ListenerTimedOutEventArgs> eventHandler = ListenerTimedOutWhileWaiting;
 			if ( eventHandler != null )
 				eventHandler( this, new ListenerTimedOutEventArgs() );
@@ -284,7 +292,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 					//Reset wait handle and create cancellation token source
 					mWaitForFirstStartWaitHandle.Reset();
-					mWaitForTaskUpdatesCancellationTokenSource = 
+					mWaitForTaskUpdatesCancellationTokenSource =
 						new CancellationTokenSource();
 
 					//Reset diagnostics and start the listener thread

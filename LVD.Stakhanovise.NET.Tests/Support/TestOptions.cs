@@ -8,13 +8,6 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 {
 	public static class TestOptions
 	{
-		public static readonly QueuedTaskStatus[] ProcessWithStatuses = new QueuedTaskStatus[] {
-			QueuedTaskStatus.Unprocessed,
-			QueuedTaskStatus.Error,
-			QueuedTaskStatus.Faulted,
-			QueuedTaskStatus.Processing
-		};
-
 		public static readonly QueuedTaskMapping DefaultMapping =
 			new QueuedTaskMapping();
 
@@ -33,16 +26,12 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public static TaskProcessingOptions GetDefaultTaskProcessingOptions ()
 		{
 			return new TaskProcessingOptions( 1000,
-				defaultEstimatedProcessingTimeMilliseconds: 1000,
-				calculateDelayTicksTaskAfterFailure: errorCount
-					=> ( long )Math.Pow( 10, errorCount ),
-				calculateEstimatedProcessingTimeMilliseconds: ( task, stats )
-					=> stats.LongestExecutionTime > 0
-						? stats.LongestExecutionTime
-						: 1000,
+				calculateDelayTicksTaskAfterFailure: token
+					=> ( long )Math.Pow( 10, token.LastQueuedTaskResult.ErrorCount + 1 ),
 				isTaskErrorRecoverable: ( task, exc )
 					 => !( exc is NullReferenceException )
-						 && !( exc is ArgumentException ) );
+						 && !( exc is ArgumentException ),
+				faultErrorThresholdCount: 5 );
 		}
 
 		public static TaskQueueConsumerOptions GetDefaultTaskQueueConsumerOptions ( string connectionString )
@@ -51,11 +40,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					keepAliveSeconds: 5,
 					retryCount: 3,
 					retryDelayMilliseconds: 100 ),
-
-				DefaultMapping,
-				ProcessWithStatuses,
-				queueConsumerConnectionPoolSize: 10,
-				faultErrorThresholdCount: 5 );
+				mapping: DefaultMapping,
+				queueConsumerConnectionPoolSize: 10 );
 		}
 
 		public static TaskQueueInfoOptions GetDefaultTaskQueueInfoOptions ( string connectionString )
@@ -64,8 +50,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					keepAliveSeconds: 0,
 					retryCount: 3,
 					retryDelayMilliseconds: 100 ),
-				DefaultMapping,
-				ProcessWithStatuses );
+				mapping: DefaultMapping );
 		}
 
 		public static TaskQueueOptions GetDefaultTaskQueueProducerOptions ( string connectionString )

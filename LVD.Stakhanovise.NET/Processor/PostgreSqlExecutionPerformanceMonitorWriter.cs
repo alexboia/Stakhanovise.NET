@@ -104,7 +104,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					@fastest_execution_time,
 					@longest_execution_time,
 					@total_execution_time
-				) ON CONFLICT (et_payload_type) DO UPDATE 
+				) ON CONFLICT (et_payload_type) DO UPDATE SET 
 					et_last_execution_time = EXCLUDED.et_last_execution_time,
 					et_avg_execution_time = CEILING(
 						(et_total_execution_time + EXCLUDED.et_total_execution_time)::double precision 

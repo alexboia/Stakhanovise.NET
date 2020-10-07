@@ -96,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 			result.LastErrorIsRecoverable = await reader.GetFieldValueAsync<bool>( "task_last_error_is_recoverable",
 				defaultValue: false );
-			result.ErrorCount = await reader.GetFieldValueAsync<int>( "task_last_error",
+			result.ErrorCount = await reader.GetFieldValueAsync<int>( "task_error_count",
 				defaultValue: 0 );
 
 			//Get payoad
