@@ -97,14 +97,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			PostgreSqlTaskQueueProducer taskQueueProducer =
 				CreateTaskQueueProducer( () => postedAt );
 
-			PostgreSqlTaskQueueInfo taskQueueInfo =
-				CreateTaskQueueInfo( () => postedAt );
-
 			EventHandler<ClearForDequeueEventArgs> handleClearForDequeue = ( s, e ) =>
 				notificationWaitHandle.Set();
 
 			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer = CreateTaskQueueConsumer( () => postedAt ) )
-			using ( TaskQueueMetricsDiffChecker diff = new TaskQueueMetricsDiffChecker( async () => await taskQueueInfo.ComputeMetricsAsync() ) )
 			{
 				taskQueueConsumer.ClearForDequeue +=
 					handleClearForDequeue;
@@ -112,9 +108,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				await taskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
 				Assert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
 
-				//Capture previous metrics
-				await diff.CaptureInitialMetricsAsync();
-
+				//Enqueue task and check result
 				IQueuedTask queuedTask = await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
 					source: nameof( Test_CanEnqueue_NewTask ),
 					priority: faker.Random.Int( 1, 100 ) );
@@ -129,15 +123,6 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				taskQueueConsumer.ClearForDequeue -=
 					handleClearForDequeue;
-
-				//Check that new metrics differ from the previous ones as expected
-				await diff.CaptureNewMetricsAndAssertCorrectDiff( delta: new TaskQueueMetrics(
-					totalUnprocessed: 1,
-					totalProcessing: 0,
-					totalErrored: 0,
-					totalFaulted: 0,
-					totalFataled: 0,
-					totalProcessed: 0 ) );
 			}
 		}
 
@@ -154,83 +139,30 @@ namespace LVD.Stakhanovise.NET.Tests
 			PostgreSqlTaskQueueProducer taskQueueProducer =
 				CreateTaskQueueProducer( () => postedAt );
 
-			PostgreSqlTaskQueueInfo taskQueueInfo =
-				CreateTaskQueueInfo( () => postedAt );
-
 			foreach ( IQueuedTaskToken token in mDataSource.CanBeRepostedSeededTaskTokens )
 			{
-				using ( TaskQueueMetricsDiffChecker diff = new TaskQueueMetricsDiffChecker( async () => await taskQueueInfo.ComputeMetricsAsync() ) )
+				QueuedTaskInfo repostTaskInfo = new QueuedTaskInfo()
 				{
-					QueuedTaskStatus prevStatus = token
-						.LastQueuedTaskResult
-						.Status;
+					Id = token.DequeuedTask.Id,
+					Priority = faker.Random.Int( 1, 100 ),
+					Payload = token.DequeuedTask.Payload,
+					Source = nameof( Test_CanEnqueue_RepostExistingTask ),
+					Type = token.DequeuedTask.Type,
+					LockedUntil = postedAt.Ticks + faker.Random.Long( 10, 1000 )
+				};
 
-					await diff.CaptureInitialMetricsAsync();
+				//Remove task record from DB - only dequeued tasks get reposted
+				await mDataSource.RemoveQueuedTaskFromDbByIdAsync( token
+					.DequeuedTask
+					.Id );
 
-					QueuedTaskInfo repostTaskInfo = new QueuedTaskInfo()
-					{
-						Id = token.DequeuedTask.Id,
-						Priority = faker.Random.Int( 1, 100 ),
-						Payload = token.DequeuedTask.Payload,
-						Source = nameof( Test_CanEnqueue_RepostExistingTask ),
-						Type = token.DequeuedTask.Type,
-						LockedUntil = postedAt.Ticks + faker.Random.Long( 10, 1000 )
-					};
+				//Enqueue task and check result
+				IQueuedTask requeuedTask = await taskQueueProducer
+					.EnqueueAsync( repostTaskInfo );
 
-					await mDataSource.RemoveQueuedTaskFromDbByIdAsync( token.DequeuedTask.Id );
-
-					IQueuedTask requeuedTask = await taskQueueProducer
-						.EnqueueAsync( repostTaskInfo );
-
-					Assert.NotNull( requeuedTask );
-					await Assert_ResultAddedOrUpdatedCorrectly( requeuedTask );
-
-					await diff.CaptureNewMetricsAndAssertCorrectDiff( delta: new TaskQueueMetrics(
-						totalUnprocessed: prevStatus != QueuedTaskStatus.Unprocessed ? 1 : 0,
-						totalProcessing: prevStatus == QueuedTaskStatus.Processing ? -1 : 0,
-						totalErrored: prevStatus == QueuedTaskStatus.Error ? -1 : 0,
-						totalFaulted: prevStatus == QueuedTaskStatus.Faulted ? -1 : 0,
-						totalFataled: prevStatus == QueuedTaskStatus.Fatal ? -1 : 0,
-						totalProcessed: prevStatus == QueuedTaskStatus.Processed ? -1 : 0 ) );
-				}
+				Assert.NotNull( requeuedTask );
+				await Assert_ResultAddedOrUpdatedCorrectly( requeuedTask );
 			}
-		}
-
-		[Test]
-		[Repeat( 5 )]
-		public async Task Test_EnqueueDoesNotChangePeekResult_SingleConsumer ()
-		{
-			int futureTicks = 1;
-			IQueuedTask peekTask = null,
-				rePeekTask = null;
-
-			string taskType = typeof( SampleTaskPayload )
-				.FullName;
-
-			PostgreSqlTaskQueueProducer taskQueueProducer = CreateTaskQueueProducer( () => mDataSource
-				.LastPostedAt
-				.AddTicks( 1 ) );
-
-			PostgreSqlTaskQueueInfo taskQueueInfo = CreateTaskQueueInfo( () => mDataSource
-				.LastPostedAt
-				.AddTicks( futureTicks++ ) );
-
-			peekTask = await taskQueueInfo.PeekAsync();
-			Assert.NotNull( peekTask );
-
-			await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
-				source: nameof( Test_EnqueueDoesNotChangePeekResult_SingleConsumer ),
-				priority: 0 );
-
-			rePeekTask = await taskQueueInfo.PeekAsync();
-			Assert.NotNull( rePeekTask );
-
-			//Placing a new element in a queue occurs at its end, 
-			//  so peeking must not be affected 
-			//  if no other operation occurs
-			Assert.AreEqual( peekTask.Id,
-				rePeekTask.Id );
-
 		}
 
 		private async Task Assert_ResultAddedOrUpdatedCorrectly ( IQueuedTask queuedTask )
