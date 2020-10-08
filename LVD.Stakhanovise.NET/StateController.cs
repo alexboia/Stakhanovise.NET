@@ -122,7 +122,7 @@ namespace LVD.Stakhanovise.NET
 				}
 				catch ( Exception )
 				{
-					Interlocked.Exchange( ref mState, StateStarted );
+					Interlocked.Exchange( ref mState, StateStopped );
 					throw;
 				}
 			}
@@ -142,7 +142,7 @@ namespace LVD.Stakhanovise.NET
 				}
 				catch ( Exception )
 				{
-					Interlocked.Exchange( ref mState, StateStarted );
+					Interlocked.Exchange( ref mState, StateStopped );
 					throw;
 				}
 			}

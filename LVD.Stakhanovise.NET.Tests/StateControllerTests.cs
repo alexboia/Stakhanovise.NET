@@ -100,7 +100,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 			finally
 			{
-				AssertControllerStarted( stateController );
+				AssertControllerStopped( stateController );
 			}
 		}
 

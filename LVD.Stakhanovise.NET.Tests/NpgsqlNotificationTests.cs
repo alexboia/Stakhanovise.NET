@@ -271,6 +271,6 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		private string ConnectionString
-			=> GetConnectionString( "testDbConnectionString" );
+			=> GetConnectionString( "listenerTestDbConnectionString" );
 	}
 }

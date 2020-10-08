@@ -37,6 +37,7 @@ using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -83,7 +84,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
-		public async Task Test_CanEnqueue_NewTask ()
+		public async Task Test_CanEnqueue_NewTask_Serial ()
 		{
 			Faker faker =
 				new Faker();
@@ -98,28 +99,101 @@ namespace LVD.Stakhanovise.NET.Tests
 				CreateTaskQueueProducer( () => postedAt );
 
 			EventHandler<ClearForDequeueEventArgs> handleClearForDequeue = ( s, e ) =>
-				notificationWaitHandle.Set();
+			{
+				if ( e.Reason == ClearForDequeReason.NewTaskPostedNotificationReceived )
+					notificationWaitHandle.Set();
+			};
 
-			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer = CreateTaskQueueConsumer( () => postedAt ) )
+			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer =
+				CreateTaskQueueConsumer( () => postedAt ) )
 			{
 				taskQueueConsumer.ClearForDequeue +=
 					handleClearForDequeue;
 
-				await taskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
-				Assert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
+				await taskQueueConsumer
+					.StartReceivingNewTaskUpdatesAsync();
+				Assert.IsTrue( taskQueueConsumer
+					.IsReceivingNewTaskUpdates );
 
 				//Enqueue task and check result
-				IQueuedTask queuedTask = await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
-					source: nameof( Test_CanEnqueue_NewTask ),
-					priority: faker.Random.Int( 1, 100 ) );
+				IQueuedTask queuedTask = await taskQueueProducer
+					.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
+						source: nameof( Test_CanEnqueue_NewTask_Serial ),
+						priority: faker.Random.Int( 1, 100 ) );
 
 				Assert.NotNull( queuedTask );
 				await Assert_ResultAddedOrUpdatedCorrectly( queuedTask );
 
 				notificationWaitHandle.WaitOne();
 
-				await taskQueueConsumer.StopReceivingNewTaskUpdatesAsync();
-				Assert.IsFalse( taskQueueConsumer.IsReceivingNewTaskUpdates );
+				await taskQueueConsumer
+					.StopReceivingNewTaskUpdatesAsync();
+				Assert.IsFalse( taskQueueConsumer
+					.IsReceivingNewTaskUpdates );
+
+				taskQueueConsumer.ClearForDequeue -=
+					handleClearForDequeue;
+			}
+		}
+
+		[Test]
+		[TestCase( 2 )]
+		[TestCase( 5 )]
+		[TestCase( 10 )]
+		public async Task Test_CanEnqueue_NewTask_ParallelProducers ( int nThreads )
+		{
+			Faker faker =
+				new Faker();
+
+			CountdownEvent notificationWaitHandle =
+				new CountdownEvent( nThreads );
+
+			AbstractTimestamp postedAt = mDataSource.LastPostedAt
+				.AddTicks( 1 );
+
+			PostgreSqlTaskQueueProducer taskQueueProducer =
+				CreateTaskQueueProducer( () => postedAt );
+
+			EventHandler<ClearForDequeueEventArgs> handleClearForDequeue = ( s, e ) =>
+			{
+				if ( e.Reason == ClearForDequeReason.NewTaskPostedNotificationReceived )
+					notificationWaitHandle.Signal();
+			};
+
+			Task[] producers = new Task[ nThreads ];
+
+			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer =
+				CreateTaskQueueConsumer( () => postedAt ) )
+			{
+				taskQueueConsumer.ClearForDequeue +=
+					handleClearForDequeue;
+
+				await taskQueueConsumer
+					.StartReceivingNewTaskUpdatesAsync();
+				Assert.IsTrue( taskQueueConsumer
+					.IsReceivingNewTaskUpdates );
+
+				for ( int i = 0; i < nThreads; i++ )
+				{
+					producers[ i ] = Task.Run( async () =>
+					{
+						//Enqueue task and check result
+						IQueuedTask queuedTask = await taskQueueProducer
+							.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
+								 source: nameof( Test_CanEnqueue_NewTask_ParallelProducers ),
+								priority: faker.Random.Int( 1, 100 ) );
+
+						Assert.NotNull( queuedTask );
+						await Assert_ResultAddedOrUpdatedCorrectly( queuedTask );
+					} );
+				}
+
+				notificationWaitHandle.Wait();
+
+				await taskQueueConsumer
+					.StopReceivingNewTaskUpdatesAsync();
+				Assert.IsFalse( taskQueueConsumer
+					.IsReceivingNewTaskUpdates );
 
 				taskQueueConsumer.ClearForDequeue -=
 					handleClearForDequeue;
@@ -128,7 +202,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
-		public async Task Test_CanEnqueue_RepostExistingTask ()
+		public async Task Test_CanEnqueue_RepostExistingTask_Serial ()
 		{
 			Faker faker =
 				new Faker();
@@ -146,7 +220,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					Id = token.DequeuedTask.Id,
 					Priority = faker.Random.Int( 1, 100 ),
 					Payload = token.DequeuedTask.Payload,
-					Source = nameof( Test_CanEnqueue_RepostExistingTask ),
+					Source = nameof( Test_CanEnqueue_RepostExistingTask_Serial ),
 					Type = token.DequeuedTask.Type,
 					LockedUntil = postedAt.Ticks + faker.Random.Long( 10, 1000 )
 				};
