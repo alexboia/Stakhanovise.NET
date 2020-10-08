@@ -125,6 +125,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			resultQueueMock.Setup( rq => rq.PostResultAsync( It.IsAny<IQueuedTaskToken>() ) )
 				.Callback<IQueuedTaskToken>( t => processedTaskTokens.Add( t ) );
 
+			//TODO: must also test that, for failed tasks that can be re-posted, 
+			//	the tasks is actually reposted
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
 			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			{

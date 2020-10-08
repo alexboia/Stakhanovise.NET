@@ -11,6 +11,7 @@ using SqlKata.Compilers;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Helpers;
 using LVD.Stakhanovise.NET.Queue;
+using System.Linq;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
@@ -85,11 +86,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			using ( NpgsqlConnection conn = await OpenDbConnectionAsync() )
 			{
 				mSeededTasks.Clear();
+				mSeededTaskResults.Clear();
+				mSeededTaskTokens.Clear();
 				await new QueryFactory( conn, new PostgresCompiler() )
 					.Query( mMapping.QueueTableName )
 					.DeleteAsync();
 				await new QueryFactory( conn, new PostgresCompiler() )
-					.Query( mMapping.ResultsTableName )
+					.Query( mMapping.ResultsQueueTableName )
 					.DeleteAsync();
 			}
 		}
@@ -115,7 +118,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
 			{
 				Query selectTaskQuery = new QueryFactory( db, new PostgresCompiler() )
-					.Query( mMapping.ResultsTableName )
+					.Query( mMapping.ResultsQueueTableName )
 					.Select( "*" )
 					.Where( "task_id", "=", taskId );
 
@@ -123,6 +126,17 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					return await reader.ReadAsync()
 						? await reader.ReadQueuedTaskResultAsync()
 						: null;
+			}
+		}
+
+		public async Task RemoveQueuedTaskByIdAsync ( Guid taskId )
+		{
+			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
+			{
+				await new QueryFactory( db, new PostgresCompiler() )
+					.Query( mMapping.QueueTableName )
+					.Where( "task_id", "=", taskId )
+					.DeleteAsync();
 			}
 		}
 
@@ -358,7 +372,6 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 						{ "task_locked_until",
 							queuedTaskPair.Item1.LockedUntil }
-
 					};
 
 					await new QueryFactory( conn, new PostgresCompiler() )
@@ -407,7 +420,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				};
 
 				await new QueryFactory( conn, new PostgresCompiler() )
-					.Query( mMapping.ResultsTableName )
+					.Query( mMapping.ResultsQueueTableName )
 					.InsertAsync( insertDataTaskResult, tx );
 
 				mSeededTasks.Add( queuedTaskPair.Item1 );
@@ -427,6 +440,12 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public IEnumerable<IQueuedTaskToken> SeededTaskTokens
 			=> mSeededTaskTokens.AsReadOnly();
+
+		public IEnumerable<IQueuedTaskToken> CanBeRepostedSeededTaskTokens
+			=> mSeededTaskTokens.Where( t
+				=> t.LastQueuedTaskResult.Status != QueuedTaskStatus.Fatal
+				&& t.LastQueuedTaskResult.Status != QueuedTaskStatus.Faulted )
+			.AsEnumerable();
 
 		public int NumUnProcessedTasks
 			=> mNumUnProcessedTasks;

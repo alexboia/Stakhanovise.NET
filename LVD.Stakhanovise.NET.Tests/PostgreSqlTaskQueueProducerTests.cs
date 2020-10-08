@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Bogus;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
@@ -53,13 +55,13 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
-		public async Task Test_CanEnqueue ()
+		public async Task Test_CanEnqueue_NewTask ()
 		{
+			Faker faker =
+				new Faker();
+
 			ManualResetEvent notificationWaitHandle =
 				new ManualResetEvent( false );
-
-			TaskQueueMetrics previousMetrics,
-				newMetrics;
 
 			string taskType = typeof( SampleTaskPayload )
 				.FullName;
@@ -77,6 +79,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				notificationWaitHandle.Set();
 
 			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer = CreateTaskQueueConsumer( () => postedAt ) )
+			using ( TaskQueueMetricsDiff diff = new TaskQueueMetricsDiff( async () => await taskQueueInfo.ComputeMetricsAsync() ) )
 			{
 				taskQueueConsumer.ClearForDequeue +=
 					handleClearForDequeue;
@@ -84,35 +87,87 @@ namespace LVD.Stakhanovise.NET.Tests
 				await taskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
 				Assert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
 
-				previousMetrics = await taskQueueInfo.ComputeMetricsAsync();
-				Assert.NotNull( previousMetrics );
+				//Capture previous metrics
+				await diff.CaptureInitialMetricsAsync();
 
-				await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
-					source: nameof( Test_CanEnqueue ),
-					priority: 0 );
+				IQueuedTask queuedTask = await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
+					source: nameof( Test_CanEnqueue_NewTask ),
+					priority: faker.Random.Int( 1, 100 ) );
+
+				Assert.NotNull( queuedTask );
+				await Assert_ResultAddedOrUpdatedCorrectly( queuedTask );
 
 				notificationWaitHandle.WaitOne();
-				newMetrics = await taskQueueInfo.ComputeMetricsAsync();
-				Assert.NotNull( newMetrics );
-
-				//One way to mirror the change is 
-				//  to compare the before & after metrics
-				Assert.AreEqual( previousMetrics.TotalErrored,
-					newMetrics.TotalErrored );
-				Assert.AreEqual( previousMetrics.TotalFataled,
-					newMetrics.TotalFataled );
-				Assert.AreEqual( previousMetrics.TotalFaulted,
-					newMetrics.TotalFaulted );
-				Assert.AreEqual( previousMetrics.TotalProcessed,
-					newMetrics.TotalProcessed );
-				Assert.AreEqual( previousMetrics.TotalUnprocessed + 1,
-					newMetrics.TotalUnprocessed );
 
 				await taskQueueConsumer.StopReceivingNewTaskUpdatesAsync();
 				Assert.IsFalse( taskQueueConsumer.IsReceivingNewTaskUpdates );
 
 				taskQueueConsumer.ClearForDequeue -=
 					handleClearForDequeue;
+
+				//Check that new metrics differ from the previous ones as expected
+				await diff.CaptureNewMetricsAndAssertCorrectDiff( delta: new TaskQueueMetrics(
+					totalUnprocessed: 1,
+					totalProcessing: 0,
+					totalErrored: 0,
+					totalFaulted: 0,
+					totalFataled: 0,
+					totalProcessed: 0 ) );
+			}
+		}
+
+		[Test]
+		[Repeat( 5 )]
+		public async Task Test_CanEnqueue_RepostExistingTask ()
+		{
+			Faker faker =
+				new Faker();
+
+			AbstractTimestamp postedAt = mDataSource.LastPostedAt
+				.AddTicks( 1 );
+
+			PostgreSqlTaskQueueProducer taskQueueProducer =
+				CreateTaskQueueProducer( () => postedAt );
+
+			PostgreSqlTaskQueueInfo taskQueueInfo =
+				CreateTaskQueueInfo( () => postedAt );
+
+			foreach ( IQueuedTaskToken token in mDataSource.CanBeRepostedSeededTaskTokens )
+			{
+				using ( TaskQueueMetricsDiff diff = new TaskQueueMetricsDiff( async () => await taskQueueInfo.ComputeMetricsAsync() ) )
+				{
+					QueuedTaskStatus prevStatus = token
+						.LastQueuedTaskResult
+						.Status;
+
+					await diff.CaptureInitialMetricsAsync();
+
+					QueuedTaskInfo repostTaskInfo = new QueuedTaskInfo()
+					{
+						Id = token.DequeuedTask.Id,
+						Priority = faker.Random.Int( 1, 100 ),
+						Payload = token.DequeuedTask.Payload,
+						Source = nameof( Test_CanEnqueue_RepostExistingTask ),
+						Type = token.DequeuedTask.Type,
+						LockedUntil = postedAt.Ticks + faker.Random.Long( 10, 1000 )
+					};
+
+					await mDataSource.RemoveQueuedTaskByIdAsync( token.DequeuedTask.Id );
+
+					IQueuedTask requeuedTask = await taskQueueProducer
+						.EnqueueAsync( repostTaskInfo );
+
+					Assert.NotNull( requeuedTask );
+					await Assert_ResultAddedOrUpdatedCorrectly( requeuedTask );
+
+					await diff.CaptureNewMetricsAndAssertCorrectDiff( delta: new TaskQueueMetrics(
+						totalUnprocessed: prevStatus != QueuedTaskStatus.Unprocessed ? 1 : 0,
+						totalProcessing: prevStatus == QueuedTaskStatus.Processing ? -1 : 0,
+						totalErrored: prevStatus == QueuedTaskStatus.Error ? -1 : 0,
+						totalFaulted: prevStatus == QueuedTaskStatus.Faulted ? -1 : 0,
+						totalFataled: prevStatus == QueuedTaskStatus.Fatal ? -1 : 0,
+						totalProcessed: prevStatus == QueuedTaskStatus.Processed ? -1 : 0 ) );
+				}
 			}
 		}
 
@@ -139,8 +194,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.NotNull( peekTask );
 
 			await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
-					source: nameof( Test_EnqueueDoesNotChangePeekResult_SingleConsumer ),
-					priority: 0 );
+				source: nameof( Test_EnqueueDoesNotChangePeekResult_SingleConsumer ),
+				priority: 0 );
 
 			rePeekTask = await taskQueueInfo.PeekAsync();
 			Assert.NotNull( rePeekTask );
@@ -151,6 +206,30 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.AreEqual( peekTask.Id,
 				rePeekTask.Id );
 
+		}
+
+		private async Task Assert_ResultAddedOrUpdatedCorrectly ( IQueuedTask queuedTask )
+		{
+			IQueuedTaskResult queuedTaskResult = await mDataSource
+				.GetQueuedTaskResultByIdAsync( queuedTask.Id );
+
+			Assert.NotNull( queuedTaskResult );
+			Assert.NotNull( queuedTaskResult.Payload );
+
+			Assert.AreEqual( queuedTask.Id,
+				queuedTaskResult.Id );
+			Assert.AreEqual( queuedTask.Type,
+				queuedTaskResult.Type );
+			Assert.AreEqual( queuedTask.Source,
+				queuedTaskResult.Source );
+			Assert.AreEqual( queuedTask.Priority,
+				queuedTaskResult.Priority );
+			Assert.AreEqual( queuedTask.PostedAt,
+				queuedTaskResult.PostedAt );
+			Assert.LessOrEqual( Math.Abs( ( queuedTask.PostedAtTs - queuedTaskResult.PostedAtTs ).TotalMilliseconds ),
+				10 );
+			Assert.AreEqual( QueuedTaskStatus.Unprocessed,
+				queuedTaskResult.Status );
 		}
 
 		private PostgreSqlTaskQueueProducer CreateTaskQueueProducer ( Func<AbstractTimestamp> currentTimeProvider )

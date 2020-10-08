@@ -105,7 +105,9 @@ namespace LVD.Stakhanovise.NET.Tests
 
 					Assert.AreEqual( 1, affectedRows );
 
-					QueuedTaskResult dbResult = await mDataSource.GetQueuedTaskResultByIdAsync( token.DequeuedTask.Id );
+					QueuedTaskResult dbResult = await mDataSource
+						.GetQueuedTaskResultByIdAsync( token.DequeuedTask.Id );
+					
 					Assert.NotNull( dbResult );
 
 					Assert.AreEqual( dbResult.ErrorCount,
@@ -124,7 +126,7 @@ namespace LVD.Stakhanovise.NET.Tests
 						token.LastQueuedTaskResult.PostedAtTs );
 					Assert.AreEqual( dbResult.Priority,
 						token.LastQueuedTaskResult.Priority );
-					Assert.AreEqual( dbResult.ProcessingFinalizedAtTs,
+					Assert.LessOrEqual( dbResult.ProcessingFinalizedAtTs,
 						token.LastQueuedTaskResult.ProcessingFinalizedAtTs );
 					Assert.AreEqual( dbResult.ProcessingTimeMilliseconds,
 						token.LastQueuedTaskResult.ProcessingTimeMilliseconds );
