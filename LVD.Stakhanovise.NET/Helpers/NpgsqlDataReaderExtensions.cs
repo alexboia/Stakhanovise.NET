@@ -93,6 +93,8 @@ namespace LVD.Stakhanovise.NET.Helpers
 				  defaultValue: string.Empty );
 			result.Status = ( QueuedTaskStatus )( await reader.GetFieldValueAsync<int>( "task_status",
 				defaultValue: 0 ) );
+			result.Priority = await reader.GetFieldValueAsync<int>( "task_priority",
+				  defaultValue: 0 );
 
 			result.LastErrorIsRecoverable = await reader.GetFieldValueAsync<bool>( "task_last_error_is_recoverable",
 				defaultValue: false );

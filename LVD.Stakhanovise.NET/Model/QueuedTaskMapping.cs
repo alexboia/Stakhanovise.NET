@@ -39,27 +39,8 @@ namespace LVD.Stakhanovise.NET.Model
 	{
 		public QueuedTaskMapping ()
 		{
-			IdColumnName = "task_id";
-			LockHandleIdColumnName = "task_lock_handle_id";
-			TypeColumnName = "task_type";
-			SourceColumnName = "task_source";
-			PayloadColumnName = "task_payload";
-			StatusColumnName = "task_status";
-			PriorityColumnName = "task_priority";
-			LastErrorColumnName = "task_last_error";
-			LastErrorIsRecoverableColumnName = "task_last_error_is_recoverable";
-			ErrorCountColumnName = "task_error_count";
-			PostedAtColumnName = "task_posted_at";
-			PostedAtTsColumnName = "task_posted_at_ts";
-			RepostedAtTsColumnName = "task_reposted_at_ts";
-			FirstProcessingAttemptedAtTsColumnName = "task_first_processing_attempted_at_ts";
-			LastProcessingAttemptedAtTsColumnName = "task_last_processing_attempted_at_ts";
-			ProcessingFinalizedAtTsColumnName = "task_processing_finalized_at_ts";
-			LockedUntilColumnName = "task_locked_until";
-			ProcessingTimeMillisecondsColumnName = "task_processing_time_milliseconds";
-
 			QueueTableName = "sk_tasks_queue_t";
-			ResultsTableName = "sk_task_results_t";
+			ResultsQueueTableName = "sk_task_results_t";
 			NewTaskNotificaionChannelName = "sk_task_queue_item_added";
 			DequeueFunctionName = "sk_try_dequeue_task";
 		}
@@ -67,47 +48,12 @@ namespace LVD.Stakhanovise.NET.Model
 		public void AddTablePrefix ( string tablePrefix )
 		{
 			QueueTableName = $"{tablePrefix}{QueueTableName}";
+			ResultsQueueTableName = $"{tablePrefix}{ResultsQueueTableName}";
 		}
-
-		public string IdColumnName { get; set; }
-
-		public string LockHandleIdColumnName { get; set; }
-
-		public string TypeColumnName { get; set; }
-
-		public string SourceColumnName { get; set; }
-
-		public string PayloadColumnName { get; set; }
-
-		public string StatusColumnName { get; set; }
-
-		public string PostedAtColumnName { get; set; }
-
-		public string LockedUntilColumnName { get; set; }
-
-		public string ProcessingTimeMillisecondsColumnName { get; set; }
-
-		public string PriorityColumnName { get; set; }
-
-		public string LastErrorColumnName { get; set; }
-
-		public string LastErrorIsRecoverableColumnName { get; set; }
-
-		public string ErrorCountColumnName { get; set; }
-
-		public string PostedAtTsColumnName { get; set; }
-
-		public string RepostedAtTsColumnName { get; set; }
-
-		public string FirstProcessingAttemptedAtTsColumnName { get; set; }
-
-		public string LastProcessingAttemptedAtTsColumnName { get; set; }
-
-		public string ProcessingFinalizedAtTsColumnName { get; set; }
 
 		public string QueueTableName { get; set; }
 
-		public string ResultsTableName { get; set; }
+		public string ResultsQueueTableName { get; set; }
 
 		public string NewTaskNotificaionChannelName { get; set; }
 

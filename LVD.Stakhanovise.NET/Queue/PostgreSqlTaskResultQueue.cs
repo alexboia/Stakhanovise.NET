@@ -91,7 +91,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string GetUpdateSql ( QueuedTaskMapping mapping )
 		{
-			return $@"UPDATE {mapping.ResultsTableName} SET 
+			return $@"UPDATE {mapping.ResultsQueueTableName} SET 
 					task_status = @t_status,
 					task_last_error = @t_last_error,
 					task_error_count = @t_error_count,

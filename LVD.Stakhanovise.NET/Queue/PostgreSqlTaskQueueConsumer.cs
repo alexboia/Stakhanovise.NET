@@ -168,7 +168,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string GetTaskResultUpdateSql ( QueuedTaskMapping mapping )
 		{
-			return $@"UPDATE {mapping.ResultsTableName} SET
+			return $@"UPDATE {mapping.ResultsQueueTableName} SET
 					task_status = @t_status,
 					task_first_processing_attempted_at_ts = COALESCE(task_first_processing_attempted_at_ts, NOW()),
 					task_last_processing_attempted_at_ts = NOW() 

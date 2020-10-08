@@ -87,7 +87,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			string statsResultsSql = $@"SELECT q.task_status, 
 					COUNT(q.task_status) AS task_status_count 
-				FROM {mOptions.Mapping.ResultsTableName} AS q 
+				FROM {mOptions.Mapping.ResultsQueueTableName} AS q 
 				GROUP BY q.task_status";
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
@@ -99,7 +99,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					long count = await statsResultsRdr.GetFieldValueAsync( "task_status_count",
 						defaultValue: 0 );
 
-					QueuedTaskStatus status = ( QueuedTaskStatus )( await statsResultsRdr.GetFieldValueAsync( mOptions.Mapping.StatusColumnName,
+					QueuedTaskStatus status = ( QueuedTaskStatus )( await statsResultsRdr.GetFieldValueAsync( "task_status",
 						defaultValue: 0 ) );
 
 					switch ( status )
@@ -166,8 +166,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					NpgsqlDbType.Bigint,
 					now.Ticks );
 
-				peekCmd.Prepare();
-
+				await peekCmd.PrepareAsync();
 				using ( NpgsqlDataReader taskReader = await peekCmd.ExecuteReaderAsync() )
 				{
 					if ( await taskReader.ReadAsync() )
