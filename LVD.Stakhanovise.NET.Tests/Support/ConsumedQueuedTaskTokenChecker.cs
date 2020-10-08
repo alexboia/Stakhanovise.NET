@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
@@ -12,8 +13,15 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 	{
 		private IQueuedTaskToken mPreviousTaskToken = null;
 
+		private PostgreSqlTaskQueueDataSource mDataSource = null;
+
 		private List<IQueuedTaskToken> mDequeuedTokens =
 			new List<IQueuedTaskToken>();
+
+		public ConsumedQueuedTaskTokenChecker( PostgreSqlTaskQueueDataSource dataSource)
+		{
+			mDataSource = dataSource;
+		}
 
 		public void AssertConsumedTokenValid ( IQueuedTaskToken newTaskToken, AbstractTimestamp now )
 		{
@@ -31,6 +39,23 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 			mPreviousTaskToken = newTaskToken;
 			mDequeuedTokens.Add( newTaskToken );
+		}
+
+		public async Task AssertTaskNotInDbAnymoreAsync ( IQueuedTaskToken newTaskToken )
+		{
+			Assert.IsNull( await mDataSource.GetQueuedTaskFromDbByIdAsync( newTaskToken
+				.DequeuedTask
+				.Id ) );
+		}
+
+		public async Task AssertTaskResultInDbAndCorrectAsync ( IQueuedTaskToken newTaskToken )
+		{
+			QueuedTaskResult dbResult = await mDataSource.GetQueuedTaskResultFromDbByIdAsync( newTaskToken
+				.DequeuedTask
+				.Id );
+
+			dbResult.AssertMatchesResult( newTaskToken
+				.LastQueuedTaskResult );
 		}
 
 		public void Dispose ()

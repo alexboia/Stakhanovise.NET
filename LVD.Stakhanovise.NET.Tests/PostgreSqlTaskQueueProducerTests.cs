@@ -177,7 +177,7 @@ namespace LVD.Stakhanovise.NET.Tests
 						LockedUntil = postedAt.Ticks + faker.Random.Long( 10, 1000 )
 					};
 
-					await mDataSource.RemoveQueuedTaskByIdAsync( token.DequeuedTask.Id );
+					await mDataSource.RemoveQueuedTaskFromDbByIdAsync( token.DequeuedTask.Id );
 
 					IQueuedTask requeuedTask = await taskQueueProducer
 						.EnqueueAsync( repostTaskInfo );
@@ -236,7 +236,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private async Task Assert_ResultAddedOrUpdatedCorrectly ( IQueuedTask queuedTask )
 		{
 			IQueuedTaskResult queuedTaskResult = await mDataSource
-				.GetQueuedTaskResultByIdAsync( queuedTask.Id );
+				.GetQueuedTaskResultFromDbByIdAsync( queuedTask.Id );
 
 			Assert.NotNull( queuedTaskResult );
 			Assert.NotNull( queuedTaskResult.Payload );

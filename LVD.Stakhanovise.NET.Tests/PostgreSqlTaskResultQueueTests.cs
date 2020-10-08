@@ -106,36 +106,10 @@ namespace LVD.Stakhanovise.NET.Tests
 					Assert.AreEqual( 1, affectedRows );
 
 					QueuedTaskResult dbResult = await mDataSource
-						.GetQueuedTaskResultByIdAsync( token.DequeuedTask.Id );
-					
-					Assert.NotNull( dbResult );
+						.GetQueuedTaskResultFromDbByIdAsync( token.DequeuedTask.Id );
 
-					Assert.AreEqual( dbResult.ErrorCount,
-						token.LastQueuedTaskResult.ErrorCount );
-					Assert.AreEqual( dbResult.FirstProcessingAttemptedAtTs,
-						token.LastQueuedTaskResult.FirstProcessingAttemptedAtTs );
-					Assert.AreEqual( dbResult.LastProcessingAttemptedAtTs,
-						token.LastQueuedTaskResult.LastProcessingAttemptedAtTs );
-					Assert.AreEqual( dbResult.LastError,
-						token.LastQueuedTaskResult.LastError );
-					Assert.AreEqual( dbResult.LastErrorIsRecoverable,
-						token.LastQueuedTaskResult.LastErrorIsRecoverable );
-					Assert.AreEqual( dbResult.PostedAt,
-						token.LastQueuedTaskResult.PostedAt );
-					Assert.AreEqual( dbResult.PostedAtTs,
-						token.LastQueuedTaskResult.PostedAtTs );
-					Assert.AreEqual( dbResult.Priority,
-						token.LastQueuedTaskResult.Priority );
-					Assert.LessOrEqual( dbResult.ProcessingFinalizedAtTs,
-						token.LastQueuedTaskResult.ProcessingFinalizedAtTs );
-					Assert.AreEqual( dbResult.ProcessingTimeMilliseconds,
-						token.LastQueuedTaskResult.ProcessingTimeMilliseconds );
-					Assert.AreEqual( dbResult.Source,
-						token.LastQueuedTaskResult.Source );
-					Assert.AreEqual( dbResult.Status,
-						token.LastQueuedTaskResult.Status );
-					Assert.AreEqual( dbResult.Type,
-						token.LastQueuedTaskResult.Type );
+					dbResult.AssertMatchesResult( token
+						.LastQueuedTaskResult );
 				}
 
 				await rq.StopAsync();

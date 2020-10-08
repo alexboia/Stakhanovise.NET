@@ -104,7 +104,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			}
 		}
 
-		public async Task<QueuedTask> GetQueuedTaskByIdAsync ( Guid taskId )
+		public async Task<QueuedTask> GetQueuedTaskFromDbByIdAsync ( Guid taskId )
 		{
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
 			{
@@ -120,7 +120,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			}
 		}
 
-		public async Task<QueuedTaskResult> GetQueuedTaskResultByIdAsync ( Guid taskId )
+		public async Task<QueuedTaskResult> GetQueuedTaskResultFromDbByIdAsync ( Guid taskId )
 		{
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
 			{
@@ -136,7 +136,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			}
 		}
 
-		public async Task RemoveQueuedTaskByIdAsync ( Guid taskId )
+		public async Task RemoveQueuedTaskFromDbByIdAsync ( Guid taskId )
 		{
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
 			{

@@ -86,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
-			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker() )
+			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 			{
 				foreach ( Type taskType in mDataSource.InQueueTaskTypes )
 				{
@@ -95,6 +95,9 @@ namespace LVD.Stakhanovise.NET.Tests
 					{
 						newTaskToken = await taskQueue.DequeueAsync( taskType.FullName );
 						checker.AssertConsumedTokenValid( newTaskToken, now );
+
+						await checker.AssertTaskNotInDbAnymoreAsync( newTaskToken );
+						await checker.AssertTaskResultInDbAndCorrectAsync( newTaskToken );
 					}
 				}
 			}
@@ -109,7 +112,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
-			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker() )
+			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 			{
 				string[] taskTypes = mDataSource.InQueueTaskTypes
 					.Select( t => t.FullName )
@@ -122,6 +125,9 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					newTaskToken = await taskQueue.DequeueAsync( taskTypes );
 					checker.AssertConsumedTokenValid( newTaskToken, now );
+
+					await checker.AssertTaskNotInDbAnymoreAsync( newTaskToken );
+					await checker.AssertTaskResultInDbAndCorrectAsync( newTaskToken );
 				}
 			}
 		}
@@ -135,7 +141,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
-			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker() )
+			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 			{
 				int expectedDequeueCount = mDataSource
 					.NumTasksInQueue;
@@ -144,6 +150,9 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					newTaskToken = await taskQueue.DequeueAsync();
 					checker.AssertConsumedTokenValid( newTaskToken, now );
+
+					await checker.AssertTaskNotInDbAnymoreAsync( newTaskToken );
+					await checker.AssertTaskResultInDbAndCorrectAsync( newTaskToken );
 				}
 			}
 		}
