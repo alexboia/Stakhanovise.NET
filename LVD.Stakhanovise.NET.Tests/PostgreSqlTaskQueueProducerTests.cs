@@ -195,12 +195,6 @@ namespace LVD.Stakhanovise.NET.Tests
 				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
 		}
 
-		private PostgreSqlTaskQueueInfo CreateTaskQueueInfo ( Func<AbstractTimestamp> currentTimeProvider )
-		{
-			return new PostgreSqlTaskQueueInfo( mInfoOptions,
-				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
-		}
-
 		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ( Func<AbstractTimestamp> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,

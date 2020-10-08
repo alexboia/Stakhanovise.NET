@@ -167,8 +167,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			PostgreSqlTaskQueueInfo taskQueueInfo =
 				CreateTaskQueueInfo( () => postedAt );
 
-			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer = CreateTaskQueueConsumer( () => postedAt ) )
-			using ( TaskQueueMetricsDiffChecker diff = new TaskQueueMetricsDiffChecker( async () => await taskQueueInfo.ComputeMetricsAsync() ) )
+			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer =
+				CreateTaskQueueConsumer( () => postedAt ) )
+			using ( TaskQueueMetricsDiffChecker diff = new TaskQueueMetricsDiffChecker( async ()
+				=> await taskQueueInfo.ComputeMetricsAsync() ) )
 			{
 				await taskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
 				Assert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
@@ -209,7 +211,8 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			foreach ( IQueuedTaskToken token in mDataSource.CanBeRepostedSeededTaskTokens )
 			{
-				using ( TaskQueueMetricsDiffChecker diff = new TaskQueueMetricsDiffChecker( async () => await taskQueueInfo.ComputeMetricsAsync() ) )
+				using ( TaskQueueMetricsDiffChecker diff = new TaskQueueMetricsDiffChecker( async ()
+					=> await taskQueueInfo.ComputeMetricsAsync() ) )
 				{
 					QueuedTaskStatus prevStatus = token
 						.LastQueuedTaskResult
@@ -242,6 +245,38 @@ namespace LVD.Stakhanovise.NET.Tests
 						totalFataled: prevStatus == QueuedTaskStatus.Fatal ? -1 : 0,
 						totalProcessed: prevStatus == QueuedTaskStatus.Processed ? -1 : 0 ) );
 				}
+			}
+		}
+
+		[Test]
+		[Repeat( 5 )]
+		public async Task Test_StatsAreCorrectlyUpdated_AfterDequeue_NoTaskType ()
+		{
+			PostgreSqlTaskQueueInfo taskQueueInfo =
+				CreateTaskQueueInfo( () => mDataSource.LastPostedAt );
+
+			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer =
+				CreateTaskQueueConsumer( () => mDataSource.LastPostedAt ) )
+			using ( TaskQueueMetricsDiffChecker diff = new TaskQueueMetricsDiffChecker( async ()
+				=> await taskQueueInfo.ComputeMetricsAsync() ) )
+			{
+				await diff.CaptureInitialMetricsAsync();
+
+				IQueuedTaskToken dequeuedToken = await taskQueueConsumer
+					.DequeueAsync();
+
+				QueuedTaskStatus origStatus = mDataSource
+					.GetOriginalTokenData( dequeuedToken.DequeuedTask.Id )
+						.LastQueuedTaskResult
+						.Status;
+
+				await diff.CaptureNewMetricsAndAssertCorrectDiff( delta: new TaskQueueMetrics(
+					totalUnprocessed: origStatus == QueuedTaskStatus.Unprocessed ? -1 : 0,
+					totalProcessing: 1,
+					totalErrored: origStatus == QueuedTaskStatus.Error ? -1 : 0,
+					totalFaulted: origStatus == QueuedTaskStatus.Faulted ? -1 : 0,
+					totalFataled: origStatus == QueuedTaskStatus.Fatal ? -1 : 0,
+					totalProcessed: origStatus == QueuedTaskStatus.Processed ? -1 : 0 ) );
 			}
 		}
 

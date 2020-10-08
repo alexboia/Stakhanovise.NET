@@ -104,6 +104,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			}
 		}
 
+		public IQueuedTaskToken GetOriginalTokenData(Guid taskId)
+		{
+			return mSeededTaskTokens.FirstOrDefault( t => t.DequeuedTask.Id == taskId );
+		}
+
 		public async Task<QueuedTask> GetQueuedTaskFromDbByIdAsync ( Guid taskId )
 		{
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
