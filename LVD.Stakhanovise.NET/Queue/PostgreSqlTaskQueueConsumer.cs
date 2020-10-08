@@ -36,8 +36,6 @@ using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using NpgsqlTypes;
 using System;
-using System.Collections.Concurrent;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -193,15 +191,33 @@ namespace LVD.Stakhanovise.NET.Queue
 				AbstractTimestamp now = await mTimeProvider
 					.GetCurrentTimeAsync();
 
+				mLogger.DebugFormat( "Current abstract time is {0} ticks@{1} time cost", 
+					now.Ticks, 
+					now.WallclockTimeCost );
+
 				conn = await OpenQueueConnectionAsync();
 				if ( conn == null )
 					return null;
 
 				using ( NpgsqlTransaction tx = conn.BeginTransaction() )
 				{
+					//1. Dequeue means that we acquire lock on a task in the queue
+					//	with the guarantee that nobody else did, and respecting 
+					//	the priority and static locks (basically the task_locked_until which says 
+					//	that it should not be pulled out of the queue until the 
+					//	current abstract time reaches that tick value)
 					dequeuedTask = await TryDequeueTaskAsync( selectTaskTypes, now, conn, tx );
+
+					//2. Acquire means that we make sure this permanently stays ours;
+					//	In this case, we simply remove it from the queue; other approaches considered, 
+					//	but this is the only one that makes the most guarantees 
+					//	with zero lock-management efforts
 					if ( dequeuedTask != null && await TryAcquireTaskAsync( dequeuedTask, conn, tx ) )
 					{
+						//3. Mark the task as being "Processing" and pull result info
+						//	The result is stored separately and it's what allows us to remove 
+						//	the task from the queue at step #2, 
+						//	whils also tracking it's processing status and previous results
 						dequeuedTaskResult = await TryUpdateTaskResultAsync( dequeuedTask, conn, tx );
 						if ( dequeuedTaskResult != null )
 						{
@@ -240,9 +256,6 @@ namespace LVD.Stakhanovise.NET.Queue
 			NpgsqlTransaction tx )
 		{
 			QueuedTask dequeuedTask;
-			Guid[] excludeLockedTaskIds =
-				new Guid[ 0 ];
-
 			using ( NpgsqlCommand dequeueCmd = new NpgsqlCommand( mTaskDequeueSql, conn, tx ) )
 			{
 				dequeueCmd.Parameters.AddWithValue( "types",
@@ -251,7 +264,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 				dequeueCmd.Parameters.AddWithValue( "excluded",
 					parameterType: NpgsqlDbType.Array | NpgsqlDbType.Uuid,
-					value: excludeLockedTaskIds );
+					value: NoExcludedTaskIds );
 
 				dequeueCmd.Parameters.AddWithValue( "now",
 					parameterType: NpgsqlDbType.Bigint,
@@ -305,7 +318,6 @@ namespace LVD.Stakhanovise.NET.Queue
 						dequeuedTaskResult = await resultRdr.ReadQueuedTaskResultAsync();
 
 					if ( dequeuedTaskResult != null )
-
 						mLogger.Debug( "Successfully dequeued, acquired and initialized/updated task result." );
 					else
 						mLogger.Debug( "Failed to initialize or update task result. Will release lock..." );
@@ -382,5 +394,8 @@ namespace LVD.Stakhanovise.NET.Queue
 				return mTimeProvider;
 			}
 		}
+
+		private Guid[] NoExcludedTaskIds 
+			=> new Guid[ 0 ];
 	}
 }

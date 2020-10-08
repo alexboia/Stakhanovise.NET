@@ -55,6 +55,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mQueueFaultErrorThrehsoldCount = queueFaultErrorThrehsoldCount;
 		}
 
+		public int CountTasksOfTypeInQueue ( Type testType )
+		{
+			return mSeededTaskTokens.Count( t
+				=> CanAddTaskToQueue( t.LastQueuedTaskResult )
+				&& t.DequeuedTask.GetType().Equals( testType ) );
+		}
+
 		public async Task SeedData ()
 		{
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
@@ -71,11 +78,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				List<Tuple<QueuedTask, QueuedTaskResult>> processedTasks = GenerateProcessedTasks();
 				await Task.Delay( 100 );
 
-				await InsertTaskDataAsync( db, unprocessedTasks, tx );
-				await InsertTaskDataAsync( db, erroredTasks, tx );
-				await InsertTaskDataAsync( db, fataledTasks, tx );
-				await InsertTaskDataAsync( db, faultedTasks, tx );
-				await InsertTaskDataAsync( db, processedTasks, tx );
+				await InsertTaskDataAsync( unprocessedTasks, db, tx );
+				await InsertTaskDataAsync( erroredTasks, db, tx );
+				await InsertTaskDataAsync( fataledTasks, db, tx );
+				await InsertTaskDataAsync( faultedTasks, db, tx );
+				await InsertTaskDataAsync( processedTasks, db, tx );
 
 				await tx.CommitAsync();
 			}
@@ -191,8 +198,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
-					Type = typeof( SampleTaskPayload ).FullName,
-					Payload = new SampleTaskPayload( mNumErroredTasks ),
+					Type = typeof( ErroredTaskPayload ).FullName,
+					Payload = new ErroredTaskPayload(),
 					PostedAtTs = now,
 					Source = GetType().FullName,
 					PostedAt = mLastPostedAtTimeTick++,
@@ -228,8 +235,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
-					Type = typeof( SampleTaskPayload ).FullName,
-					Payload = new SampleTaskPayload( mNumFatalTasks ),
+					Type = typeof( ThrowsExceptionTaskPayload ).FullName,
+					Payload = new ThrowsExceptionTaskPayload(),
 					PostedAtTs = now,
 					Source = GetType().FullName,
 					PostedAt = mLastPostedAtTimeTick++,
@@ -265,8 +272,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
-					Type = typeof( SampleTaskPayload ).FullName,
-					Payload = new SampleTaskPayload( mNumFaultedTasks ),
+					Type = typeof( ErroredTaskPayload ).FullName,
+					Payload = new ErroredTaskPayload(),
 					PostedAtTs = now,
 					Source = GetType().FullName,
 					PostedAt = mLastPostedAtTimeTick++,
@@ -302,8 +309,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
-					Type = typeof( SampleTaskPayload ).FullName,
-					Payload = new SampleTaskPayload( mNumProcessedTasks ),
+					Type = typeof( SuccessfulTaskPayload ).FullName,
+					Payload = new SuccessfulTaskPayload(),
 					PostedAtTs = now,
 					Source = GetType().FullName,
 					PostedAt = mLastPostedAtTimeTick++,
@@ -337,91 +344,110 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			return processedTasks;
 		}
 
-		private async Task InsertTaskDataAsync ( NpgsqlConnection conn,
-			IEnumerable<Tuple<QueuedTask, QueuedTaskResult>> queuedTasks,
+		private bool CanAddTaskToQueue ( IQueuedTaskResult result )
+		{
+			return result.Status != QueuedTaskStatus.Cancelled
+				&& result.Status != QueuedTaskStatus.Processing
+				&& result.Status != QueuedTaskStatus.Processed
+				&& result.Status != QueuedTaskStatus.Fatal;
+		}
+
+		private bool CanAddTaskToQueue ( Tuple<QueuedTask, QueuedTaskResult> queuedTaskPair )
+		{
+			return CanAddTaskToQueue( queuedTaskPair.Item2 );
+		}
+
+		private async Task AddTaskToQueue ( Tuple<QueuedTask, QueuedTaskResult> queuedTaskPair,
+			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
 		{
-			Dictionary<string, object> insertDataTask;
-			Dictionary<string, object> insertDataTaskResult;
+			Dictionary<string, object> insertDataTask = new Dictionary<string, object>()
+			{
+				{ "task_id",
+					queuedTaskPair.Item1.Id },
+				{ "task_payload",
+					queuedTaskPair.Item1.Payload.ToJson(includeTypeInformation: true) },
+				{ "task_type",
+					queuedTaskPair.Item1.Type },
 
+				{ "task_source",
+					queuedTaskPair.Item1.Source },
+				{ "task_priority",
+					queuedTaskPair.Item1.Priority },
+
+				{ "task_posted_at",
+					queuedTaskPair.Item1.PostedAt },
+				{ "task_posted_at_ts",
+					queuedTaskPair.Item1.PostedAtTs },
+
+				{ "task_locked_until",
+					queuedTaskPair.Item1.LockedUntil }
+			};
+
+			await new QueryFactory( conn, new PostgresCompiler() )
+				.Query( mMapping.QueueTableName )
+				.InsertAsync( insertDataTask, tx );
+		}
+
+		private async Task AddTaskResultToResultQueue ( Tuple<QueuedTask, QueuedTaskResult> queuedTaskPair,
+			NpgsqlConnection conn,
+			NpgsqlTransaction tx )
+		{
+			Dictionary<string, object> insertDataTaskResult = new Dictionary<string, object>()
+			{
+				{ "task_id",
+					queuedTaskPair.Item2.Id },
+				{ "task_payload",
+					queuedTaskPair.Item1.Payload.ToJson(includeTypeInformation: true) },
+				{ "task_type",
+					queuedTaskPair.Item1.Type },
+
+				{ "task_source",
+					queuedTaskPair.Item1.Source },
+				{ "task_priority",
+					queuedTaskPair.Item1.Priority },
+
+				{ "task_posted_at",
+					queuedTaskPair.Item1.PostedAt },
+				{ "task_posted_at_ts",
+					queuedTaskPair.Item1.PostedAtTs },
+
+				{ "task_status",
+					queuedTaskPair.Item2.Status },
+
+				{ "task_processing_time_milliseconds",
+					queuedTaskPair.Item2.ProcessingTimeMilliseconds },
+
+				{ "task_error_count",
+					queuedTaskPair.Item2.ErrorCount },
+				{ "task_last_error",
+					queuedTaskPair.Item2.LastError.ToJson() },
+				{ "task_last_error_is_recoverable",
+					queuedTaskPair.Item2.LastErrorIsRecoverable },
+
+				{ "task_first_processing_attempted_at_ts",
+					queuedTaskPair.Item2.FirstProcessingAttemptedAtTs },
+				{ "task_last_processing_attempted_at_ts",
+					queuedTaskPair.Item2.LastProcessingAttemptedAtTs },
+				{ "task_processing_finalized_at_ts",
+					queuedTaskPair.Item2.ProcessingFinalizedAtTs }
+			};
+
+			await new QueryFactory( conn, new PostgresCompiler() )
+				.Query( mMapping.ResultsQueueTableName )
+				.InsertAsync( insertDataTaskResult, tx );
+		}
+
+		private async Task InsertTaskDataAsync ( IEnumerable<Tuple<QueuedTask, QueuedTaskResult>> queuedTasks,
+			NpgsqlConnection conn,
+			NpgsqlTransaction tx )
+		{
 			foreach ( Tuple<QueuedTask, QueuedTaskResult> queuedTaskPair in queuedTasks )
 			{
-				if ( queuedTaskPair.Item2.Status != QueuedTaskStatus.Cancelled
-					&& queuedTaskPair.Item2.Status != QueuedTaskStatus.Processing
-					&& queuedTaskPair.Item2.Status != QueuedTaskStatus.Processed
-					&& queuedTaskPair.Item2.Status != QueuedTaskStatus.Fatal )
-				{
-					insertDataTask = new Dictionary<string, object>()
-					{
-						{ "task_id",
-							queuedTaskPair.Item1.Id },
-						{ "task_payload",
-							queuedTaskPair.Item1.Payload.ToJson(includeTypeInformation: true) },
-						{ "task_type",
-							queuedTaskPair.Item1.Type },
+				if ( CanAddTaskToQueue( queuedTaskPair ) )
+					await AddTaskToQueue( queuedTaskPair, conn, tx );
 
-						{ "task_source",
-							queuedTaskPair.Item1.Source },
-						{ "task_priority",
-							queuedTaskPair.Item1.Priority },
-
-						{ "task_posted_at",
-							queuedTaskPair.Item1.PostedAt },
-						{ "task_posted_at_ts",
-							queuedTaskPair.Item1.PostedAtTs },
-
-						{ "task_locked_until",
-							queuedTaskPair.Item1.LockedUntil }
-					};
-
-					await new QueryFactory( conn, new PostgresCompiler() )
-						.Query( mMapping.QueueTableName )
-						.InsertAsync( insertDataTask, tx );
-				}
-
-				insertDataTaskResult = new Dictionary<string, object>()
-				{
-					{ "task_id",
-						queuedTaskPair.Item2.Id },
-					{ "task_payload",
-						queuedTaskPair.Item1.Payload.ToJson(includeTypeInformation: true) },
-					{ "task_type",
-						queuedTaskPair.Item1.Type },
-
-					{ "task_source",
-						queuedTaskPair.Item1.Source },
-					{ "task_priority",
-						queuedTaskPair.Item1.Priority },
-
-					{ "task_posted_at",
-						queuedTaskPair.Item1.PostedAt },
-					{ "task_posted_at_ts",
-						queuedTaskPair.Item1.PostedAtTs },
-
-					{ "task_status",
-						queuedTaskPair.Item2.Status },
-
-					{ "task_processing_time_milliseconds",
-						queuedTaskPair.Item2.ProcessingTimeMilliseconds },
-
-					{ "task_error_count",
-						queuedTaskPair.Item2.ErrorCount },
-					{ "task_last_error",
-						queuedTaskPair.Item2.LastError.ToJson() },
-					{ "task_last_error_is_recoverable",
-						queuedTaskPair.Item2.LastErrorIsRecoverable },
-
-					{ "task_first_processing_attempted_at_ts",
-						queuedTaskPair.Item2.FirstProcessingAttemptedAtTs },
-					{ "task_last_processing_attempted_at_ts",
-						queuedTaskPair.Item2.LastProcessingAttemptedAtTs },
-					{ "task_processing_finalized_at_ts",
-						queuedTaskPair.Item2.ProcessingFinalizedAtTs }
-				};
-
-				await new QueryFactory( conn, new PostgresCompiler() )
-					.Query( mMapping.ResultsQueueTableName )
-					.InsertAsync( insertDataTaskResult, tx );
+				await AddTaskResultToResultQueue( queuedTaskPair, conn, tx );
 
 				mSeededTasks.Add( queuedTaskPair.Item1 );
 				mSeededTaskResults.Add( queuedTaskPair.Item2 );
@@ -432,8 +458,26 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			}
 		}
 
+		private bool CanTaskBeReposted ( IQueuedTaskToken token )
+		{
+			return token.LastQueuedTaskResult.Status != QueuedTaskStatus.Fatal
+				&& token.LastQueuedTaskResult.Status != QueuedTaskStatus.Faulted
+				&& token.LastQueuedTaskResult.Status != QueuedTaskStatus.Cancelled
+				&& token.LastQueuedTaskResult.Status != QueuedTaskStatus.Processed;
+		}
+
 		public IEnumerable<QueuedTask> SeededTasks
 			=> mSeededTasks.AsReadOnly();
+
+		public IEnumerable<Type> InQueueTaskTypes
+			=> mSeededTaskTokens
+				.Where( t => CanAddTaskToQueue( t.LastQueuedTaskResult ) )
+				.Select( t => t.DequeuedTask.Payload.GetType() )
+				.Distinct()
+				.AsEnumerable();
+
+		public int NumTasksInQueue
+			=> mSeededTaskTokens.Count( t => CanAddTaskToQueue( t.LastQueuedTaskResult ) );
 
 		public IEnumerable<QueuedTaskResult> SeededTaskResults
 			=> mSeededTaskResults.AsReadOnly();
@@ -442,10 +486,9 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			=> mSeededTaskTokens.AsReadOnly();
 
 		public IEnumerable<IQueuedTaskToken> CanBeRepostedSeededTaskTokens
-			=> mSeededTaskTokens.Where( t
-				=> t.LastQueuedTaskResult.Status != QueuedTaskStatus.Fatal
-				&& t.LastQueuedTaskResult.Status != QueuedTaskStatus.Faulted )
-			.AsEnumerable();
+			=> mSeededTaskTokens
+				.Where( t => CanTaskBeReposted( t ) )
+				.AsEnumerable();
 
 		public int NumUnProcessedTasks
 			=> mNumUnProcessedTasks;
@@ -466,7 +509,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			=> mNumProcessingTasks;
 
 		public AbstractTimestamp LastPostedAt
-			=> new AbstractTimestamp( mLastPostedAtTimeTick, mLastPostedAtTimeTick * 100 );
+			=> new AbstractTimestamp( mLastPostedAtTimeTick,
+				mLastPostedAtTimeTick * 100 );
 
 		public long LastPostedAtTimeTick
 			=> mLastPostedAtTimeTick;

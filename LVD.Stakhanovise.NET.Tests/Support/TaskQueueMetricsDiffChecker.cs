@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
-	public class TaskQueueMetricsDiff : IDisposable
+	public class TaskQueueMetricsDiffChecker : IDisposable
 	{
 		private Func<Task<TaskQueueMetrics>> mAcquireMetricsFn;
 
 		private TaskQueueMetrics mInitialMetrics;
 
-		public TaskQueueMetricsDiff ( Func<Task<TaskQueueMetrics>> acquireMetricsFn )
+		public TaskQueueMetricsDiffChecker ( Func<Task<TaskQueueMetrics>> acquireMetricsFn )
 		{
 			mAcquireMetricsFn = acquireMetricsFn;
 		}

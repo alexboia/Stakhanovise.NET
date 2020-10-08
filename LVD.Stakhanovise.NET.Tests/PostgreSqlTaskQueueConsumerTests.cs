@@ -1,4 +1,35 @@
-﻿using LVD.Stakhanovise.NET.Queue;
+﻿// 
+// BSD 3-Clause License
+// 
+// Copyright (c) 2020, Boia Alexandru
+// All rights reserved.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+// 
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
+using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Npgsql;
 using NUnit.Framework;
@@ -15,10 +46,6 @@ using System.Linq;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
-	//TODO: also test dequeue with tasks still being locked
-	//TODO: test correct handling of connection dropouts (notifications being emitted by queue consumer)
-	//TODO: also test without a given task type/s
-	//TODO: test for all test task types/payload types
 	[TestFixture]
 	public class PostgreSqlTaskQueueConsumerTests : BaseDbTests
 	{
@@ -52,47 +79,71 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
-		public async Task Test_CanDequeue_WithTaskTypes ()
+		public async Task Test_CanDequeue_WithTaskTypes_OneTypePerDequeueCall ()
 		{
-			List<IQueuedTaskToken> dequedTokens =
-				new List<IQueuedTaskToken>();
-
-			IQueuedTaskToken newTaskToken = null,
-				previousTaskToken = null;
-
-			string taskType = typeof( SampleTaskPayload )
-				.FullName;
-
+			IQueuedTaskToken newTaskToken = null;
 			AbstractTimestamp now = mDataSource
 				.LastPostedAt;
 
-			int dequeueCount = mDataSource.NumUnProcessedTasks 
-				+ mDataSource.NumErroredTasks 
-				+ mDataSource.NumFaultedTasks;
+			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
+			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker() )
+			{
+				foreach ( Type taskType in mDataSource.InQueueTaskTypes )
+				{
+					int expectedDequeueCount = mDataSource.CountTasksOfTypeInQueue( taskType );
+					for ( int i = 0; i < expectedDequeueCount; i++ )
+					{
+						newTaskToken = await taskQueue.DequeueAsync( taskType.FullName );
+						checker.AssertConsumedTokenValid( newTaskToken, now );
+					}
+				}
+			}
+		}
+
+		[Test]
+		[Repeat( 5 )]
+		public async Task Test_CanDequeue_WithTaskTypes_MultipleTypesPerDequeueCall ()
+		{
+			IQueuedTaskToken newTaskToken = null;
+			AbstractTimestamp now = mDataSource
+				.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
+			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker() )
 			{
-				for ( int i = 0; i < dequeueCount; i++ )
+				string[] taskTypes = mDataSource.InQueueTaskTypes
+					.Select( t => t.FullName )
+					.ToArray();
+
+				int expectedDequeueCount = mDataSource
+					.NumTasksInQueue;
+
+				for ( int i = 0; i < expectedDequeueCount; i++ )
 				{
-					newTaskToken = await taskQueue
-						.DequeueAsync( taskType );
+					newTaskToken = await taskQueue.DequeueAsync( taskTypes );
+					checker.AssertConsumedTokenValid( newTaskToken, now );
+				}
+			}
+		}
 
-					Assert.NotNull( newTaskToken );
-					Assert.NotNull( newTaskToken.DequeuedAt );
-					Assert.NotNull( newTaskToken.DequeuedTask );
-					Assert.NotNull( newTaskToken.LastQueuedTaskResult );
+		[Test]
+		[Repeat( 5 )]
+		public async Task Test_CanDequeue_WithoutTaskTypes ()
+		{
+			IQueuedTaskToken newTaskToken = null;
+			AbstractTimestamp now = mDataSource
+				.LastPostedAt;
 
-					Assert.AreEqual( now, newTaskToken.DequeuedAt );
+			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
+			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker() )
+			{
+				int expectedDequeueCount = mDataSource
+					.NumTasksInQueue;
 
-					Assert.IsFalse( dequedTokens.Any( t => t.DequeuedTask.Id
-						== newTaskToken.DequeuedTask.Id ) );
-
-					if ( previousTaskToken != null )
-						Assert.GreaterOrEqual( newTaskToken.DequeuedTask.PostedAt,
-							previousTaskToken.DequeuedTask.PostedAt );
-
-					previousTaskToken = newTaskToken;
-					dequedTokens.Add( newTaskToken );
+				for ( int i = 0; i < expectedDequeueCount; i++ )
+				{
+					newTaskToken = await taskQueue.DequeueAsync();
+					checker.AssertConsumedTokenValid( newTaskToken, now );
 				}
 			}
 		}
