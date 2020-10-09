@@ -35,82 +35,82 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-   public class QueuedTaskError
-   {
-      private QueuedTaskError()
-      {
-         return;
-      }
+	public class QueuedTaskError : IEquatable<QueuedTaskError>
+	{
+		private QueuedTaskError ()
+		{
+			return;
+		}
 
-      public QueuedTaskError(string message)
-          : this(null, message, null)
-      {
-         return;
-      }
+		public QueuedTaskError ( string message )
+			: this( null, message, null )
+		{
+			return;
+		}
 
-      public QueuedTaskError(string type, string message)
-         : this(type, message, null)
-      {
-         return;
-      }
+		public QueuedTaskError ( string type, string message )
+		   : this( type, message, null )
+		{
+			return;
+		}
 
-      public QueuedTaskError(string type, string message, string stackTrace)
-          : this()
-      {
-         Type = type;
-         Message = message;
-         StackTrace = stackTrace;
-      }
+		public QueuedTaskError ( string type, string message, string stackTrace )
+			: this()
+		{
+			Type = type;
+			Message = message;
+			StackTrace = stackTrace;
+		}
 
-      public QueuedTaskError(Exception exc)
-          : this(exc.GetType().FullName, exc.Message, exc.StackTrace)
-      {
-         return;
-      }
+		public QueuedTaskError ( Exception exc )
+			: this( exc.GetType().FullName, exc.Message, exc.StackTrace )
+		{
+			return;
+		}
 
-      public static QueuedTaskError FromException(Exception exc)
-      {
-         return new QueuedTaskError(exc);
-      }
+		public static QueuedTaskError FromException ( Exception exc )
+		{
+			return new QueuedTaskError( exc );
+		}
 
-      public static QueuedTaskError FromMessage(string message)
-      {
-         return new QueuedTaskError(message);
-      }
+		public static QueuedTaskError FromMessage ( string message )
+		{
+			return new QueuedTaskError( message );
+		}
 
-      public static QueuedTaskError FromMessage(string type, string message)
-      {
-         return new QueuedTaskError(type, message);
-      }
+		public static QueuedTaskError FromMessage ( string type, string message )
+		{
+			return new QueuedTaskError( type, message );
+		}
 
-      public bool Equals(QueuedTaskError taskError)
-      {
-         return taskError != null
-             && string.Equals(Type, taskError.Type)
-             && string.Equals(Message, taskError.Message)
-             && string.Equals(StackTrace, taskError.StackTrace);
-      }
+		public bool Equals ( QueuedTaskError taskError )
+		{
+			return taskError != null
+				&& string.Equals( Type, taskError.Type )
+				&& string.Equals( Message, taskError.Message )
+				&& string.Equals( StackTrace, taskError.StackTrace );
+		}
 
-      public override bool Equals(object obj)
-      {
-         return Equals(obj as QueuedTaskError);
-      }
+		public override bool Equals ( object obj )
+		{
+			return Equals( obj as QueuedTaskError );
+		}
 
-      public override int GetHashCode()
-      {
-         int result = 1;
+		public override int GetHashCode ()
+		{
+			int result = 1;
 
-         result = result * 13 + Type.GetHashCode();
-         result = result * 13 + Message.GetHashCode();
-         result = result * 13 + StackTrace.GetHashCode();
+			result = result * 13 + Type.GetHashCode();
+			result = result * 13 + Message.GetHashCode();
+			result = result * 13 + StackTrace.GetHashCode();
 
-         return result;
-      }
+			return result;
+		}
 
-      public string Type { get; set; }
+		public string Type { get; set; }
 
-      public string Message { get; set; }
+		public string Message { get; set; }
 
-      public string StackTrace { get; set; }
-   }
+		public string StackTrace { get; set; }
+	}
 }
