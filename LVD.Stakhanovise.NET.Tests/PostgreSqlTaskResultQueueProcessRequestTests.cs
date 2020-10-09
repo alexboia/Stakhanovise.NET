@@ -34,27 +34,33 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Bogus;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
+using Moq;
 using NUnit.Framework;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class PostgreSqlTaskQueueTimingBeltTickRequestTests : BaseAsyncProcessingRequestTests
+	public class PostgreSqlTaskResultQueueProcessRequestTests : BaseAsyncProcessingRequestTests
 	{
 		[Test]
-		public void Test_CanSetCompleted_SingleThread ()
+		[TestCase( 0 )]
+		[TestCase( 1 )]
+		[TestCase( 5 )]
+		public void Test_CanSetCompleted_SingleThread ( int expectedResult )
 		{
-			AbstractTimestamp timestamp =
-				new AbstractTimestamp( 10, 1000 );
+			Mock<IQueuedTaskResult> resultMock =
+				new Mock<IQueuedTaskResult>();
 
-			RunTest_CanSetCompleted_SingleThread<AbstractTimestamp>( tcs => new PostgreSqlTaskQueueTimingBeltTickRequest( 1,
+			RunTest_CanSetCompleted_SingleThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+					resultToUpdate: resultMock.Object,
 					completionToken: tcs,
 					timeoutMilliseconds: 0,
 					maxFailCount: 3 ),
-				timestamp,
-				expectSame: true );
+				expectedResult,
+				expectSame: false );
 		}
 
 		[Test]
@@ -67,29 +73,34 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( false, 10 )]
 		public async Task Test_CanSetCompleted_MultiThread ( bool syncOnCheckpoints, int nThreads )
 		{
-			Barrier syncCheckpoint =
-				new Barrier( nThreads );
+			Faker faker =
+				new Faker();
 
-			List<Task> allThreads =
-				new List<Task>();
+			int expectedResult = faker.Random
+				.Int( 0, 10 );
 
-			AbstractTimestamp timestamp =
-				new AbstractTimestamp( 10, 1000 );
+			Mock<IQueuedTaskResult> resultMock =
+				new Mock<IQueuedTaskResult>();
 
-			await RunTest_CanSetCompleted_MultiThread<AbstractTimestamp>( tcs => new PostgreSqlTaskQueueTimingBeltTickRequest( 1,
+			await RunTest_CanSetCompleted_MultiThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+					resultToUpdate: resultMock.Object,
 					completionToken: tcs,
 					timeoutMilliseconds: 0,
 					maxFailCount: 3 ),
 				syncOnCheckpoints,
 				nThreads,
-				timestamp,
-				expectSame: true );
+				expectedResult,
+				expectSame: false );
 		}
 
 		[Test]
 		public void Test_CanSetCancelledManually_SingleThread ()
 		{
-			RunTest_CanSetCancelledManually_SingleThread<AbstractTimestamp>( tcs => new PostgreSqlTaskQueueTimingBeltTickRequest( 1,
+			Mock<IQueuedTaskResult> resultMock =
+				new Mock<IQueuedTaskResult>();
+
+			RunTest_CanSetCancelledManually_SingleThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+				 resultToUpdate: resultMock.Object,
 				 completionToken: tcs,
 				 timeoutMilliseconds: 0,
 				 maxFailCount: 3 ) );
@@ -105,7 +116,11 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( false, 10 )]
 		public async Task Test_CanSetCancelledManually_MultiThread ( bool syncOnCheckpoints, int nThreads )
 		{
-			await RunTest_CanSetCancelledManually_MultiThread<AbstractTimestamp>( tcs => new PostgreSqlTaskQueueTimingBeltTickRequest( 1,
+			Mock<IQueuedTaskResult> resultMock =
+				new Mock<IQueuedTaskResult>();
+
+			await RunTest_CanSetCancelledManually_MultiThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+					resultToUpdate: resultMock.Object,
 					completionToken: tcs,
 					timeoutMilliseconds: 0,
 					maxFailCount: 3 ),
@@ -119,10 +134,14 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 1000 )]
 		public void Test_CanCancelItselfViaTimeout ( int timeoutMilliseconds )
 		{
-			RunTest_CanCancelItselfViaTimeout<AbstractTimestamp>( tcs => new PostgreSqlTaskQueueTimingBeltTickRequest( 1,
-				completionToken: tcs,
-				timeoutMilliseconds: timeoutMilliseconds,
-				maxFailCount: 3 ) );
+			Mock<IQueuedTaskResult> resultMock =
+				new Mock<IQueuedTaskResult>();
+
+			RunTest_CanCancelItselfViaTimeout<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+				 resultToUpdate: resultMock.Object,
+				 completionToken: tcs,
+				 timeoutMilliseconds: timeoutMilliseconds,
+				 maxFailCount: 3 ) );
 		}
 
 		[Test]
@@ -131,10 +150,14 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 5 )]
 		public void Test_CanSetFailed_SingleThread ( int maxFailCount )
 		{
-			RunTest_CanSetFailed_SingleThread<AbstractTimestamp>( tcs => new PostgreSqlTaskQueueTimingBeltTickRequest( 1,
+			Mock<IQueuedTaskResult> resultMock =
+				new Mock<IQueuedTaskResult>();
+
+			RunTest_CanSetFailed_SingleThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+					resultToUpdate: resultMock.Object,
 					completionToken: tcs,
 					timeoutMilliseconds: 0,
-					maxFailCount: maxFailCount ),
+					maxFailCount: maxFailCount ), 
 				maxFailCount );
 		}
 	}
