@@ -21,6 +21,7 @@ namespace LVD.Stakhanovise.NET.Model
 			Type = task.Type;
 			Payload = task.Payload;
 			Status = QueuedTaskStatus.Processing;
+			Source = task.Source;
 			Priority = task.Priority;
 			PostedAt = task.PostedAt;
 			PostedAtTs = task.PostedAtTs;
