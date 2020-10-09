@@ -29,20 +29,17 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Helpers;
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Npgsql;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using LVD.Stakhanovise.NET.Helpers;
-using LVD.Stakhanovise.NET.Options;
-using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Tests.Payloads;
-using System.Linq;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -77,28 +74,40 @@ namespace LVD.Stakhanovise.NET.Tests
 			await Task.Delay( 100 );
 		}
 
+		private async Task Run_ConsumeTest ( PostgreSqlTaskQueueConsumer taskQueue,
+			ConsumedQueuedTaskTokenChecker checker,
+			AbstractTimestamp now,
+			params string[] payloadTypes )
+		{
+			IQueuedTaskToken newTaskToken;
+			if ( payloadTypes != null && payloadTypes.Length > 0 )
+				newTaskToken = await taskQueue.DequeueAsync( payloadTypes );
+			else
+				newTaskToken = await taskQueue.DequeueAsync();
+
+			checker.AssertConsumedTokenValid( newTaskToken, now );
+
+			await checker.AssertTaskNotInDbAnymoreAsync( newTaskToken );
+			await checker.AssertTaskResultInDbAndCorrectAsync( newTaskToken );
+		}
+
 		[Test]
 		[Repeat( 5 )]
 		public async Task Test_CanDequeue_WithTaskTypes_OneTypePerDequeueCall ()
 		{
-			IQueuedTaskToken newTaskToken = null;
 			AbstractTimestamp now = mDataSource
 				.LastPostedAt;
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
-			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker( mDataSource ) )
+			using ( PostgreSqlTaskQueueConsumer taskQueue =
+				CreateTaskQueue( () => now ) )
+			using ( ConsumedQueuedTaskTokenChecker checker =
+				new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 			{
 				foreach ( Type taskType in mDataSource.InQueueTaskTypes )
 				{
 					int expectedDequeueCount = mDataSource.CountTasksOfTypeInQueue( taskType );
 					for ( int i = 0; i < expectedDequeueCount; i++ )
-					{
-						newTaskToken = await taskQueue.DequeueAsync( taskType.FullName );
-						checker.AssertConsumedTokenValid( newTaskToken, now );
-
-						await checker.AssertTaskNotInDbAnymoreAsync( newTaskToken );
-						await checker.AssertTaskResultInDbAndCorrectAsync( newTaskToken );
-					}
+						await Run_ConsumeTest( taskQueue, checker, now, taskType.FullName );
 				}
 			}
 		}
@@ -107,54 +116,110 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanDequeue_WithTaskTypes_MultipleTypesPerDequeueCall ()
 		{
-			IQueuedTaskToken newTaskToken = null;
 			AbstractTimestamp now = mDataSource
 				.LastPostedAt;
+			int expectedDequeueCount = mDataSource
+				.NumTasksInQueue;
+			string[] taskTypes = mDataSource.InQueueTaskTypes
+				.Select( t => t.FullName )
+				.ToArray();
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
-			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker( mDataSource ) )
+			using ( PostgreSqlTaskQueueConsumer taskQueue =
+				CreateTaskQueue( () => now ) )
+			using ( ConsumedQueuedTaskTokenChecker checker =
+				new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 			{
-				string[] taskTypes = mDataSource.InQueueTaskTypes
-					.Select( t => t.FullName )
-					.ToArray();
-
-				int expectedDequeueCount = mDataSource
-					.NumTasksInQueue;
-
 				for ( int i = 0; i < expectedDequeueCount; i++ )
-				{
-					newTaskToken = await taskQueue.DequeueAsync( taskTypes );
-					checker.AssertConsumedTokenValid( newTaskToken, now );
-
-					await checker.AssertTaskNotInDbAnymoreAsync( newTaskToken );
-					await checker.AssertTaskResultInDbAndCorrectAsync( newTaskToken );
-				}
+					await Run_ConsumeTest( taskQueue, checker, now, taskTypes );
 			}
+		}
+
+		[Test]
+		[TestCase( 2 )]
+		[TestCase( 5 )]
+		[TestCase( 10 )]
+		[Repeat( 5 )]
+		public async Task Test_CanDequeue_WithTaskTypes_MultipleTypesPerDequeueCall_ParallelConsumers ( int nConsumers )
+		{
+			int currentDequeueCount = 0;
+			int expectedDequeueCount = mDataSource
+				.NumTasksInQueue;
+			AbstractTimestamp now = mDataSource
+				.LastPostedAt;
+			string[] taskTypes = mDataSource.InQueueTaskTypes
+				.Select( t => t.FullName )
+				.ToArray();
+
+			Task[] consumers = new Task[ nConsumers ];
+
+			for ( int i = 0; i < nConsumers; i++ )
+			{
+				consumers[ i ] = Task.Run( async () =>
+				{
+					using ( PostgreSqlTaskQueueConsumer taskQueue =
+						CreateTaskQueue( () => now ) )
+					using ( ConsumedQueuedTaskTokenChecker checker =
+						new ConsumedQueuedTaskTokenChecker( mDataSource ) )
+					{
+						while ( Interlocked.Increment( ref currentDequeueCount ) < expectedDequeueCount )
+							await Run_ConsumeTest( taskQueue, checker, now, taskTypes );
+					}
+				} );
+			}
+
+			await Task.WhenAll( consumers );
 		}
 
 		[Test]
 		[Repeat( 5 )]
 		public async Task Test_CanDequeue_WithoutTaskTypes ()
 		{
-			IQueuedTaskToken newTaskToken = null;
+			AbstractTimestamp now = mDataSource
+				.LastPostedAt;
+			int expectedDequeueCount = mDataSource
+					.NumTasksInQueue;
+
+			using ( PostgreSqlTaskQueueConsumer taskQueue =
+				CreateTaskQueue( () => now ) )
+			using ( ConsumedQueuedTaskTokenChecker checker =
+				new ConsumedQueuedTaskTokenChecker( mDataSource ) )
+			{
+				for ( int i = 0; i < expectedDequeueCount; i++ )
+					await Run_ConsumeTest( taskQueue, checker, now );
+			}
+		}
+
+		[Test]
+		[TestCase( 2 )]
+		[TestCase( 5 )]
+		[TestCase( 10 )]
+		[Repeat( 5 )]
+		public async Task Test_CanDequeue_WithoutTaskTypes_ParallelConsumers ( int nConsumers )
+		{
+			int currentDequeueCount = 0;
+			int expectedDequeueCount = mDataSource
+				.NumTasksInQueue;
 			AbstractTimestamp now = mDataSource
 				.LastPostedAt;
 
-			using ( PostgreSqlTaskQueueConsumer taskQueue = CreateTaskQueue( () => now ) )
-			using ( ConsumedQueuedTaskTokenChecker checker = new ConsumedQueuedTaskTokenChecker( mDataSource ) )
+			Task[] consumers = new Task[ nConsumers ];
+
+			for ( int i = 0; i < nConsumers; i++ )
 			{
-				int expectedDequeueCount = mDataSource
-					.NumTasksInQueue;
-
-				for ( int i = 0; i < expectedDequeueCount; i++ )
+				consumers[ i ] = Task.Run( async () =>
 				{
-					newTaskToken = await taskQueue.DequeueAsync();
-					checker.AssertConsumedTokenValid( newTaskToken, now );
-
-					await checker.AssertTaskNotInDbAnymoreAsync( newTaskToken );
-					await checker.AssertTaskResultInDbAndCorrectAsync( newTaskToken );
-				}
+					using ( PostgreSqlTaskQueueConsumer taskQueue =
+						CreateTaskQueue( () => now ) )
+					using ( ConsumedQueuedTaskTokenChecker checker =
+						new ConsumedQueuedTaskTokenChecker( mDataSource ) )
+					{
+						while ( Interlocked.Increment( ref currentDequeueCount ) < expectedDequeueCount )
+							await Run_ConsumeTest( taskQueue, checker, now );
+					}
+				} );
 			}
+
+			await Task.WhenAll( consumers );
 		}
 
 		[Test]

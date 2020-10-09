@@ -140,13 +140,13 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 2 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
-		public async Task Test_CanEnqueue_NewTask_ParallelProducers ( int nThreads )
+		public async Task Test_CanEnqueue_NewTask_ParallelProducers ( int nProducers )
 		{
 			Faker faker =
 				new Faker();
 
 			CountdownEvent notificationWaitHandle =
-				new CountdownEvent( nThreads );
+				new CountdownEvent( nProducers );
 
 			AbstractTimestamp postedAt = mDataSource.LastPostedAt
 				.AddTicks( 1 );
@@ -160,7 +160,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					notificationWaitHandle.Signal();
 			};
 
-			Task[] producers = new Task[ nThreads ];
+			Task[] producers = new Task[ nProducers ];
 
 			using ( PostgreSqlTaskQueueConsumer taskQueueConsumer =
 				CreateTaskQueueConsumer( () => postedAt ) )
@@ -173,7 +173,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				Assert.IsTrue( taskQueueConsumer
 					.IsReceivingNewTaskUpdates );
 
-				for ( int i = 0; i < nThreads; i++ )
+				for ( int i = 0; i < nProducers; i++ )
 				{
 					producers[ i ] = Task.Run( async () =>
 					{
