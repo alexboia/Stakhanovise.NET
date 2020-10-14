@@ -35,7 +35,7 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public class TaskExecutionResultInfo
+	public class TaskExecutionResultInfo : IEquatable<TaskExecutionResultInfo>
 	{
 		private QueuedTaskError mError;
 
@@ -52,8 +52,8 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public static TaskExecutionResultInfo Successful ()
 		{
-			return new TaskExecutionResultInfo( TaskExecutionStatus.ExecutedSuccessfully, 
-				error: null, 
+			return new TaskExecutionResultInfo( TaskExecutionStatus.ExecutedSuccessfully,
+				error: null,
 				isRecoverable: false );
 		}
 
@@ -74,11 +74,39 @@ namespace LVD.Stakhanovise.NET.Model
 				isRecoverable: isRecoverable );
 		}
 
+		public bool Equals ( TaskExecutionResultInfo other )
+		{
+			return other != null
+				&& mStatus == other.mStatus
+				&& object.Equals( mError, other.mError )
+				&& mIsRecoverable == other.mIsRecoverable;
+		}
+
+		public override bool Equals ( object obj )
+		{
+			return Equals( obj as TaskExecutionResultInfo );
+		}
+
+		public override int GetHashCode ()
+		{
+			int result = 1;
+
+			result = result * 13 + mStatus.GetHashCode();
+			if ( mError != null )
+				result = result * 13 + mError.GetHashCode();
+			result = result * 13 + mIsRecoverable.GetHashCode();
+
+			return result;
+		}
+
 		public bool ExecutedSuccessfully
 			=> mStatus == TaskExecutionStatus.ExecutedSuccessfully;
 
 		public bool ExecutionCancelled
 			=> mStatus == TaskExecutionStatus.ExecutionCancelled;
+
+		public bool ExecutionFailed
+			=> mStatus == TaskExecutionStatus.ExecutedWithError;
 
 		public QueuedTaskError Error
 			=> mError;

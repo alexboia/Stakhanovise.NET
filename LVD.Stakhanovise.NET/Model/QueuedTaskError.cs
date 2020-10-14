@@ -83,12 +83,12 @@ namespace LVD.Stakhanovise.NET.Model
 			return new QueuedTaskError( type, message );
 		}
 
-		public bool Equals ( QueuedTaskError taskError )
+		public bool Equals ( QueuedTaskError other )
 		{
-			return taskError != null
-				&& string.Equals( Type, taskError.Type )
-				&& string.Equals( Message, taskError.Message )
-				&& string.Equals( StackTrace, taskError.StackTrace );
+			return other != null
+				&& string.Equals( Type, other.Type )
+				&& string.Equals( Message, other.Message )
+				&& string.Equals( StackTrace, other.StackTrace );
 		}
 
 		public override bool Equals ( object obj )

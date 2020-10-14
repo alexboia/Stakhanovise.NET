@@ -52,6 +52,9 @@ namespace LVD.Stakhanovise.NET
 			long retryAtTicks,
 			int faultErrorThresholdCount )
 		{
+			if ( resultInfo == null )
+				throw new ArgumentNullException( nameof( resultInfo ) );
+
 			mResultInfo = resultInfo;
 			mFaultErrorThresholdCount = faultErrorThresholdCount;
 			mProcessingTimeMilliseconds = ( long )Math.Ceiling( duration.TotalMilliseconds );
@@ -60,13 +63,10 @@ namespace LVD.Stakhanovise.NET
 
 		public bool Equals ( TaskExecutionResult other )
 		{
-			return other != null &&
-				ExecutedSuccessfully == other.ExecutedSuccessfully &&
-				ExecutionCancelled == other.ExecutionCancelled &&
-				IsRecoverable == other.IsRecoverable &&
-				RetryAtTicks == other.RetryAtTicks &&
-				FaultErrorThresholdCount == other.FaultErrorThresholdCount &&
-				object.Equals( Error, other.Error );
+			return other != null
+				&& mResultInfo.Equals( other.mResultInfo )
+				&& mRetryAtTicks == other.mRetryAtTicks
+				&& mProcessingTimeMilliseconds == other.mProcessingTimeMilliseconds;
 		}
 
 		public override bool Equals ( object obj )
@@ -78,15 +78,9 @@ namespace LVD.Stakhanovise.NET
 		{
 			int result = 1;
 
-			result = result * 31 + mResultInfo.ExecutedSuccessfully.GetHashCode();
-			result = result * 31 + mResultInfo.ExecutionCancelled.GetHashCode();
-			result = result * 31 + mResultInfo.IsRecoverable.GetHashCode();
-
-			result = result * 31 + mRetryAtTicks.GetHashCode();
+			result = result * 31 + mResultInfo.GetHashCode();
 			result = result * 31 + mFaultErrorThresholdCount.GetHashCode();
-
-			if ( mResultInfo.Error != null )
-				result = result * 31 + mResultInfo.Error.GetHashCode();
+			result = result * 31 + mProcessingTimeMilliseconds.GetHashCode();
 
 			return result;
 		}
@@ -102,6 +96,9 @@ namespace LVD.Stakhanovise.NET
 
 		public bool ExecutionCancelled
 			=> mResultInfo.ExecutionCancelled;
+
+		public bool ExecutionFailed
+			=> mResultInfo.ExecutionFailed;
 
 		public long RetryAtTicks
 			=> mRetryAtTicks;
