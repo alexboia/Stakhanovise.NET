@@ -32,10 +32,20 @@ namespace LVD.Stakhanovise.NET.Model
 		{
 			QueuedTaskInfo repostTask = null;
 
+			//Task processing lifecycle ends with one of these statuses
+			//	Hence, if the result reaches one of these points, 
+			//	no more updates can be performed
+			if ( Status == QueuedTaskStatus.Fatal 
+				|| Status == QueuedTaskStatus.Cancelled 
+				|| Status == QueuedTaskStatus.Processed )
+				throw new InvalidOperationException( $"A result with {Status} status can no longer be updated" );
+
 			if ( result.ExecutedSuccessfully )
 				Processed( result );
-			else if ( !result.ExecutionCancelled )
+			else if ( result.ExecutionFailed )
 				repostTask = HadError( result );
+			else if ( result.ExecutionCancelled )
+				Cancelled( result );
 
 			return repostTask;
 		}
@@ -65,18 +75,28 @@ namespace LVD.Stakhanovise.NET.Model
 
 			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 
-			if ( Status != QueuedTaskStatus.Fatal &&
-				Status != QueuedTaskStatus.Faulted )
-				Status = QueuedTaskStatus.Error;
+			//If the error is recoverable, work out the status transition 
+			//	from the current error count
+			if ( result.IsRecoverable )
+			{
+				if ( Status != QueuedTaskStatus.Fatal &&
+					Status != QueuedTaskStatus.Faulted )
+					Status = QueuedTaskStatus.Error;
 
-			if ( ErrorCount > result.FaultErrorThresholdCount + 1 )
-				Status = QueuedTaskStatus.Fatal;
-			else if ( ErrorCount > result.FaultErrorThresholdCount )
-				Status = QueuedTaskStatus.Faulted;
+				if ( ErrorCount > result.FaultErrorThresholdCount + 1 )
+					Status = QueuedTaskStatus.Fatal;
+				else if ( ErrorCount > result.FaultErrorThresholdCount )
+					Status = QueuedTaskStatus.Faulted;
+				else
+					Status = QueuedTaskStatus.Error;
+			}
 			else
-				Status = QueuedTaskStatus.Error;
+				//Otherwise, set it to fatal
+				Status = QueuedTaskStatus.Fatal;
 
-			if ( result.IsRecoverable && Status != QueuedTaskStatus.Fatal )
+			//If status is not fatal, compute the information 
+			//	necessary to retry task execution
+			if ( Status != QueuedTaskStatus.Fatal )
 			{
 				return new QueuedTaskInfo()
 				{
@@ -90,6 +110,17 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 			else
 				return null;
+		}
+
+		private void Cancelled ( TaskExecutionResult result )
+		{
+			Status = QueuedTaskStatus.Cancelled;
+
+			ProcessingFinalizedAtTs = DateTimeOffset.UtcNow;
+			if ( !FirstProcessingAttemptedAtTs.HasValue )
+				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
+
+			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 		}
 
 		public bool Equals ( QueuedTaskResult other )
