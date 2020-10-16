@@ -95,7 +95,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					task_status = @t_status,
 					task_last_error = @t_last_error,
 					task_error_count = @t_error_count,
-					task_last_error_recoverable = @t_last_error_recoverable,
+					task_last_error_is_recoverable = @t_last_error_recoverable,
 					task_processing_time_milliseconds = @t_processing_time_milliseconds,
 					task_processing_finalized_at_ts = @t_processing_finalized_at_ts
 				WHERE task_id = @t_id";
@@ -167,7 +167,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				NpgsqlParameter pProcessingTime = updateCmd.Parameters
 					.Add( "t_processing_time_milliseconds", NpgsqlDbType.Bigint );
 				NpgsqlParameter pFinalizedAt = updateCmd.Parameters
-					.Add( "t_processing_finalied_at_ts", NpgsqlDbType.TimestampTz );
+					.Add( "t_processing_finalized_at_ts", NpgsqlDbType.TimestampTz );
 				NpgsqlParameter pId = updateCmd.Parameters
 					.Add( "t_id", NpgsqlDbType.Uuid );
 
@@ -181,11 +181,22 @@ namespace LVD.Stakhanovise.NET.Queue
 					try
 					{
 						pStatus.Value = ( int )processRq.ResultToUpdate.Status;
-						pLastError.Value = processRq.ResultToUpdate.LastError.ToJson();
+
+						string strLastError = processRq.ResultToUpdate.LastError.ToJson();
+						if ( strLastError != null )
+							pLastError.Value = strLastError;
+						else
+							pLastError.Value = DBNull.Value;
+
 						pErrorCount.Value = processRq.ResultToUpdate.ErrorCount;
 						pLastErrorIsRecoverable.Value = processRq.ResultToUpdate.LastErrorIsRecoverable;
 						pProcessingTime.Value = processRq.ResultToUpdate.ProcessingTimeMilliseconds;
-						pFinalizedAt.Value = processRq.ResultToUpdate.ProcessingFinalizedAtTs;
+						
+						if ( processRq.ResultToUpdate.ProcessingFinalizedAtTs.HasValue )
+							pFinalizedAt.Value = processRq.ResultToUpdate.ProcessingFinalizedAtTs;
+						else
+							pFinalizedAt.Value = DBNull.Value;
+
 						pId.Value = processRq.ResultToUpdate.Id;
 
 						int affectedRows = await updateCmd.ExecuteNonQueryAsync( cancellationToken );

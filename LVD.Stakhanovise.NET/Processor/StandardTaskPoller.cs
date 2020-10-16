@@ -110,12 +110,20 @@ namespace LVD.Stakhanovise.NET.Processor
 		private async Task<IQueuedTaskToken> DequeueAsync ()
 		{
 			//Tick time and fetch current
-			AbstractTimestamp now = await mTimingBelt.TickAbstractTimeAsync( mOptions
-				.AbstractTimeTickTimeoutMilliseconds );
+			try
+			{
+				//TODO: this sequence should probably be moved to the worker class
+				AbstractTimestamp now = await mTimingBelt.TickAbstractTimeAsync( mOptions
+					.AbstractTimeTickTimeoutMilliseconds );
 
-			mLogger.DebugFormat( "Current abstract time is: {0}. Wallclock time cost is {1}.",
-				now.Ticks,
-				now.WallclockTimeCost );
+				mLogger.DebugFormat( "New abstract time is {0}@{1} time cost.",
+					now.Ticks,
+					now.WallclockTimeCost );
+			}
+			catch ( OperationCanceledException )
+			{
+				mLogger.Debug( "Tick request cancelled probably due to operation timeout" );
+			}
 
 			return await mTaskQueueConsumer.DequeueAsync( mRequiredPayloadTypes );
 		}

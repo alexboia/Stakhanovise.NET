@@ -107,13 +107,17 @@ namespace LVD.Stakhanovise.NET.Processor
 				) ON CONFLICT (et_payload_type) DO UPDATE SET 
 					et_last_execution_time = EXCLUDED.et_last_execution_time,
 					et_avg_execution_time = CEILING(
-						(et_total_execution_time + EXCLUDED.et_total_execution_time)::double precision 
-							/ (et_n_execution_cycles + EXCLUDED.et_n_execution_cycles)
+						(sk_task_execution_time_stats_t.et_total_execution_time + EXCLUDED.et_total_execution_time)::double precision 
+							/ (sk_task_execution_time_stats_t.et_n_execution_cycles + EXCLUDED.et_n_execution_cycles)
 					)::bigint,
-					et_fastest_execution_time = LEAST(et_fastest_execution_time, EXCLUDED.et_fastest_execution_time),
-					et_longest_execution_time = GREATEST(et_longest_execution_time, EXCLUDED.et_longest_execution_time),
-					et_total_execution_time = et_total_execution_time + EXCLUDED.et_total_execution_time,
-					et_n_execution_cycles = et_n_execution_cycles + EXCLUDED.et_n_execution_cycles";
+					et_fastest_execution_time = LEAST(sk_task_execution_time_stats_t.et_fastest_execution_time, 
+						EXCLUDED.et_fastest_execution_time),
+					et_longest_execution_time = GREATEST(sk_task_execution_time_stats_t.et_longest_execution_time, 
+						EXCLUDED.et_longest_execution_time),
+					et_total_execution_time = sk_task_execution_time_stats_t.et_total_execution_time 
+						+ EXCLUDED.et_total_execution_time,
+					et_n_execution_cycles = sk_task_execution_time_stats_t.et_n_execution_cycles 
+						+ EXCLUDED.et_n_execution_cycles";
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
