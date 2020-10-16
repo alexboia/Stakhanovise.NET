@@ -52,14 +52,19 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 			task.ContinueWith( prev =>
 			{
-				cleanup.Invoke( prev );
-
-				if ( task.IsCanceled )
-					completion.SetCanceled();
-				else if ( task.IsFaulted )
-					completion.SetException( task.Exception );
-				else
-					completion.SetResult( task.Result );
+				try
+				{
+					cleanup.Invoke( prev );
+				}
+				finally
+				{
+					if ( task.IsCanceled )
+						completion.SetCanceled();
+					else if ( task.IsFaulted )
+						completion.SetException( task.Exception.InnerException );
+					else
+						completion.SetResult( task.Result );
+				}
 			} );
 
 			return completion.Task;
