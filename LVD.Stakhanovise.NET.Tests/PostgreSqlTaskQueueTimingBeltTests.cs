@@ -346,10 +346,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			return await OpenDbConnectionAsync( ConnectionString );
 		}
 
-		public string ConnectionString
+		private string ConnectionString
 			=> GetConnectionString( "testDbConnectionString" );
 
-		public Guid TimeId
+		private Guid TimeId
 			=> Guid.Parse( GetAppSetting( "timeId" ) );
 	}
 }

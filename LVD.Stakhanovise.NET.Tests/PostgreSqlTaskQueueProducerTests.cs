@@ -59,7 +59,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			mInfoOptions = TestOptions
 				.GetDefaultTaskQueueInfoOptions( ConnectionString );
 			mProducerOptions = TestOptions
-				.GetDefaultTaskQueueProducerOptions( ConnectionString );
+				.GetDefaultTaskQueueProducerAndResultOptions( ConnectionString );
 			mConsumerOptions = TestOptions
 				.GetDefaultTaskQueueConsumerOptions( ConnectionString );
 
