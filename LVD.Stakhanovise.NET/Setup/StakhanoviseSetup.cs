@@ -62,8 +62,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardExecutionPerformanceMonitorWriterSetup mPerformanceMonitorWriterSetup;
 
-		private StandardTaskQueueTimingBeltSetup mTimingBeltSetup;
-
 		private IStakhanoviseLoggingProvider mLoggingProvider;
 
 		private bool mRegisterOwnDependencies = true;
@@ -107,9 +105,6 @@ namespace LVD.Stakhanovise.NET.Setup
 			mTaskEngineSetup = new StandardTaskEngineSetup( mTaskQueueConsumerSetup,
 				defaults );
 
-			mTimingBeltSetup = new StandardTaskQueueTimingBeltSetup( builtInTimingBeltConnectionSetup,
-				defaults );
-
 			mPerformanceMonitorWriterSetup = new StandardExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup );
 		}
 
@@ -128,15 +123,6 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( setupAction ) );
 
 			setupAction.Invoke( mPerformanceMonitorWriterSetup );
-			return this;
-		}
-
-		public IStakhanoviseSetup SetupTimingBelt ( Action<ITaskQueueTimingBeltSetup> setupAction )
-		{
-			if ( setupAction == null )
-				throw new ArgumentNullException( nameof( setupAction ) );
-
-			setupAction.Invoke( mTimingBeltSetup );
 			return this;
 		}
 
@@ -232,11 +218,11 @@ namespace LVD.Stakhanovise.NET.Setup
 			ITaskExecutorRegistry executorRegistry = mTaskExecutorRegistrySetup
 				.BuildTaskExecutorRegistry();
 
-			ITaskQueueTimingBelt timingBelt = mTimingBeltSetup
-				.BuildTimingBelt();
-
 			IExecutionPerformanceMonitorWriter executionPerfMonWriter = mPerformanceMonitorWriterSetup
 				.BuildWriter();
+
+			ITimestampProvider timestampProvider =
+				new UtcNowTimestampProvider();
 
 			TaskQueueConsumerOptions consumerOptions = mTaskQueueConsumerSetup
 				.BuildOptions();
@@ -248,10 +234,10 @@ namespace LVD.Stakhanovise.NET.Setup
 				?? new NoOpLoggingProvider();
 
 			ITaskQueueProducer taskQueueProducer = new PostgreSqlTaskQueueProducer( producerOptions,
-				timingBelt );
+				timestampProvider );
 
-			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup
-				.BuiltOptions(), timingBelt );
+			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup.BuiltOptions(),
+				timestampProvider );
 
 			if ( mRegisterOwnDependencies )
 			{
@@ -267,8 +253,8 @@ namespace LVD.Stakhanovise.NET.Setup
 			return mTaskEngineSetup.BuildTaskEngine( consumerOptions,
 				producerOptions,
 				executorRegistry,
-				timingBelt,
-				executionPerfMonWriter );
+				executionPerfMonWriter,
+				timestampProvider );
 		}
 	}
 }

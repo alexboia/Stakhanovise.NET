@@ -45,21 +45,21 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		private TaskQueueOptions mOptions;
 
-		private ITaskQueueAbstractTimeProvider mTimeProvider;
-
 		private string mInsertSql;
 
 		private string mAddOrUpdateResultSql;
 
-		public PostgreSqlTaskQueueProducer ( TaskQueueOptions options, ITaskQueueAbstractTimeProvider timeProvider )
+		private ITimestampProvider mTimestampProvider;
+
+		public PostgreSqlTaskQueueProducer ( TaskQueueOptions options, ITimestampProvider timestampProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
-			if ( timeProvider == null )
-				throw new ArgumentNullException( nameof( timeProvider ) );
+			if ( timestampProvider == null )
+				throw new ArgumentNullException( nameof( timestampProvider ) );
 
 			mOptions = options;
-			mTimeProvider = timeProvider;
+			mTimestampProvider = timestampProvider;
 
 			mInsertSql = GetInsertSql( mOptions.Mapping );
 			mAddOrUpdateResultSql = GetAddOrUpdateResultSql( mOptions.Mapping );
@@ -68,23 +68,22 @@ namespace LVD.Stakhanovise.NET.Queue
 		private string GetInsertSql ( QueuedTaskMapping mapping )
 		{
 			return $@"INSERT INTO {mapping.QueueTableName} (
-					task_id, task_payload, task_type, task_source, task_priority, task_posted_at, task_posted_at_ts, task_locked_until
+					task_id, task_payload, task_type, task_source, task_priority, task_posted_at_ts, task_locked_until_ts
 				) VALUES (
-					@t_id, @t_payload, @t_type, @t_source, @t_priority, @t_posted_at, @t_posted_at_ts, @t_locked_until
+					@t_id, @t_payload, @t_type, @t_source, @t_priority, @t_posted_at_ts, @t_locked_until_ts
 				) RETURNING task_lock_handle_id";
 		}
 
 		private string GetAddOrUpdateResultSql ( QueuedTaskMapping mapping )
 		{
 			return $@"INSERT INTO {mapping.ResultsQueueTableName} (
-					task_id, task_type, task_source, task_payload, task_status, task_priority, task_posted_at, task_posted_at_ts
+					task_id, task_type, task_source, task_payload, task_status, task_priority, task_posted_at_ts
 				) VALUES (
-					@t_id, @t_type, @t_source, @t_payload, @t_status, @t_priority, @t_posted_at, @t_posted_at_ts
+					@t_id, @t_type, @t_source, @t_payload, @t_status, @t_priority, @t_posted_at_ts
 				) ON CONFLICT (task_id) DO UPDATE SET 
 					task_status = EXCLUDED.task_status,
 					task_priority = EXCLUDED.task_priority,
 					task_source = EXCLUDED.task_source,
-					task_posted_at = EXCLUDED.task_posted_at,
 					task_posted_at_ts = EXCLUDED.task_posted_at_ts";
 		}
 
@@ -114,7 +113,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				Type = typeof( TPayload ).FullName,
 				Priority = priority,
 				Source = source,
-				LockedUntil = 0
+				LockedUntilTs = mTimestampProvider
+					.GetNow()
+					.AddSeconds( -1 )
 			} );
 		}
 
@@ -126,8 +127,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( queuedTaskInfo.Priority < 0 )
 				throw new ArgumentOutOfRangeException( nameof( queuedTaskInfo ), "Priority must be greater than or equal to 0" );
 
-			QueuedTask queuedTask = 
-				await NewTaskFromInfoAsync( queuedTaskInfo );
+			QueuedTask queuedTask = NewTaskFromInfo( queuedTaskInfo );
 
 			using ( NpgsqlConnection conn = await TryOpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
@@ -155,14 +155,12 @@ namespace LVD.Stakhanovise.NET.Queue
 					queuedTask.Source );
 				insertCmd.Parameters.AddWithValue( "t_priority", NpgsqlDbType.Integer,
 					queuedTask.Priority );
-				insertCmd.Parameters.AddWithValue( "t_posted_at", NpgsqlDbType.Bigint,
-					queuedTask.PostedAt );
-				insertCmd.Parameters.AddWithValue( "t_locked_until", NpgsqlDbType.Bigint,
-					queuedTask.LockedUntil );
+				insertCmd.Parameters.AddWithValue( "t_locked_until_ts", NpgsqlDbType.TimestampTz,
+					queuedTask.LockedUntilTs );
 				insertCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
 					queuedTask.PostedAtTs );
 
-				queuedTask.LockedUntil = ( long )await insertCmd
+				queuedTask.LockHandleId = ( long )await insertCmd
 					.ExecuteScalarAsync();
 			}
 
@@ -185,8 +183,6 @@ namespace LVD.Stakhanovise.NET.Queue
 					( int )QueuedTaskStatus.Unprocessed );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_priority", NpgsqlDbType.Integer,
 					queuedTask.Priority );
-				addOrUpdateResultCmd.Parameters.AddWithValue( "t_posted_at", NpgsqlDbType.Bigint,
-					queuedTask.PostedAt );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
 					queuedTask.PostedAtTs );
 
@@ -195,13 +191,10 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private async Task<QueuedTask> NewTaskFromInfoAsync ( QueuedTaskInfo queuedTaskInfo )
+		private QueuedTask NewTaskFromInfo ( QueuedTaskInfo queuedTaskInfo )
 		{
-			QueuedTask queuedTask = 
+			QueuedTask queuedTask =
 				new QueuedTask();
-
-			AbstractTimestamp now = await mTimeProvider
-				.GetCurrentTimeAsync();
 
 			queuedTask.Id = queuedTaskInfo.Id.Equals( Guid.Empty )
 				? Guid.NewGuid()
@@ -211,19 +204,13 @@ namespace LVD.Stakhanovise.NET.Queue
 			queuedTask.Type = queuedTaskInfo.Type;
 			queuedTask.Source = queuedTaskInfo.Source;
 			queuedTask.Priority = queuedTaskInfo.Priority;
-			queuedTask.PostedAt = now.Ticks;
-			queuedTask.PostedAtTs = DateTimeOffset.UtcNow;
-			queuedTask.LockedUntil = queuedTaskInfo.LockedUntil;
+			queuedTask.PostedAtTs = mTimestampProvider.GetNow();
+			queuedTask.LockedUntilTs = queuedTaskInfo.LockedUntilTs;
 
 			return queuedTask;
 		}
 
-		public ITaskQueueAbstractTimeProvider TimeProvider
-		{
-			get
-			{
-				return mTimeProvider;
-			}
-		}
+		public ITimestampProvider TimestampProvider 
+			=> mTimestampProvider;
 	}
 }

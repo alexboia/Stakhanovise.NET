@@ -56,8 +56,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskExecutorRegistry mExecutorRegistry;
 
-		private ITaskQueueTimingBelt mTimingBelt;
-
 		private IExecutionPerformanceMonitor mExecutionPerfMon;
 
 		private IExecutionPerformanceMonitorWriter mExecutionPerfMonWriter;
@@ -79,8 +77,8 @@ namespace LVD.Stakhanovise.NET.Processor
 			TaskQueueOptions producerAndResultOptions,
 			TaskQueueConsumerOptions consumerOptions,
 			ITaskExecutorRegistry executorRegistry,
-			ITaskQueueTimingBelt timingBelt,
-			IExecutionPerformanceMonitorWriter executionPerfMonWriter )
+			IExecutionPerformanceMonitorWriter executionPerfMonWriter,
+			ITimestampProvider timestampProvider )
 		{
 			if ( engineOptions == null )
 				throw new ArgumentNullException( nameof( engineOptions ) );
@@ -94,24 +92,21 @@ namespace LVD.Stakhanovise.NET.Processor
 			mExecutorRegistry = executorRegistry
 				?? throw new ArgumentNullException( nameof( executorRegistry ) );
 
-			mTimingBelt = timingBelt
-				?? throw new ArgumentNullException( nameof( timingBelt ) );
 			mExecutionPerfMonWriter = executionPerfMonWriter
 				?? throw new ArgumentNullException( nameof( executionPerfMonWriter ) );
 
 			mExecutionPerfMon = new StandardExecutionPerformanceMonitor();
 			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( consumerOptions,
-				timingBelt );
+				timestampProvider );
 			mTaskQueueProducer = new PostgreSqlTaskQueueProducer( producerAndResultOptions,
-				timingBelt );
+				timestampProvider );
 
 			mTaskResultQueue = new PostgreSqlTaskResultQueue( producerAndResultOptions );
 
 			mTaskBuffer = new StandardTaskBuffer( engineOptions.WorkerCount );
 			mTaskPoller = new StandardTaskPoller( engineOptions.TaskProcessingOptions,
-					mTaskQueueConsumer,
-					mTaskBuffer,
-					mTimingBelt );
+				mTaskQueueConsumer,
+				mTaskBuffer );
 
 			mOptions = engineOptions;
 		}
@@ -135,7 +130,6 @@ namespace LVD.Stakhanovise.NET.Processor
 				string.Join( ",", requiredPayloadTypes ) );
 
 			//Start the task poller and then start workers
-			await StartTimingBeltAsync();
 			await StartResultQueueProcessingAsync();
 			await StartFlushingPerformanceStatsAsync();
 			await StartPollerAsync( requiredPayloadTypes );
@@ -164,7 +158,6 @@ namespace LVD.Stakhanovise.NET.Processor
 			await StopWorkersAsync();
 			await StopResultQueueProcessingAsync();
 			await StopFlushingPerformanceStatsAsync();
-			await StopTimingBeltAsync();
 
 			mLogger.Debug( "The task engine has been successfully stopped." );
 		}
@@ -235,20 +228,6 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "The task poller has been successfully stopped. Attempting to stop workers." );
 		}
 
-		private async Task StartTimingBeltAsync ()
-		{
-			mLogger.Debug( "Attempting to start the timing belt" );
-			await mTimingBelt.StartAsync();
-			mLogger.Debug( "Timing belt successfully started" );
-		}
-
-		private async Task StopTimingBeltAsync ()
-		{
-			mLogger.Debug( "Attempting to stop the timing belt" );
-			await mTimingBelt.StopAsync();
-			mLogger.Debug( "Timing belt successfully stopped" );
-		}
-
 		private async Task StartWorkersAsync ( string[] requiredPayloadTypes )
 		{
 			mLogger.Debug( "Attempting to start workers..." );
@@ -260,8 +239,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					mExecutorRegistry,
 					mExecutionPerfMon,
 					mTaskQueueProducer,
-					mTaskResultQueue,
-					mTimingBelt ); ;
+					mTaskResultQueue );
 
 				await taskWorker.StartAsync( requiredPayloadTypes );
 				mWorkers.Add( taskWorker );
@@ -303,7 +281,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 					mTaskPoller = null;
 					mTaskBuffer = null;
-					mTimingBelt = null;
 					mTaskResultQueue = null;
 
 					mTaskQueueConsumer = null;
@@ -335,6 +312,15 @@ namespace LVD.Stakhanovise.NET.Processor
 			{
 				CheckDisposedOrThrow();
 				return mTaskPoller;
+			}
+		}
+
+		public TaskEngineOptions Options
+		{
+			get
+			{
+				CheckDisposedOrThrow();
+				return mOptions;
 			}
 		}
 

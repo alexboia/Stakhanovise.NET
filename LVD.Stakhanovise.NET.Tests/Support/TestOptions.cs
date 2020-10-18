@@ -43,36 +43,16 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public static readonly QueuedTaskMapping DefaultMapping =
 			new QueuedTaskMapping();
 
-		public static PostgreSqlTaskQueueTimingBeltOptions GetDefaultPostgreSqlTaskQueueTimingBeltOptions ( Guid timeId, string connectionString )
-		{
-			return new PostgreSqlTaskQueueTimingBeltOptions( timeId,
-				connectionOptions: new ConnectionOptions( connectionString,
-					keepAliveSeconds: 0,
-					retryCount: 3,
-					retryDelayMilliseconds: 250 ),
-				initialWallclockTimeCost: 1000,
-				timeTickBatchSize: 10,
-				timeTickMaxFailCount: 3 );
-		}
-
-		public static PostgreSqlTaskQueueAbstractTimeProviderOptions GetDefaultPostgreSqlTaskQueueAbstractTimeProviderOptions ( Guid timeId, string connectionString )
-		{
-			return new PostgreSqlTaskQueueAbstractTimeProviderOptions( timeId,
-				connectionOptions: new ConnectionOptions( connectionString,
-					keepAliveSeconds: 0,
-					retryCount: 3,
-					retryDelayMilliseconds: 250 ) );
-		}
+		public static readonly int DefaultFaultErrorThresholdCount = 5;
 
 		public static TaskProcessingOptions GetDefaultTaskProcessingOptions ()
 		{
-			return new TaskProcessingOptions( 2500,
-				calculateDelayTicksTaskAfterFailure: token
-					=> ( long )Math.Pow( 10, token.LastQueuedTaskResult.ErrorCount + 1 ),
+			return new TaskProcessingOptions( calculateDelayTicksTaskAfterFailure: token
+					=> ( long )500 * ( token.LastQueuedTaskResult.ErrorCount + 1 ),
 				isTaskErrorRecoverable: ( task, exc )
 					 => !( exc is NullReferenceException )
 						 && !( exc is ArgumentException ),
-				faultErrorThresholdCount: 5 );
+				faultErrorThresholdCount: DefaultFaultErrorThresholdCount );
 		}
 
 		public static TaskQueueConsumerOptions GetDefaultTaskQueueConsumerOptions ( string connectionString )

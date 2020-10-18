@@ -71,7 +71,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			Func<TaskExecutionResult> rsFactory = () => new TaskExecutionResult( TaskExecutionResultInfo.Successful(),
 				duration: faker.Date.Timespan(),
-				retryAtTicks: 0,
+				retryAt: DateTimeOffset.UtcNow,
 				faultErrorThresholdCount: mDataSource.QueueFaultErrorThresholdCount );
 
 			await Run_PostResultTests( rsFactory );
@@ -86,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					.ExecutedWithError( new QueuedTaskError( faker.System.Exception() ),
 						isRecoverable: faker.Random.Bool() ),
 				duration: TimeSpan.Zero,
-				retryAtTicks: faker.Random.Long( 100 ),
+				retryAt: DateTimeOffset.UtcNow,
 				faultErrorThresholdCount: mDataSource.QueueFaultErrorThresholdCount );
 
 			await Run_PostResultTests( rsFactory );

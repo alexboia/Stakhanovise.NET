@@ -42,6 +42,7 @@ using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using System.Dynamic;
 using NpgsqlTypes;
+using LVD.Stakhanovise.NET.Tests.Helpers;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -92,14 +93,12 @@ namespace LVD.Stakhanovise.NET.Tests
 							( ( SampleTaskPayload )actualTask.Payload ).Counter );
 
 						Assert.AreEqual( expectedTask.Id, actualTask.Id );
-						Assert.AreEqual( expectedTask.LockedUntil, actualTask.LockedUntil );
+						Assert.IsTrue( actualTask.LockedUntilTs.EqualsAproximately( expectedTask.LockedUntilTs ) );
 						Assert.AreEqual( expectedTask.Type, actualTask.Type );
 						Assert.AreEqual( expectedTask.Source, actualTask.Source );
 						Assert.AreEqual( expectedTask.Priority, actualTask.Priority );
-						Assert.AreEqual( expectedTask.PostedAt, actualTask.PostedAt );
 
-						Assert.LessOrEqual( Math.Abs( ( expectedTask.PostedAtTs - actualTask.PostedAtTs ).TotalMilliseconds ),
-							250 );
+						Assert.IsTrue( actualTask.PostedAtTs.EqualsAproximately( expectedTask.PostedAtTs ) );
 
 						Assert.Greater( actualTask.LockHandleId, 0 );
 					}
@@ -146,28 +145,23 @@ namespace LVD.Stakhanovise.NET.Tests
 						Assert.AreEqual( expectedTaskResult.Type, actualTaskResult.Type );
 						Assert.AreEqual( expectedTaskResult.Source, actualTaskResult.Source );
 						Assert.AreEqual( expectedTaskResult.Priority, actualTaskResult.Priority );
-						Assert.AreEqual( expectedTaskResult.PostedAt, actualTaskResult.PostedAt );
-
 						Assert.AreEqual( expectedTaskResult.ErrorCount, actualTaskResult.ErrorCount );
 						Assert.AreEqual( expectedTaskResult.LastErrorIsRecoverable, actualTaskResult.LastErrorIsRecoverable );
 						Assert.AreEqual( expectedTaskResult.LastError, actualTaskResult.LastError );
 
 						Assert.AreEqual( expectedTaskResult.Status, actualTaskResult.Status );
 
-						Assert.LessOrEqual( Math.Abs( ( expectedTaskResult.PostedAtTs - actualTaskResult.PostedAtTs )
-								.TotalMilliseconds ),
-							250 );
+						Assert.IsTrue( expectedTaskResult.PostedAtTs
+							.EqualsAproximately( actualTaskResult.PostedAtTs ) );
 
-						Assert.LessOrEqual( Math.Abs( ( expectedTaskResult.ProcessingFinalizedAtTs - actualTaskResult.ProcessingFinalizedAtTs )
-								.Value.TotalMilliseconds ),
-							250 );
+						Assert.IsTrue( expectedTaskResult.ProcessingFinalizedAtTs
+							.EqualsAproximately( actualTaskResult.ProcessingFinalizedAtTs ) );
 
-						Assert.LessOrEqual( Math.Abs( ( expectedTaskResult.FirstProcessingAttemptedAtTs - actualTaskResult.FirstProcessingAttemptedAtTs )
-								.Value.TotalMilliseconds ),
-							250 );
-						Assert.LessOrEqual( Math.Abs( ( expectedTaskResult.LastProcessingAttemptedAtTs - actualTaskResult.LastProcessingAttemptedAtTs )
-								.Value.TotalMilliseconds ),
-							250 );
+						Assert.IsTrue( expectedTaskResult.FirstProcessingAttemptedAtTs
+							.EqualsAproximately( actualTaskResult.FirstProcessingAttemptedAtTs ) );
+						
+						Assert.IsTrue( expectedTaskResult.LastProcessingAttemptedAtTs
+							.EqualsAproximately( actualTaskResult.LastProcessingAttemptedAtTs ) );
 					}
 				}
 
@@ -180,11 +174,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker<QueuedTask> qFaker = new Faker<QueuedTask>();
 
 			qFaker.RuleFor( q => q.Id, f => Guid.NewGuid() );
-			qFaker.RuleFor( q => q.LockedUntil, f => f.Random.Long( 1 ) );
+			qFaker.RuleFor( q => q.LockedUntilTs, f => f.Date.FutureOffset() );
 			qFaker.RuleFor( q => q.Payload, f => new SampleTaskPayload( f.Random.Int() ) );
 			qFaker.RuleFor( q => q.Type, f => typeof( SampleTaskPayload ).FullName );
 			qFaker.RuleFor( q => q.Source, f => nameof( GetQueuedTaskFaker ) );
-			qFaker.RuleFor( q => q.PostedAt, f => f.Random.Long( 1 ) );
 			qFaker.RuleFor( q => q.PostedAtTs, f => f.Date.SoonOffset() );
 			qFaker.RuleFor( q => q.Priority, f => f.Random.Int( 1, 1000 ) );
 
@@ -199,7 +192,6 @@ namespace LVD.Stakhanovise.NET.Tests
 			qrFaker.RuleFor( q => q.Payload, f => new SampleTaskPayload( f.Random.Int() ) );
 			qrFaker.RuleFor( q => q.Type, f => typeof( SampleTaskPayload ).FullName );
 			qrFaker.RuleFor( q => q.Source, f => nameof( GetQueuedTaskFaker ) );
-			qrFaker.RuleFor( q => q.PostedAt, f => f.Random.Long( 1 ) );
 			qrFaker.RuleFor( q => q.PostedAtTs, f => f.Date.SoonOffset() );
 			qrFaker.RuleFor( q => q.FirstProcessingAttemptedAtTs, f => f.Date.SoonOffset() );
 			qrFaker.RuleFor( q => q.LastProcessingAttemptedAtTs, f => f.Date.SoonOffset() );

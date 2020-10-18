@@ -49,10 +49,8 @@ namespace LVD.Stakhanovise.NET.Model
 
 		int Priority { get; set; }
 
-		long PostedAt { get; }
-
 		DateTimeOffset PostedAtTs { get; }
 
-		long LockedUntil { get; }
+		DateTimeOffset LockedUntilTs { get; }
 	}
 }

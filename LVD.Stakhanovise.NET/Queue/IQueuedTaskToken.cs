@@ -47,6 +47,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		IQueuedTaskResult LastQueuedTaskResult { get; }
 
-		AbstractTimestamp DequeuedAt { get; }
+		DateTimeOffset DequeuedAt { get; }
 	}
 }

@@ -21,8 +21,6 @@ namespace LVD.Stakhanovise.NET.Model
 
 		int Priority { get; }
 
-		long PostedAt { get; }
-
 		long ProcessingTimeMilliseconds { get; }
 
 		QueuedTaskError LastError { get; }

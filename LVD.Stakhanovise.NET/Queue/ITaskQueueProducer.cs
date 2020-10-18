@@ -45,6 +45,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		Task<IQueuedTask> EnqueueAsync ( QueuedTaskInfo queuedTaskInfo );
 
-		ITaskQueueAbstractTimeProvider TimeProvider { get; }
+		ITimestampProvider TimestampProvider { get; }
 	}
 }

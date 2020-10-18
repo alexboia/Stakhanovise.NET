@@ -39,8 +39,6 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public interface ITaskProcessingSetup
 	{
-		ITaskProcessingSetup WithAbstractTimeTickTimeoutMilliseconds ( int abstractTimeTickTimeoutMilliseconds );
-
 		ITaskProcessingSetup WithDelayTicksTaskAfterFailureCalculator ( Func<IQueuedTaskToken, long> calculateDelayTicksTaskAfterFailure );
 
 		ITaskProcessingSetup WithTaskErrorRecoverabilityCallback ( Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable );

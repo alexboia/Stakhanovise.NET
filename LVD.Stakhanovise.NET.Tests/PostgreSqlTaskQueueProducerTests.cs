@@ -92,7 +92,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			ManualResetEvent notificationWaitHandle =
 				new ManualResetEvent( false );
 
-			AbstractTimestamp postedAt = mDataSource.LastPostedAt
+			DateTimeOffset postedAt = mDataSource.LastPostedAt
 				.AddTicks( 1 );
 
 			PostgreSqlTaskQueueProducer taskQueueProducer =
@@ -148,7 +148,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			CountdownEvent notificationWaitHandle =
 				new CountdownEvent( nProducers );
 
-			AbstractTimestamp postedAt = mDataSource.LastPostedAt
+			DateTimeOffset postedAt = mDataSource.LastPostedAt
 				.AddTicks( 1 );
 
 			PostgreSqlTaskQueueProducer taskQueueProducer =
@@ -207,8 +207,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker =
 				new Faker();
 
-			AbstractTimestamp postedAt = mDataSource.LastPostedAt
-				.AddTicks( 1 );
+			DateTimeOffset postedAt = mDataSource.LastPostedAt
+				.AddSeconds( 1 );
 
 			PostgreSqlTaskQueueProducer taskQueueProducer =
 				CreateTaskQueueProducer( () => postedAt );
@@ -222,7 +222,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					Payload = token.DequeuedTask.Payload,
 					Source = nameof( Test_CanEnqueue_RepostExistingTask_Serial ),
 					Type = token.DequeuedTask.Type,
-					LockedUntil = postedAt.Ticks + faker.Random.Long( 10, 1000 )
+					LockedUntilTs = postedAt.AddMilliseconds( faker.Random.Long( 1000, 10000 ) )
 				};
 
 				//Remove task record from DB - only dequeued tasks get reposted
@@ -255,24 +255,22 @@ namespace LVD.Stakhanovise.NET.Tests
 				queuedTaskResult.Source );
 			Assert.AreEqual( queuedTask.Priority,
 				queuedTaskResult.Priority );
-			Assert.AreEqual( queuedTask.PostedAt,
-				queuedTaskResult.PostedAt );
 			Assert.LessOrEqual( Math.Abs( ( queuedTask.PostedAtTs - queuedTaskResult.PostedAtTs ).TotalMilliseconds ),
 				10 );
 			Assert.AreEqual( QueuedTaskStatus.Unprocessed,
 				queuedTaskResult.Status );
 		}
 
-		private PostgreSqlTaskQueueProducer CreateTaskQueueProducer ( Func<AbstractTimestamp> currentTimeProvider )
+		private PostgreSqlTaskQueueProducer CreateTaskQueueProducer ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueProducer( mProducerOptions,
-				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
+				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
-		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ( Func<AbstractTimestamp> currentTimeProvider )
+		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
-				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
+				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private string ConnectionString

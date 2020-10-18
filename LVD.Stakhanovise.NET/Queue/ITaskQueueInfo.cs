@@ -43,6 +43,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		Task<IQueuedTask> PeekAsync ();
 
-		ITaskQueueAbstractTimeProvider TimeProvider { get; }
+		ITimestampProvider TimestampProvider { get; }
 	}
 }

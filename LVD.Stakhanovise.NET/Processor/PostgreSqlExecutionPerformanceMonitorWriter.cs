@@ -47,7 +47,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public PostgreSqlExecutionPerformanceMonitorWriter ( PostgreSqlExecutionPerformanceMonitorWriterOptions options )
 		{
-			mOptions = options 
+			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
 		}
 
@@ -125,33 +125,43 @@ namespace LVD.Stakhanovise.NET.Processor
 			{
 				try
 				{
-					upsertCmd.Parameters.Add( "payload_type", NpgsqlDbType.Varchar );
-					upsertCmd.Parameters.Add( "n_execution_cycles", NpgsqlDbType.Bigint );
-					upsertCmd.Parameters.Add( "last_execution_time", NpgsqlDbType.Bigint );
-					upsertCmd.Parameters.Add( "avg_execution_time", NpgsqlDbType.Bigint );
-					upsertCmd.Parameters.Add( "fastest_execution_time", NpgsqlDbType.Bigint );
-					upsertCmd.Parameters.Add( "longest_execution_time", NpgsqlDbType.Bigint );
-					upsertCmd.Parameters.Add( "total_execution_time", NpgsqlDbType.Bigint );
+					NpgsqlParameter pPayloadType = upsertCmd.Parameters
+						.Add( "payload_type", NpgsqlDbType.Varchar );
+					NpgsqlParameter pNExecutionCycles = upsertCmd.Parameters
+						.Add( "n_execution_cycles", NpgsqlDbType.Bigint );
+					NpgsqlParameter pLastExecutionTime = upsertCmd.Parameters
+						.Add( "last_execution_time", NpgsqlDbType.Bigint );
+					NpgsqlParameter pAvgExecutionTime = upsertCmd.Parameters
+						.Add( "avg_execution_time", NpgsqlDbType.Bigint );
+					NpgsqlParameter pFastestExecutionTime = upsertCmd.Parameters
+						.Add( "fastest_execution_time", NpgsqlDbType.Bigint );
+					NpgsqlParameter pLongestExecutionTime = upsertCmd.Parameters
+						.Add( "longest_execution_time", NpgsqlDbType.Bigint );
+					NpgsqlParameter pTotalExecutionTime = upsertCmd.Parameters
+						.Add( "total_execution_time", NpgsqlDbType.Bigint );
 
 					await upsertCmd.PrepareAsync();
 
 					foreach ( KeyValuePair<string, TaskExecutionStats> payloadInfo in executionTimeInfo )
 					{
-						upsertCmd.Parameters[ "payload_type" ].Value = payloadInfo.Key;
-						upsertCmd.Parameters[ "n_execution_cycles" ].Value = payloadInfo.Value
-							.NumberOfExecutionCycles;
-						upsertCmd.Parameters[ "last_execution_time" ].Value = payloadInfo.Value
-							.LastExecutionTime;
-						upsertCmd.Parameters[ "avg_execution_time" ].Value = payloadInfo.Value
-							.AverageExecutionTime;
-						upsertCmd.Parameters[ "fastest_execution_time" ].Value = payloadInfo.Value
-							.FastestExecutionTime;
-						upsertCmd.Parameters[ "longest_execution_time" ].Value = payloadInfo.Value
-							.LongestExecutionTime;
-						upsertCmd.Parameters[ "total_execution_time" ].Value = payloadInfo.Value
-							.TotalExecutionTime;
+						if ( payloadInfo.Value.NumberOfExecutionCycles > 0 )
+						{
+							pPayloadType.Value = payloadInfo.Key;
+							pNExecutionCycles.Value = payloadInfo.Value
+								.NumberOfExecutionCycles;
+							pLastExecutionTime.Value = payloadInfo.Value
+								.LastExecutionTime;
+							pAvgExecutionTime.Value = payloadInfo.Value
+								.AverageExecutionTime;
+							pFastestExecutionTime.Value = payloadInfo.Value
+								.FastestExecutionTime;
+							pLongestExecutionTime.Value = payloadInfo.Value
+								.LongestExecutionTime;
+							pTotalExecutionTime.Value = payloadInfo.Value
+								.TotalExecutionTime;
 
-						await upsertCmd.ExecuteNonQueryAsync();
+							await upsertCmd.ExecuteNonQueryAsync();
+						}
 					}
 
 					await tx.CommitAsync();

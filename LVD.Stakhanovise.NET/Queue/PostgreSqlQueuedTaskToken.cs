@@ -38,14 +38,13 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		public PostgreSqlQueuedTaskToken ( QueuedTask dequeuedTask,
 			QueuedTaskResult lastQueuedTaskResult,
-			AbstractTimestamp dequeuedAt )
+			DateTimeOffset dequeuedAt )
 		{
 			DequeuedTask = dequeuedTask 
 				?? throw new ArgumentNullException( nameof( dequeuedTask ) );
 			LastQueuedTaskResult = lastQueuedTaskResult 
 				?? throw new ArgumentNullException( nameof( lastQueuedTaskResult ) );
-			DequeuedAt = dequeuedAt
-				?? throw new ArgumentNullException( nameof( dequeuedAt ) );
+			DequeuedAt = dequeuedAt;
 		}
 
 		public QueuedTaskInfo UdpateFromExecutionResult ( TaskExecutionResult result )
@@ -57,6 +56,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public IQueuedTaskResult LastQueuedTaskResult { get; private set; }
 
-		public AbstractTimestamp DequeuedAt { get; private set; }
+		public DateTimeOffset DequeuedAt { get; private set; }
 	}
 }

@@ -61,8 +61,6 @@ namespace LVD.Stakhanovise.NET
 				WorkerCount = defaultWorkerCount,
 				QueueConsumerConnectionPoolSize = defaultWorkerCount * 2,
 
-				AbstractTimeTickTimeoutMilliseconds = 1000,
-
 				CalculateDelayTicksTaskAfterFailure = token
 					=> ( long )Math.Pow( 10, token.LastQueuedTaskResult.ErrorCount + 1 ),
 
@@ -73,10 +71,6 @@ namespace LVD.Stakhanovise.NET
 				ExecutionPerformanceMonitorFlushStats = true,
 				ExecutionPerformanceMonitorWriteCountThreshold = 10,
 				ExecutionPerformanceMonitorWriteIntervalThresholdMilliseconds = 1000,
-
-				BuiltInTimingBeltInitialWallclockTimeCost = 1000,
-				BuiltInTimingBeltTimeTickBatchSize = 5,
-				BuiltInTimingBeltTimeTickMaxFailCount = 3,
 
 				FaultErrorThresholdCount = 5
 			};

@@ -51,7 +51,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private bool mIsDisposed = false;
 
-		private string[] mRequiredPayloadTypes;
+		private string[] mPayloadTypes;
 
 		private StateController mStateController
 			= new StateController();
@@ -63,9 +63,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskExecutorRegistry mExecutorRegistry;
 
-		private ITaskQueueTimingBelt mTimingBelt;
-
-		private IExecutionPerformanceMonitor mExecutionPerformanceMonitor;
+		private IExecutionPerformanceMonitor mPerformanceMonitor;
 
 		private ITaskQueueProducer mTaskQueueProducer;
 
@@ -81,10 +79,9 @@ namespace LVD.Stakhanovise.NET.Processor
 			TaskProcessingOptions options,
 			ITaskBuffer taskBuffer,
 			ITaskExecutorRegistry executorRegistry,
-			IExecutionPerformanceMonitor executionPerformanceMonitor,
+			IExecutionPerformanceMonitor performanceMonitor,
 			ITaskQueueProducer taskQueueProducer,
-			ITaskResultQueue taskResultQueue,
-			ITaskQueueTimingBelt timingBelt )
+			ITaskResultQueue taskResultQueue )
 		{
 			mOptions = options ??
 				throw new ArgumentNullException( nameof( options ) );
@@ -92,10 +89,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mExecutorRegistry = executorRegistry
 				?? throw new ArgumentNullException( nameof( executorRegistry ) );
-			mExecutionPerformanceMonitor = executionPerformanceMonitor
-				?? throw new ArgumentNullException( nameof( executionPerformanceMonitor ) );
-			mTimingBelt = timingBelt ??
-				throw new ArgumentNullException( nameof( timingBelt ) );
+			mPerformanceMonitor = performanceMonitor
+				?? throw new ArgumentNullException( nameof( performanceMonitor ) );
 			mTaskQueueProducer = taskQueueProducer ??
 				throw new ArgumentNullException( nameof( taskQueueProducer ) );
 			mTaskResultQueue = taskResultQueue ??
@@ -153,8 +148,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task<TaskExecutionResult> ExecuteTaskAsync ( TaskExecutionContext executionContext )
 		{
-			long retryAtTicks = 0;
 			ITaskExecutor taskExecutor = null;
+			DateTimeOffset retryAt = DateTimeOffset.UtcNow;
+
 			IQueuedTask dequeuedTask = executionContext
 				.TaskToken
 				.DequeuedTask;
@@ -182,23 +178,6 @@ namespace LVD.Stakhanovise.NET.Processor
 					//	and no result explicitly set, assume success.
 					if ( !executionContext.HasResult )
 						executionContext.NotifyTaskCompleted();
-
-					//Cancellation can also be silent, if the user-code 
-					//	checks for executionContext.IsCancellationRequested 
-					//	and then stops execution and calls 
-					//	executionContext.NotifyCancellationObserved()
-					if ( !executionContext.ExecutionCancelled
-						&& !executionContext.ExecutedSuccessfully )
-					{
-						mLogger.Debug( "Will compute task execution delay." );
-
-						//Compute the amount of ticks to delay task execution
-						retryAtTicks = await ComputeRetryAt( mOptions
-							.CalculateDelayTicksTaskAfterFailure( executionContext.TaskToken ) );
-
-						mLogger.DebugFormat( "Computed retry at ticks = {0}",
-							retryAtTicks );
-					}
 				}
 			}
 			catch ( OperationCanceledException )
@@ -222,10 +201,16 @@ namespace LVD.Stakhanovise.NET.Processor
 				executionContext.StopTimingExecution();
 			}
 
+			//Compute the amount of time to delay task execution
+			//	if execution failed
+			if ( executionContext.HasResult 
+				&& executionContext.ExecutionFailed )
+				retryAt = ComputeRetryAt( executionContext.TaskToken );
+
 			return taskExecutor != null
 				? new TaskExecutionResult( executionContext.ResultInfo,
 					duration: executionContext.Duration,
-					retryAtTicks: retryAtTicks,
+					retryAt: retryAt,
 					faultErrorThresholdCount: mOptions.FaultErrorThresholdCount )
 				: null;
 		}
@@ -254,7 +239,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 				//Update execution result and see whether 
 				//	we need to repost the task to retry its execution
-				QueuedTaskInfo repostWithInfo = queuedTaskToken.UdpateFromExecutionResult( result );
+				QueuedTaskInfo repostWithInfo = queuedTaskToken
+					.UdpateFromExecutionResult( result );
 
 				//Post result
 				mLogger.Debug( "Will post task execution result." );
@@ -272,8 +258,8 @@ namespace LVD.Stakhanovise.NET.Processor
 					mLogger.Debug( "Will not repost task for execution." );
 
 				//Finally, report execution time
-				mExecutionPerformanceMonitor.ReportExecutionTime( queuedTaskToken.DequeuedTask.Type,
-					result.ProcessingTimeMilliseconds );
+				mPerformanceMonitor.ReportExecutionTime( queuedTaskToken,
+					result );
 			}
 			catch ( Exception exc )
 			{
@@ -282,41 +268,37 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		private async Task<long> ComputeRetryAt ( long delayTicks )
+		private DateTimeOffset ComputeRetryAt ( IQueuedTaskToken queuedTaskToken )
 		{
-			long retryAtTicks;
-			AbstractTimestamp lastKnownTime =
-				mTimingBelt.LastTime;
+			long delayMilliseconds = 0;
 
 			try
 			{
 				//Compute the absolute time, in ticks, 
 				//	until the task execution is delayed.
-				retryAtTicks = await mTimingBelt.ComputeAbsoluteTimeTicksAsync( delayTicks );
+				delayMilliseconds = mOptions.CalculateRetryMillisecondsDelay( queuedTaskToken );
 			}
 			catch ( Exception exc )
 			{
-				//Attempt failed, we will fallback to the last known time 
-				//	+ the amount to delay
-				retryAtTicks = lastKnownTime.Ticks + delayTicks;
-				mLogger.Error( "Failed to compute absolute delay. Using last known time as a basis.",
+				mLogger.Error( "Failed to compute delay. Using default value of 0.", 
 					exc );
 			}
 
-			return retryAtTicks;
+			return DateTimeOffset.UtcNow.AddMilliseconds( delayMilliseconds );
 		}
 
-		private async Task ExecuteQueuedTaskAndProcessResultAsync ( IQueuedTaskToken queuedTaskToken,
+		private async Task ExecuteAndProcessResultAsync ( IQueuedTaskToken queuedTaskToken,
 			CancellationToken stopToken )
 		{
 			mLogger.DebugFormat( "New task to execute retrieved from buffer: task id = {0}.",
 				queuedTaskToken.DequeuedTask.Id );
 
-			//Execute task
+			//Prepare execution context
 			TaskExecutionContext executionContext =
 				new TaskExecutionContext( queuedTaskToken,
 					stopToken );
 
+			//Execute task
 			TaskExecutionResult executionResult =
 				await ExecuteTaskAsync( executionContext );
 
@@ -338,7 +320,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				return true;
 
 			//No tasks found in buffer, dig deeper
-			mLogger.Debug( "No tasks found in buffer. Checking if buffer is completed..." );
+			mLogger.Debug( "No tasks found. Checking if buffer is completed..." );
 
 			//It may be that it ran out of tasks because 
 			//  it was marked as completed and all 
@@ -359,8 +341,12 @@ namespace LVD.Stakhanovise.NET.Processor
 			return true;
 		}
 
-		private async Task RunWorkerAsync ( CancellationToken stopToken )
+		private async Task RunWorkerAsync ()
 		{
+			//Pull the cancellation token
+			CancellationToken stopToken = mStopTokenSource
+				.Token;
+
 			//Check for cancellation before we start 
 			//	the processing loop
 			if ( stopToken.IsCancellationRequested )
@@ -388,35 +374,40 @@ namespace LVD.Stakhanovise.NET.Processor
 					//  and forward the result to the result queue
 					IQueuedTaskToken queuedTaskToken = mTaskBuffer.TryGetNextTask();
 					if ( queuedTaskToken != null )
-						await ExecuteQueuedTaskAndProcessResultAsync( queuedTaskToken, stopToken );
+						await ExecuteAndProcessResultAsync( queuedTaskToken, stopToken );
 					else
-						mLogger.Debug( "Nothing to execute: no task was retrieved from buffer." );
+						mLogger.Debug( "Nothing to execute: no task was retrieved." );
 
 					//At the end of the loop, reset the handle
 					mWaitForClearToFetchTask.Reset();
 				}
 				catch ( OperationCanceledException )
 				{
-					mLogger.Debug( "Task worker stop requested. Breaking processing loop..." );
+					mLogger.Debug( "Worker stop requested. Breaking processing loop..." );
 					break;
 				}
 			}
 		}
 
-		private void DoStartupSequence ( string[] requiredPayloadTypes )
+		private void DoStartupSequence ( string[] payloadTypes )
 		{
 			mLogger.Debug( "Worker is stopped. Starting..." );
 
 			//Save payload types
-			mRequiredPayloadTypes = requiredPayloadTypes ?? new string[ 0 ];
+			mPayloadTypes = payloadTypes ?? new string[ 0 ];
+			if ( mPayloadTypes.Length > 0 )
+				mLogger.DebugFormat( "Using payload types: {0}", string.Join( ", ", mPayloadTypes ) );
+			else
+				mLogger.Debug( "No payload type restrictions given" );
 
 			//Set everything to proper initial state
 			//   and register event handlers
+			mStopTokenSource = new CancellationTokenSource();
 			mTaskBuffer.QueuedTaskAdded += HandleQueuedTaskAdded;
+			mWaitForClearToFetchTask.Reset();
 
 			//Run worker thread
-			mStopTokenSource = new CancellationTokenSource();
-			mWorkerTask = Task.Run( async () => await RunWorkerAsync( mStopTokenSource.Token ) );
+			mWorkerTask = Task.Run( async () => await RunWorkerAsync() );
 
 			mLogger.Debug( "Worker successfully started." );
 		}
@@ -454,7 +445,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			//Clean-up event handlers and reset state
 			mTaskBuffer.QueuedTaskAdded -= HandleQueuedTaskAdded;
-
 			mWaitForClearToFetchTask.Reset();
 			mWorkerTask = null;
 
@@ -488,12 +478,14 @@ namespace LVD.Stakhanovise.NET.Processor
 					mWaitForClearToFetchTask.Dispose();
 					mWaitForClearToFetchTask = null;
 
-					//It is not our responsibility to dispose of these dependencies
-					//  since we are not the owner and we may interfere with their orchestration
+					//It is not our responsibility 
+					//	to dispose of these dependencies
+					//  since we are not the owner and we 
+					//	may interfere with their orchestration
 					mTaskBuffer = null;
 					mExecutorRegistry = null;
 
-					mRequiredPayloadTypes = null;
+					mPayloadTypes = null;
 					mStateController = null;
 					mTaskQueueProducer = null;
 					mTaskResultQueue = null;

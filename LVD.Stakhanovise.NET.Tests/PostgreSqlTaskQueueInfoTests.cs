@@ -32,14 +32,12 @@ namespace LVD.Stakhanovise.NET.Tests
 		public async Task TestSetUp ()
 		{
 			await mDataSource.SeedData();
-			await Task.Delay( 100 );
 		}
 
 		[TearDown]
 		public async Task TestTearDown ()
 		{
 			await mDataSource.ClearData();
-			await Task.Delay( 100 );
 		}
 
 		[Test]
@@ -91,16 +89,16 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
-		private PostgreSqlTaskQueueInfo CreateTaskQueue ( Func<AbstractTimestamp> currentTimeProvider )
+		private PostgreSqlTaskQueueInfo CreateTaskQueue ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueInfo( mInfoOptions,
-				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
+				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private IQueuedTask ExpectedTopOfQueueTask
 			=> mDataSource.SeededTasks
 				.OrderByDescending( t => t.Priority )
-				.OrderBy( t => t.PostedAt )
+				.OrderBy( t => t.PostedAtTs )
 				.OrderBy( t => t.LockHandleId )
 				.FirstOrDefault();
 

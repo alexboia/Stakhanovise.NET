@@ -38,8 +38,6 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public interface IStakhanoviseSetup
 	{
-		IStakhanoviseSetup SetupTimingBelt ( Action<ITaskQueueTimingBeltSetup> setupAction );
-
 		IStakhanoviseSetup SetupPerformanceMonitorWriter ( Action<IExecutionPerformanceMonitorWriterSetup> setupAction );
 
 		IStakhanoviseSetup SetupEngine ( Action<ITaskEngineSetup> setupAction );

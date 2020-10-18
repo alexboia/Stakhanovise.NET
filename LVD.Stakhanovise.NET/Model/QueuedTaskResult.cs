@@ -20,10 +20,9 @@ namespace LVD.Stakhanovise.NET.Model
 			Id = task.Id;
 			Type = task.Type;
 			Payload = task.Payload;
-			Status = QueuedTaskStatus.Processing;
+			Status = QueuedTaskStatus.Unprocessed;
 			Source = task.Source;
 			Priority = task.Priority;
-			PostedAt = task.PostedAt;
 			PostedAtTs = task.PostedAtTs;
 			ProcessingTimeMilliseconds = 0;
 		}
@@ -79,10 +78,6 @@ namespace LVD.Stakhanovise.NET.Model
 			//	from the current error count
 			if ( result.IsRecoverable )
 			{
-				if ( Status != QueuedTaskStatus.Fatal &&
-					Status != QueuedTaskStatus.Faulted )
-					Status = QueuedTaskStatus.Error;
-
 				if ( ErrorCount > result.FaultErrorThresholdCount + 1 )
 					Status = QueuedTaskStatus.Fatal;
 				else if ( ErrorCount > result.FaultErrorThresholdCount )
@@ -105,7 +100,7 @@ namespace LVD.Stakhanovise.NET.Model
 					Type = Type,
 					Source = Source,
 					Priority = Priority,
-					LockedUntil = result.RetryAtTicks
+					LockedUntilTs = result.RetryAt
 				};
 			}
 			else
@@ -155,8 +150,6 @@ namespace LVD.Stakhanovise.NET.Model
 		public QueuedTaskStatus Status { get; set; }
 
 		public int Priority { get; set; }
-
-		public long PostedAt { get; set; }
 
 		public long ProcessingTimeMilliseconds { get; set; }
 

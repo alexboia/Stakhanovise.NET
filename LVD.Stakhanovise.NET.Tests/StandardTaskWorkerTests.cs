@@ -75,14 +75,12 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<ITaskResultQueue> resultQueueMock =
 				new Mock<ITaskResultQueue>( MockBehavior.Loose );
 
-			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			using ( StandardTaskWorker worker = new StandardTaskWorker( processingOpts,
 				bufferMock.Object,
 				executorRegistryMock.Object,
 				executionPerformanceMonitorMock.Object,
 				producerMock.Object,
-				resultQueueMock.Object,
-				timingBelt ) )
+				resultQueueMock.Object ) )
 			{
 				await worker.StartAsync();
 				Assert.IsTrue( worker.IsRunning );
@@ -128,7 +126,6 @@ namespace LVD.Stakhanovise.NET.Tests
 			//TODO: must also test that, for failed tasks that can be re-posted, 
 			//	the tasks is actually reposted
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
 			{
 				TestBufferProducer producer =
 					new TestBufferProducer( taskBuffer, mPayloadTypes );
@@ -139,10 +136,8 @@ namespace LVD.Stakhanovise.NET.Tests
 						CreateTaskExecutorRegistry(),
 						executionPerformanceMonitorMock.Object,
 						producerMock.Object,
-						resultQueueMock.Object,
-						timingBelt ) );
+						resultQueueMock.Object ) );
 
-				await timingBelt.StartAsync();
 				foreach ( StandardTaskWorker w in workers )
 					await w.StartAsync();
 
@@ -155,7 +150,6 @@ namespace LVD.Stakhanovise.NET.Tests
 				foreach ( StandardTaskWorker w in workers )
 					await w.StopAync();
 
-				await timingBelt.StopAsync();
 				foreach ( StandardTaskWorker w in workers )
 					w.Dispose();
 

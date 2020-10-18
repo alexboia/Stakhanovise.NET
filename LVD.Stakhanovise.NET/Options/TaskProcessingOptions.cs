@@ -39,15 +39,10 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskProcessingOptions
 	{
-		public TaskProcessingOptions ( int abstractTimeTickTimeoutMilliseconds,
-			Func<IQueuedTaskToken, long> calculateDelayTicksTaskAfterFailure,
+		public TaskProcessingOptions ( Func<IQueuedTaskToken, long> calculateDelayTicksTaskAfterFailure,
 			Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable,
 			int faultErrorThresholdCount )
 		{
-			if ( abstractTimeTickTimeoutMilliseconds <= 0 )
-				throw new ArgumentOutOfRangeException( nameof( abstractTimeTickTimeoutMilliseconds ),
-					"The timeout for the abstract time tick operation must be greater than or equal to 0" );
-
 			if ( calculateDelayTicksTaskAfterFailure == null )
 				throw new ArgumentNullException( nameof( calculateDelayTicksTaskAfterFailure ) );
 
@@ -58,15 +53,12 @@ namespace LVD.Stakhanovise.NET.Options
 				throw new ArgumentOutOfRangeException( nameof( faultErrorThresholdCount ),
 					"Fault error threshold count must be greater than or equal to 1" );
 
-			AbstractTimeTickTimeoutMilliseconds = abstractTimeTickTimeoutMilliseconds;
-			CalculateDelayTicksTaskAfterFailure = calculateDelayTicksTaskAfterFailure;
+			CalculateRetryMillisecondsDelay = calculateDelayTicksTaskAfterFailure;
 			IsTaskErrorRecoverable = isTaskErrorRecoverable;
 			FaultErrorThresholdCount = faultErrorThresholdCount;
 		}
 
-		public int AbstractTimeTickTimeoutMilliseconds { get; private set; }
-
-		public Func<IQueuedTaskToken, long> CalculateDelayTicksTaskAfterFailure { get; private set; }
+		public Func<IQueuedTaskToken, long> CalculateRetryMillisecondsDelay { get; private set; }
 
 		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; private set; }
 

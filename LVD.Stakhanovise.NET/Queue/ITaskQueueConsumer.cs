@@ -49,8 +49,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		IQueuedTaskToken Dequeue ( params string[] supportedTypes );
 
-		ITaskQueueAbstractTimeProvider TimeProvider { get; }
-
 		bool IsReceivingNewTaskUpdates { get; }
+
+		ITimestampProvider TimestampProvider { get; }
 	}
 }

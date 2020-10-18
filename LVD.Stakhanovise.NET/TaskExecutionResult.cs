@@ -41,7 +41,7 @@ namespace LVD.Stakhanovise.NET
 	{
 		private TaskExecutionResultInfo mResultInfo;
 
-		private long mRetryAtTicks;
+		private DateTimeOffset mRetryAt;
 
 		private long mProcessingTimeMilliseconds;
 
@@ -49,7 +49,7 @@ namespace LVD.Stakhanovise.NET
 
 		public TaskExecutionResult ( TaskExecutionResultInfo resultInfo,
 			TimeSpan duration,
-			long retryAtTicks,
+			DateTimeOffset retryAt,
 			int faultErrorThresholdCount )
 		{
 			if ( resultInfo == null )
@@ -58,14 +58,14 @@ namespace LVD.Stakhanovise.NET
 			mResultInfo = resultInfo;
 			mFaultErrorThresholdCount = faultErrorThresholdCount;
 			mProcessingTimeMilliseconds = ( long )Math.Ceiling( duration.TotalMilliseconds );
-			mRetryAtTicks = retryAtTicks;
+			mRetryAt = retryAt;
 		}
 
 		public bool Equals ( TaskExecutionResult other )
 		{
 			return other != null
 				&& mResultInfo.Equals( other.mResultInfo )
-				&& mRetryAtTicks == other.mRetryAtTicks
+				&& mRetryAt == other.mRetryAt
 				&& mProcessingTimeMilliseconds == other.mProcessingTimeMilliseconds;
 		}
 
@@ -81,6 +81,7 @@ namespace LVD.Stakhanovise.NET
 			result = result * 31 + mResultInfo.GetHashCode();
 			result = result * 31 + mFaultErrorThresholdCount.GetHashCode();
 			result = result * 31 + mProcessingTimeMilliseconds.GetHashCode();
+			result = result * 31 + mRetryAt.GetHashCode();
 
 			return result;
 		}
@@ -100,8 +101,8 @@ namespace LVD.Stakhanovise.NET
 		public bool ExecutionFailed
 			=> mResultInfo.ExecutionFailed;
 
-		public long RetryAtTicks
-			=> mRetryAtTicks;
+		public DateTimeOffset RetryAt
+			=> mRetryAt;
 
 		public long ProcessingTimeMilliseconds
 			=> mProcessingTimeMilliseconds;

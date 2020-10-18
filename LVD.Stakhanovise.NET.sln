@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.Logging.Log4Net", "LVD.Stakhanovise.NET.Logging.Log4Net\LVD.Stakhanovise.NET.Logging.Log4Net.csproj", "{5334E253-9BC2-4C45-83F1-99091726EA39}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{A01D2FAD-25C2-462F-840F-1F3079DDD818}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A01D2FAD-25C2-462F-840F-1F3079DDD818}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A01D2FAD-25C2-462F-840F-1F3079DDD818}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5334E253-9BC2-4C45-83F1-99091726EA39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5334E253-9BC2-4C45-83F1-99091726EA39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5334E253-9BC2-4C45-83F1-99091726EA39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5334E253-9BC2-4C45-83F1-99091726EA39}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

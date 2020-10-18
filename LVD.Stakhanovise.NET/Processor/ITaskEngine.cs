@@ -34,21 +34,24 @@ using System.Collections.Generic;
 using System.Text;
 using System.Reflection;
 using System.Threading.Tasks;
+using LVD.Stakhanovise.NET.Options;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-   public interface ITaskEngine : IDisposable
-   {
-      Task StartAsync();
+	public interface ITaskEngine : IDisposable
+	{
+		Task StartAsync ();
 
-      Task StopAync();
+		Task StopAync ();
 
-      void ScanAssemblies(params Assembly[] assemblies);
+		void ScanAssemblies ( params Assembly[] assemblies );
 
-      IEnumerable<ITaskWorker> Workers { get; }
+		IEnumerable<ITaskWorker> Workers { get; }
 
-      ITaskPoller TaskPoller { get; }
+		ITaskPoller TaskPoller { get; }
 
-      bool IsRunning { get; }
-   }
+		TaskEngineOptions Options { get; }
+
+		bool IsRunning { get; }
+	}
 }

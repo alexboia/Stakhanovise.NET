@@ -44,7 +44,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private int mQueueFaultErrorThrehsoldCount;
 
-		private long mLastPostedAtTimeTick = 1;
+		private DateTimeOffset mLastPostedAt;
 
 		private PostgreSqlTaskQueueDbOperations mOperations;
 
@@ -125,31 +125,26 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private List<Tuple<QueuedTask, QueuedTaskResult>> GenerateUnprocessedTasks ()
 		{
-			DateTimeOffset now = DateTimeOffset.Now;
 			List<Tuple<QueuedTask, QueuedTaskResult>> unprocessedTasks =
 				new List<Tuple<QueuedTask, QueuedTaskResult>>();
 
 			for ( int i = 0; i < mNumUnProcessedTasks; i++ )
 			{
+				mLastPostedAt = DateTimeOffset.UtcNow;
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
 					Type = typeof( SampleTaskPayload ).FullName,
 					Payload = new SampleTaskPayload( mNumUnProcessedTasks ),
-					PostedAtTs = now,
+					PostedAtTs = mLastPostedAt,
 					Source = GetType().FullName,
-					PostedAt = mLastPostedAtTimeTick++,
-					LockedUntil = 1,
+					LockedUntilTs = mLastPostedAt.AddMinutes( -1 ),
 					Priority = 0
 				};
-
 
 				unprocessedTasks.Add( new Tuple<QueuedTask, QueuedTaskResult>(
 					task,
 					new QueuedTaskResult( task )
-					{
-						Status = QueuedTaskStatus.Unprocessed
-					}
 				) );
 			}
 
@@ -158,21 +153,20 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private List<Tuple<QueuedTask, QueuedTaskResult>> GenerateErroredTasks ()
 		{
-			DateTimeOffset now = DateTimeOffset.Now;
 			List<Tuple<QueuedTask, QueuedTaskResult>> erroredTasks =
 				new List<Tuple<QueuedTask, QueuedTaskResult>>();
 
 			for ( int i = 0; i < mNumErroredTasks; i++ )
 			{
+				mLastPostedAt = DateTimeOffset.UtcNow;
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
 					Type = typeof( ErroredTaskPayload ).FullName,
 					Payload = new ErroredTaskPayload(),
-					PostedAtTs = now,
+					PostedAtTs = mLastPostedAt,
 					Source = GetType().FullName,
-					PostedAt = mLastPostedAtTimeTick++,
-					LockedUntil = 1,
+					LockedUntilTs = mLastPostedAt.AddMinutes( -1 ),
 					Priority = 0
 				};
 
@@ -180,8 +174,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					task,
 					new QueuedTaskResult( task )
 					{
-						FirstProcessingAttemptedAtTs = DateTimeOffset.Now,
-						LastProcessingAttemptedAtTs = DateTimeOffset.Now,
+						FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow,
+						LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow,
 						LastErrorIsRecoverable = i % 2 == 0,
 						LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: error" ) ),
 						ErrorCount = Math.Abs( mQueueFaultErrorThrehsoldCount - i ),
@@ -195,21 +189,20 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private List<Tuple<QueuedTask, QueuedTaskResult>> GenerateFataledTasks ()
 		{
-			DateTimeOffset now = DateTimeOffset.Now;
 			List<Tuple<QueuedTask, QueuedTaskResult>> fataledTasks =
 				new List<Tuple<QueuedTask, QueuedTaskResult>>();
 
 			for ( int i = 0; i < mNumFatalTasks; i++ )
 			{
+				mLastPostedAt = DateTimeOffset.UtcNow;
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
 					Type = typeof( ThrowsExceptionTaskPayload ).FullName,
 					Payload = new ThrowsExceptionTaskPayload(),
-					PostedAtTs = now,
+					PostedAtTs = mLastPostedAt,
 					Source = GetType().FullName,
-					PostedAt = mLastPostedAtTimeTick++,
-					LockedUntil = 1,
+					LockedUntilTs = mLastPostedAt.AddMinutes( -1 ),
 					Priority = 0
 				};
 
@@ -218,8 +211,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					new QueuedTaskResult( task )
 					{
 						Status = QueuedTaskStatus.Fatal,
-						FirstProcessingAttemptedAtTs = DateTimeOffset.Now,
-						LastProcessingAttemptedAtTs = DateTimeOffset.Now,
+						FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow,
+						LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow,
 						LastErrorIsRecoverable = i % 2 == 0,
 						LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: fatal" ) ),
 						ErrorCount = mQueueFaultErrorThrehsoldCount + i
@@ -232,21 +225,20 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private List<Tuple<QueuedTask, QueuedTaskResult>> GenerateFaultedTasks ()
 		{
-			DateTimeOffset now = DateTimeOffset.Now;
 			List<Tuple<QueuedTask, QueuedTaskResult>> faultedTasks =
 				new List<Tuple<QueuedTask, QueuedTaskResult>>();
 
 			for ( int i = 0; i < mNumFaultedTasks; i++ )
 			{
+				mLastPostedAt = DateTimeOffset.UtcNow;
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
 					Type = typeof( ErroredTaskPayload ).FullName,
 					Payload = new ErroredTaskPayload(),
-					PostedAtTs = now,
+					PostedAtTs = mLastPostedAt,
 					Source = GetType().FullName,
-					PostedAt = mLastPostedAtTimeTick++,
-					LockedUntil = 1,
+					LockedUntilTs = mLastPostedAt.AddMinutes( -1 ),
 					Priority = 0
 				};
 
@@ -255,8 +247,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					new QueuedTaskResult( task )
 					{
 						Status = QueuedTaskStatus.Faulted,
-						FirstProcessingAttemptedAtTs = DateTimeOffset.Now,
-						LastProcessingAttemptedAtTs = DateTimeOffset.Now,
+						FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow,
+						LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow,
 						LastErrorIsRecoverable = i % 2 == 0,
 						LastError = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception: faulted" ) ),
 						ErrorCount = mQueueFaultErrorThrehsoldCount
@@ -269,21 +261,20 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private List<Tuple<QueuedTask, QueuedTaskResult>> GenerateProcessedTasks ()
 		{
-			DateTimeOffset now = DateTimeOffset.Now;
 			List<Tuple<QueuedTask, QueuedTaskResult>> processedTasks =
 				new List<Tuple<QueuedTask, QueuedTaskResult>>();
 
 			for ( int i = 0; i < mNumProcessedTasks; i++ )
 			{
+				mLastPostedAt = DateTimeOffset.UtcNow;
 				QueuedTask task = new QueuedTask()
 				{
 					Id = Guid.NewGuid(),
 					Type = typeof( SuccessfulTaskPayload ).FullName,
 					Payload = new SuccessfulTaskPayload(),
-					PostedAtTs = now,
+					PostedAtTs = mLastPostedAt,
 					Source = GetType().FullName,
-					PostedAt = mLastPostedAtTimeTick++,
-					LockedUntil = 1,
+					LockedUntilTs = mLastPostedAt.AddMinutes( -1 ),
 					Priority = 0
 				};
 
@@ -293,9 +284,9 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					{
 						Status = QueuedTaskStatus.Processed,
 						ProcessingTimeMilliseconds = 1000,
-						FirstProcessingAttemptedAtTs = DateTimeOffset.Now,
-						LastProcessingAttemptedAtTs = DateTimeOffset.Now,
-						ProcessingFinalizedAtTs = DateTimeOffset.Now,
+						FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow,
+						LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow,
+						ProcessingFinalizedAtTs = DateTimeOffset.UtcNow,
 						LastErrorIsRecoverable = false,
 						LastError = null,
 						ErrorCount = 0,
@@ -400,12 +391,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public int NumProcessingTasks
 			=> mNumProcessingTasks;
 
-		public AbstractTimestamp LastPostedAt
-			=> new AbstractTimestamp( mLastPostedAtTimeTick,
-				mLastPostedAtTimeTick * 100 );
-
-		public long LastPostedAtTimeTick
-			=> mLastPostedAtTimeTick;
+		public DateTimeOffset LastPostedAt
+			=> mLastPostedAt;
 
 		public int QueueFaultErrorThresholdCount
 			=> mQueueFaultErrorThrehsoldCount;

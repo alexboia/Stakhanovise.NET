@@ -16,12 +16,12 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			TaskExecutionResultInfo successfulInfo = TaskExecutionResultInfo.Successful();
 			TimeSpan sampleDuration = faker.Date.Timespan();
-			long sampleRetryAtTicks = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult successful = new TaskExecutionResult( successfulInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			Assert.IsTrue( successful.ExecutedSuccessfully );
@@ -32,7 +32,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
 				successful.ProcessingTimeMilliseconds );
 
-			Assert.AreEqual( sampleRetryAtTicks, successful.RetryAtTicks );
+			Assert.AreEqual( sampleRetryAt, successful.RetryAt );
 			Assert.AreEqual( sampleFaultErrorThresholdCount, successful.FaultErrorThresholdCount );
 		}
 
@@ -42,12 +42,12 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			TaskExecutionResultInfo cancelledInfo = TaskExecutionResultInfo.Cancelled();
 			TimeSpan sampleDuration = faker.Date.Timespan();
-			long sampleRetryAtTicks = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult cancelled = new TaskExecutionResult( cancelledInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			Assert.IsFalse( cancelled.ExecutedSuccessfully );
@@ -58,7 +58,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
 				cancelled.ProcessingTimeMilliseconds );
 
-			Assert.AreEqual( sampleRetryAtTicks, cancelled.RetryAtTicks );
+			Assert.AreEqual( sampleRetryAt, cancelled.RetryAt );
 			Assert.AreEqual( sampleFaultErrorThresholdCount, cancelled.FaultErrorThresholdCount );
 		}
 
@@ -73,12 +73,12 @@ namespace LVD.Stakhanovise.NET.Tests
 				.ExecutedWithError( new QueuedTaskError( exc ), isRecoverable );
 
 			TimeSpan sampleDuration = faker.Date.Timespan();
-			long sampleRetryAtTicks = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult failedWithError = new TaskExecutionResult( failedWithErrorInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			Assert.IsFalse( failedWithError.ExecutedSuccessfully );
@@ -90,7 +90,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
 				failedWithError.ProcessingTimeMilliseconds );
 
-			Assert.AreEqual( sampleRetryAtTicks, failedWithError.RetryAtTicks );
+			Assert.AreEqual( sampleRetryAt, failedWithError.RetryAt );
 			Assert.AreEqual( sampleFaultErrorThresholdCount, failedWithError.FaultErrorThresholdCount );
 		}
 
@@ -100,17 +100,17 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			TaskExecutionResultInfo successfulInfo = TaskExecutionResultInfo.Successful();
 			TimeSpan sampleDuration = faker.Date.Timespan();
-			long sampleRetryAtTicks = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult successful1 = new TaskExecutionResult( successfulInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			TaskExecutionResult successful2 = new TaskExecutionResult( successfulInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			Assert.AreEqual( successful1, successful2 );
@@ -123,22 +123,22 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			TaskExecutionResultInfo successfulInfo1 = TaskExecutionResultInfo.Successful();
 			TimeSpan sampleDuration1 = faker.Date.Timespan();
-			long sampleRetryAtTicks1 = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt1 = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount1 = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResultInfo successfulInfo2 = TaskExecutionResultInfo.Successful();
 			TimeSpan sampleDuration2 = faker.Date.Timespan();
-			long sampleRetryAtTicks2 = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt2 = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount2 = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult successful1 = new TaskExecutionResult( successfulInfo1,
 				duration: sampleDuration1,
-				retryAtTicks: sampleRetryAtTicks1,
+				retryAt: sampleRetryAt1,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount1 );
 
 			TaskExecutionResult successful2 = new TaskExecutionResult( successfulInfo2,
 				duration: sampleDuration2,
-				retryAtTicks: sampleRetryAtTicks2,
+				retryAt: sampleRetryAt2,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount2 );
 
 			Assert.AreNotEqual( successful1, successful2 );
@@ -150,17 +150,17 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			TaskExecutionResultInfo cancelledInfo = TaskExecutionResultInfo.Cancelled();
 			TimeSpan sampleDuration = faker.Date.Timespan();
-			long sampleRetryAtTicks = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult cancelled1 = new TaskExecutionResult( cancelledInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			TaskExecutionResult cancelled2 = new TaskExecutionResult( cancelledInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			Assert.AreEqual( cancelled1, cancelled2 );
@@ -173,22 +173,22 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			TaskExecutionResultInfo cancelledInfo1 = TaskExecutionResultInfo.Cancelled();
 			TimeSpan sampleDuration1 = faker.Date.Timespan();
-			long sampleRetryAtTicks1 = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt1 = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount1 = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResultInfo cancelledInfo2 = TaskExecutionResultInfo.Cancelled();
 			TimeSpan sampleDuration2 = faker.Date.Timespan();
-			long sampleRetryAtTicks2 = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetry2 = faker.Date.PastOffset();
 			int sampleFaultErrorThresholdCount2 = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult cancelled1 = new TaskExecutionResult( cancelledInfo1,
 				duration: sampleDuration1,
-				retryAtTicks: sampleRetryAtTicks1,
+				retryAt: sampleRetryAt1,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount1 );
 
 			TaskExecutionResult cancelled2 = new TaskExecutionResult( cancelledInfo2,
 				duration: sampleDuration2,
-				retryAtTicks: sampleRetryAtTicks2,
+				retryAt: sampleRetry2,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount2 );
 
 			Assert.AreNotEqual( cancelled1, cancelled2 );
@@ -205,17 +205,17 @@ namespace LVD.Stakhanovise.NET.Tests
 				.ExecutedWithError( new QueuedTaskError( exc ), isRecoverable );
 
 			TimeSpan sampleDuration = faker.Date.Timespan();
-			long sampleRetryAtTicks = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt = faker.Date.RecentOffset();
 			int sampleFaultErrorThresholdCount = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult failedWithError1 = new TaskExecutionResult( failedWithErrorInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			TaskExecutionResult failedWithError2 = new TaskExecutionResult( failedWithErrorInfo,
 				duration: sampleDuration,
-				retryAtTicks: sampleRetryAtTicks,
+				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
 			Assert.AreEqual( failedWithError1, failedWithError2 );
@@ -236,21 +236,21 @@ namespace LVD.Stakhanovise.NET.Tests
 				.ExecutedWithError( new QueuedTaskError( exc ), isRecoverable );
 
 			TimeSpan sampleDuration1 = faker.Date.Timespan();
-			long sampleRetryAtTicks1 = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt1 = faker.Date.SoonOffset();
 			int sampleFaultErrorThresholdCount1 = faker.Random.Int( 1, 5 );
 
 			TimeSpan sampleDuration2 = faker.Date.Timespan();
-			long sampleRetryAtTicks2 = faker.Random.Long( 1 );
+			DateTimeOffset sampleRetryAt2 = faker.Date.SoonOffset();
 			int sampleFaultErrorThresholdCount2 = faker.Random.Int( 1, 5 );
 
 			TaskExecutionResult failedWithError1 = new TaskExecutionResult( failedWithErrorInfo1,
 				duration: sampleDuration1,
-				retryAtTicks: sampleRetryAtTicks1,
+				retryAt: sampleRetryAt1,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount1 );
 
 			TaskExecutionResult failedWithError2 = new TaskExecutionResult( failedWithErrorInfo2,
 				duration: sampleDuration2,
-				retryAtTicks: sampleRetryAtTicks2,
+				retryAt: sampleRetryAt2,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount2 );
 
 			Assert.AreNotEqual( failedWithError1, failedWithError2 );

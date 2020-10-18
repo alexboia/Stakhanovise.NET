@@ -48,8 +48,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public QueuedTaskMapping Mapping { get; set; }
 
-		public int AbstractTimeTickTimeoutMilliseconds { get; set; }
-
 		public Func<IQueuedTaskToken, long> CalculateDelayTicksTaskAfterFailure { get; set; }
 
 		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; set; }
@@ -59,12 +57,6 @@ namespace LVD.Stakhanovise.NET.Setup
 		public int ExecutionPerformanceMonitorWriteCountThreshold { get; set; }
 
 		public int ExecutionPerformanceMonitorWriteIntervalThresholdMilliseconds { get; set; }
-
-		public int BuiltInTimingBeltInitialWallclockTimeCost { get; set; }
-
-		public int BuiltInTimingBeltTimeTickBatchSize { get; set; }
-
-		public int BuiltInTimingBeltTimeTickMaxFailCount { get; set; }
 
 		public int FaultErrorThresholdCount { get; set; }
 	}

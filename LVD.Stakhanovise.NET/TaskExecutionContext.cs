@@ -113,6 +113,9 @@ namespace LVD.Stakhanovise.NET
 		public bool ExecutionCancelled
 			=> HasResult && ResultInfo.ExecutionCancelled;
 
+		public bool ExecutionFailed
+			=> HasResult && ResultInfo.ExecutionFailed;
+
 		public bool HasResult
 			=> mResult != null;
 	}

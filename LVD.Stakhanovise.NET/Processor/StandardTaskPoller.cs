@@ -52,8 +52,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private ITaskQueueConsumer mTaskQueueConsumer;
 
-		private ITaskQueueTimingBelt mTimingBelt;
-
 		private bool mIsDisposed = false;
 
 		private StateController mStateController
@@ -75,8 +73,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public StandardTaskPoller ( TaskProcessingOptions options,
 			ITaskQueueConsumer taskQueueConsumer,
-			ITaskBuffer taskBuffer,
-			ITaskQueueTimingBelt timingBelt )
+			ITaskBuffer taskBuffer )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
@@ -84,8 +81,6 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
-			mTimingBelt = timingBelt
-				?? throw new ArgumentNullException( nameof( timingBelt ) );
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -105,27 +100,6 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			mLogger.DebugFormat( "Received poll for dequeue required notification from queue. Reason = {0}. Will resume polling...", e.Reason );
 			mWaitForClearToDequeue.Set();
-		}
-
-		private async Task<IQueuedTaskToken> DequeueAsync ()
-		{
-			//Tick time and fetch current
-			try
-			{
-				//TODO: this sequence should probably be moved to the worker class
-				AbstractTimestamp now = await mTimingBelt.TickAbstractTimeAsync( mOptions
-					.AbstractTimeTickTimeoutMilliseconds );
-
-				mLogger.DebugFormat( "New abstract time is {0}@{1} time cost.",
-					now.Ticks,
-					now.WallclockTimeCost );
-			}
-			catch ( OperationCanceledException )
-			{
-				mLogger.Debug( "Tick request cancelled probably due to operation timeout" );
-			}
-
-			return await mTaskQueueConsumer.DequeueAsync( mRequiredPayloadTypes );
 		}
 
 		private async Task PollForQueuedTasksAsync ( CancellationToken stopToken )
@@ -158,7 +132,11 @@ namespace LVD.Stakhanovise.NET.Processor
 					stopToken.ThrowIfCancellationRequested();
 
 					//Attempt to dequeue and then check cancellation
-					IQueuedTaskToken queuedTaskToken = await DequeueAsync();
+					IQueuedTaskToken queuedTaskToken = await mTaskQueueConsumer
+						.DequeueAsync( mRequiredPayloadTypes );
+					
+					//Before posting the token to the buffer, 
+					//	check if cancellation was requested
 					stopToken.ThrowIfCancellationRequested();
 
 					if ( queuedTaskToken != null )
@@ -311,7 +289,6 @@ namespace LVD.Stakhanovise.NET.Processor
 					//  interfere with their orchestration
 					mTaskBuffer = null;
 					mTaskQueueConsumer = null;
-					mTimingBelt = null;
 
 					mRequiredPayloadTypes = null;
 					mStateController = null;

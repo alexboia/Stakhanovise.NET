@@ -28,10 +28,9 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.AreEqual( task.Type, result.Type );
 			Assert.AreSame( task.Payload, result.Payload );
 			Assert.AreEqual( task.Source, result.Source );
-			Assert.AreEqual( task.PostedAt, result.PostedAt );
 			Assert.AreEqual( task.PostedAtTs, result.PostedAtTs );
 			Assert.AreEqual( 0, result.ProcessingTimeMilliseconds );
-			Assert.AreEqual( QueuedTaskStatus.Processing, result.Status );
+			Assert.AreEqual( QueuedTaskStatus.Unprocessed, result.Status );
 		}
 
 		[Test]
@@ -52,7 +51,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			TaskExecutionResult successful = new TaskExecutionResult( TaskExecutionResultInfo.Successful(),
 				duration: faker.Date.Timespan(),
-				retryAtTicks: faker.Random.Long( 1 ),
+				retryAt: faker.Date.FutureOffset(),
 				faultErrorThresholdCount: faker.Random.Int( 1, 5 ) );
 
 			QueuedTaskInfo repostWithInfo = result.UdpateFromExecutionResult( successful );
@@ -84,7 +83,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			TaskExecutionResult cancelled = new TaskExecutionResult( TaskExecutionResultInfo.Cancelled(),
 				duration: faker.Date.Timespan(),
-				retryAtTicks: faker.Random.Long( 1 ),
+				retryAt: faker.Date.FutureOffset(),
 				faultErrorThresholdCount: faker.Random.Int( 1, 5 ) );
 
 			QueuedTaskInfo repostWithInfo = result.UdpateFromExecutionResult( cancelled );
@@ -125,7 +124,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			TaskExecutionResult failedWithError = new TaskExecutionResult( failedWithErrorInfo,
 				duration: faker.Date.Timespan(),
-				retryAtTicks: faker.Random.Long( 1 ),
+				retryAt: faker.Date.FutureOffset(),
 				faultErrorThresholdCount: faultErrorThresholdCount );
 
 			//1 to faultErrorThresholdCount -> Error status
@@ -190,7 +189,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			TaskExecutionResult failedWithError = new TaskExecutionResult( failedWithErrorInfo,
 				duration: faker.Date.Timespan(),
-				retryAtTicks: faker.Random.Long( 1 ),
+				retryAt: faker.Date.FutureOffset(),
 				faultErrorThresholdCount: faultErrorThresholdCount );
 
 			for ( int i = 1; i <= faultErrorThresholdCount + 2; i++ )
@@ -215,11 +214,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker<QueuedTask> qFaker = new Faker<QueuedTask>();
 
 			qFaker.RuleFor( q => q.Id, f => Guid.NewGuid() );
-			qFaker.RuleFor( q => q.LockedUntil, f => f.Random.Long( 1 ) );
+			qFaker.RuleFor( q => q.LockedUntilTs, f => f.Date.FutureOffset() );
 			qFaker.RuleFor( q => q.Payload, f => new SampleTaskPayload( f.Random.Int() ) );
 			qFaker.RuleFor( q => q.Type, f => typeof( SampleTaskPayload ).FullName );
 			qFaker.RuleFor( q => q.Source, f => nameof( GetQueuedTaskFaker ) );
-			qFaker.RuleFor( q => q.PostedAt, f => f.Random.Long( 1 ) );
 			qFaker.RuleFor( q => q.PostedAtTs, f => f.Date.SoonOffset() );
 			qFaker.RuleFor( q => q.Priority, f => f.Random.Int( 1, 1000 ) );
 

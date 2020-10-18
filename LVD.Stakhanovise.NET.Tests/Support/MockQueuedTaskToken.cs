@@ -35,6 +35,6 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public IQueuedTaskResult LastQueuedTaskResult => mLastQueuedTaskResult;
 
-		public AbstractTimestamp DequeuedAt => AbstractTimestamp.Zero();
+		public DateTimeOffset DequeuedAt => DateTimeOffset.UtcNow;
 	}
 }

@@ -115,11 +115,8 @@ namespace LVD.Stakhanovise.NET.Helpers
 			result.LastError = taskErrorString
 				.AsObjectFromJson<QueuedTaskError>();
 
-			result.PostedAt = await reader.GetFieldValueAsync<long>( "task_posted_at",
-				defaultValue: 0 );
 			result.PostedAtTs = await reader.GetFieldValueAsync<DateTimeOffset>( "task_posted_at_ts",
 				defaultValue: DateTimeOffset.MinValue );
-
 			result.ProcessingTimeMilliseconds = await reader.GetFieldValueAsync<long>( "task_processing_time_milliseconds",
 				defaultValue: 0 );
 
@@ -153,9 +150,8 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 			queuedTask.Type = await reader.GetFieldValueAsync<string>( "task_type",
 				defaultValue: string.Empty );
-			queuedTask.Source =
-			   await reader.GetFieldValueAsync<string>( "task_source",
-				  defaultValue: string.Empty );
+			queuedTask.Source = await reader.GetFieldValueAsync<string>( "task_source",
+				defaultValue: string.Empty );
 
 			//Get payoad
 			payloadString = await reader.GetFieldValueAsync<string>( "task_payload",
@@ -164,13 +160,10 @@ namespace LVD.Stakhanovise.NET.Helpers
 			queuedTask.Payload = payloadString
 				.AsObjectFromJson();
 
-			queuedTask.PostedAt = await reader.GetFieldValueAsync<long>( "task_posted_at",
-				defaultValue: 0 );
 			queuedTask.PostedAtTs = await reader.GetFieldValueAsync<DateTimeOffset>( "task_posted_at_ts",
 				defaultValue: DateTimeOffset.MinValue );
-
-			queuedTask.LockedUntil = await reader.GetFieldValueAsync<long>( "task_locked_until",
-				defaultValue: 0 );
+			queuedTask.LockedUntilTs = await reader.GetFieldValueAsync<DateTimeOffset>( "task_locked_until_ts",
+				defaultValue: DateTimeOffset.MinValue );
 
 			return queuedTask;
 		}

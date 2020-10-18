@@ -8,7 +8,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 {
 	public static class QueuedTaskResultChecks
 	{
-		public static void AssertMatchesResult(this IQueuedTaskResult actualResult, IQueuedTaskResult expectedResult )
+		public static void AssertMatchesResult ( this IQueuedTaskResult actualResult, IQueuedTaskResult expectedResult )
 		{
 			Assert.NotNull( actualResult );
 
@@ -22,8 +22,6 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				expectedResult.LastError );
 			Assert.AreEqual( actualResult.LastErrorIsRecoverable,
 				expectedResult.LastErrorIsRecoverable );
-			Assert.AreEqual( actualResult.PostedAt,
-				expectedResult.PostedAt );
 			Assert.AreEqual( actualResult.PostedAtTs,
 				expectedResult.PostedAtTs );
 			Assert.AreEqual( actualResult.Priority,

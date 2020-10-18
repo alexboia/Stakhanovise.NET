@@ -41,12 +41,12 @@ namespace LVD.Stakhanovise.NET.Logging
 
 		private static IStakhanoviseLoggingProvider mProvider = new NoOpLoggingProvider();
 
-		internal static IStakhanoviseLogger GetLogger ( Type type )
+		public static IStakhanoviseLogger GetLogger ( Type type )
 		{
 			return GetLogger( type.FullName );
 		}
 
-		internal static IStakhanoviseLogger GetLogger ( string name )
+		public static IStakhanoviseLogger GetLogger ( string name )
 		{
 			return Provider.CreateLogger( "Stakhanovise." + name );
 		}

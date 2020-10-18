@@ -29,9 +29,9 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private int mRemainingTaskCount;
 
-		private ITaskQueueAbstractTimeProvider mTimeProvider;
+		private ITimestampProvider mTimeProvider;
 
-		public MockTaskQueueConsumer ( int numberOfTasks, ITaskQueueAbstractTimeProvider timeProvider )
+		public MockTaskQueueConsumer ( int numberOfTasks, ITimestampProvider timeProvider )
 		{
 			//TODO: also add task type
 			mQueueDepletedTaskCompletionSource = new TaskCompletionSource<bool>();
@@ -115,7 +115,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mDequeuedTasksHistory.Clear();
 		}
 
-		public ITaskQueueAbstractTimeProvider TimeProvider
+		public ITimestampProvider TimestampProvider
 			=> mTimeProvider;
 
 		public List<IQueuedTaskToken> DequeuedTasksHistory

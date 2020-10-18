@@ -40,8 +40,6 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StandardTaskProcessingSetup : ITaskProcessingSetup
 	{
-		private int mAbstractTimeTickTimeoutMilliseconds;
-
 		private Func<IQueuedTaskToken, long> mCalculateDelayTicksTaskAfterFailure;
 
 		private Func<IQueuedTask, Exception, bool> mIsTaskErrorRecoverable;
@@ -53,25 +51,12 @@ namespace LVD.Stakhanovise.NET.Setup
 			if ( defaults == null )
 				throw new ArgumentNullException( nameof( defaults ) );
 
-			mAbstractTimeTickTimeoutMilliseconds = defaults
-				.AbstractTimeTickTimeoutMilliseconds;
-
 			mCalculateDelayTicksTaskAfterFailure = defaults
 				.CalculateDelayTicksTaskAfterFailure;
 			mIsTaskErrorRecoverable = defaults
 				.IsTaskErrorRecoverable;
 			mFaultErrorThresholdCount = defaults
 				.FaultErrorThresholdCount;
-		}
-
-		public ITaskProcessingSetup WithAbstractTimeTickTimeoutMilliseconds ( int abstractTimeTickTimeoutMilliseconds )
-		{
-			if ( abstractTimeTickTimeoutMilliseconds <= 0 )
-				throw new ArgumentOutOfRangeException( nameof( abstractTimeTickTimeoutMilliseconds ),
-					"The timeout for the abstract time tick operation must be greater than or equal to 0" );
-
-			mAbstractTimeTickTimeoutMilliseconds = abstractTimeTickTimeoutMilliseconds;
-			return this;
 		}
 
 		public ITaskProcessingSetup WithDelayTicksTaskAfterFailureCalculator ( Func<IQueuedTaskToken, long> calculateDelayTicksTaskAfterFailure )
@@ -104,8 +89,7 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public TaskProcessingOptions BuildOptions ()
 		{
-			return new TaskProcessingOptions( mAbstractTimeTickTimeoutMilliseconds,
-				calculateDelayTicksTaskAfterFailure: mCalculateDelayTicksTaskAfterFailure,
+			return new TaskProcessingOptions( calculateDelayTicksTaskAfterFailure: mCalculateDelayTicksTaskAfterFailure,
 				isTaskErrorRecoverable: mIsTaskErrorRecoverable,
 				faultErrorThresholdCount: mFaultErrorThresholdCount );
 		}

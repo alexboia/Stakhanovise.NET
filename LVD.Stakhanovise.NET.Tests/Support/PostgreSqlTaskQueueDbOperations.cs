@@ -87,25 +87,6 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			}
 		}
 
-		public async Task ResetTimeDbTableAsync ( Guid timeId )
-		{
-			string resetSql = @"UPDATE sk_time_t 
-				SET t_total_ticks = 0, 
-					t_total_ticks_cost = 0 
-				WHERE t_id = @t_id";
-
-			using ( NpgsqlConnection conn = await OpenDbConnectionAsync() )
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( resetSql, conn ) )
-			{
-				cmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid,
-					timeId );
-
-				await cmd.PrepareAsync();
-				await cmd.ExecuteNonQueryAsync();
-				await conn.CloseAsync();
-			}
-		}
-
 		private async Task AddQueuedTaskAsync ( QueuedTask taskData,
 			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
@@ -119,10 +100,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				{ "task_source", taskData.Source },
 				{ "task_priority", taskData.Priority },
 
-				{ "task_posted_at", taskData.PostedAt },
 				{ "task_posted_at_ts", taskData.PostedAtTs },
-
-				{ "task_locked_until", taskData.LockedUntil }
+				{ "task_locked_until_ts", taskData.LockedUntilTs }
 			};
 
 			if ( tx != null )
@@ -148,9 +127,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				{ "task_source", resultData.Source },
 				{ "task_priority", resultData.Priority },
 
-				{ "task_posted_at", resultData.PostedAt },
 				{ "task_posted_at_ts", resultData.PostedAtTs },
-
 				{ "task_status", resultData.Status },
 
 				{ "task_processing_time_milliseconds", resultData.ProcessingTimeMilliseconds },

@@ -60,24 +60,23 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private PostgreSqlTaskQueueNotificationListener mNotificationListener;
 
-		private ITaskQueueAbstractTimeProvider mTimeProvider;
-
 		private string mTaskDequeueSql;
 
 		private string mTaskAcquireSql;
 
 		private string mTaskResultUpdateSql;
 
-		public PostgreSqlTaskQueueConsumer ( TaskQueueConsumerOptions options, ITaskQueueAbstractTimeProvider timeProvider )
+		private ITimestampProvider mTimestampProvider;
+
+		public PostgreSqlTaskQueueConsumer ( TaskQueueConsumerOptions options, ITimestampProvider timestampProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
-
-			if ( timeProvider == null )
-				throw new ArgumentNullException( nameof( timeProvider ) );
+			if ( timestampProvider == null )
+				throw new ArgumentNullException( nameof( timestampProvider ) );
 
 			mOptions = options;
-			mTimeProvider = timeProvider;
+			mTimestampProvider = timestampProvider;
 
 			mSignalingConnectionString = options.ConnectionOptions
 				.ConnectionString
@@ -155,7 +154,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string GetTaskDequeueSql ( QueuedTaskMapping mapping )
 		{
-			return $@"SELECT tq.* FROM { mapping.DequeueFunctionName }(@types, @excluded, @now) tq";
+			return $@"SELECT tq.* FROM { mapping.DequeueFunctionName }(@types, @excluded, @ref_now) tq";
 		}
 
 		private string GetTaskAcquireSql ( QueuedTaskMapping mapping )
@@ -180,6 +179,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			QueuedTask dequeuedTask = null;
 			QueuedTaskResult dequeuedTaskResult = null;
 			PostgreSqlQueuedTaskToken dequeuedTaskToken = null;
+			DateTimeOffset now = mTimestampProvider.GetNow();
 
 			CheckNotDisposedOrThrow();
 
@@ -187,13 +187,6 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				mLogger.DebugFormat( "Begin dequeue task. Looking for types: {0}.",
 					string.Join<string>( ",", selectTaskTypes ) );
-
-				AbstractTimestamp now = await mTimeProvider
-					.GetCurrentTimeAsync();
-
-				mLogger.DebugFormat( "Current abstract time is {0} ticks@{1} time cost", 
-					now.Ticks, 
-					now.WallclockTimeCost );
 
 				conn = await OpenQueueConnectionAsync();
 				if ( conn == null )
@@ -251,7 +244,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		}
 
 		private async Task<QueuedTask> TryDequeueTaskAsync ( string[] selectTaskTypes,
-			AbstractTimestamp now,
+			DateTimeOffset now,
 			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
 		{
@@ -266,9 +259,9 @@ namespace LVD.Stakhanovise.NET.Queue
 					parameterType: NpgsqlDbType.Array | NpgsqlDbType.Uuid,
 					value: NoExcludedTaskIds );
 
-				dequeueCmd.Parameters.AddWithValue( "now",
-					parameterType: NpgsqlDbType.Bigint,
-					value: now.Ticks );
+				dequeueCmd.Parameters.AddWithValue( "ref_now",
+					parameterType: NpgsqlDbType.TimestampTz,
+					value: now );
 
 				await dequeueCmd.PrepareAsync();
 				using ( NpgsqlDataReader taskRdr = await dequeueCmd.ExecuteReaderAsync() )
@@ -386,16 +379,16 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		public ITaskQueueAbstractTimeProvider TimeProvider
+		public ITimestampProvider TimestampProvider
 		{
 			get
 			{
 				CheckNotDisposedOrThrow();
-				return mTimeProvider;
+				return mTimestampProvider;
 			}
 		}
 
-		private Guid[] NoExcludedTaskIds 
+		private Guid[] NoExcludedTaskIds
 			=> new Guid[ 0 ];
 	}
 }

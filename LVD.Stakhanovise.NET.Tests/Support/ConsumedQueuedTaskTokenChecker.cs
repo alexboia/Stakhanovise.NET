@@ -23,7 +23,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mDataSource = dataSource;
 		}
 
-		public void AssertConsumedTokenValid ( IQueuedTaskToken newTaskToken, AbstractTimestamp now )
+		public void AssertConsumedTokenValid ( IQueuedTaskToken newTaskToken, DateTimeOffset now )
 		{
 			Assert.NotNull( newTaskToken );
 			Assert.NotNull( newTaskToken.DequeuedAt );
@@ -35,7 +35,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			Assert.IsFalse( mDequeuedTokens.Any( t => t.DequeuedTask.Id == newTaskToken.DequeuedTask.Id ) );
 
 			if ( mPreviousTaskToken != null )
-				Assert.GreaterOrEqual( newTaskToken.DequeuedTask.PostedAt, mPreviousTaskToken.DequeuedTask.PostedAt );
+				Assert.GreaterOrEqual( newTaskToken.DequeuedTask.PostedAtTs, mPreviousTaskToken.DequeuedTask.PostedAtTs );
 
 			mPreviousTaskToken = newTaskToken;
 			mDequeuedTokens.Add( newTaskToken );

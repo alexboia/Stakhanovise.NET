@@ -55,21 +55,17 @@ namespace LVD.Stakhanovise.NET.Tests
 				TestOptions.GetDefaultTaskProcessingOptions();
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( 100 ) )
-			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
-			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( 0, timingBelt ) )
+			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( 0, new UtcNowTimestampProvider() ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueue,
-				taskBuffer,
-				timingBelt ) )
+				taskBuffer ) )
 			{
-				await timingBelt.StartAsync();
 				await poller.StartAsync();
 
 				Assert.IsTrue( poller.IsRunning );
 				Assert.IsTrue( taskQueue.IsReceivingNewTaskUpdates );
 
 				await poller.StopAync();
-				await timingBelt.StopAsync();
 
 				Assert.IsFalse( poller.IsRunning );
 				Assert.IsFalse( taskQueue.IsReceivingNewTaskUpdates );
@@ -89,17 +85,14 @@ namespace LVD.Stakhanovise.NET.Tests
 				TestOptions.GetDefaultTaskProcessingOptions();
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( InMemoryTaskQueueTimingBelt timingBelt = new InMemoryTaskQueueTimingBelt( initialWallclockTimeCost: 1000 ) )
-			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( numberOfTasks, timingBelt ) )
+			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( numberOfTasks, new UtcNowTimestampProvider() ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueue,
-				taskBuffer,
-				timingBelt ) )
+				taskBuffer ) )
 			{
 				TestBufferConsumer consumer =
 					new TestBufferConsumer( taskBuffer );
 
-				await timingBelt.StartAsync();
 				await poller.StartAsync();
 
 				//Poller is filling up the buffer.
@@ -109,7 +102,6 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				taskQueue.WaitForQueueToBeDepleted();
 				await poller.StopAync();
-				await timingBelt.StopAsync();
 
 				consumer.WaitForBufferToBeConsumed();
 

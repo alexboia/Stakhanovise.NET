@@ -44,20 +44,19 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		private TaskQueueInfoOptions mOptions;
 
-		private ITaskQueueAbstractTimeProvider mTimeProvider;
-
 		private bool mIsDisposed = false;
 
-		public PostgreSqlTaskQueueInfo ( TaskQueueInfoOptions options, ITaskQueueAbstractTimeProvider timeProvider )
+		private ITimestampProvider mTimestampProvider;
+
+		public PostgreSqlTaskQueueInfo ( TaskQueueInfoOptions options, ITimestampProvider timestampProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
-
-			if ( timeProvider == null )
-				throw new ArgumentNullException( nameof( timeProvider ) );
+			if ( timestampProvider == null )
+				throw new ArgumentNullException( nameof( timestampProvider ) );
 
 			mOptions = options;
-			mTimeProvider = timeProvider;
+			mTimestampProvider = timestampProvider;
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -139,23 +138,20 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task<IQueuedTask> PeekAsync ()
 		{
-			AbstractTimestamp now;
 			IQueuedTask peekedTask = null;
+			DateTimeOffset now = mTimestampProvider.GetNow();
 
 			CheckNotDisposedOrThrow();
 
 			//This simply returns the latest item on top of the queue,
 			//  without acquiring any lock
 
-			now = await mTimeProvider
-				.GetCurrentTimeAsync();
-
 			string peekSql = $@"SELECT q.*
 				FROM {mOptions.Mapping.QueueTableName} as q
-				WHERE q.task_locked_until < @t_now
+				WHERE (q.task_locked_until_ts IS NULL OR q.task_locked_until_ts < @t_now)
 					AND sk_has_advisory_lock(q.task_lock_handle_id) = false
 				ORDER BY q.task_priority DESC,
-					q.task_posted_at ASC,
+					q.task_posted_at_ts ASC,
 					q.task_lock_handle_id ASC
 				LIMIT 1";
 
@@ -163,8 +159,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			using ( NpgsqlCommand peekCmd = new NpgsqlCommand( peekSql, conn ) )
 			{
 				peekCmd.Parameters.AddWithValue( "t_now",
-					NpgsqlDbType.Bigint,
-					now.Ticks );
+					NpgsqlDbType.TimestampTz,
+					now );
 
 				await peekCmd.PrepareAsync();
 				using ( NpgsqlDataReader taskReader = await peekCmd.ExecuteReaderAsync() )
@@ -181,12 +177,12 @@ namespace LVD.Stakhanovise.NET.Queue
 			return peekedTask;
 		}
 
-		public ITaskQueueAbstractTimeProvider TimeProvider
+		public ITimestampProvider TimestampProvider
 		{
 			get
 			{
 				CheckNotDisposedOrThrow();
-				return mTimeProvider;
+				return mTimestampProvider;
 			}
 		}
 	}

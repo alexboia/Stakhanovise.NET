@@ -76,7 +76,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private async Task Run_ConsumeTest ( PostgreSqlTaskQueueConsumer taskQueue,
 			ConsumedQueuedTaskTokenChecker checker,
-			AbstractTimestamp now,
+			DateTimeOffset now,
 			params string[] payloadTypes )
 		{
 			IQueuedTaskToken newTaskToken;
@@ -95,7 +95,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanDequeue_WithTaskTypes_OneTypePerDequeueCall ()
 		{
-			AbstractTimestamp now = mDataSource
+			DateTimeOffset now = mDataSource
 				.LastPostedAt;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue =
@@ -116,7 +116,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanDequeue_WithTaskTypes_MultipleTypesPerDequeueCall ()
 		{
-			AbstractTimestamp now = mDataSource
+			DateTimeOffset now = mDataSource
 				.LastPostedAt;
 			int expectedDequeueCount = mDataSource
 				.NumTasksInQueue;
@@ -144,7 +144,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			int currentDequeueCount = 0;
 			int expectedDequeueCount = mDataSource
 				.NumTasksInQueue;
-			AbstractTimestamp now = mDataSource
+			DateTimeOffset now = mDataSource
 				.LastPostedAt;
 			string[] taskTypes = mDataSource.InQueueTaskTypes
 				.Select( t => t.FullName )
@@ -174,10 +174,10 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 5 )]
 		public async Task Test_CanDequeue_WithoutTaskTypes ()
 		{
-			AbstractTimestamp now = mDataSource
+			DateTimeOffset now = mDataSource
 				.LastPostedAt;
 			int expectedDequeueCount = mDataSource
-					.NumTasksInQueue;
+				.NumTasksInQueue;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue =
 				CreateTaskQueue( () => now ) )
@@ -199,7 +199,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			int currentDequeueCount = 0;
 			int expectedDequeueCount = mDataSource
 				.NumTasksInQueue;
-			AbstractTimestamp now = mDataSource
+			DateTimeOffset now = mDataSource
 				.LastPostedAt;
 
 			Task[] consumers = new Task[ nConsumers ];
@@ -252,10 +252,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			await Task.Delay( 100 );
 		}
 
-		private PostgreSqlTaskQueueConsumer CreateTaskQueue ( Func<AbstractTimestamp> currentTimeProvider )
+		private PostgreSqlTaskQueueConsumer CreateTaskQueue ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
-				new TestTaskQueueAbstractTimeProvider( currentTimeProvider ) );
+				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private async Task<NpgsqlConnection> OpenDbConnectionAsync ()
