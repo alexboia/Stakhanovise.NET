@@ -99,12 +99,5 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				retryCount: 3,
 				retryDelayMilliseconds: 250 ) );
 		}
-
-		public static ExecutionPerformanceMonitorOptions GetDefaultExecutionPerformanceMonitorOptions ()
-		{
-			return new ExecutionPerformanceMonitorOptions( true,
-				flushOptions: new ExecutionPerformanceMonitorWriteOptions( 500,
-					writeCountThreshold: 10 ) );
-		}
 	}
 }

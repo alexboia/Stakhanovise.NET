@@ -52,44 +52,38 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private bool mIsDisposed = false;
 
-		private Task mFlushTask = null;
+		private long mLastRequestId;
 
-		private CancellationTokenSource mFlushStopTokenSource = null;
+		private Task mStatsProcessingTask = null;
 
-		private CountdownEvent mFlushCountdownHandle = null;
+		private CancellationTokenSource mStatsProcessingStopTokenSource = null;
 
-		private StateController mFlushStateController =
+		private StateController mStateController =
 			new StateController();
 
-		private ConcurrentDictionary<string, TaskExecutionStats> mExecutionStats =
-			new ConcurrentDictionary<string, TaskExecutionStats>();
+		private BlockingCollection<StandardExecutionPerformanceMonitorWriteRequest> mStatsProcessingQueue =
+			new BlockingCollection<StandardExecutionPerformanceMonitorWriteRequest>();
 
-		private IReadOnlyDictionary<string, TaskExecutionStats> mLastFlushedStats = null;
+		private IExecutionPerformanceMonitorWriter mStatsWriter;
 
-		private IExecutionPerformanceMonitorWriter mFlushWriter;
-
-		private ExecutionPerformanceMonitorWriteOptions mFlushOptions;
-
-		private void CheckDisposedOrThrow ()
+		private void CheckNotDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( StandardExecutionPerformanceMonitor ),
 					"Cannot reuse a disposed execution performance monitor" );
 		}
 
-		public TaskExecutionStats GetExecutionStats ( string payloadType )
+		private void CheckRunningOrThrow ()
 		{
-			if ( payloadType == null )
-				throw new ArgumentNullException( nameof( payloadType ) );
-
-			if ( !mExecutionStats.TryGetValue( payloadType, out TaskExecutionStats executionTimeInfo ) )
-				executionTimeInfo = TaskExecutionStats.Zero();
-
-			return executionTimeInfo;
+			if ( !IsRunning )
+				throw new InvalidOperationException( "The execution performance monitor is not running." );
 		}
 
-		public void ReportExecutionTime ( string payloadType, long durationMilliseconds )
+		public Task<int> ReportExecutionTimeAsync ( string payloadType, long durationMilliseconds, int timeoutMilliseconds )
 		{
+			CheckNotDisposedOrThrow();
+			CheckRunningOrThrow();
+
 			if ( payloadType == null )
 				throw new ArgumentNullException( nameof( payloadType ) );
 
@@ -97,92 +91,157 @@ namespace LVD.Stakhanovise.NET.Processor
 				durationMilliseconds,
 				payloadType );
 
-			mExecutionStats.AddOrUpdate( payloadType,
-				addValueFactory: key => TaskExecutionStats.Initial( durationMilliseconds ),
-				updateValueFactory: ( key, lastStats ) => lastStats.UpdateWithNewCycleExecutionTime( durationMilliseconds ) );
+			long requestId = Interlocked.Increment( ref mLastRequestId );
 
-			if ( mFlushStateController.IsStarted )
-				mFlushCountdownHandle.Signal();
+			TaskCompletionSource<int> completionToken =
+				new TaskCompletionSource<int>( TaskCreationOptions
+					.RunContinuationsAsynchronously );
+
+			StandardExecutionPerformanceMonitorWriteRequest request =
+				new StandardExecutionPerformanceMonitorWriteRequest( requestId, payloadType, durationMilliseconds,
+					completionToken,
+					timeoutMilliseconds: timeoutMilliseconds,
+					maxFailCount: 3 );
+
+			mStatsProcessingQueue.Add( request );
+
+			return completionToken.Task.WithCleanup( ( prev )
+				=> request.Dispose() );
 		}
 
-		private async Task RunFlushLoopAsync ( CancellationToken stopToken )
+		private async Task ProcessStatsBatchAsync ( IEnumerable<StandardExecutionPerformanceMonitorWriteRequest> currentBatch )
 		{
+			List<TaskPerformanceStats> executionTimeInfoBatch =
+				new List<TaskPerformanceStats>();
+
+			try
+			{
+				foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
+					executionTimeInfoBatch.Add( new TaskPerformanceStats( rq.PayloadType, rq.DurationMilliseconds ) );
+
+				await mStatsWriter.WriteAsync( executionTimeInfoBatch );
+
+				foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
+					rq.SetCompleted( 1 );
+			}
+			catch ( Exception exc )
+			{
+				foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
+				{
+					rq.SetFailed( exc );
+					if ( rq.CanBeRetried )
+						mStatsProcessingQueue.Add( rq );
+				}
+
+				mLogger.Error( "Error processing performance stats batch", exc );
+			}
+		}
+
+		private async Task RunFlushLoopAsync ()
+		{
+			CancellationToken stopToken = mStatsProcessingStopTokenSource
+				.Token;
+
+			if ( stopToken.IsCancellationRequested )
+				return;
+
 			while ( true )
 			{
+				List<StandardExecutionPerformanceMonitorWriteRequest> currentBatch =
+					new List<StandardExecutionPerformanceMonitorWriteRequest>();
+
 				try
 				{
 					stopToken.ThrowIfCancellationRequested();
 
-					if ( mFlushOptions.WriteIntervalThresholdMilliseconds > 0 )
-						mFlushCountdownHandle.Wait( mFlushOptions.WriteIntervalThresholdMilliseconds, stopToken );
-					else
-						mFlushCountdownHandle.Wait( stopToken );
+					//Try to dequeue and block if no item is available
+					StandardExecutionPerformanceMonitorWriteRequest processItem =
+						 mStatsProcessingQueue.Take( stopToken );
 
-					stopToken.ThrowIfCancellationRequested();
-					mFlushCountdownHandle.Reset();
+					currentBatch.Add( processItem );
 
-					await mFlushWriter.WriteAsync( GetExecutionStatsChangesSinceLastFlush() );
-					stopToken.ThrowIfCancellationRequested();
+					//See if there are other items available 
+					//	and add them to current batch
+					while ( currentBatch.Count < 5 && mStatsProcessingQueue.TryTake( out processItem ) )
+						currentBatch.Add( processItem );
+
+					//Process the entire batch - don't observe 
+					//	cancellation token
+					await ProcessStatsBatchAsync( currentBatch );
 				}
 				catch ( OperationCanceledException )
 				{
-					await mFlushWriter.WriteAsync( GetExecutionStatsChangesSinceLastFlush() );
+					//Best effort to cancel all tasks
+					foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in mStatsProcessingQueue.ToArray() )
+						rq.SetCancelled();
+
+					mLogger.Debug( "Cancellation requested. Breaking stats processing loop..." );
 					break;
 				}
 				catch ( Exception exc )
 				{
-					mLogger.Error( "Error flushing execution time info", exc );
+					//Add them back to processing queue to be retried
+					foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
+					{
+						rq.SetFailed( exc );
+						if ( rq.CanBeRetried )
+							mStatsProcessingQueue.Add( rq );
+					}
+
+					mLogger.Error( "Error processing results", exc );
+				}
+				finally
+				{
+					//Clear batch and start over
+					currentBatch.Clear();
 				}
 			}
 		}
 
-		private async Task DoFlushingStartupSequenceAsync ( IExecutionPerformanceMonitorWriter writer,
-			ExecutionPerformanceMonitorWriteOptions options )
+		private async Task DoFlushingStartupSequenceAsync ( IExecutionPerformanceMonitorWriter writer )
 		{
-			mFlushWriter = writer;
-			mFlushOptions = options;
-			mFlushStopTokenSource = new CancellationTokenSource();
-			mFlushCountdownHandle = new CountdownEvent( options.WriteCountThreshold );
+			mStatsWriter = writer;
+			mStatsProcessingStopTokenSource =
+				new CancellationTokenSource();
 
-			await mFlushWriter.SetupIfNeededAsync();
-			mFlushTask = Task.Run( async () => await RunFlushLoopAsync( mFlushStopTokenSource.Token ) );
+			await mStatsWriter.SetupIfNeededAsync();
+			mStatsProcessingTask = Task.Run( async ()
+				=> await RunFlushLoopAsync() );
 		}
 
-		public async Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer,
-			ExecutionPerformanceMonitorWriteOptions options )
+		public async Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer )
 		{
-			CheckDisposedOrThrow();
+			CheckNotDisposedOrThrow();
 
-			if ( mFlushStateController.IsStopped )
-				await mFlushStateController.TryRequestStartAsync( async ()
-					=> await DoFlushingStartupSequenceAsync( writer, options ) );
+			if ( mStateController.IsStopped )
+				await mStateController.TryRequestStartAsync( async ()
+					=> await DoFlushingStartupSequenceAsync( writer ) );
 			else
 				mLogger.Debug( "Flush scheduler is already started. Nothing to be done." );
 		}
 
 		private async Task DoFlushingShutdownSequenceAsync ()
 		{
-			mFlushStopTokenSource.Cancel();
-			await mFlushTask;
+			mStatsProcessingQueue.CompleteAdding();
+			mStatsProcessingStopTokenSource.Cancel();
+			await mStatsProcessingTask;
 
-			mFlushTask.Dispose();
-			mFlushStopTokenSource.Dispose();
-			mFlushCountdownHandle.Dispose();
+			mStatsProcessingTask.Dispose();
+			mStatsProcessingStopTokenSource.Dispose();
+			mStatsProcessingQueue.Dispose();
 
-			mFlushTask = null;
-			mFlushStopTokenSource = null;
-			mFlushCountdownHandle = null;
-			mFlushOptions = null;
-			mFlushWriter = null;
-			mLastFlushedStats = null;
+			mStatsProcessingTask = null;
+			mStatsProcessingQueue = null;
+			mStatsProcessingStopTokenSource = null;
+			mStatsWriter = null;
 		}
 
 		public async Task StopFlushingAsync ()
 		{
-			CheckDisposedOrThrow();
+			CheckNotDisposedOrThrow();
 
-			if ( mFlushStateController.IsStarted )
-				await mFlushStateController.TryRequestStartAsync( async ()
+			if ( mStateController.IsStarted )
+				await mStateController.TryRequestStartAsync( async ()
 					=> await DoFlushingShutdownSequenceAsync() );
 			else
 				mLogger.Debug( "Flush scheduler is already stopped. Nothing to be done." );
@@ -195,10 +254,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				if ( disposing )
 				{
 					StopFlushingAsync().Wait();
-
-					mExecutionStats.Clear();
-					mExecutionStats = null;
-					mFlushStateController = null;
+					mStateController = null;
 				}
 
 				mIsDisposed = true;
@@ -211,43 +267,13 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
-		private IReadOnlyDictionary<string, TaskExecutionStats> GetExecutionStatsChangesSinceLastFlush ()
+		public bool IsRunning
 		{
-			Dictionary<string, TaskExecutionStats> statsDelta =
-				new Dictionary<string, TaskExecutionStats>();
-
-			IReadOnlyDictionary<string, TaskExecutionStats> currentStats =
-				GetExecutionStatsSnpashot();
-
-			IReadOnlyDictionary<string, TaskExecutionStats> prevStats = mLastFlushedStats == null
-				? new ReadOnlyDictionary<string, TaskExecutionStats>( new Dictionary<string, TaskExecutionStats>() )
-				: mLastFlushedStats;
-
-
-			foreach ( KeyValuePair<string, TaskExecutionStats> tsPair in currentStats )
+			get
 			{
-				if ( !prevStats.TryGetValue( tsPair.Key, out TaskExecutionStats prevTs ) )
-					prevTs = null;
-
-				statsDelta.Add( tsPair.Key, tsPair.Value.Since( prevTs ) );
+				CheckNotDisposedOrThrow();
+				return mStateController.IsStarted;
 			}
-
-			mLastFlushedStats = currentStats;
-			return statsDelta;
 		}
-
-		private IReadOnlyDictionary<string, TaskExecutionStats> GetExecutionStatsSnpashot ()
-		{
-			Dictionary<string, TaskExecutionStats> snapshot =
-				new Dictionary<string, TaskExecutionStats>();
-
-			foreach ( KeyValuePair<string, TaskExecutionStats> tsInfo in mExecutionStats )
-				snapshot.Add( tsInfo.Key, tsInfo.Value.Copy() );
-
-			return new ReadOnlyDictionary<string, TaskExecutionStats>( snapshot );
-		}
-
-		public IReadOnlyDictionary<string, TaskExecutionStats> ExecutionStats =>
-			GetExecutionStatsSnpashot();
 	}
 }

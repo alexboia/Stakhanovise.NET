@@ -49,7 +49,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardTaskProcessingSetup mTaskProcessingSetup;
 
-		private StandardExecutionPerformanceMonitorSetup mExecutionPerformanceMonitorSetup;
 
 		private StandardTaskQueueConsumerSetup mTaskQueueConsumerSetup;
 
@@ -64,16 +63,6 @@ namespace LVD.Stakhanovise.NET.Setup
 			mWorkerCount = defaults.WorkerCount;
 			mTaskProcessingSetup = new StandardTaskProcessingSetup( defaults );
 			mTaskQueueConsumerSetup = taskQueueConsumerSetup;
-			mExecutionPerformanceMonitorSetup = new StandardExecutionPerformanceMonitorSetup( defaults );
-		}
-
-		public ITaskEngineSetup SetupPerformanceMonitor ( Action<IExecutionPerformanceMonitorSetup> setupAction )
-		{
-			if ( setupAction == null )
-				throw new ArgumentNullException( nameof( setupAction ) );
-
-			setupAction.Invoke( mExecutionPerformanceMonitorSetup );
-			return this;
 		}
 
 		public ITaskEngineSetup SetupTaskProcessing ( Action<ITaskProcessingSetup> setupAction )
@@ -101,7 +90,6 @@ namespace LVD.Stakhanovise.NET.Setup
 		private TaskEngineOptions BuildOptions ()
 		{
 			return new TaskEngineOptions( mWorkerCount,
-				mExecutionPerformanceMonitorSetup.BuildOptions(),
 				mTaskProcessingSetup.BuildOptions() );
 		}
 

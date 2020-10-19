@@ -204,14 +204,12 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task StartFlushingPerformanceStatsAsync ()
 		{
-			if ( mOptions.PerfMonOptions.FlushStats )
-				await mExecutionPerfMon.StartFlushingAsync( mExecutionPerfMonWriter, mOptions.PerfMonOptions.FlushOptions );
+			await mExecutionPerfMon.StartFlushingAsync( mExecutionPerfMonWriter );
 		}
 
 		private async Task StopFlushingPerformanceStatsAsync ()
 		{
-			if ( mOptions.PerfMonOptions.FlushStats )
-				await mExecutionPerfMon.StopFlushingAsync();
+			await mExecutionPerfMon.StopFlushingAsync();
 		}
 
 		private async Task StartPollerAsync ( string[] requiredPayloadTypes )

@@ -3,12 +3,13 @@ using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
 	public static class MiscExtensions
 	{
-		public static void ReportExecutionTime ( this IExecutionPerformanceMonitor executionPerformanceMonitor,
+		public static async Task ReportExecutionTimeAsync ( this IExecutionPerformanceMonitor executionPerformanceMonitor,
 			IQueuedTaskToken queuedTaskToken,
 			TaskExecutionResult result )
 		{
@@ -21,9 +22,10 @@ namespace LVD.Stakhanovise.NET.Helpers
 			if ( result == null )
 				throw new ArgumentNullException( nameof( result ) );
 
-			executionPerformanceMonitor.ReportExecutionTime(
+			await executionPerformanceMonitor.ReportExecutionTimeAsync(
 				queuedTaskToken.DequeuedTask.Type,
-				result.ProcessingTimeMilliseconds );
+				result.ProcessingTimeMilliseconds,
+				timeoutMilliseconds: 0 );
 		}
 	}
 }

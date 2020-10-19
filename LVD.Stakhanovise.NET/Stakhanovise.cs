@@ -68,10 +68,6 @@ namespace LVD.Stakhanovise.NET
 					=> !( exc is NullReferenceException )
 						&& !( exc is ArgumentException ),
 
-				ExecutionPerformanceMonitorFlushStats = true,
-				ExecutionPerformanceMonitorWriteCountThreshold = 10,
-				ExecutionPerformanceMonitorWriteIntervalThresholdMilliseconds = 1000,
-
 				FaultErrorThresholdCount = 5
 			};
 

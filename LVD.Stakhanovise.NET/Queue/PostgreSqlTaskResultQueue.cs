@@ -64,7 +64,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private StateController mStateController =
 			new StateController();
 
-		private long mLastRequestId;
+		private long mLastRequestId = 0;
 
 		private string mUpdateSql;
 
@@ -147,13 +147,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				timeoutMilliseconds: 0 );
 		}
 
-		private async Task ProcessResultBatchAsync ( Queue<PostgreSqlTaskResultQueueProcessRequest> currentBatch,
-			CancellationToken cancellationToken )
+		private async Task ProcessResultBatchAsync ( Queue<PostgreSqlTaskResultQueueProcessRequest> currentBatch )
 		{
 			//An explicit choice has been made not to use transactions
 			//	since failing to update a result MUST NOT 
 			//	cause the other successful updates to be rolled back.
-			using ( NpgsqlConnection conn = await OpenConnectionAsync( cancellationToken ) )
+			using ( NpgsqlConnection conn = await OpenConnectionAsync( CancellationToken.None ) )
 			using ( NpgsqlCommand updateCmd = new NpgsqlCommand( mUpdateSql, conn ) )
 			{
 				NpgsqlParameter pStatus = updateCmd.Parameters
@@ -171,7 +170,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				NpgsqlParameter pId = updateCmd.Parameters
 					.Add( "t_id", NpgsqlDbType.Uuid );
 
-				await updateCmd.PrepareAsync( cancellationToken );
+				await updateCmd.PrepareAsync();
 
 				while ( currentBatch.Count > 0 )
 				{
@@ -191,7 +190,7 @@ namespace LVD.Stakhanovise.NET.Queue
 						pErrorCount.Value = processRq.ResultToUpdate.ErrorCount;
 						pLastErrorIsRecoverable.Value = processRq.ResultToUpdate.LastErrorIsRecoverable;
 						pProcessingTime.Value = processRq.ResultToUpdate.ProcessingTimeMilliseconds;
-						
+
 						if ( processRq.ResultToUpdate.ProcessingFinalizedAtTs.HasValue )
 							pFinalizedAt.Value = processRq.ResultToUpdate.ProcessingFinalizedAtTs;
 						else
@@ -199,7 +198,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 						pId.Value = processRq.ResultToUpdate.Id;
 
-						int affectedRows = await updateCmd.ExecuteNonQueryAsync( cancellationToken );
+						int affectedRows = await updateCmd.ExecuteNonQueryAsync();
 						processRq.SetCompleted( affectedRows );
 					}
 					catch ( OperationCanceledException )
@@ -221,6 +220,73 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
+		private async Task RunProcessingLoopAsync ()
+		{
+			CancellationToken stopToken = mResultProcessingStopRequest
+					.Token;
+
+			if ( stopToken.IsCancellationRequested )
+				return;
+
+			while ( true )
+			{
+				//We need to use a queue here - as we process the batch, 
+				//	we consume each element and, in case of an error 
+				//	that affects all of them, 
+				//	we would fail only the remaining ones, not the ones 
+				//	that have been successfully processed
+				Queue<PostgreSqlTaskResultQueueProcessRequest> currentBatch =
+					new Queue<PostgreSqlTaskResultQueueProcessRequest>();
+
+				try
+				{
+					stopToken.ThrowIfCancellationRequested();
+
+					//Try to dequeue and block if no item is available
+					PostgreSqlTaskResultQueueProcessRequest processItem =
+						 mResultProcessingQueue.Take( stopToken );
+
+					currentBatch.Enqueue( processItem );
+
+					//See if there are other items available 
+					//	and add them to current batch
+					while ( currentBatch.Count < 5 && mResultProcessingQueue.TryTake( out processItem ) )
+						currentBatch.Enqueue( processItem );
+
+					//Process the entire batch - don't observe 
+					//	cancellation token
+					await ProcessResultBatchAsync( currentBatch );
+				}
+				catch ( OperationCanceledException )
+				{
+					//Best effort to cancel all tasks
+					foreach ( PostgreSqlTaskResultQueueProcessRequest rq in mResultProcessingQueue.ToArray() )
+						rq.SetCancelled();
+
+					mLogger.Debug( "Cancellation requested. Breaking result processing loop..." );
+					break;
+				}
+				catch ( Exception exc )
+				{
+					//Add them back to processing queue to be retried
+					foreach ( PostgreSqlTaskResultQueueProcessRequest rq in currentBatch )
+					{
+						rq.SetFailed( exc );
+						if ( rq.CanBeRetried )
+							mResultProcessingQueue.Add( rq );
+					}
+
+					currentBatch.Clear();
+					mLogger.Error( "Error processing results", exc );
+				}
+				finally
+				{
+					//Clear batch and start over
+					currentBatch.Clear();
+				}
+			}
+		}
+
 		private async Task StartProcessingAsync ()
 		{
 			await PrepConnectionPoolAsync( CancellationToken.None );
@@ -228,75 +294,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			mResultProcessingStopRequest = new CancellationTokenSource();
 			mResultProcessingQueue = new BlockingCollection<PostgreSqlTaskResultQueueProcessRequest>();
 
-			mResultProcessingTask = Task.Run( async () =>
-			 {
-				 CancellationToken stopToken = mResultProcessingStopRequest
-					.Token;
-
-				 while ( true )
-				 {
-					 //We need to use a queue here - as we process the batch, 
-					 //	we consume each element and, in case of an error 
-					 //	that affects all of them, 
-					 //	we would fail only the remaining ones, not the ones 
-					 //	that have been successfully processed
-					 Queue<PostgreSqlTaskResultQueueProcessRequest> currentBatch =
-						 new Queue<PostgreSqlTaskResultQueueProcessRequest>();
-
-					 try
-					 {
-						 stopToken.ThrowIfCancellationRequested();
-
-						 //Try to dequeue and block if no item is available
-						 PostgreSqlTaskResultQueueProcessRequest processItem =
-							  mResultProcessingQueue.Take( stopToken );
-
-						 currentBatch.Enqueue( processItem );
-
-						 //See if there are other items available 
-						 //	and add them to current batch
-						 while ( currentBatch.Count < 5 && mResultProcessingQueue.TryTake( out processItem ) )
-							 currentBatch.Enqueue( processItem );
-
-						 stopToken.ThrowIfCancellationRequested();
-
-						 //Process the entire batch
-						 await ProcessResultBatchAsync( currentBatch,
-							 stopToken );
-
-						 //Clear batch and start over
-						 currentBatch.Clear();
-					 }
-					 catch ( OperationCanceledException )
-					 {
-						 //Best effort to cancel all tasks - both the current batch
-						 //	 and the remaining items in queue
-						 foreach ( PostgreSqlTaskResultQueueProcessRequest rq in currentBatch )
-							 rq.SetCancelled();
-
-						 foreach ( PostgreSqlTaskResultQueueProcessRequest rq in mResultProcessingQueue.ToArray() )
-							 rq.SetCancelled();
-
-						 currentBatch.Clear();
-						 mLogger.Debug( "Cancellation requested. Breaking result processing loop..." );
-
-						 break;
-					 }
-					 catch ( Exception exc )
-					 {
-						 //Add them back to processing queue to be retried
-						 foreach ( PostgreSqlTaskResultQueueProcessRequest rq in currentBatch )
-						 {
-							 rq.SetFailed( exc );
-							 if ( rq.CanBeRetried )
-								 mResultProcessingQueue.Add( rq );
-						 }
-
-						 currentBatch.Clear();
-						 mLogger.Error( "Error processing results", exc );
-					 }
-				 }
-			 } );
+			mResultProcessingTask = Task.Run( async () 
+				=> await RunProcessingLoopAsync() );
 		}
 
 		public async Task StartAsync ()

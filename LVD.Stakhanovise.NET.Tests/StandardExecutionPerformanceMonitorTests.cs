@@ -54,318 +54,95 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 1 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
-		[TestCase( 15 )]
-		[TestCase( 50 )]
-		[TestCase( 100 )]
-		[TestCase( 1000 )]
-		[Repeat( 5 )]
-		public void Test_CanReportExecutionTime_NoFlush_SerialCalls ( int nReports )
+		[Repeat( 10 )]
+		public async Task Test_CanReportExecutionStats_SerialCalls ( int nReports )
 		{
 			StandardExecutionPerformanceMonitor perfMon =
 				new StandardExecutionPerformanceMonitor();
 
-			ConcurrentQueue<Tuple<string, long>> execTimesToReport = GenerateExecutionTimesToReport( nReports,
-				out Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals );
+			ConcurrentQueue<Tuple<string, long>> perfStatsToReport = GenerateSamplePerformanceStats( nReports,
+				out List<TaskPerformanceStats> expectedWrittenStats );
 
-			while ( execTimesToReport.TryDequeue( out Tuple<string, long> execTime ) )
-				perfMon.ReportExecutionTime( execTime.Item1, execTime.Item2 );
+			Mock<IExecutionPerformanceMonitorWriter> writerMock =
+				new Mock<IExecutionPerformanceMonitorWriter>();
 
-			Assert_CorrectStats( perfMon, expectedPerPayloadTotals,
-				validateLastExecutionTime: true );
+			List<TaskPerformanceStats> actualWrittenStats =
+				new List<TaskPerformanceStats>();
+
+			writerMock.Setup( w => w.SetupIfNeededAsync() );
+			writerMock.Setup( w => w.WriteAsync( It.IsAny<IEnumerable<TaskPerformanceStats>>() ) )
+				.Callback<IEnumerable<TaskPerformanceStats>>( ws => actualWrittenStats.AddRange( ws ) );
+
+			await perfMon.StartFlushingAsync( writerMock.Object );
+
+			while ( perfStatsToReport.TryDequeue( out Tuple<string, long> execTime ) )
+				await perfMon.ReportExecutionTimeAsync( execTime.Item1, execTime.Item2, 0 );
+
+			await perfMon.StopFlushingAsync();
+
+			CollectionAssert.AreEquivalent( expectedWrittenStats,
+				actualWrittenStats );
 		}
 
-		[Test]
-		[TestCase( 2, 1 )]
-		[TestCase( 2, 5 )]
-		[TestCase( 2, 10 )]
-		[TestCase( 2, 15 )]
-		[TestCase( 2, 50 )]
-		[TestCase( 2, 100 )]
-		[TestCase( 2, 1000 )]
-
-		[TestCase( 5, 1 )]
+		[TestCase( 1, 2 )]
+		[TestCase( 1, 5 )]
+		[TestCase( 1, 10 )]
+		[TestCase( 5, 2 )]
 		[TestCase( 5, 5 )]
 		[TestCase( 5, 10 )]
-		[TestCase( 5, 15 )]
-		[TestCase( 5, 50 )]
-		[TestCase( 5, 100 )]
-		[TestCase( 5, 1000 )]
-		[Repeat( 5 )]
-		public void Test_CanReportExecutionTime_NoFlush_ParallelCalls ( int nThreads, int nReports )
-		{
-			StandardExecutionPerformanceMonitor perfMon =
-				new StandardExecutionPerformanceMonitor();
-
-			ConcurrentQueue<Tuple<string, long>> execTimesToReport = GenerateExecutionTimesToReport( nReports,
-				out Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals );
-
-			Task[] threads = new Task[ nThreads ];
-			Barrier syncStart = new Barrier( nThreads );
-
-			for ( int i = 0; i < nThreads; i++ )
-			{
-				threads[ i ] = Task.Run( () =>
-				{
-					syncStart.SignalAndWait();
-					while ( execTimesToReport.TryDequeue( out Tuple<string, long> execTime ) )
-						perfMon.ReportExecutionTime( execTime.Item1, execTime.Item2 );
-				} );
-			}
-
-			Task.WaitAll( threads );
-
-			Assert_CorrectStats( perfMon,
-				expectedPerPayloadTotals,
-				validateLastExecutionTime: false );
-		}
-
-		[Test]
-		[TestCase( 1 )]
-		[TestCase( 5 )]
-		[TestCase( 10 )]
-		[TestCase( 100 )]
-		[Repeat( 10 )]
-		public async Task Test_CanReportExecutionTime_WithFlush_WriteCountThreshold ( int writeCountTheshold )
-		{
-			StandardExecutionPerformanceMonitor perfMon =
-				new StandardExecutionPerformanceMonitor();
-
-			ConcurrentQueue<Tuple<string, long>> execTimesToReport = GenerateExecutionTimesToReport( writeCountTheshold,
-				out Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals );
-
-			ExecutionPerformanceMonitorWriteOptions writeOptions = new ExecutionPerformanceMonitorWriteOptions( writeIntervalThresholdMilliseconds: 1000,
-				writeCountTheshold );
-
-			await Run_FlushTests( perfMon,
-				execTimesToReport,
-				expectedPerPayloadTotals,
-				writeOptions );
-		}
-
-
-		[Test]
+		[TestCase( 100, 2 )]
 		[TestCase( 100, 5 )]
-		[TestCase( 100, 1 )]
 		[TestCase( 100, 10 )]
-		[TestCase( 1500, 5 )]
-		[TestCase( 1500, 1 )]
-		[TestCase( 1500, 10 )]
 		[Repeat( 10 )]
-		public async Task Test_CanReportExecutionTime_WithFlush_WriteIntervalThreshold ( int writeIntervalThreshold, int nReports )
+		public async Task Test_CanReportExecutionStats_ParallelCalls ( int nReports, int nProducers )
 		{
+
 			StandardExecutionPerformanceMonitor perfMon =
 				new StandardExecutionPerformanceMonitor();
 
-			ConcurrentQueue<Tuple<string, long>> execTimesToReport = GenerateExecutionTimesToReport( nReports,
-				out Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals );
-
-			ExecutionPerformanceMonitorWriteOptions writeOptions = new ExecutionPerformanceMonitorWriteOptions( writeIntervalThreshold,
-				writeCountThreshold: nReports * 2 );
-
-			await Run_FlushTests( perfMon,
-				execTimesToReport,
-				expectedPerPayloadTotals,
-				writeOptions );
-		}
-
-		[Test]
-		[TestCase( 100 )]
-		[TestCase( 250 )]
-		[TestCase( 1000 )]
-		[TestCase( 1500 )]
-		[Repeat( 3 )]
-		public async Task Test_FlushWithoutChanges_NoInitialReports ( int writeIntervalThreshold )
-		{
-			StandardExecutionPerformanceMonitor perfMon =
-				new StandardExecutionPerformanceMonitor();
+			ConcurrentQueue<Tuple<string, long>> perfStatsToReport = GenerateSamplePerformanceStats( nReports,
+				out List<TaskPerformanceStats> expectedWrittenStats );
 
 			Mock<IExecutionPerformanceMonitorWriter> writerMock =
 				new Mock<IExecutionPerformanceMonitorWriter>();
 
-			ExecutionPerformanceMonitorWriteOptions writeOptions = new ExecutionPerformanceMonitorWriteOptions( writeIntervalThreshold,
-				writeCountThreshold: 1000 );
+			ConcurrentBag<TaskPerformanceStats> actualWrittenStats =
+				new ConcurrentBag<TaskPerformanceStats>();
 
-			CountdownEvent syncCount = new CountdownEvent( 3 );
+			Task[] producers = new Task[ nProducers ];
 
 			writerMock.Setup( w => w.SetupIfNeededAsync() );
-			writerMock.Setup( w => w.WriteAsync( It.IsAny<IReadOnlyDictionary<string, TaskExecutionStats>>() ) )
-				.Callback<IReadOnlyDictionary<string, TaskExecutionStats>>( f =>
+			writerMock.Setup( w => w.WriteAsync( It.IsAny<IEnumerable<TaskPerformanceStats>>() ) )
+				.Callback<IEnumerable<TaskPerformanceStats>>( ws =>
 				{
-					try
-					{
-						Assert.NotNull( f );
-						Assert.AreEqual( 0, f.Count );
-					}
-					finally
-					{
-						syncCount.Signal();
-					}
+					foreach ( TaskPerformanceStats s in ws )
+						actualWrittenStats.Add( s );
 				} );
 
-			await perfMon.StartFlushingAsync( writerMock.Object, writeOptions );
+			await perfMon.StartFlushingAsync( writerMock.Object );
+
+			for ( int i = 0; i < nProducers; i++ )
+			{
+				producers[ i ] = Task.Run( async () =>
+				 {
+					 while ( perfStatsToReport.TryDequeue( out Tuple<string, long> execTime ) )
+						 await perfMon.ReportExecutionTimeAsync( execTime.Item1, execTime.Item2, 0 );
+				 } );
+			}
+
+			await Task.WhenAll( producers );
 			await perfMon.StopFlushingAsync();
 
-			syncCount.Wait();
+			CollectionAssert.AreEquivalent( expectedWrittenStats.ToArray(),
+				actualWrittenStats.ToArray() );
 		}
 
-		[Test]
-		[TestCase( 100, 5 )]
-		[TestCase( 100, 1 )]
-		[TestCase( 100, 10 )]
-		[TestCase( 1500, 5 )]
-		[TestCase( 1500, 1 )]
-		[TestCase( 1500, 10 )]
-		public async Task Test_FlushWithoutChanges_WithInitialReports ( int writeIntervalThreshold, int nReports )
+		private ConcurrentQueue<Tuple<string, long>> GenerateSamplePerformanceStats ( int count,
+			out List<TaskPerformanceStats> expectedWrittenStats )
 		{
-			StandardExecutionPerformanceMonitor perfMon =
-				new StandardExecutionPerformanceMonitor();
+			Faker faker =
+				new Faker();
 
-			Mock<IExecutionPerformanceMonitorWriter> writerMock =
-				new Mock<IExecutionPerformanceMonitorWriter>();
-
-			ConcurrentQueue<Tuple<string, long>> execTimesToReport = GenerateExecutionTimesToReport( nReports,
-				out Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals );
-
-			ExecutionPerformanceMonitorWriteOptions writeOptions = new ExecutionPerformanceMonitorWriteOptions( writeIntervalThreshold,
-				nReports * 2 );
-
-			CountdownEvent syncCount = new CountdownEvent( 3 );
-			IReadOnlyDictionary<string, TaskExecutionStats> flushedArgs = null;
-
-			writerMock.Setup( w => w.SetupIfNeededAsync() );
-			writerMock.Setup( w => w.WriteAsync( It.IsAny<IReadOnlyDictionary<string, TaskExecutionStats>>() ) )
-				.Callback<IReadOnlyDictionary<string, TaskExecutionStats>>( f =>
-				{
-					try
-					{
-						Assert.NotNull( f );
-						Assert.AreEqual( expectedPerPayloadTotals.Count, f.Count );
-
-						if ( flushedArgs == null )
-						{
-							flushedArgs = f;
-							Assert_CorrectStats( expectedPerPayloadTotals, f, validateLastExecutionTime: false );
-						}
-						else
-							Assert_UnchangedStats( flushedArgs, f );
-					}
-					finally
-					{
-						syncCount.Signal();
-					}
-				} );
-
-			await perfMon.StartFlushingAsync( writerMock.Object, writeOptions );
-
-			while ( execTimesToReport.TryDequeue( out Tuple<string, long> execTime ) )
-				perfMon.ReportExecutionTime( execTime.Item1, execTime.Item2 );
-
-			await perfMon.StopFlushingAsync();
-
-			syncCount.Wait();
-		}
-
-		private static async Task Run_FlushTests ( StandardExecutionPerformanceMonitor perfMon,
-			ConcurrentQueue<Tuple<string, long>> execTimesToReport,
-			Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals,
-			ExecutionPerformanceMonitorWriteOptions writeOptions )
-		{
-			int execTimesToReportCount = execTimesToReport.Count;
-			IReadOnlyDictionary<string, TaskExecutionStats> flushedArgs = null;
-
-			Mock<IExecutionPerformanceMonitorWriter> writerMock =
-				new Mock<IExecutionPerformanceMonitorWriter>();
-
-			using ( ManualResetEvent syncFlushed = new ManualResetEvent( false ) )
-			{
-				writerMock.Setup( w => w.SetupIfNeededAsync() );
-				writerMock.Setup( w => w.WriteAsync( It.IsAny<IReadOnlyDictionary<string, TaskExecutionStats>>() ) )
-					.Callback<IReadOnlyDictionary<string, TaskExecutionStats>>( f =>
-					{
-						flushedArgs = f;
-						syncFlushed.Set();
-					} );
-
-				await perfMon.StartFlushingAsync( writerMock.Object, writeOptions );
-
-				while ( execTimesToReport.TryDequeue( out Tuple<string, long> execTime ) )
-					perfMon.ReportExecutionTime( execTime.Item1, execTime.Item2 );
-
-				await perfMon.StopFlushingAsync();
-				syncFlushed.WaitOne();
-
-				Assert.NotNull( flushedArgs );
-				Assert.AreEqual( expectedPerPayloadTotals.Count, flushedArgs.Count );
-
-				Assert_CorrectStats( expectedPerPayloadTotals,
-					flushedArgs,
-					validateLastExecutionTime: true );
-			}
-		}
-
-		private static void Assert_UnchangedStats ( IReadOnlyDictionary<string, TaskExecutionStats> lastPerPayloadTotals,
-			IReadOnlyDictionary<string, TaskExecutionStats> currentTotals )
-		{
-			foreach ( KeyValuePair<string, TaskExecutionStats> expected in lastPerPayloadTotals )
-			{
-				if ( currentTotals.TryGetValue( expected.Key, out TaskExecutionStats stats ) )
-				{
-					Assert.AreEqual( expected.Value.FastestExecutionTime, stats.FastestExecutionTime );
-					Assert.AreEqual( expected.Value.LongestExecutionTime, stats.LongestExecutionTime );
-					Assert.AreEqual( 0, stats.AverageExecutionTime );
-					Assert.AreEqual( expected.Value.LastExecutionTime, stats.LastExecutionTime );
-					Assert.AreEqual( 0, stats.NumberOfExecutionCycles );
-					Assert.AreEqual( 0, stats.TotalExecutionTime );
-				}
-				else
-					Assert.Fail();
-			}
-		}
-
-		private static void Assert_CorrectStats ( StandardExecutionPerformanceMonitor perfMon,
-			Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals,
-			bool validateLastExecutionTime )
-		{
-			foreach ( KeyValuePair<string, TaskExecutionStats> expected in expectedPerPayloadTotals )
-			{
-				TaskExecutionStats stats = perfMon.GetExecutionStats( expected.Key );
-				Assert.NotNull( stats );
-
-				Assert.AreEqual( expected.Value.FastestExecutionTime, stats.FastestExecutionTime );
-				Assert.AreEqual( expected.Value.LongestExecutionTime, stats.LongestExecutionTime );
-				Assert.AreEqual( expected.Value.AverageExecutionTime, stats.AverageExecutionTime );
-				if ( validateLastExecutionTime )
-					Assert.AreEqual( expected.Value.LastExecutionTime, stats.LastExecutionTime );
-				Assert.AreEqual( expected.Value.NumberOfExecutionCycles, stats.NumberOfExecutionCycles );
-				Assert.AreEqual( expected.Value.TotalExecutionTime, stats.TotalExecutionTime );
-			}
-		}
-
-		private static void Assert_CorrectStats ( Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals,
-			IReadOnlyDictionary<string, TaskExecutionStats> actualTotals,
-			bool validateLastExecutionTime )
-		{
-			foreach ( KeyValuePair<string, TaskExecutionStats> expected in expectedPerPayloadTotals )
-			{
-				if ( actualTotals.TryGetValue( expected.Key, out TaskExecutionStats stats ) )
-				{
-					Assert.AreEqual( expected.Value.FastestExecutionTime, stats.FastestExecutionTime );
-					Assert.AreEqual( expected.Value.LongestExecutionTime, stats.LongestExecutionTime );
-					Assert.AreEqual( expected.Value.AverageExecutionTime, stats.AverageExecutionTime );
-					if ( validateLastExecutionTime )
-						Assert.AreEqual( expected.Value.LastExecutionTime, stats.LastExecutionTime );
-					Assert.AreEqual( expected.Value.NumberOfExecutionCycles, stats.NumberOfExecutionCycles );
-					Assert.AreEqual( expected.Value.TotalExecutionTime, stats.TotalExecutionTime );
-				}
-				else
-					Assert.Fail();
-			}
-		}
-
-		private ConcurrentQueue<Tuple<string, long>> GenerateExecutionTimesToReport ( int nReports,
-			out Dictionary<string, TaskExecutionStats> expectedPerPayloadTotals )
-		{
-			Faker faker = new Faker();
 			Type[] payloadTypes = new Type[]
 			{
 				typeof(AnotherSampleTaskPayload),
@@ -379,21 +156,21 @@ namespace LVD.Stakhanovise.NET.Tests
 			ConcurrentQueue<Tuple<string, long>> execTimes =
 				new ConcurrentQueue<Tuple<string, long>>();
 
-			expectedPerPayloadTotals = new Dictionary<string, TaskExecutionStats>();
+			expectedWrittenStats =
+				new List<TaskPerformanceStats>();
 
-			for ( int i = 0; i < nReports; i++ )
+			for ( int i = 0; i < count; i++ )
 			{
 				long time = faker.Random.Long( 1, 10000 );
 				Type taskType = faker.PickRandom( payloadTypes );
 
-				execTimes.Enqueue( new Tuple<string, long>( taskType.FullName, time ) );
+				execTimes.Enqueue( new Tuple<string, long>( 
+					taskType.FullName, 
+					time ) );
 
-				if ( expectedPerPayloadTotals.TryGetValue( taskType.FullName, out TaskExecutionStats stats ) )
-					expectedPerPayloadTotals[ taskType.FullName ] =
-						stats.UpdateWithNewCycleExecutionTime( time );
-				else
-					expectedPerPayloadTotals[ taskType.FullName ] =
-						TaskExecutionStats.Initial( time );
+				expectedWrittenStats.Add( new TaskPerformanceStats( 
+					taskType.FullName,
+					time ) );
 			}
 
 			return execTimes;

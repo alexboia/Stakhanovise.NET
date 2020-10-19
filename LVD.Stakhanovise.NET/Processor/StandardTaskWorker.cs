@@ -258,7 +258,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					mLogger.Debug( "Will not repost task for execution." );
 
 				//Finally, report execution time
-				mPerformanceMonitor.ReportExecutionTime( queuedTaskToken,
+				await mPerformanceMonitor.ReportExecutionTimeAsync( queuedTaskToken,
 					result );
 			}
 			catch ( Exception exc )

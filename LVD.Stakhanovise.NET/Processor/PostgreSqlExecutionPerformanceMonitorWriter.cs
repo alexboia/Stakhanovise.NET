@@ -36,6 +36,7 @@ using Npgsql;
 using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -78,16 +79,16 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public async Task WriteAsync ( IReadOnlyDictionary<string, TaskExecutionStats> executionTimeInfo )
+		public async Task<int> WriteAsync ( IEnumerable<TaskPerformanceStats> executionTimeInfoBatch )
 		{
-			if ( executionTimeInfo == null )
-				throw new ArgumentNullException( nameof( executionTimeInfo ) );
+			int affectedRows = 0;
 
-			if ( executionTimeInfo.Count == 0 )
-				return;
+			if ( executionTimeInfoBatch == null )
+				throw new ArgumentNullException( nameof( executionTimeInfoBatch ) );
 
-			//TODO: adjust to avoid division by 0 when calculating average
-			//	situation may occur when nothing happens since system startup, but data is flushed anyway
+			if ( executionTimeInfoBatch.Count() == 0 )
+				return 0;
+
 			string upsertSql = @"INSERT INTO sk_task_execution_time_stats_t (
 					et_payload_type,
 					et_n_execution_cycles,
@@ -107,17 +108,17 @@ namespace LVD.Stakhanovise.NET.Processor
 				) ON CONFLICT (et_payload_type) DO UPDATE SET 
 					et_last_execution_time = EXCLUDED.et_last_execution_time,
 					et_avg_execution_time = CEILING(
-						(sk_task_execution_time_stats_t.et_total_execution_time + EXCLUDED.et_total_execution_time)::double precision 
-							/ (sk_task_execution_time_stats_t.et_n_execution_cycles + EXCLUDED.et_n_execution_cycles)
+						(sk_task_execution_time_stats_t.et_total_execution_time + EXCLUDED.et_last_execution_time)::double precision 
+							/ (sk_task_execution_time_stats_t.et_n_execution_cycles + 1)
 					)::bigint,
 					et_fastest_execution_time = LEAST(sk_task_execution_time_stats_t.et_fastest_execution_time, 
-						EXCLUDED.et_fastest_execution_time),
+						EXCLUDED.et_last_execution_time),
 					et_longest_execution_time = GREATEST(sk_task_execution_time_stats_t.et_longest_execution_time, 
-						EXCLUDED.et_longest_execution_time),
+						EXCLUDED.et_last_execution_time),
 					et_total_execution_time = sk_task_execution_time_stats_t.et_total_execution_time 
-						+ EXCLUDED.et_total_execution_time,
+						+ EXCLUDED.et_last_execution_time,
 					et_n_execution_cycles = sk_task_execution_time_stats_t.et_n_execution_cycles 
-						+ EXCLUDED.et_n_execution_cycles";
+						+ 1";
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
@@ -126,7 +127,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				try
 				{
 					NpgsqlParameter pPayloadType = upsertCmd.Parameters
-						.Add( "payload_type", NpgsqlDbType.Varchar );
+					   .Add( "payload_type", NpgsqlDbType.Varchar );
 					NpgsqlParameter pNExecutionCycles = upsertCmd.Parameters
 						.Add( "n_execution_cycles", NpgsqlDbType.Bigint );
 					NpgsqlParameter pLastExecutionTime = upsertCmd.Parameters
@@ -142,26 +143,17 @@ namespace LVD.Stakhanovise.NET.Processor
 
 					await upsertCmd.PrepareAsync();
 
-					foreach ( KeyValuePair<string, TaskExecutionStats> payloadInfo in executionTimeInfo )
+					foreach ( TaskPerformanceStats s in executionTimeInfoBatch )
 					{
-						if ( payloadInfo.Value.NumberOfExecutionCycles > 0 )
-						{
-							pPayloadType.Value = payloadInfo.Key;
-							pNExecutionCycles.Value = payloadInfo.Value
-								.NumberOfExecutionCycles;
-							pLastExecutionTime.Value = payloadInfo.Value
-								.LastExecutionTime;
-							pAvgExecutionTime.Value = payloadInfo.Value
-								.AverageExecutionTime;
-							pFastestExecutionTime.Value = payloadInfo.Value
-								.FastestExecutionTime;
-							pLongestExecutionTime.Value = payloadInfo.Value
-								.LongestExecutionTime;
-							pTotalExecutionTime.Value = payloadInfo.Value
-								.TotalExecutionTime;
+						pPayloadType.Value = s.PayloadType;
+						pNExecutionCycles.Value = 1;
+						pLastExecutionTime.Value = s.DurationMilliseconds;
+						pAvgExecutionTime.Value = s.DurationMilliseconds;
+						pFastestExecutionTime.Value = s.DurationMilliseconds;
+						pLongestExecutionTime.Value = s.DurationMilliseconds;
+						pTotalExecutionTime.Value = s.DurationMilliseconds;
 
-							await upsertCmd.ExecuteNonQueryAsync();
-						}
+						affectedRows += await upsertCmd.ExecuteNonQueryAsync();
 					}
 
 					await tx.CommitAsync();
@@ -172,6 +164,8 @@ namespace LVD.Stakhanovise.NET.Processor
 					throw;
 				}
 			}
+
+			return affectedRows;
 		}
 	}
 }

@@ -52,12 +52,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; set; }
 
-		public bool ExecutionPerformanceMonitorFlushStats { get; set; }
-
-		public int ExecutionPerformanceMonitorWriteCountThreshold { get; set; }
-
-		public int ExecutionPerformanceMonitorWriteIntervalThresholdMilliseconds { get; set; }
-
 		public int FaultErrorThresholdCount { get; set; }
 	}
 }

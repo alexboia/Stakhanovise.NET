@@ -311,14 +311,14 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private ITaskQueueProducer CreateTaskQueueProducer ()
 		{
-			return new PostgreSqlTaskQueueProducer( TestOptions.GetDefaultTaskQueueProducerAndResultOptions( CommonConnectionString ),
+			return new PostgreSqlTaskQueueProducer( TestOptions
+					.GetDefaultTaskQueueProducerAndResultOptions( CommonConnectionString ),
 				timestampProvider: new UtcNowTimestampProvider() );
 		}
 
 		private TaskEngineOptions GetTaskEngineOptions ( int workerCount )
 		{
 			return new TaskEngineOptions( workerCount,
-				perfMonOptions: TestOptions.GetDefaultExecutionPerformanceMonitorOptions(),
 				taskProcessingOptions: TestOptions.GetDefaultTaskProcessingOptions() );
 		}
 

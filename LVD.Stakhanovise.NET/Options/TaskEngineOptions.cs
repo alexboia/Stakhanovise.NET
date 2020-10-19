@@ -38,19 +38,14 @@ namespace LVD.Stakhanovise.NET.Options
 	public class TaskEngineOptions
 	{
 		public TaskEngineOptions ( int workerCount,
-			ExecutionPerformanceMonitorOptions perfMonOptions,
 			TaskProcessingOptions taskProcessingOptions )
 		{
 			WorkerCount = workerCount;
 			TaskProcessingOptions = taskProcessingOptions
 				?? throw new ArgumentNullException( nameof( taskProcessingOptions ) );
-			PerfMonOptions = perfMonOptions
-				?? throw new ArgumentNullException( nameof( perfMonOptions ) );
 		}
 
 		public int WorkerCount { get; private set; }
-
-		public ExecutionPerformanceMonitorOptions PerfMonOptions { get; private set; }
 
 		public TaskProcessingOptions TaskProcessingOptions { get; private set; }
 	}

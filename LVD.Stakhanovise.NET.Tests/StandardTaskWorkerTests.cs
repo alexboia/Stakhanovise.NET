@@ -116,9 +116,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<StandardTaskWorker> workers
 				= new List<StandardTaskWorker>();
 
-			executionPerformanceMonitorMock.Setup( m => m.ReportExecutionTime(
+			executionPerformanceMonitorMock.Setup( m => m.ReportExecutionTimeAsync(
 				It.IsIn( mPayloadTypes.Select( t => t.FullName ).ToArray() ),
-				It.IsAny<long>() ) );
+				It.IsAny<long>(),
+				It.IsAny<int>() ) );
 
 			resultQueueMock.Setup( rq => rq.PostResultAsync( It.IsAny<IQueuedTaskToken>() ) )
 				.Callback<IQueuedTaskToken>( t => processedTaskTokens.Add( t ) );
