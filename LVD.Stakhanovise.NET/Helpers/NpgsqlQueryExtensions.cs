@@ -51,41 +51,6 @@ namespace LVD.Stakhanovise.NET.Helpers
 				|| db.State == ConnectionState.Fetching );
 		}
 
-		public static async Task UnlockAllAsync ( this NpgsqlConnection db )
-		{
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT pg_advisory_unlock_all()", db ) )
-			{
-				cmd.CommandType = CommandType.Text;
-				await cmd.ExecuteNonQueryAsync();
-			}
-		}
-
-		public static async Task<bool> LockAsync ( this NpgsqlConnection db, long lockHandleId )
-		{
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT pg_try_advisory_lock(@lock_handle_id)", db ) )
-			{
-				cmd.CommandType = CommandType.Text;
-				cmd.Parameters.AddWithValue( "lock_handle_id",
-					NpgsqlDbType.Bigint,
-					lockHandleId );
-
-				return ( bool )( await cmd.ExecuteScalarAsync() );
-			}
-		}
-
-		public static async Task<bool> UnlockAsync ( this NpgsqlConnection db, long lockHandleId )
-		{
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( "SELECT pg_advisory_unlock(@lock_handle_id)", db ) )
-			{
-				cmd.CommandType = CommandType.Text;
-				cmd.Parameters.AddWithValue( "lock_handle_id",
-					NpgsqlDbType.Bigint,
-					lockHandleId );
-
-				return ( bool )( await cmd.ExecuteScalarAsync() );
-			}
-		}
-
 		public static async Task NotifyAsync ( this NpgsqlConnection db, string channel, NpgsqlTransaction withinTx )
 		{
 			if ( db == null )
@@ -146,22 +111,6 @@ namespace LVD.Stakhanovise.NET.Helpers
 			}
 			else
 				return false;
-		}
-
-		public static async Task<bool> IsAdvisoryLockHeldAsync ( this NpgsqlConnection db, long lockHandleId )
-		{
-			if ( db == null )
-				throw new ArgumentNullException( nameof( db ) );
-
-			using ( NpgsqlCommand checkCmd = new NpgsqlCommand( "SELECT sk_has_advisory_lock(@lock_handle_id) AS is_lock_held", db ) )
-			{
-				checkCmd.Parameters.AddWithValue( "lock_handle_id",
-					parameterType: NpgsqlDbType.Bigint,
-					value: lockHandleId );
-
-				object result = await checkCmd.ExecuteScalarAsync();
-				return result is bool && ( bool )result;
-			}
 		}
 
 		public static bool IsListening ( this NpgsqlConnection db, string channel )

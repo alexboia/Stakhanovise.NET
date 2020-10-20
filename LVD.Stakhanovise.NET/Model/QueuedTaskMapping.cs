@@ -41,14 +41,17 @@ namespace LVD.Stakhanovise.NET.Model
 		{
 			QueueTableName = "sk_tasks_queue_t";
 			ResultsQueueTableName = "sk_task_results_t";
+			ExecutionTimeStatsTableName = "sk_task_execution_time_stats_t";
 			NewTaskNotificaionChannelName = "sk_task_queue_item_added";
 			DequeueFunctionName = "sk_try_dequeue_task";
+			HasAdvisoryLockFunctionName = "sk_has_advisory_lock";
 		}
 
 		public void AddTablePrefix ( string tablePrefix )
 		{
 			QueueTableName = $"{tablePrefix}{QueueTableName}";
 			ResultsQueueTableName = $"{tablePrefix}{ResultsQueueTableName}";
+			ExecutionTimeStatsTableName= $"{tablePrefix}{ExecutionTimeStatsTableName}";
 		}
 
 		public string QueueTableName { get; set; }
@@ -57,6 +60,10 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public string NewTaskNotificaionChannelName { get; set; }
 
+		public string ExecutionTimeStatsTableName { get; set; }
+
 		public string DequeueFunctionName { get; set; }
+
+		public string HasAdvisoryLockFunctionName { get; set; }
 	}
 }

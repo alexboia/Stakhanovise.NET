@@ -55,7 +55,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.NotNull( taskExecutorRegistry
 				.DetectedPayloadTypes );
 
-			Assert.AreEqual( 7, taskExecutorRegistry
+			Assert.AreEqual( 9, taskExecutorRegistry
 				.DetectedPayloadTypes
 				.Count() );
 

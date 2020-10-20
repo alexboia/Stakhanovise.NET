@@ -139,7 +139,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		public async Task<IQueuedTask> PeekAsync ()
 		{
 			IQueuedTask peekedTask = null;
-			DateTimeOffset now = mTimestampProvider.GetNow();
+			DateTimeOffset refNow = mTimestampProvider.GetNow();
 
 			CheckNotDisposedOrThrow();
 
@@ -148,10 +148,10 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			string peekSql = $@"SELECT q.*
 				FROM {mOptions.Mapping.QueueTableName} as q
-				WHERE (q.task_locked_until_ts IS NULL OR q.task_locked_until_ts < @t_now)
+				WHERE q.task_locked_until_ts < @t_now
 					AND sk_has_advisory_lock(q.task_lock_handle_id) = false
 				ORDER BY q.task_priority DESC,
-					q.task_posted_at_ts ASC,
+					q.task_locked_until_ts ASC,
 					q.task_lock_handle_id ASC
 				LIMIT 1";
 
@@ -160,7 +160,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				peekCmd.Parameters.AddWithValue( "t_now",
 					NpgsqlDbType.TimestampTz,
-					now );
+					refNow );
 
 				await peekCmd.PrepareAsync();
 				using ( NpgsqlDataReader taskReader = await peekCmd.ExecuteReaderAsync() )

@@ -36,7 +36,13 @@ using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using NpgsqlTypes;
 using System;
+using System.Collections.Concurrent;
+using System.Data;
+using System.Diagnostics;
+using System.Dynamic;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
@@ -154,6 +160,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string GetTaskDequeueSql ( QueuedTaskMapping mapping )
 		{
+			//See https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
 			return $@"SELECT tq.* FROM { mapping.DequeueFunctionName }(@types, @excluded, @ref_now) tq";
 		}
 
@@ -192,7 +199,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				if ( conn == null )
 					return null;
 
-				using ( NpgsqlTransaction tx = conn.BeginTransaction() )
+				using ( NpgsqlTransaction tx = conn.BeginTransaction( IsolationLevel.ReadCommitted ) )
 				{
 					//1. Dequeue means that we acquire lock on a task in the queue
 					//	with the guarantee that nobody else did, and respecting 
@@ -200,14 +207,9 @@ namespace LVD.Stakhanovise.NET.Queue
 					//	that it should not be pulled out of the queue until the 
 					//	current abstract time reaches that tick value)
 					dequeuedTask = await TryDequeueTaskAsync( selectTaskTypes, now, conn, tx );
-
-					//2. Acquire means that we make sure this permanently stays ours;
-					//	In this case, we simply remove it from the queue; other approaches considered, 
-					//	but this is the only one that makes the most guarantees 
-					//	with zero lock-management efforts
-					if ( dequeuedTask != null && await TryAcquireTaskAsync( dequeuedTask, conn, tx ) )
+					if ( dequeuedTask != null )
 					{
-						//3. Mark the task as being "Processing" and pull result info
+						//2. Mark the task as being "Processing" and pull result info
 						//	The result is stored separately and it's what allows us to remove 
 						//	the task from the queue at step #2, 
 						//	whils also tracking it's processing status and previous results
@@ -227,12 +229,6 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 			finally
 			{
-				//If no task has been found, attempt to 
-				//  release all locks held by this connection 
-				//  and also close it
-				if ( dequeuedTaskToken == null && conn != null )
-					await conn.UnlockAllAsync();
-
 				if ( conn != null )
 				{
 					await conn.CloseAsync();
@@ -244,7 +240,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		}
 
 		private async Task<QueuedTask> TryDequeueTaskAsync ( string[] selectTaskTypes,
-			DateTimeOffset now,
+			DateTimeOffset refNow,
 			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
 		{
@@ -261,7 +257,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 				dequeueCmd.Parameters.AddWithValue( "ref_now",
 					parameterType: NpgsqlDbType.TimestampTz,
-					value: now );
+					value: refNow );
 
 				await dequeueCmd.PrepareAsync();
 				using ( NpgsqlDataReader taskRdr = await dequeueCmd.ExecuteReaderAsync() )
@@ -273,21 +269,6 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 
 			return dequeuedTask;
-		}
-
-		private async Task<bool> TryAcquireTaskAsync ( QueuedTask dequeuedTask,
-			NpgsqlConnection conn,
-			NpgsqlTransaction tx )
-		{
-			using ( NpgsqlCommand removeCmd = new NpgsqlCommand( mTaskAcquireSql, conn, tx ) )
-			{
-				removeCmd.Parameters.AddWithValue( "t_id",
-					NpgsqlDbType.Uuid,
-					dequeuedTask.Id );
-
-				await removeCmd.PrepareAsync();
-				return await removeCmd.ExecuteNonQueryAsync() == 1;
-			}
 		}
 
 		private async Task<QueuedTaskResult> TryUpdateTaskResultAsync ( QueuedTask dequeuedTask,

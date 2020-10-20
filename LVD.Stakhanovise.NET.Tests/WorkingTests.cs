@@ -55,18 +55,36 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	public class WorkingTests : BaseDbTests
 	{
+		private ITimestampProvider mTimestampProvider;
+
+		private TaskQueueOptions mProducerAndResultOptions;
+
+		private TaskProcessingOptions mTaskProcessingOptions;
+
+		private TaskQueueConsumerOptions mTaskQueueConsumerOptions;
+
+		private PostgreSqlExecutionPerformanceMonitorWriterOptions mPostgreSqlExecutionPerformanceMonitorWriterOptions;
+
 		private PostgreSqlTaskQueueDbOperations mOperations;
 
 		public WorkingTests ()
 		{
-			mOperations = new PostgreSqlTaskQueueDbOperations( CommonConnectionString, TestOptions.DefaultMapping );
-		}
+			mTimestampProvider = new UtcNowTimestampProvider();
 
-		[OneTimeSetUp]
-		public void FixtureSetUp ()
-		{
-			StakhanoviseLogManager.Provider = new ConsoleLoggingProvider( StakhanoviseLogLevel.Trace,
-				writeToStdOut: true );
+			mTaskProcessingOptions = TestOptions
+				.GetDefaultTaskProcessingOptions();
+
+			mProducerAndResultOptions = TestOptions
+				.GetDefaultTaskQueueProducerAndResultOptions( CommonConnectionString );
+
+			mTaskQueueConsumerOptions = TestOptions
+				.GetDefaultTaskQueueConsumerOptions( BaseConsumerConnectionString );
+
+			mPostgreSqlExecutionPerformanceMonitorWriterOptions = TestOptions
+				.GetDefaultPostgreSqlExecutionPerformanceMonitorWriterOptions( CommonConnectionString );
+
+			mOperations = new PostgreSqlTaskQueueDbOperations( CommonConnectionString,
+				TestOptions.DefaultMapping );
 		}
 
 		[SetUp]
@@ -113,14 +131,21 @@ namespace LVD.Stakhanovise.NET.Tests
 			ITaskEngine taskEngine =
 				CreateTaskEngine( workerCount );
 
+			Dictionary<string, long> cyclesCountBefore =
+				await GetAllExecutionCyclesCounts();
+
 			await taskEngine.StartAsync();
 			await Task.Delay( faker.Random.Int( 500, 5000 ) );
 			await taskEngine.StopAync();
 
-			//TODO: thins that need to be tested:
-			//	- abstract time is not ticked forward
-			//	- no changes in task and result queues
-			//	- no changes in task execution stats
+			Dictionary<string, long> cyclesCountAfter =
+				await GetAllExecutionCyclesCounts();
+
+			await AssertTotalTasks( expectedTotal: 0 );
+			await AssertTotalTaskResults( expectedTotal: 0 );
+
+			CollectionAssert.AreEqual( cyclesCountBefore,
+				cyclesCountAfter );
 		}
 
 		[Test]
@@ -151,13 +176,15 @@ namespace LVD.Stakhanovise.NET.Tests
 			doneEvent.Wait();
 			await taskEngine.StopAync();
 
-			await AssertRemainingTotalTasksLeft( 0 );
-			await AssertAllTasksCompletedWithStatus( 20,
-				expectedStatus: QueuedTaskStatus.Processed,
-				errorCount: 0 );
+			await AssertTotalTasks( expectedTotal: 0 );
 
-			await AssertCorrectExecutionTimeStats( typeof( ComputeFactorial ).FullName,
-				expectedExecutionCycles: 20 );
+			await AssertAllTasksCompletedWithStatus(
+				expectedTaskResultCount: 20,
+				expectedStatus: QueuedTaskStatus.Processed,
+				expectedErrorCount: 0 );
+
+			await AssertCorrectExecutionCyclesCount<ComputeFactorial>( expectedCount: 
+				20 );
 		}
 
 		[Test]
@@ -186,26 +213,29 @@ namespace LVD.Stakhanovise.NET.Tests
 			await taskEngine.StartAsync();
 
 			for ( int i = 1; i <= 20; i++ )
-				await producer.EnqueueAsync( new FailsNTimesBeforeSucceeding( Guid.NewGuid(), numberForErrorsBeforeSucceeding ),
+				await producer.EnqueueAsync( new FailsNTimesBeforeSucceeding( Guid.NewGuid(),
+						numberForErrorsBeforeSucceeding ),
 					source: nameof( Test_DoWork_TasksWithErrors_CompletesSuccessfullyAfterFailures ),
 					priority: 0 );
 
 			doneEvent.Wait();
 			await taskEngine.StopAync();
 
-			await AssertRemainingTotalTasksLeft( 0 );
-			await AssertAllTasksCompletedWithStatus( 20,
-				expectedStatus: QueuedTaskStatus.Processed,
-				errorCount: numberForErrorsBeforeSucceeding );
+			await AssertTotalTasks( expectedTotal: 0 );
 
-			await AssertCorrectExecutionTimeStats( typeof( FailsNTimesBeforeSucceeding ).FullName,
-				expectedExecutionCycles: 20 * ( numberForErrorsBeforeSucceeding + 1 ) );
+			await AssertAllTasksCompletedWithStatus( expectedTaskResultCount: 20,
+				expectedStatus: QueuedTaskStatus.Processed,
+				expectedErrorCount: numberForErrorsBeforeSucceeding );
+
+			await AssertCorrectExecutionCyclesCount<FailsNTimesBeforeSucceeding>( expectedCount: 
+				20 * ( numberForErrorsBeforeSucceeding + 1 ) );
 		}
 
 		[Test]
 		[TestCase( 1 )]
 		[TestCase( 2 )]
 		[TestCase( 5 )]
+		[Repeat( 5 )]
 		public async Task Test_DoWork_TasksWithErrors_UntilFataled ( int workerCount )
 		{
 			ITaskQueueProducer producer =
@@ -234,16 +264,18 @@ namespace LVD.Stakhanovise.NET.Tests
 			doneEvent.Wait();
 			await taskEngine.StopAync();
 
-			await AssertRemainingTotalTasksLeft( 0 );
-			await AssertAllTasksCompletedWithStatus( 20,
-				expectedStatus: QueuedTaskStatus.Fatal,
-				errorCount: expectedNumberOfErrors );
+			await AssertTotalTasks( expectedTotal: 0 );
 
-			await AssertCorrectExecutionTimeStats( typeof( AlwaysFailingTask ).FullName,
-				expectedExecutionCycles: 20 * expectedNumberOfErrors );
+			await AssertAllTasksCompletedWithStatus(
+				expectedTaskResultCount: 20,
+				expectedStatus: QueuedTaskStatus.Fatal,
+				expectedErrorCount: expectedNumberOfErrors );
+
+			await AssertCorrectExecutionCyclesCount<AlwaysFailingTask>( expectedCount: 
+				20 * expectedNumberOfErrors );
 		}
 
-		private async Task AssertRemainingTotalTasksLeft ( long expectedRemaining )
+		private async Task AssertTotalTasks ( long expectedTotal )
 		{
 			string countRemainingSql = $@"SELECT COUNT(1) 
 				FROM {TestOptions.DefaultMapping.QueueTableName}";
@@ -252,47 +284,92 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( countRemainingSql, conn ) )
 			{
 				long remainingCount = ( long )await cmd.ExecuteScalarAsync();
-				Assert.AreEqual( expectedRemaining, remainingCount );
+				Assert.AreEqual( expectedTotal, remainingCount );
 			}
 		}
 
-		private async Task AssertAllTasksCompletedWithStatus ( int expectedTaskCount, QueuedTaskStatus expectedStatus, int errorCount )
+		private async Task AssertTotalTaskResults ( long expectedTotal )
+		{
+			string countRemainingSql = $@"SELECT COUNT(1) 
+				FROM {TestOptions.DefaultMapping.ResultsQueueTableName}";
+
+			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( CommonConnectionString ) )
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( countRemainingSql, conn ) )
+			{
+				long remainingCount = ( long )await cmd.ExecuteScalarAsync();
+				Assert.AreEqual( expectedTotal, remainingCount );
+			}
+		}
+
+		private async Task AssertAllTasksCompletedWithStatus ( int expectedTaskResultCount,
+			QueuedTaskStatus expectedStatus,
+			int expectedErrorCount )
 		{
 			string countCompletedSql = $@"SELECT COUNT(1) 
 				FROM {TestOptions.DefaultMapping.ResultsQueueTableName}
 				WHERE task_status = {( int )expectedStatus} 
-					AND task_error_count = {errorCount}";
+					AND task_error_count = {expectedErrorCount}";
 
 			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( CommonConnectionString ) )
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( countCompletedSql, conn ) )
 			{
 				long completedCount = ( long )await cmd.ExecuteScalarAsync();
-				Assert.AreEqual( expectedTaskCount, completedCount );
+				Assert.AreEqual( expectedTaskResultCount, completedCount );
 			}
 		}
 
-		private async Task AssertCorrectExecutionTimeStats ( string payloadType, long expectedExecutionCycles )
+		private async Task AssertCorrectExecutionCyclesCount<TPayload> ( long expectedCount )
 		{
+			string payloadType = typeof( TPayload )
+				.FullName;
+
 			string countCyclesSql = $@"SELECT et_n_execution_cycles 
-				FROM sk_task_execution_time_stats_t  
+				FROM {TestOptions.DefaultMapping.ExecutionTimeStatsTableName}  
 				WHERE et_payload_type = '{payloadType}'";
 
 			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( CommonConnectionString ) )
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( countCyclesSql, conn ) )
 			{
 				long countCycles = ( long )await cmd.ExecuteScalarAsync();
-				Assert.AreEqual( expectedExecutionCycles, countCycles );
+				Assert.AreEqual( expectedCount, countCycles );
 			}
+		}
+
+		private async Task<Dictionary<string, long>> GetAllExecutionCyclesCounts ()
+		{
+			Dictionary<string, long> payloadCyclesCounts =
+				new Dictionary<string, long>();
+
+			string getCyclesSql = $@"SELECT et_payload_type, et_n_execution_cycles 
+				FROM {TestOptions.DefaultMapping.ExecutionTimeStatsTableName}";
+
+			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( CommonConnectionString ) )
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( getCyclesSql, conn ) )
+			using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
+			{
+				while ( await rdr.ReadAsync() )
+				{
+					string payloadType = rdr.GetString( rdr
+						.GetOrdinal( "et_payload_type" ) );
+					long executionCycles = rdr.GetInt64( rdr
+						.GetOrdinal( "et_n_execution_cycles" ) );
+
+					payloadCyclesCounts.Add( payloadType,
+						executionCycles );
+				}
+			}
+
+			return payloadCyclesCounts;
 		}
 
 		private ITaskEngine CreateTaskEngine ( int workerCount )
 		{
 			ITaskEngine engine = new StandardTaskEngine( GetTaskEngineOptions( workerCount ),
-				GetProduerAndResultOptions(),
-				GetConsumerOptions(),
+				mProducerAndResultOptions,
+				mTaskQueueConsumerOptions,
 				CreateTaskExecutorRegistry(),
 				CreateExecutionPeformanceMonitorWriter(),
-				new UtcNowTimestampProvider() );
+				mTimestampProvider );
 
 			engine.ScanAssemblies( GetType().Assembly );
 			return engine;
@@ -305,31 +382,17 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private IExecutionPerformanceMonitorWriter CreateExecutionPeformanceMonitorWriter ()
 		{
-			return new PostgreSqlExecutionPerformanceMonitorWriter( TestOptions
-				.GetDefaultPostgreSqlExecutionPerformanceMonitorWriterOptions( CommonConnectionString ) );
+			return new PostgreSqlExecutionPerformanceMonitorWriter( mPostgreSqlExecutionPerformanceMonitorWriterOptions );
 		}
 
 		private ITaskQueueProducer CreateTaskQueueProducer ()
 		{
-			return new PostgreSqlTaskQueueProducer( TestOptions
-					.GetDefaultTaskQueueProducerAndResultOptions( CommonConnectionString ),
-				timestampProvider: new UtcNowTimestampProvider() );
+			return new PostgreSqlTaskQueueProducer( mProducerAndResultOptions, mTimestampProvider );
 		}
 
 		private TaskEngineOptions GetTaskEngineOptions ( int workerCount )
 		{
-			return new TaskEngineOptions( workerCount,
-				taskProcessingOptions: TestOptions.GetDefaultTaskProcessingOptions() );
-		}
-
-		private TaskQueueConsumerOptions GetConsumerOptions ()
-		{
-			return TestOptions.GetDefaultTaskQueueConsumerOptions( BaseConsumerConnectionString );
-		}
-
-		private TaskQueueOptions GetProduerAndResultOptions ()
-		{
-			return TestOptions.GetDefaultTaskQueueProducerAndResultOptions( CommonConnectionString );
+			return new TaskEngineOptions( workerCount, mTaskProcessingOptions );
 		}
 
 		private string BaseConsumerConnectionString
@@ -337,8 +400,5 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private string CommonConnectionString
 			=> GetConnectionString( "testDbConnectionString" );
-
-		private Guid TimingBeltTimeId
-			=> Guid.Parse( GetAppSetting( "timeId" ) );
 	}
 }

@@ -62,7 +62,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					retryCount: 3,
 					retryDelayMilliseconds: 250 ),
 				mapping: DefaultMapping,
-				queueConsumerConnectionPoolSize: 10 );
+				queueConsumerConnectionPoolSize: 25 );
 		}
 
 		public static TaskQueueInfoOptions GetDefaultTaskQueueInfoOptions ( string connectionString )

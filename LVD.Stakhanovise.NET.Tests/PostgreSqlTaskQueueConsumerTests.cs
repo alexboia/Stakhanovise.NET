@@ -33,6 +33,7 @@ using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Tests.Helpers;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Npgsql;
 using NUnit.Framework;
@@ -44,6 +45,7 @@ using System.Threading.Tasks;
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
+	[NonParallelizable]
 	public class PostgreSqlTaskQueueConsumerTests : BaseDbTests
 	{
 		private TaskQueueConsumerOptions mConsumerOptions;
@@ -63,20 +65,19 @@ namespace LVD.Stakhanovise.NET.Tests
 		[SetUp]
 		public async Task TestSetUp ()
 		{
+			await mDataSource.ClearData();
 			await mDataSource.SeedData();
-			await Task.Delay( 100 );
 		}
 
 		[TearDown]
 		public async Task TestTearDown ()
 		{
 			await mDataSource.ClearData();
-			await Task.Delay( 100 );
 		}
 
-		private async Task Run_ConsumeTest ( PostgreSqlTaskQueueConsumer taskQueue,
+		private async Task Run_ConsumeTestAsync ( PostgreSqlTaskQueueConsumer taskQueue,
 			ConsumedQueuedTaskTokenChecker checker,
-			DateTimeOffset now,
+			DateTimeOffset refNow,
 			params string[] payloadTypes )
 		{
 			IQueuedTaskToken newTaskToken;
@@ -85,21 +86,22 @@ namespace LVD.Stakhanovise.NET.Tests
 			else
 				newTaskToken = await taskQueue.DequeueAsync();
 
-			checker.AssertConsumedTokenValid( newTaskToken, now );
+			checker.AssertConsumedTokenValid( newTaskToken, refNow );
 
 			await checker.AssertTaskNotInDbAnymoreAsync( newTaskToken );
 			await checker.AssertTaskResultInDbAndCorrectAsync( newTaskToken );
 		}
 
 		[Test]
-		[Repeat( 5 )]
+		[Repeat( 20 )]
 		public async Task Test_CanDequeue_WithTaskTypes_OneTypePerDequeueCall ()
 		{
-			DateTimeOffset now = mDataSource
-				.LastPostedAt;
+			DateTimeOffset refNow = mDataSource
+				.LastPostedAt
+				.AddMilliseconds( 1 );
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue =
-				CreateTaskQueue( () => now ) )
+				CreateTaskQueue( () => refNow ) )
 			using ( ConsumedQueuedTaskTokenChecker checker =
 				new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 			{
@@ -107,30 +109,39 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					int expectedDequeueCount = mDataSource.CountTasksOfTypeInQueue( taskType );
 					for ( int i = 0; i < expectedDequeueCount; i++ )
-						await Run_ConsumeTest( taskQueue, checker, now, taskType.FullName );
+						await Run_ConsumeTestAsync( taskQueue,
+							checker,
+							refNow,
+							taskType.FullName );
 				}
 			}
 		}
 
 		[Test]
-		[Repeat( 5 )]
+		[Repeat( 20 )]
 		public async Task Test_CanDequeue_WithTaskTypes_MultipleTypesPerDequeueCall ()
 		{
-			DateTimeOffset now = mDataSource
-				.LastPostedAt;
+			DateTimeOffset refNow = mDataSource
+				.LastPostedAt
+				.AddMilliseconds( 1 );
+
 			int expectedDequeueCount = mDataSource
 				.NumTasksInQueue;
+
 			string[] taskTypes = mDataSource.InQueueTaskTypes
 				.Select( t => t.FullName )
 				.ToArray();
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue =
-				CreateTaskQueue( () => now ) )
+				CreateTaskQueue( () => refNow ) )
 			using ( ConsumedQueuedTaskTokenChecker checker =
 				new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 			{
 				for ( int i = 0; i < expectedDequeueCount; i++ )
-					await Run_ConsumeTest( taskQueue, checker, now, taskTypes );
+					await Run_ConsumeTestAsync( taskQueue,
+						checker,
+						refNow,
+						taskTypes );
 			}
 		}
 
@@ -138,31 +149,44 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 2 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
-		[Repeat( 5 )]
+		[TestCase( 15 )]
+		[Repeat( 20 )]
 		public async Task Test_CanDequeue_WithTaskTypes_MultipleTypesPerDequeueCall_ParallelConsumers ( int nConsumers )
 		{
-			int currentDequeueCount = 0;
 			int expectedDequeueCount = mDataSource
 				.NumTasksInQueue;
-			DateTimeOffset now = mDataSource
-				.LastPostedAt;
+
+			DateTimeOffset refNow = mDataSource
+				.LastPostedAt
+				.AddMilliseconds( 1 );
+
 			string[] taskTypes = mDataSource.InQueueTaskTypes
 				.Select( t => t.FullName )
 				.ToArray();
 
 			Task[] consumers = new Task[ nConsumers ];
 
-			for ( int i = 0; i < nConsumers; i++ )
+			int[] loopPartitions = expectedDequeueCount
+				.PartitionValue( nConsumers );
+
+			Assert.AreEqual( expectedDequeueCount,
+				loopPartitions.Sum() );
+
+			for ( int iConsumer = 0; iConsumer < nConsumers; iConsumer++ )
 			{
-				consumers[ i ] = Task.Run( async () =>
+				int loopCount = loopPartitions[ iConsumer ];
+				consumers[ iConsumer ] = Task.Run( async () =>
 				{
 					using ( PostgreSqlTaskQueueConsumer taskQueue =
-						CreateTaskQueue( () => now ) )
+						CreateTaskQueue( () => refNow ) )
 					using ( ConsumedQueuedTaskTokenChecker checker =
 						new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 					{
-						while ( Interlocked.Increment( ref currentDequeueCount ) < expectedDequeueCount )
-							await Run_ConsumeTest( taskQueue, checker, now, taskTypes );
+						for ( int iTest = 0; iTest < loopCount; iTest++ )
+							await Run_ConsumeTestAsync( taskQueue,
+								checker,
+								refNow,
+								taskTypes );
 					}
 				} );
 			}
@@ -171,21 +195,23 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		[Repeat( 5 )]
+		[Repeat( 20 )]
 		public async Task Test_CanDequeue_WithoutTaskTypes ()
 		{
-			DateTimeOffset now = mDataSource
-				.LastPostedAt;
+			DateTimeOffset refNow = mDataSource
+				.LastPostedAt
+				.AddMilliseconds( 1 );
+
 			int expectedDequeueCount = mDataSource
 				.NumTasksInQueue;
 
 			using ( PostgreSqlTaskQueueConsumer taskQueue =
-				CreateTaskQueue( () => now ) )
+				CreateTaskQueue( () => refNow ) )
 			using ( ConsumedQueuedTaskTokenChecker checker =
 				new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 			{
 				for ( int i = 0; i < expectedDequeueCount; i++ )
-					await Run_ConsumeTest( taskQueue, checker, now );
+					await Run_ConsumeTestAsync( taskQueue, checker, refNow );
 			}
 		}
 
@@ -193,28 +219,39 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 2 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
-		[Repeat( 5 )]
+		[TestCase( 15 )]
+		[Repeat( 20 )]
 		public async Task Test_CanDequeue_WithoutTaskTypes_ParallelConsumers ( int nConsumers )
 		{
-			int currentDequeueCount = 0;
 			int expectedDequeueCount = mDataSource
 				.NumTasksInQueue;
-			DateTimeOffset now = mDataSource
-				.LastPostedAt;
+
+			DateTimeOffset refNow = mDataSource
+				.LastPostedAt
+				.AddMilliseconds( 1 );
 
 			Task[] consumers = new Task[ nConsumers ];
 
-			for ( int i = 0; i < nConsumers; i++ )
+			int[] loopCountForConsumers = expectedDequeueCount
+				.PartitionValue( nConsumers );
+
+			Assert.AreEqual( expectedDequeueCount,
+				loopCountForConsumers.Sum() );
+
+			for ( int iConsumer = 0; iConsumer < nConsumers; iConsumer++ )
 			{
-				consumers[ i ] = Task.Run( async () =>
+				int loopCount = loopCountForConsumers[ iConsumer ];
+				consumers[ iConsumer ] = Task.Run( async () =>
 				{
 					using ( PostgreSqlTaskQueueConsumer taskQueue =
-						CreateTaskQueue( () => now ) )
+						CreateTaskQueue( () => refNow ) )
 					using ( ConsumedQueuedTaskTokenChecker checker =
 						new ConsumedQueuedTaskTokenChecker( mDataSource ) )
 					{
-						while ( Interlocked.Increment( ref currentDequeueCount ) < expectedDequeueCount )
-							await Run_ConsumeTest( taskQueue, checker, now );
+						for ( int iTest = 0; iTest < loopCount; iTest++ )
+							await Run_ConsumeTestAsync( taskQueue,
+								checker,
+								refNow );
 					}
 				} );
 			}
@@ -223,7 +260,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		[Repeat( 5 )]
+		[Repeat( 10 )]
 		public async Task Test_CanStartStopReceivingNewTaskNotificationUpdates ()
 		{
 			ManualResetEvent notificationWaitHandle = new

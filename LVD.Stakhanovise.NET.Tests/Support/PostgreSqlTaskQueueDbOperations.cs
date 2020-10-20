@@ -110,8 +110,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					.InsertAsync( insertDataTask, tx );
 			else
 				await new QueryFactory( conn, new PostgresCompiler() )
-					   .Query( mMapping.QueueTableName )
-					   .InsertAsync( insertDataTask );
+					.Query( mMapping.QueueTableName )
+					.InsertAsync( insertDataTask );
 		}
 
 		private async Task AddQueuedTaskResultAsync ( QueuedTaskResult resultData,

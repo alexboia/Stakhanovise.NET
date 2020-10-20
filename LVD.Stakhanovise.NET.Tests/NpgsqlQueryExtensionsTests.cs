@@ -80,63 +80,6 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
-		[Test]
-		[Repeat( 10 )]
-		public async Task Test_CanLockUnlock ()
-		{
-			Faker faker =
-				new Faker();
-
-			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( ConnectionString ) )
-			{
-				long lock1 = faker.Random.Long( 1, 10000 );
-				long lock2 = faker.Random.Long( 1, 10000 );
-
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock1 ) );
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock2 ) );
-
-				await conn.LockAsync( lock1 );
-				Assert.IsTrue( await conn.IsAdvisoryLockHeldAsync( lock1 ) );
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock2 ) );
-
-				await conn.LockAsync( lock2 );
-				Assert.IsTrue( await conn.IsAdvisoryLockHeldAsync( lock1 ) );
-				Assert.IsTrue( await conn.IsAdvisoryLockHeldAsync( lock2 ) );
-
-				await conn.UnlockAsync( lock1 );
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock1 ) );
-				Assert.IsTrue( await conn.IsAdvisoryLockHeldAsync( lock2 ) );
-
-				await conn.UnlockAsync( lock2 );
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock1 ) );
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock2 ) );
-			}
-		}
-
-		[Test]
-		[Repeat( 10 )]
-		public async Task Test_CanLockUnlock_WithUnlockAll ()
-		{
-			Faker faker =
-				new Faker();
-
-			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( ConnectionString ) )
-			{
-				long lock1 = faker.Random.Long( 1, 10000 );
-				long lock2 = faker.Random.Long( 1, 10000 );
-
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock1 ) );
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock2 ) );
-
-				await conn.LockAsync( lock1 );
-				await conn.LockAsync( lock2 );
-
-				await conn.UnlockAllAsync();
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock1 ) );
-				Assert.IsFalse( await conn.IsAdvisoryLockHeldAsync( lock2 ) );
-			}
-		}
-
 		private string ConnectionString
 			=> GetConnectionString( "testDbConnectionString" );
 	}

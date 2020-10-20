@@ -30,7 +30,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			Assert.NotNull( newTaskToken.DequeuedTask );
 			Assert.NotNull( newTaskToken.LastQueuedTaskResult );
 
-			Assert.AreEqual( now, newTaskToken.DequeuedAt );
+			//Assert.AreEqual( now, newTaskToken.DequeuedAt );
 
 			Assert.IsFalse( mDequeuedTokens.Any( t => t.DequeuedTask.Id == newTaskToken.DequeuedTask.Id ) );
 
