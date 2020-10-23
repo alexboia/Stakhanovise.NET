@@ -29,25 +29,23 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace LVD.Stakhanovise.NET.Options
 {
-	public class PostgreSqlExecutionPerformanceMonitorWriterOptions
+	public class AppMetricsMonitorOptions
 	{
-		public PostgreSqlExecutionPerformanceMonitorWriterOptions ( ConnectionOptions connectionOptions, QueuedTaskMapping mapping )
+		public AppMetricsMonitorOptions ( int collectionIntervalMilliseconds )
 		{
-			ConnectionOptions = connectionOptions 
-				?? throw new ArgumentNullException( nameof( connectionOptions ) );
-			Mapping = mapping
-				?? throw new ArgumentNullException( nameof( mapping ) );
+			if ( collectionIntervalMilliseconds < 1 )
+				throw new ArgumentOutOfRangeException( nameof( collectionIntervalMilliseconds ),
+					"The collection interval must be greater than 0" );
+
+			CollectionIntervalMilliseconds = collectionIntervalMilliseconds;
 		}
 
-		public ConnectionOptions ConnectionOptions { get; private set; }
-
-		public QueuedTaskMapping Mapping { get; private set; }
+		public int CollectionIntervalMilliseconds { get; private set; }
 	}
 }

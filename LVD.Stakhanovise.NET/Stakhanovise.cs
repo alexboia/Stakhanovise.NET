@@ -49,6 +49,8 @@ namespace LVD.Stakhanovise.NET
 
 		private ITaskEngine mEngine;
 
+		private IAppMetricsMonitor mAppMetricsMonitor;
+
 		public Stakhanovise ()
 		{
 			int defaultWorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
@@ -111,10 +113,18 @@ namespace LVD.Stakhanovise.NET
 			CheckNotDisposedOrThrow();
 
 			if ( mEngine == null )
-				mEngine = mStakhanoviseSetup.Build();
+				mEngine = mStakhanoviseSetup.BuildTaskEngine();
+
+			if ( mAppMetricsMonitor == null )
+				mAppMetricsMonitor = mStakhanoviseSetup.BuildAppMetricsMonitor();
 
 			if ( !mEngine.IsRunning )
 				await mEngine.StartAsync();
+
+			if ( mAppMetricsMonitor != null
+					&& !mAppMetricsMonitor.IsRunning
+					&& mEngine is IAppMetricsProvider )
+				await mAppMetricsMonitor.StartAsync( ( IAppMetricsProvider )mEngine );
 
 			return this;
 		}
@@ -126,6 +136,9 @@ namespace LVD.Stakhanovise.NET
 			if ( mEngine != null && mEngine.IsRunning )
 				await mEngine.StopAync();
 
+			if ( mAppMetricsMonitor != null && mAppMetricsMonitor.IsRunning )
+				await mAppMetricsMonitor.StopAsync();
+
 			return this;
 		}
 
@@ -136,8 +149,12 @@ namespace LVD.Stakhanovise.NET
 				if ( disposing )
 				{
 					StopFulfillingFiveYearPlanAsync().Wait();
-					mEngine.Dispose();
+					mEngine?.Dispose();
 					mEngine = null;
+
+					IDisposable disposableAppMetricsMonitor = mAppMetricsMonitor as IDisposable;
+					if ( disposableAppMetricsMonitor != null )
+						disposableAppMetricsMonitor.Dispose();
 				}
 
 				mIsDisposed = true;

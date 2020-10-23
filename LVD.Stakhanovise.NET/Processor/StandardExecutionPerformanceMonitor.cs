@@ -129,24 +129,21 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			long requestId = Interlocked.Increment( ref mLastRequestId );
 
-			TaskCompletionSource<int> completionToken =
-				new TaskCompletionSource<int>( TaskCreationOptions
-					.RunContinuationsAsynchronously );
-
-			StandardExecutionPerformanceMonitorWriteRequest request =
-				new StandardExecutionPerformanceMonitorWriteRequest( requestId, payloadType, durationMilliseconds,
-					completionToken,
+			StandardExecutionPerformanceMonitorWriteRequest processRequest =
+				new StandardExecutionPerformanceMonitorWriteRequest( requestId, 
+					payloadType, 
+					durationMilliseconds,
 					timeoutMilliseconds: timeoutMilliseconds,
 					maxFailCount: 3 );
 
-			mStatsProcessingQueue.Add( request );
+			mStatsProcessingQueue.Add( processRequest );
 			IncrementPerfMonPostCount();
 
-			return completionToken.Task.WithCleanup( ( prev ) =>
+			return processRequest.Task.WithCleanup( ( prev ) =>
 			{
-				if ( request.IsTimedOut )
+				if ( processRequest.IsTimedOut )
 					IncrementPerfMonWriteRequestTimeoutCount();
-				request.Dispose();
+				processRequest.Dispose();
 			} );
 		}
 
@@ -263,7 +260,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				mStateController.TryRequestStart( ()
 					=> DoFlushingStartupSequence( writer ) );
 			else
-				mLogger.Debug( "Flush scheduler is already started. Nothing to be done." );
+				mLogger.Debug( "Flushing is already started. Nothing to be done." );
 
 			return Task.CompletedTask;
 		}
@@ -292,7 +289,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				await mStateController.TryRequestStartAsync( async ()
 					=> await DoFlushingShutdownSequenceAsync() );
 			else
-				mLogger.Debug( "Flush scheduler is already stopped. Nothing to be done." );
+				mLogger.Debug( "Flushing is already stopped. Nothing to be done." );
 		}
 
 		protected void Dispose ( bool disposing )

@@ -49,18 +49,17 @@ namespace LVD.Stakhanovise.NET.Setup
 			new StandardConnectionSetup();
 
 		public StandardTaskQueueConsumerSetup ( StandardConnectionSetup connectionSetup,
-			QueuedTaskMapping defaultMapping,
-			int defaultQueueConsumerConnectionPoolSize )
+			StakhanoviseSetupDefaults defaults )
 		{
 			if ( connectionSetup == null )
 				throw new ArgumentNullException( nameof( connectionSetup ) );
 
-			if ( defaultMapping == null )
-				throw new ArgumentNullException( nameof( defaultMapping ) );
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
 
 			mConnectionSetup = connectionSetup;
-			mQueueConsumerConnectionPoolSize = defaultQueueConsumerConnectionPoolSize;
-			mMapping = defaultMapping;
+			mQueueConsumerConnectionPoolSize = defaults.QueueConsumerConnectionPoolSize;
+			mMapping = defaults.Mapping;
 		}
 
 		public ITaskQueueConsumerSetup SetupConnection ( Action<IConnectionSetup> setupAction )

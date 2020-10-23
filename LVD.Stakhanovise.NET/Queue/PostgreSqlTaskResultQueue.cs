@@ -164,23 +164,16 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			long requestId = Interlocked.Increment( ref mLastRequestId );
 
-			//TODO: this needs to be provided by the consumer
-			//	 - can very well be created by the request itself!!!
-			TaskCompletionSource<int> completionToken =
-				new TaskCompletionSource<int>( TaskCreationOptions
-					.RunContinuationsAsynchronously );
-
 			PostgreSqlTaskResultQueueProcessRequest processRequest =
 				new PostgreSqlTaskResultQueueProcessRequest( requestId,
 					token.LastQueuedTaskResult,
-					completionToken,
 					timeoutMilliseconds: timeoutMilliseconds,
 					maxFailCount: 3 );
 
 			mResultProcessingQueue.Add( processRequest );
 			IncrementPostResultCount();
 
-			return completionToken.Task.WithCleanup( ( prev ) =>
+			return processRequest.Task.WithCleanup( ( prev ) =>
 			{
 				if ( processRequest.IsTimedOut )
 					IncrementResultWriteRequestTimeoutCount();

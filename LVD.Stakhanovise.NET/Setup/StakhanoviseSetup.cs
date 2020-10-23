@@ -45,6 +45,8 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StakhanoviseSetup : IStakhanoviseSetup
 	{
+		private bool mAppMetricsMonitoringEnabled;
+
 		private Assembly[] mExecutorAssemblies = null;
 
 		private StandardTaskExecutorRegistrySetup mTaskExecutorRegistrySetup =
@@ -62,6 +64,10 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardExecutionPerformanceMonitorWriterSetup mPerformanceMonitorWriterSetup;
 
+		private StandardAppMetricsMonitorWriterSetup mAppMetricsMonitorWriterSetup;
+
+		private StandardAppMetricsMonitorSetup mAppMetricsMonitorSetup;
+
 		private IStakhanoviseLoggingProvider mLoggingProvider;
 
 		private bool mRegisterOwnDependencies = true;
@@ -70,6 +76,9 @@ namespace LVD.Stakhanovise.NET.Setup
 		{
 			if ( defaults == null )
 				throw new ArgumentNullException( nameof( defaults ) );
+
+			mAppMetricsMonitoringEnabled = defaults
+				.AppMetricsMonitoringEnabled;
 
 			StandardConnectionSetup queueConsumerConnectionSetup =
 				new StandardConnectionSetup();
@@ -86,6 +95,9 @@ namespace LVD.Stakhanovise.NET.Setup
 			StandardConnectionSetup builtInWriterConnectionSetup =
 				new StandardConnectionSetup();
 
+			StandardConnectionSetup builtInAppMetricsWriterConnectionSetup =
+				new StandardConnectionSetup();
+
 			mTaskQueueProducerSetup = new StandardTaskQueueProducerSetup( queueProducerConnectionSetup,
 				defaultMapping: defaults.Mapping );
 
@@ -96,16 +108,22 @@ namespace LVD.Stakhanovise.NET.Setup
 				queueProducerConnectionSetup,
 				queueInfoConnectionSetup,
 				builtInTimingBeltConnectionSetup,
-				builtInWriterConnectionSetup );
+				builtInWriterConnectionSetup,
+				builtInAppMetricsWriterConnectionSetup );
 
 			mTaskQueueConsumerSetup = new StandardTaskQueueConsumerSetup( queueConsumerConnectionSetup,
-				defaultMapping: defaults.Mapping,
-				defaultQueueConsumerConnectionPoolSize: defaults.QueueConsumerConnectionPoolSize );
+				defaults );
 
 			mTaskEngineSetup = new StandardTaskEngineSetup( mTaskQueueConsumerSetup,
 				defaults );
 
-			mPerformanceMonitorWriterSetup = new StandardExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup );
+			mPerformanceMonitorWriterSetup = new StandardExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup,
+				defaults );
+
+			mAppMetricsMonitorSetup = new StandardAppMetricsMonitorSetup( defaults );
+
+			mAppMetricsMonitorWriterSetup = new StandardAppMetricsMonitorWriterSetup( builtInAppMetricsWriterConnectionSetup,
+				defaults );
 		}
 
 		public IStakhanoviseSetup SetupEngine ( Action<ITaskEngineSetup> setupAction )
@@ -123,6 +141,31 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( setupAction ) );
 
 			setupAction.Invoke( mPerformanceMonitorWriterSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup DisableAppMetricsMonitoring ()
+		{
+			mAppMetricsMonitoringEnabled = false;
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupAppMetricsMonitorWriter ( Action<IAppMetricsMonitorWriterSetup> setupAction )
+		{
+
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mAppMetricsMonitorWriterSetup );
+			return this;
+		}
+
+		public IStakhanoviseSetup SetupAppMetricsMonitor ( Action<IAppMetricsMonitorSetup> setupAction )
+		{
+			if ( setupAction == null )
+				throw new ArgumentNullException( nameof( setupAction ) );
+
+			setupAction.Invoke( mAppMetricsMonitorSetup );
 			return this;
 		}
 
@@ -161,7 +204,9 @@ namespace LVD.Stakhanovise.NET.Setup
 			mTaskQueueConsumerSetup.WithMapping( mapping );
 			mTaskQueueProducerSetup.WithMapping( mapping );
 			mTaskQueueInfoSetup.WithMapping( mapping );
-			mPerformanceMonitorWriterSetup.WithMapping( mapping );
+
+			mPerformanceMonitorWriterSetup.WithMappingForBuiltInWriter( mapping );
+			mAppMetricsMonitorWriterSetup.WithMappingForBuiltInWriter( mapping );
 
 			return this;
 		}
@@ -214,7 +259,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public ITaskEngine Build ()
+		public ITaskEngine BuildTaskEngine ()
 		{
 			ITaskExecutorRegistry executorRegistry = mTaskExecutorRegistrySetup
 				.BuildTaskExecutorRegistry();
@@ -256,6 +301,13 @@ namespace LVD.Stakhanovise.NET.Setup
 				executorRegistry,
 				executionPerfMonWriter,
 				timestampProvider );
+		}
+
+		public IAppMetricsMonitor BuildAppMetricsMonitor ()
+		{
+			return mAppMetricsMonitoringEnabled
+				? mAppMetricsMonitorSetup.BuildMonitor( mAppMetricsMonitorWriterSetup.BuildWriter() )
+				: null;
 		}
 	}
 }

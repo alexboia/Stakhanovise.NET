@@ -62,16 +62,12 @@ namespace LVD.Stakhanovise.NET.Model
 		private long mRequestId;
 
 		public AsyncProcessingRequest ( long requestId,
-			TaskCompletionSource<TResult> completionToken,
 			int timeoutMilliseconds,
 			int maxFailCount )
 		{
 			if ( requestId <= 0 )
 				throw new ArgumentOutOfRangeException( nameof( requestId ),
 					"Request ID must be greater than 0" );
-
-			if ( completionToken == null )
-				throw new ArgumentNullException( nameof( completionToken ) );
 
 			if ( maxFailCount < 0 )
 				throw new ArgumentOutOfRangeException( nameof( maxFailCount ),
@@ -95,7 +91,7 @@ namespace LVD.Stakhanovise.NET.Model
 			mCancellationToken = mCancellationTokenSource.Token;
 			mCancellationTokenRegistration = mCancellationToken.Register( () => HandleCancellationRequested() );
 
-			mCompletionToken = completionToken;
+			mCompletionToken = new TaskCompletionSource<TResult>();
 			mMaxFailCount = maxFailCount;
 		}
 
@@ -183,6 +179,9 @@ namespace LVD.Stakhanovise.NET.Model
 			Dispose( true );
 			GC.SuppressFinalize( this );
 		}
+
+		public Task<TResult> Task
+			=> mCompletionToken.Task;
 
 		public bool IsCompleted
 			=> mCompletionToken.Task.IsCanceled

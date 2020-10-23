@@ -43,9 +43,14 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardPostgreSqlExecutionPerformanceMonitorWriterSetup mBuiltInWriterSetup;
 
-		public StandardExecutionPerformanceMonitorWriterSetup ( StandardConnectionSetup builtInWriterConnectionSetup )
+		public StandardExecutionPerformanceMonitorWriterSetup ( StandardConnectionSetup builtInWriterConnectionSetup,
+			StakhanoviseSetupDefaults defaults )
 		{
-			mBuiltInWriterSetup = new StandardPostgreSqlExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup );
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
+
+			mBuiltInWriterSetup = new StandardPostgreSqlExecutionPerformanceMonitorWriterSetup( builtInWriterConnectionSetup,
+				defaults );
 		}
 
 		public IExecutionPerformanceMonitorWriterSetup SetupBuiltInWriter ( Action<IPostgreSqlExecutionPerformanceMonitorWriterSetup> setupAction )
@@ -77,7 +82,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IExecutionPerformanceMonitorWriterSetup WithMapping ( QueuedTaskMapping mapping )
+		public IExecutionPerformanceMonitorWriterSetup WithMappingForBuiltInWriter ( QueuedTaskMapping mapping )
 		{
 			if ( mapping == null )
 				throw new ArgumentNullException( nameof( mapping ) );

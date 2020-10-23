@@ -41,10 +41,9 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		public PostgreSqlTaskResultQueueProcessRequest ( long requestId,
 			IQueuedTaskResult resultToUpdate,
-			TaskCompletionSource<int> completionToken,
 			int timeoutMilliseconds,
 			int maxFailCount )
-			: base( requestId, completionToken, timeoutMilliseconds, maxFailCount )
+			: base( requestId, timeoutMilliseconds, maxFailCount )
 		{
 			ResultToUpdate = resultToUpdate ?? throw new ArgumentNullException( nameof( resultToUpdate ) );
 		}

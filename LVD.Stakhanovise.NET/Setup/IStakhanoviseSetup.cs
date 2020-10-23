@@ -40,6 +40,12 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		IStakhanoviseSetup SetupPerformanceMonitorWriter ( Action<IExecutionPerformanceMonitorWriterSetup> setupAction );
 
+		IStakhanoviseSetup DisableAppMetricsMonitoring ();
+
+		IStakhanoviseSetup SetupAppMetricsMonitor ( Action<IAppMetricsMonitorSetup> setupAction );
+
+		IStakhanoviseSetup SetupAppMetricsMonitorWriter ( Action<IAppMetricsMonitorWriterSetup> setupAction );
+
 		IStakhanoviseSetup SetupEngine ( Action<ITaskEngineSetup> setupAction );
 
 		IStakhanoviseSetup SetupTaskExecutorRegistry ( Action<ITaskExecutorRegistrySetup> setupAction );

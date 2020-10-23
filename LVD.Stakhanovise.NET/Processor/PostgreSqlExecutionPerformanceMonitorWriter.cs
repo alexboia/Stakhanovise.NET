@@ -46,14 +46,14 @@ namespace LVD.Stakhanovise.NET.Processor
 	{
 		private PostgreSqlExecutionPerformanceMonitorWriterOptions mOptions;
 
-		private string mUpsertSql;
+		private string mPerfMonInfoUpsertSql;
 
 		public PostgreSqlExecutionPerformanceMonitorWriter ( PostgreSqlExecutionPerformanceMonitorWriterOptions options )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
 
-			mUpsertSql = GetUpsertSql( options.Mapping );
+			mPerfMonInfoUpsertSql = GetPerfMonInfoUpsertSql( options.Mapping );
 		}
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ()
@@ -61,7 +61,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			return await mOptions.ConnectionOptions.TryOpenConnectionAsync();
 		}
 
-		private string GetUpsertSql ( QueuedTaskMapping mapping )
+		private string GetPerfMonInfoUpsertSql ( QueuedTaskMapping mapping )
 		{
 			return $@"INSERT INTO {mapping.ExecutionTimeStatsTableName} (
 					et_payload_type,
@@ -107,7 +107,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
-			using ( NpgsqlCommand upsertCmd = new NpgsqlCommand( mUpsertSql, conn, tx ) )
+			using ( NpgsqlCommand upsertCmd = new NpgsqlCommand( mPerfMonInfoUpsertSql, conn, tx ) )
 			{
 				try
 				{

@@ -42,10 +42,9 @@ namespace LVD.Stakhanovise.NET.Processor
 		public StandardExecutionPerformanceMonitorWriteRequest ( long requestId,
 			string payloadType,
 			long durationMilliseconds,
-			TaskCompletionSource<int> completionToken,
 			int timeoutMilliseconds,
 			int maxFailCount )
-			: base( requestId, completionToken, timeoutMilliseconds, maxFailCount )
+			: base( requestId, timeoutMilliseconds, maxFailCount )
 		{
 			if ( string.IsNullOrEmpty( payloadType ) )
 				throw new ArgumentNullException( nameof( payloadType ) );

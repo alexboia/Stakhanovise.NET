@@ -33,21 +33,12 @@ using LVD.Stakhanovise.NET.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Options
+namespace LVD.Stakhanovise.NET.Processor
 {
-	public class PostgreSqlExecutionPerformanceMonitorWriterOptions
+	public interface IAppMetricsMonitorWriter
 	{
-		public PostgreSqlExecutionPerformanceMonitorWriterOptions ( ConnectionOptions connectionOptions, QueuedTaskMapping mapping )
-		{
-			ConnectionOptions = connectionOptions 
-				?? throw new ArgumentNullException( nameof( connectionOptions ) );
-			Mapping = mapping
-				?? throw new ArgumentNullException( nameof( mapping ) );
-		}
-
-		public ConnectionOptions ConnectionOptions { get; private set; }
-
-		public QueuedTaskMapping Mapping { get; private set; }
+		Task<int> WriteAsync ( IEnumerable<AppMetric> appMetrics );
 	}
 }

@@ -53,5 +53,9 @@ namespace LVD.Stakhanovise.NET.Setup
 		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; set; }
 
 		public int FaultErrorThresholdCount { get; set; }
+
+		public int AppMetricsCollectionIntervalMilliseconds { get; set; }
+
+		public bool AppMetricsMonitoringEnabled { get; set; }
 	}
 }

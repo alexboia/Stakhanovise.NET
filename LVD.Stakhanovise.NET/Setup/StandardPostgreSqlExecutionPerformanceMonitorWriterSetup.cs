@@ -43,12 +43,17 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardConnectionSetup mConnectionSetup;
 
-		public StandardPostgreSqlExecutionPerformanceMonitorWriterSetup ( StandardConnectionSetup connectionSetup )
+		public StandardPostgreSqlExecutionPerformanceMonitorWriterSetup ( StandardConnectionSetup connectionSetup,
+			StakhanoviseSetupDefaults defaults )
 		{
 			mConnectionSetup = connectionSetup
 				?? throw new ArgumentNullException( nameof( connectionSetup ) );
-		}
 
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
+
+			mMapping = defaults.Mapping;
+		}
 
 		public IPostgreSqlExecutionPerformanceMonitorWriterSetup WithConnectionOptions ( Action<IConnectionSetup> setupAction )
 		{
@@ -69,7 +74,7 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public PostgreSqlExecutionPerformanceMonitorWriterOptions BuildOptions ()
 		{
-			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( mConnectionSetup.BuildOptions(), 
+			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( mConnectionSetup.BuildOptions(),
 				mapping: mMapping );
 		}
 	}
