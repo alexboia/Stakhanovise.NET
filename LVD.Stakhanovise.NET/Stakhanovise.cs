@@ -70,7 +70,10 @@ namespace LVD.Stakhanovise.NET
 					=> !( exc is NullReferenceException )
 						&& !( exc is ArgumentException ),
 
-				FaultErrorThresholdCount = 5
+				FaultErrorThresholdCount = 5,
+
+				AppMetricsCollectionIntervalMilliseconds = 10000,
+				AppMetricsMonitoringEnabled = true
 			};
 
 			//Init setup API

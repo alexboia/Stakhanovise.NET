@@ -37,18 +37,6 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class CollectiveConnectionSetup : IConnectionSetup
 	{
-		private StandardConnectionSetup mQueueConsumerConnectionSetup;
-
-		private StandardConnectionSetup mQueueProducerConnectionSetup;
-
-		private StandardConnectionSetup mQueueInfoConnectionSetup;
-
-		private StandardConnectionSetup mBuiltInTimingBeltConnectionSetup;
-
-		private StandardConnectionSetup mBuiltInWriterConnectionSetup;
-
-		private StandardConnectionSetup mBuiltInAppMetricsWriterConnectionSetup;
-
 		private StandardConnectionSetup[] mConnectionSetupTargets;
 
 		public CollectiveConnectionSetup ( params StandardConnectionSetup[] targets )
