@@ -39,18 +39,11 @@ namespace LVD.Stakhanovise.NET.Options
 	public class TaskQueueConsumerOptions : TaskQueueOptions
 	{
 		public TaskQueueConsumerOptions ( ConnectionOptions connectionOptions,
-			QueuedTaskMapping mapping,
-			int queueConsumerConnectionPoolSize  )
+			QueuedTaskMapping mapping )
 			: base( connectionOptions,
 				  mapping )
 		{
-			if ( queueConsumerConnectionPoolSize < 1 )
-				throw new ArgumentOutOfRangeException( nameof( queueConsumerConnectionPoolSize ),
-					"Queue consumer connection pool size must be greater than or equal to 1" );
-
-			QueueConsumerConnectionPoolSize = queueConsumerConnectionPoolSize;
+			return;
 		}
-
-		public int QueueConsumerConnectionPoolSize { get; private set; }
 	}
 }

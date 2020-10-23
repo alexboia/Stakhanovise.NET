@@ -39,10 +39,6 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StandardTaskQueueConsumerSetup : ITaskQueueConsumerSetup
 	{
-		private int mQueueConsumerConnectionPoolSize;
-
-		private bool mIsQueueConsumerConnectionPoolSizeUserConfigured = false;
-
 		private QueuedTaskMapping mMapping;
 
 		private StandardConnectionSetup mConnectionSetup =
@@ -58,7 +54,6 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( defaults ) );
 
 			mConnectionSetup = connectionSetup;
-			mQueueConsumerConnectionPoolSize = defaults.QueueConsumerConnectionPoolSize;
 			mMapping = defaults.Mapping;
 		}
 
@@ -68,18 +63,6 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( setupAction ) );
 
 			setupAction.Invoke( mConnectionSetup );
-			return this;
-		}
-
-		public ITaskQueueConsumerSetup WithQueueConsumerConnectionPoolSize ( int queueConsumerConnectionPoolSize )
-		{
-			if ( queueConsumerConnectionPoolSize < 1 )
-				throw new ArgumentOutOfRangeException( nameof( queueConsumerConnectionPoolSize ),
-					"Queue consumer connection pool size must be greater than or equal to 1" );
-
-			mQueueConsumerConnectionPoolSize = queueConsumerConnectionPoolSize;
-			mIsQueueConsumerConnectionPoolSizeUserConfigured = true;
-
 			return this;
 		}
 
@@ -95,11 +78,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		public TaskQueueConsumerOptions BuildOptions ()
 		{
 			return new TaskQueueConsumerOptions( mConnectionSetup.BuildOptions(),
-				mMapping,
-				mQueueConsumerConnectionPoolSize );
+				mMapping );
 		}
-
-		public bool IsQueueConsumerConnectionPoolSizeUserConfigured
-			=> mIsQueueConsumerConnectionPoolSizeUserConfigured;
 	}
 }

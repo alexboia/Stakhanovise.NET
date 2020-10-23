@@ -39,7 +39,5 @@ namespace LVD.Stakhanovise.NET.Setup
 	public interface ITaskQueueConsumerSetup
 	{
 		ITaskQueueConsumerSetup SetupConnection ( Action<IConnectionSetup> setupAction );
-
-		ITaskQueueConsumerSetup WithQueueConsumerConnectionPoolSize ( int queueConsumerConnectionPoolSize );
 	}
 }

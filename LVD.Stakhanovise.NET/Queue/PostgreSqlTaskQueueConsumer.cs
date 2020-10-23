@@ -58,8 +58,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string mSignalingConnectionString;
 
-		private string mQueueConnectionString;
-
 		private PostgreSqlTaskQueueNotificationListener mNotificationListener;
 
 		private string mTaskDequeueSql;
@@ -91,9 +89,6 @@ namespace LVD.Stakhanovise.NET.Queue
 			mSignalingConnectionString = options.ConnectionOptions
 				.ConnectionString
 				.DeriveSignalingConnectionString( options );
-			mQueueConnectionString = options.ConnectionOptions
-				.ConnectionString
-				.DeriveQueueConsumerConnectionString( options );
 
 			mNotificationListener = new PostgreSqlTaskQueueNotificationListener( mSignalingConnectionString,
 				options.Mapping.NewTaskNotificationChannelName );
@@ -122,12 +117,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task<NpgsqlConnection> OpenQueueConnectionAsync ()
 		{
-			return await mQueueConnectionString.TryOpenConnectionAsync(
-				mOptions.ConnectionOptions
-					.ConnectionRetryCount,
-				mOptions.ConnectionOptions
-					.ConnectionRetryDelayMilliseconds
-			);
+			return await mOptions
+				.ConnectionOptions
+				.TryOpenConnectionAsync();
 		}
 
 		private void NotifyClearForDequeue ( ClearForDequeReason reason )
@@ -383,13 +375,13 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public AppMetric QueryMetric ( AppMetricId metricId )
 		{
-			return AppMetricsCollection.JoinQueryMetric( metricId, this, 
+			return AppMetricsCollection.JoinQueryMetric( metricId, this,
 				mNotificationListener );
 		}
 
 		public IEnumerable<AppMetric> CollectMetrics ()
 		{
-			return AppMetricsCollection.JoinCollectMetrics( this, 
+			return AppMetricsCollection.JoinCollectMetrics( this,
 				mNotificationListener );
 		}
 
@@ -415,7 +407,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			get
 			{
-				return AppMetricsCollection.JoinExportedMetrics( this, 
+				return AppMetricsCollection.JoinExportedMetrics( this,
 					mNotificationListener );
 			}
 		}

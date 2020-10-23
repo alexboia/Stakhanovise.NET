@@ -61,7 +61,6 @@ namespace LVD.Stakhanovise.NET
 				Mapping = new QueuedTaskMapping(),
 				ExecutorAssemblies = GetDefaultAssembliesToScan(),
 				WorkerCount = defaultWorkerCount,
-				QueueConsumerConnectionPoolSize = defaultWorkerCount * 2,
 
 				CalculateDelayTicksTaskAfterFailure = token
 					=> ( long )Math.Pow( 10, token.LastQueuedTaskResult.ErrorCount + 1 ),

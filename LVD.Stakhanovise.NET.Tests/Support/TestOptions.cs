@@ -61,8 +61,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					keepAliveSeconds: 5,
 					retryCount: 3,
 					retryDelayMilliseconds: 250 ),
-				mapping: DefaultMapping,
-				queueConsumerConnectionPoolSize: 25 );
+				mapping: DefaultMapping );
 		}
 
 		public static TaskQueueInfoOptions GetDefaultTaskQueueInfoOptions ( string connectionString )
@@ -97,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( new ConnectionOptions( connectionString,
 					keepAliveSeconds: 0,
 					retryCount: 3,
-					retryDelayMilliseconds: 250 ), 
+					retryDelayMilliseconds: 250 ),
 				mapping: DefaultMapping );
 		}
 	}

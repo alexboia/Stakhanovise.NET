@@ -11,23 +11,20 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	abstract public class BaseAsyncProcessingRequestTests
 	{
-		protected void RunTest_CanSetCompleted_SingleThread<TResult> ( Func<TaskCompletionSource<TResult>, AsyncProcessingRequest<TResult>> rqFn,
+		protected void RunTest_CanSetCompleted_SingleThread<TResult> ( Func<AsyncProcessingRequest<TResult>> rqFn,
 			TResult expectedResult,
 			bool expectSame )
 		{
-			TaskCompletionSource<TResult> tcs =
-				new TaskCompletionSource<TResult>( TaskCreationOptions.RunContinuationsAsynchronously );
-
 			AsyncProcessingRequest<TResult> rq = rqFn
-				.Invoke( tcs );
+				.Invoke();
 
 			rq.SetCompleted( expectedResult );
 
-			TResult actualResult = tcs.Task
+			TResult actualResult = rq.Task
 				.Result;
 
 			Assert.AreEqual( TaskStatus.RanToCompletion,
-				tcs.Task.Status );
+				rq.Task.Status );
 
 			if ( !expectSame )
 				Assert.AreEqual( expectedResult,
@@ -37,7 +34,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					actualResult );
 		}
 
-		protected async Task RunTest_CanSetCompleted_MultiThread<TResult> ( Func<TaskCompletionSource<TResult>, AsyncProcessingRequest<TResult>> rqFn,
+		protected async Task RunTest_CanSetCompleted_MultiThread<TResult> ( Func<AsyncProcessingRequest<TResult>> rqFn,
 			bool syncOnCheckpoints,
 			int nThreads,
 			TResult expectedResult,
@@ -48,11 +45,9 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			List<Task> allThreads =
 				new List<Task>();
-			TaskCompletionSource<TResult> tcs =
-				new TaskCompletionSource<TResult>( TaskCreationOptions.RunContinuationsAsynchronously );
 
 			AsyncProcessingRequest<TResult> rq = rqFn
-				.Invoke( tcs );
+				.Invoke();
 
 			for ( int i = 0; i < nThreads; i++ )
 			{
@@ -66,11 +61,11 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			await Task.WhenAll( allThreads );
 
-			TResult actualResult = tcs.Task
+			TResult actualResult = rq.Task
 				.Result;
 
 			Assert.AreEqual( TaskStatus.RanToCompletion,
-				tcs.Task.Status );
+				rq.Task.Status );
 
 			if ( !expectSame )
 				Assert.AreEqual( expectedResult,
@@ -80,21 +75,18 @@ namespace LVD.Stakhanovise.NET.Tests
 					actualResult );
 		}
 
-		protected void RunTest_CanSetCancelledManually_SingleThread<TResult> ( Func<TaskCompletionSource<TResult>, AsyncProcessingRequest<TResult>> rqFn )
+		protected void RunTest_CanSetCancelledManually_SingleThread<TResult> ( Func<AsyncProcessingRequest<TResult>> rqFn )
 		{
-			TaskCompletionSource<TResult> tcs =
-				new TaskCompletionSource<TResult>( TaskCreationOptions.RunContinuationsAsynchronously );
-
 			AsyncProcessingRequest<TResult> rq = rqFn
-				.Invoke( tcs );
+				.Invoke();
 
 			rq.SetCancelled();
 
 			Assert.AreEqual( TaskStatus.Canceled,
-				tcs.Task.Status );
+				rq.Task.Status );
 		}
 
-		protected async Task RunTest_CanSetCancelledManually_MultiThread<TResult> ( Func<TaskCompletionSource<TResult>, AsyncProcessingRequest<TResult>> rqFn,
+		protected async Task RunTest_CanSetCancelledManually_MultiThread<TResult> ( Func<AsyncProcessingRequest<TResult>> rqFn,
 			bool syncOnCheckpoints,
 			int nThreads )
 		{
@@ -103,11 +95,9 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			List<Task> allThreads =
 				new List<Task>();
-			TaskCompletionSource<TResult> tcs =
-				new TaskCompletionSource<TResult>( TaskCreationOptions.RunContinuationsAsynchronously );
 
 			AsyncProcessingRequest<TResult> rq = rqFn
-				.Invoke( tcs );
+				.Invoke();
 
 			for ( int i = 0; i < nThreads; i++ )
 			{
@@ -122,34 +112,30 @@ namespace LVD.Stakhanovise.NET.Tests
 			await Task.WhenAll( allThreads );
 
 			Assert.AreEqual( TaskStatus.Canceled,
-				tcs.Task.Status );
+				rq.Task.Status );
 		}
 
-		protected void RunTest_CanCancelItselfViaTimeout<TResult> ( Func<TaskCompletionSource<TResult>, AsyncProcessingRequest<TResult>> rqFn )
+		protected void RunTest_CanCancelItselfViaTimeout<TResult> ( Func<AsyncProcessingRequest<TResult>> rqFn )
 		{
-			TaskCompletionSource<TResult> tcs =
-				new TaskCompletionSource<TResult>( TaskCreationOptions.RunContinuationsAsynchronously );
-
 			AsyncProcessingRequest<TResult> rq = rqFn
-				.Invoke( tcs );
+				.Invoke();
 
-			Assert.CatchAsync<TaskCanceledException>( async ()
-				=> await tcs.Task );
+			Assert.CatchAsync<TimeoutException>( async ()
+				=> await rq.Task );
 
-			Assert.AreEqual( TaskStatus.Canceled,
-				tcs.Task.Status );
+			Assert.AreEqual( TaskStatus.Faulted,
+				rq.Task.Status );
+
+			Assert.IsTrue( rq.IsTimedOut );
 		}
 
-		protected void RunTest_CanSetFailed_SingleThread<TResult> ( Func<TaskCompletionSource<TResult>, AsyncProcessingRequest<TResult>> rqFn,
+		protected void RunTest_CanSetFailed_SingleThread<TResult> ( Func<AsyncProcessingRequest<TResult>> rqFn,
 			int maxFailCount )
 		{
 			Exception exc = new Exception( "Sample exception" );
 
-			TaskCompletionSource<TResult> tcs =
-				new TaskCompletionSource<TResult>( TaskCreationOptions.RunContinuationsAsynchronously );
-
 			AsyncProcessingRequest<TResult> rq = rqFn
-				.Invoke( tcs );
+				.Invoke();
 
 			for ( int i = 0; i < maxFailCount; i++ )
 			{
@@ -159,11 +145,11 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					Assert.IsTrue( rq.CanBeRetried );
 
-					Exception actualExc = tcs.Task
+					Exception actualExc = rq.Task
 						.Exception;
 
 					Assert.AreEqual( TaskStatus.WaitingForActivation,
-						tcs.Task.Status );
+						rq.Task.Status );
 
 					Assert.Null( actualExc );
 				}
@@ -171,7 +157,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					Assert.IsFalse( rq.CanBeRetried );
 
-					Exception actualExc = tcs.Task
+					Exception actualExc = rq.Task
 						.Exception;
 
 					actualExc = ( actualExc is AggregateException )
@@ -179,7 +165,7 @@ namespace LVD.Stakhanovise.NET.Tests
 						: actualExc;
 
 					Assert.AreEqual( TaskStatus.Faulted,
-						tcs.Task.Status );
+						rq.Task.Status );
 
 					Assert.NotNull( actualExc );
 					Assert.AreSame( exc, actualExc );

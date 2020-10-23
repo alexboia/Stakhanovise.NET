@@ -44,8 +44,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public int WorkerCount { get; set; }
 
-		public int QueueConsumerConnectionPoolSize { get; set; }
-
 		public QueuedTaskMapping Mapping { get; set; }
 
 		public Func<IQueuedTaskToken, long> CalculateDelayTicksTaskAfterFailure { get; set; }

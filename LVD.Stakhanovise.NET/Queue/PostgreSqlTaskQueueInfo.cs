@@ -148,9 +148,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			string peekSql = $@"SELECT q.*
 				FROM {mOptions.Mapping.QueueTableName} as q
-				WHERE q.task_locked_until_ts < @t_now
-					AND sk_has_advisory_lock(q.task_lock_handle_id) = false
-				ORDER BY q.task_priority DESC,
+				WHERE q.task_locked_until_ts < @t_now 
+				ORDER BY q.task_priority ASC,
 					q.task_locked_until_ts ASC,
 					q.task_lock_handle_id ASC
 				LIMIT 1";

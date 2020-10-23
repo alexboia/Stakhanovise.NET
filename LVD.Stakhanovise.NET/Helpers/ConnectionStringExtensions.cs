@@ -85,41 +85,5 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 			return signalingConnectionStringInfo.ToString();
 		}
-
-		public static string DeriveQueueConsumerConnectionString ( this string connectionString, TaskQueueConsumerOptions options )
-		{
-			if ( string.IsNullOrEmpty( connectionString ) )
-				throw new ArgumentNullException( nameof( connectionString ) );
-
-			if ( options == null )
-				throw new ArgumentNullException( nameof( options ) );
-
-			NpgsqlConnectionStringBuilder builder = new NpgsqlConnectionStringBuilder( connectionString );
-			return builder.DeriveQueueConsumerConnectionString( options );
-		}
-
-		public static string DeriveQueueConsumerConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueConsumerOptions options )
-		{
-			if ( info == null )
-				throw new ArgumentNullException( nameof( info ) );
-
-			if ( options == null )
-				throw new ArgumentNullException( nameof( options ) );
-
-			//The connection used for management will be 
-			//  the same as the one used for read-only queue operation 
-			//  with the notable exceptions that: 
-			//  a) we need  to activate the Npgsql keepalive mechanism (see: http://www.npgsql.org/doc/keepalive.html)
-			//  b) we need to configure the connection pool to match the required lock pool size
-
-			NpgsqlConnectionStringBuilder managementConnectionStringInfo = info.Copy();
-
-			managementConnectionStringInfo.Pooling = true;
-			managementConnectionStringInfo.MinPoolSize = options.QueueConsumerConnectionPoolSize;
-			managementConnectionStringInfo.MaxPoolSize = options.QueueConsumerConnectionPoolSize;
-			managementConnectionStringInfo.KeepAlive = options.ConnectionOptions.ConnectionKeepAliveSeconds;
-
-			return managementConnectionStringInfo.ToString();
-		}
 	}
 }

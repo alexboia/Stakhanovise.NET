@@ -54,9 +54,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<IQueuedTaskResult> resultMock =
 				new Mock<IQueuedTaskResult>();
 
-			RunTest_CanSetCompleted_SingleThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+			RunTest_CanSetCompleted_SingleThread<int>( () => new PostgreSqlTaskResultQueueProcessRequest( 1,
 					resultToUpdate: resultMock.Object,
-					completionToken: tcs,
 					timeoutMilliseconds: 0,
 					maxFailCount: 3 ),
 				expectedResult,
@@ -82,9 +81,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<IQueuedTaskResult> resultMock =
 				new Mock<IQueuedTaskResult>();
 
-			await RunTest_CanSetCompleted_MultiThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+			await RunTest_CanSetCompleted_MultiThread<int>( () => new PostgreSqlTaskResultQueueProcessRequest( 1,
 					resultToUpdate: resultMock.Object,
-					completionToken: tcs,
 					timeoutMilliseconds: 0,
 					maxFailCount: 3 ),
 				syncOnCheckpoints,
@@ -99,9 +97,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<IQueuedTaskResult> resultMock =
 				new Mock<IQueuedTaskResult>();
 
-			RunTest_CanSetCancelledManually_SingleThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+			RunTest_CanSetCancelledManually_SingleThread<int>( () => new PostgreSqlTaskResultQueueProcessRequest( 1,
 				 resultToUpdate: resultMock.Object,
-				 completionToken: tcs,
 				 timeoutMilliseconds: 0,
 				 maxFailCount: 3 ) );
 		}
@@ -119,9 +116,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<IQueuedTaskResult> resultMock =
 				new Mock<IQueuedTaskResult>();
 
-			await RunTest_CanSetCancelledManually_MultiThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+			await RunTest_CanSetCancelledManually_MultiThread<int>( () => new PostgreSqlTaskResultQueueProcessRequest( 1,
 					resultToUpdate: resultMock.Object,
-					completionToken: tcs,
 					timeoutMilliseconds: 0,
 					maxFailCount: 3 ),
 				syncOnCheckpoints: syncOnCheckpoints,
@@ -137,9 +133,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<IQueuedTaskResult> resultMock =
 				new Mock<IQueuedTaskResult>();
 
-			RunTest_CanCancelItselfViaTimeout<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+			RunTest_CanCancelItselfViaTimeout<int>( () => new PostgreSqlTaskResultQueueProcessRequest( 1,
 				 resultToUpdate: resultMock.Object,
-				 completionToken: tcs,
 				 timeoutMilliseconds: timeoutMilliseconds,
 				 maxFailCount: 3 ) );
 		}
@@ -153,11 +148,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			Mock<IQueuedTaskResult> resultMock =
 				new Mock<IQueuedTaskResult>();
 
-			RunTest_CanSetFailed_SingleThread<int>( tcs => new PostgreSqlTaskResultQueueProcessRequest( 1,
+			RunTest_CanSetFailed_SingleThread<int>( () => new PostgreSqlTaskResultQueueProcessRequest( 1,
 					resultToUpdate: resultMock.Object,
-					completionToken: tcs,
 					timeoutMilliseconds: 0,
-					maxFailCount: maxFailCount ), 
+					maxFailCount: maxFailCount ),
 				maxFailCount );
 		}
 	}

@@ -81,9 +81,6 @@ namespace LVD.Stakhanovise.NET.Setup
 					"Worker count must be greater than 1" );
 
 			mWorkerCount = workerCount;
-			if ( !mTaskQueueConsumerSetup.IsQueueConsumerConnectionPoolSizeUserConfigured )
-				mTaskQueueConsumerSetup.WithQueueConsumerConnectionPoolSize( mWorkerCount * 2 );
-
 			return this;
 		}
 
