@@ -49,98 +49,48 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardConnectionSetup mBuiltInAppMetricsWriterConnectionSetup;
 
-		public CollectiveConnectionSetup ( StandardConnectionSetup queueConsumerConnectionSetup,
-			StandardConnectionSetup queueProducerConnectionSetup,
-			StandardConnectionSetup queueInfoConnectionSetup,
-			StandardConnectionSetup builtInTimingBeltConnectionSetup,
-			StandardConnectionSetup builtInWriterConnectionSetup,
-			StandardConnectionSetup builtInAppMetricsWriterConnectionSetup )
+		private StandardConnectionSetup[] mConnectionSetupTargets;
+
+		public CollectiveConnectionSetup ( params StandardConnectionSetup[] targets )
 		{
-			mQueueConsumerConnectionSetup = queueConsumerConnectionSetup
-				?? throw new ArgumentNullException( nameof( queueConsumerConnectionSetup ) );
-			mQueueProducerConnectionSetup = queueProducerConnectionSetup
-				?? throw new ArgumentNullException( nameof( queueProducerConnectionSetup ) );
-			mQueueInfoConnectionSetup = queueInfoConnectionSetup
-				?? throw new ArgumentNullException( nameof( queueInfoConnectionSetup ) );
-			mBuiltInTimingBeltConnectionSetup = builtInTimingBeltConnectionSetup
-				?? throw new ArgumentNullException( nameof( builtInTimingBeltConnectionSetup ) );
-			mBuiltInWriterConnectionSetup = builtInWriterConnectionSetup
-				?? throw new ArgumentNullException( nameof( builtInWriterConnectionSetup ) );
-			mBuiltInAppMetricsWriterConnectionSetup = builtInAppMetricsWriterConnectionSetup
-				?? throw new ArgumentNullException( nameof( builtInAppMetricsWriterConnectionSetup ) );
+			if ( targets == null || targets.Length == 0 )
+				throw new ArgumentNullException( nameof( targets ) );
+
+			mConnectionSetupTargets = targets;
 		}
 
 		public IConnectionSetup WithConnectionKeepAlive ( int connectionKeepAlive )
 		{
-			mQueueConsumerConnectionSetup.WithConnectionKeepAlive( connectionKeepAlive );
+			foreach ( StandardConnectionSetup cs in mConnectionSetupTargets )
+				if ( !cs.IsConnectionKeepAliveSecondsUserConfigured )
+					cs.WithConnectionKeepAlive( connectionKeepAlive );
+
 			return this;
 		}
 
 		public IConnectionSetup WithConnectionRetryCount ( int connectionRetryCount )
 		{
-			if ( !mQueueConsumerConnectionSetup.IsConnectionRetryCountUserConfigured )
-				mQueueConsumerConnectionSetup.WithConnectionRetryCount( connectionRetryCount );
-
-			if ( !mQueueProducerConnectionSetup.IsConnectionRetryCountUserConfigured )
-				mQueueProducerConnectionSetup.WithConnectionRetryCount( connectionRetryCount );
-
-			if ( !mQueueInfoConnectionSetup.IsConnectionRetryCountUserConfigured )
-				mQueueInfoConnectionSetup.WithConnectionRetryCount( connectionRetryCount );
-
-			if ( !mBuiltInTimingBeltConnectionSetup.IsConnectionRetryCountUserConfigured )
-				mBuiltInTimingBeltConnectionSetup.WithConnectionRetryCount( connectionRetryCount );
-
-			if ( !mBuiltInWriterConnectionSetup.IsConnectionRetryCountUserConfigured )
-				mBuiltInWriterConnectionSetup.WithConnectionRetryCount( connectionRetryCount );
-
-			if ( !mBuiltInAppMetricsWriterConnectionSetup.IsConnectionRetryCountUserConfigured )
-				mBuiltInAppMetricsWriterConnectionSetup.WithConnectionRetryCount( connectionRetryCount );
+			foreach ( StandardConnectionSetup cs in mConnectionSetupTargets )
+				if ( !cs.IsConnectionRetryCountUserConfigured )
+					cs.WithConnectionRetryCount( connectionRetryCount );
 
 			return this;
 		}
 
 		public IConnectionSetup WithConnectionRetryDelayMilliseconds ( int connectionRetryDelayMilliseconds )
 		{
-			if ( !mQueueConsumerConnectionSetup.IsConnectionRetryDelayMillisecondsUserConfigured )
-				mQueueConsumerConnectionSetup.WithConnectionRetryDelayMilliseconds( connectionRetryDelayMilliseconds );
-
-			if ( !mQueueProducerConnectionSetup.IsConnectionRetryDelayMillisecondsUserConfigured )
-				mQueueProducerConnectionSetup.WithConnectionRetryDelayMilliseconds( connectionRetryDelayMilliseconds );
-
-			if ( !mQueueInfoConnectionSetup.IsConnectionRetryDelayMillisecondsUserConfigured )
-				mQueueInfoConnectionSetup.WithConnectionRetryDelayMilliseconds( connectionRetryDelayMilliseconds );
-
-			if ( !mBuiltInTimingBeltConnectionSetup.IsConnectionRetryDelayMillisecondsUserConfigured )
-				mBuiltInTimingBeltConnectionSetup.WithConnectionRetryDelayMilliseconds( connectionRetryDelayMilliseconds );
-
-			if ( !mBuiltInWriterConnectionSetup.IsConnectionRetryDelayMillisecondsUserConfigured )
-				mBuiltInWriterConnectionSetup.WithConnectionRetryDelayMilliseconds( connectionRetryDelayMilliseconds );
-
-			if ( !mBuiltInAppMetricsWriterConnectionSetup.IsConnectionRetryDelayMillisecondsUserConfigured )
-				mBuiltInAppMetricsWriterConnectionSetup.WithConnectionRetryDelayMilliseconds( connectionRetryDelayMilliseconds );
+			foreach ( StandardConnectionSetup cs in mConnectionSetupTargets )
+				if ( !cs.IsConnectionRetryDelayMillisecondsUserConfigured )
+					cs.WithConnectionRetryDelayMilliseconds( connectionRetryDelayMilliseconds );
 
 			return this;
 		}
 
 		public IConnectionSetup WithConnectionString ( string connectionString )
 		{
-			if ( !mQueueConsumerConnectionSetup.IsConnectionStringUserConfigured )
-				mQueueConsumerConnectionSetup.WithConnectionString( connectionString );
-
-			if ( !mQueueProducerConnectionSetup.IsConnectionStringUserConfigured )
-				mQueueProducerConnectionSetup.WithConnectionString( connectionString );
-
-			if ( !mQueueInfoConnectionSetup.IsConnectionStringUserConfigured )
-				mQueueInfoConnectionSetup.WithConnectionString( connectionString );
-
-			if ( !mBuiltInTimingBeltConnectionSetup.IsConnectionStringUserConfigured )
-				mBuiltInTimingBeltConnectionSetup.WithConnectionString( connectionString );
-
-			if ( !mBuiltInWriterConnectionSetup.IsConnectionStringUserConfigured )
-				mBuiltInWriterConnectionSetup.WithConnectionString( connectionString );
-
-			if ( !mBuiltInAppMetricsWriterConnectionSetup.IsConnectionStringUserConfigured )
-				mBuiltInAppMetricsWriterConnectionSetup.WithConnectionString( connectionString );
+			foreach ( StandardConnectionSetup cs in mConnectionSetupTargets )
+				if ( !cs.IsConnectionStringUserConfigured )
+					cs.WithConnectionString( connectionString );
 
 			return this;
 		}
