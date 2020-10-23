@@ -68,6 +68,11 @@ namespace LVD.Stakhanovise.NET.Model
 			return new MonotonicTimestamp( value );
 		}
 
+		public static TimeSpan Since ( MonotonicTimestamp start )
+		{
+			return Now() - start;
+		}
+
 		public static TimeSpan operator - ( MonotonicTimestamp to, MonotonicTimestamp from )
 		{
 			if ( to.timestamp == 0 )
@@ -75,7 +80,7 @@ namespace LVD.Stakhanovise.NET.Model
 					nameof( to ) );
 
 			if ( from.timestamp == 0 )
-				throw new ArgumentException( "Must be created using MonotonicTimestamp.Now(), not default(MonotonicTimestamp)", 
+				throw new ArgumentException( "Must be created using MonotonicTimestamp.Now(), not default(MonotonicTimestamp)",
 					nameof( from ) );
 
 			long ticks = unchecked(( long )( ( to.timestamp - from.timestamp ) * tickFrequency ));

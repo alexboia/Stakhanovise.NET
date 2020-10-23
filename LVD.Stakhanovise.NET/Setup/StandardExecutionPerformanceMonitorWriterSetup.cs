@@ -29,6 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Processor;
 using System;
 using System.Collections.Generic;
@@ -76,7 +77,15 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IExecutionPerformanceMonitorWriter BuildWriter()
+		public IExecutionPerformanceMonitorWriterSetup WithMapping ( QueuedTaskMapping mapping )
+		{
+			if ( mapping == null )
+				throw new ArgumentNullException( nameof( mapping ) );
+			mBuiltInWriterSetup.WithMapping( mapping );
+			return this;
+		}
+
+		public IExecutionPerformanceMonitorWriter BuildWriter ()
 		{
 			if ( mWriterFactory == null )
 				return new PostgreSqlExecutionPerformanceMonitorWriter( mBuiltInWriterSetup

@@ -134,7 +134,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				queuedTask = await TryPostTaskAsync( queuedTask, conn, tx );
 				await TryInitOrUpdateResultAsync( queuedTask, conn, tx );
-				await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificaionChannelName, tx );
+				await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificationChannelName, tx );
 				tx.Commit();
 			}
 

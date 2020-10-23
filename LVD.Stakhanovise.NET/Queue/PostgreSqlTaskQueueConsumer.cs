@@ -36,18 +36,14 @@ using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using NpgsqlTypes;
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
-using System.Dynamic;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class PostgreSqlTaskQueueConsumer : ITaskQueueConsumer, IDisposable
+	public class PostgreSqlTaskQueueConsumer : ITaskQueueConsumer, IAppMetricsProvider, IDisposable
 	{
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
@@ -74,6 +70,14 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private ITimestampProvider mTimestampProvider;
 
+		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		(
+			new AppMetric( AppMetricId.QueueConsumerDequeueCount, 0 ),
+			new AppMetric( AppMetricId.QueueConsumerMaximumDequeueDuration, long.MinValue ),
+			new AppMetric( AppMetricId.QueueConsumerMinimumDequeueDuration, long.MaxValue ),
+			new AppMetric( AppMetricId.QueueConsumerTotalDequeueDuration, 0 )
+		);
+
 		public PostgreSqlTaskQueueConsumer ( TaskQueueConsumerOptions options, ITimestampProvider timestampProvider )
 		{
 			if ( options == null )
@@ -92,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				.DeriveQueueConsumerConnectionString( options );
 
 			mNotificationListener = new PostgreSqlTaskQueueNotificationListener( mSignalingConnectionString,
-				options.Mapping.NewTaskNotificaionChannelName );
+				options.Mapping.NewTaskNotificationChannelName );
 
 			mNotificationListener.ListenerConnectionRestored +=
 				HandleListenerConnectionRestored;
@@ -180,13 +184,33 @@ namespace LVD.Stakhanovise.NET.Queue
 				RETURNING *";
 		}
 
+		private void IncrementDequeueCount ( TimeSpan duration )
+		{
+			long durationMilliseconds = ( long )Math.Ceiling( duration
+				.TotalMilliseconds );
+
+			mMetrics.UpdateMetric( AppMetricId.QueueConsumerDequeueCount,
+				m => m.Increment() );
+
+			mMetrics.UpdateMetric( AppMetricId.QueueConsumerTotalDequeueDuration,
+				m => m.Add( durationMilliseconds ) );
+
+			mMetrics.UpdateMetric( AppMetricId.QueueConsumerMinimumDequeueDuration,
+				m => m.Min( durationMilliseconds ) );
+
+			mMetrics.UpdateMetric( AppMetricId.QueueConsumerMaximumDequeueDuration,
+				m => m.Max( durationMilliseconds ) );
+		}
+
 		public async Task<IQueuedTaskToken> DequeueAsync ( params string[] selectTaskTypes )
 		{
 			NpgsqlConnection conn = null;
 			QueuedTask dequeuedTask = null;
 			QueuedTaskResult dequeuedTaskResult = null;
 			PostgreSqlQueuedTaskToken dequeuedTaskToken = null;
-			DateTimeOffset now = mTimestampProvider.GetNow();
+
+			MonotonicTimestamp startDequeue;
+			DateTimeOffset refNow = mTimestampProvider.GetNow();
 
 			CheckNotDisposedOrThrow();
 
@@ -194,6 +218,9 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				mLogger.DebugFormat( "Begin dequeue task. Looking for types: {0}.",
 					string.Join<string>( ",", selectTaskTypes ) );
+
+				startDequeue = MonotonicTimestamp
+					.Now();
 
 				conn = await OpenQueueConnectionAsync();
 				if ( conn == null )
@@ -206,7 +233,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					//	the priority and static locks (basically the task_locked_until which says 
 					//	that it should not be pulled out of the queue until the 
 					//	current abstract time reaches that tick value)
-					dequeuedTask = await TryDequeueTaskAsync( selectTaskTypes, now, conn, tx );
+					dequeuedTask = await TryDequeueTaskAsync( selectTaskTypes, refNow, conn, tx );
 					if ( dequeuedTask != null )
 					{
 						//2. Mark the task as being "Processing" and pull result info
@@ -219,12 +246,15 @@ namespace LVD.Stakhanovise.NET.Queue
 							await tx.CommitAsync();
 							dequeuedTaskToken = new PostgreSqlQueuedTaskToken( dequeuedTask,
 								dequeuedTaskResult,
-								now );
+								refNow );
 						}
 					}
 
-					if ( dequeuedTaskToken == null )
+					if ( dequeuedTaskToken != null )
+						IncrementDequeueCount( MonotonicTimestamp.Since( startDequeue ) );
+					else
 						await tx.RollbackAsync();
+
 				}
 			}
 			finally
@@ -351,6 +381,18 @@ namespace LVD.Stakhanovise.NET.Queue
 			GC.SuppressFinalize( this );
 		}
 
+		public AppMetric QueryMetric ( AppMetricId metricId )
+		{
+			return AppMetricsCollection.JoinQueryMetric( metricId, this, 
+				mNotificationListener );
+		}
+
+		public IEnumerable<AppMetric> CollectMetrics ()
+		{
+			return AppMetricsCollection.JoinCollectMetrics( this, 
+				mNotificationListener );
+		}
+
 		public bool IsReceivingNewTaskUpdates
 		{
 			get
@@ -366,6 +408,15 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				CheckNotDisposedOrThrow();
 				return mTimestampProvider;
+			}
+		}
+
+		public IEnumerable<AppMetricId> ExportedMetrics
+		{
+			get
+			{
+				return AppMetricsCollection.JoinExportedMetrics( this, 
+					mNotificationListener );
 			}
 		}
 

@@ -34,6 +34,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
+using ServerTimer = System.Timers.Timer;
 
 namespace LVD.Stakhanovise.NET.Model
 {
@@ -47,11 +49,15 @@ namespace LVD.Stakhanovise.NET.Model
 
 		private TaskCompletionSource<TResult> mCompletionToken;
 
+		private ServerTimer mTimer;
+
 		private bool mIsDisposed;
 
 		private int mCurrentFailCount = 0;
 
 		private int mMaxFailCount;
+
+		private bool mIsTimedOut = false;
 
 		private long mRequestId;
 
@@ -77,7 +83,13 @@ namespace LVD.Stakhanovise.NET.Model
 			//If timeout is specified, then schedule the CTS 
 			//	to automatically request cancellation
 			if ( timeoutMilliseconds > 0 )
-				mCancellationTokenSource.CancelAfter( timeoutMilliseconds );
+			{
+				mTimer = new ServerTimer();
+				mTimer.Interval = timeoutMilliseconds;
+				mTimer.AutoReset = false;
+				mTimer.Elapsed += HandleCancellationTimerElapsed;
+				mTimer.Start();
+			}
 
 			//Register a handler for when cancellation is requested
 			mCancellationToken = mCancellationTokenSource.Token;
@@ -85,6 +97,29 @@ namespace LVD.Stakhanovise.NET.Model
 
 			mCompletionToken = completionToken;
 			mMaxFailCount = maxFailCount;
+		}
+
+		private void HandleCancellationTimerElapsed ( object sender, ElapsedEventArgs e )
+		{
+			if ( !mIsDisposed && !IsCompleted )
+			{
+				mIsTimedOut = true;
+				mCompletionToken.TrySetException( new TimeoutException( "Request processing timed out" ) );
+				mTimer.Elapsed -= HandleCancellationTimerElapsed;
+				mTimer.Dispose();
+				mTimer = null;
+			}
+		}
+
+		private void ShutdownCancellationTimer ()
+		{
+			if ( mTimer != null )
+			{
+				mTimer.Elapsed -= HandleCancellationTimerElapsed;
+				mTimer.Stop();
+				mTimer.Dispose();
+				mTimer = null;
+			}
 		}
 
 		private void HandleCancellationRequested ()
@@ -95,20 +130,27 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public void SetCancelled ()
 		{
-			if ( !mCancellationToken.IsCancellationRequested )
+			if ( !IsCompleted )
+			{
+				ShutdownCancellationTimer();
 				mCancellationTokenSource.Cancel();
+			}
 		}
 
 		public void SetCompleted ( TResult result )
 		{
-			if ( !mCancellationToken.IsCancellationRequested )
+			if ( !IsCompleted )
+			{
+				ShutdownCancellationTimer();
 				mCompletionToken.TrySetResult( result );
+			}
 		}
 
 		public void SetFailed ( Exception exc )
 		{
-			if ( !mCancellationToken.IsCancellationRequested )
+			if ( !IsCompleted )
 			{
+				ShutdownCancellationTimer();
 				IncrementFailCount();
 				if ( !CanBeRetried )
 					mCompletionToken.TrySetException( exc );
@@ -142,8 +184,16 @@ namespace LVD.Stakhanovise.NET.Model
 			GC.SuppressFinalize( this );
 		}
 
+		public bool IsCompleted
+			=> mCompletionToken.Task.IsCanceled
+				|| mCompletionToken.Task.IsCompleted
+				|| mCompletionToken.Task.IsFaulted;
+
 		public bool CanBeRetried
 			=> mCurrentFailCount < mMaxFailCount;
+
+		public bool IsTimedOut
+			=> mIsTimedOut;
 
 		public long Id
 			=> mRequestId;

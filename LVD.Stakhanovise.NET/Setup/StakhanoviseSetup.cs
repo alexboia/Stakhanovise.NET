@@ -161,6 +161,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			mTaskQueueConsumerSetup.WithMapping( mapping );
 			mTaskQueueProducerSetup.WithMapping( mapping );
 			mTaskQueueInfoSetup.WithMapping( mapping );
+			mPerformanceMonitorWriterSetup.WithMapping( mapping );
 
 			return this;
 		}

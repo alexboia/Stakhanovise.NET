@@ -32,18 +32,18 @@
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class StandardExecutionPerformanceMonitor : IExecutionPerformanceMonitor, IDisposable
+	public class StandardExecutionPerformanceMonitor : IExecutionPerformanceMonitor,
+		IAppMetricsProvider,
+		IDisposable
 	{
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
@@ -66,6 +66,15 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private IExecutionPerformanceMonitorWriter mStatsWriter;
 
+		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		(
+			new AppMetric( AppMetricId.PerfMonReportPostCount, 0 ),
+			new AppMetric( AppMetricId.PerfMonReportWriteCount, 0 ),
+			new AppMetric( AppMetricId.PerfMonMinimumReportWriteDuration, long.MaxValue ),
+			new AppMetric( AppMetricId.PerfMonMaximumReportWriteDuration, long.MinValue ),
+			new AppMetric( AppMetricId.PerfMonReportWriteRequestsTimeoutCount, 0 )
+		);
+
 		private void CheckNotDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
@@ -77,6 +86,33 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			if ( !IsRunning )
 				throw new InvalidOperationException( "The execution performance monitor is not running." );
+		}
+
+		private void IncrementPerfMonPostCount ()
+		{
+			mMetrics.UpdateMetric( AppMetricId.PerfMonReportPostCount,
+				m => m.Increment() );
+		}
+
+		private void IncrementPerfMonWriteCount ( TimeSpan duration )
+		{
+			long durationMilliseconds = ( long )Math.Ceiling( duration
+				.TotalMilliseconds );
+
+			mMetrics.UpdateMetric( AppMetricId.PerfMonReportWriteCount,
+				m => m.Increment() );
+
+			mMetrics.UpdateMetric( AppMetricId.PerfMonMinimumReportWriteDuration,
+				m => m.Min( durationMilliseconds ) );
+
+			mMetrics.UpdateMetric( AppMetricId.PerfMonMaximumReportWriteDuration,
+				m => m.Max( durationMilliseconds ) );
+		}
+
+		private void IncrementPerfMonWriteRequestTimeoutCount ()
+		{
+			mMetrics.UpdateMetric( AppMetricId.PerfMonReportWriteRequestsTimeoutCount,
+				m => m.Increment() );
 		}
 
 		public Task<int> ReportExecutionTimeAsync ( string payloadType, long durationMilliseconds, int timeoutMilliseconds )
@@ -104,13 +140,21 @@ namespace LVD.Stakhanovise.NET.Processor
 					maxFailCount: 3 );
 
 			mStatsProcessingQueue.Add( request );
+			IncrementPerfMonPostCount();
 
-			return completionToken.Task.WithCleanup( ( prev )
-				=> request.Dispose() );
+			return completionToken.Task.WithCleanup( ( prev ) =>
+			{
+				if ( request.IsTimedOut )
+					IncrementPerfMonWriteRequestTimeoutCount();
+				request.Dispose();
+			} );
 		}
 
 		private async Task ProcessStatsBatchAsync ( IEnumerable<StandardExecutionPerformanceMonitorWriteRequest> currentBatch )
 		{
+			MonotonicTimestamp startWrite = MonotonicTimestamp
+				.Now();
+
 			List<TaskPerformanceStats> executionTimeInfoBatch =
 				new List<TaskPerformanceStats>();
 
@@ -123,6 +167,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 				foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
 					rq.SetCompleted( 1 );
+
+				IncrementPerfMonWriteCount( MonotonicTimestamp
+					.Since( startWrite ) );
 			}
 			catch ( Exception exc )
 			{
@@ -198,26 +245,27 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		private async Task DoFlushingStartupSequenceAsync ( IExecutionPerformanceMonitorWriter writer )
+		private void DoFlushingStartupSequence ( IExecutionPerformanceMonitorWriter writer )
 		{
 			mStatsWriter = writer;
 			mStatsProcessingStopTokenSource =
 				new CancellationTokenSource();
 
-			await mStatsWriter.SetupIfNeededAsync();
 			mStatsProcessingTask = Task.Run( async ()
 				=> await RunFlushLoopAsync() );
 		}
 
-		public async Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer )
+		public Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer )
 		{
 			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStopped )
-				await mStateController.TryRequestStartAsync( async ()
-					=> await DoFlushingStartupSequenceAsync( writer ) );
+				mStateController.TryRequestStart( ()
+					=> DoFlushingStartupSequence( writer ) );
 			else
 				mLogger.Debug( "Flush scheduler is already started. Nothing to be done." );
+
+			return Task.CompletedTask;
 		}
 
 		private async Task DoFlushingShutdownSequenceAsync ()
@@ -267,12 +315,30 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
+		public AppMetric QueryMetric ( AppMetricId metricId )
+		{
+			return mMetrics.QueryMetric( metricId );
+		}
+
+		public IEnumerable<AppMetric> CollectMetrics ()
+		{
+			return mMetrics.CollectMetrics();
+		}
+
 		public bool IsRunning
 		{
 			get
 			{
 				CheckNotDisposedOrThrow();
 				return mStateController.IsStarted;
+			}
+		}
+
+		public IEnumerable<AppMetricId> ExportedMetrics
+		{
+			get
+			{
+				return mMetrics.ExportedMetrics;
 			}
 		}
 	}

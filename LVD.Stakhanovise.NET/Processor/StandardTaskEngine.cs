@@ -31,6 +31,7 @@
 // 
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Logging;
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
 using System;
@@ -41,30 +42,31 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class StandardTaskEngine : ITaskEngine
+	public class StandardTaskEngine : ITaskEngine, IAppMetricsProvider
 	{
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
 				.GetCurrentMethod()
 				.DeclaringType );
 
-		private ITaskQueueConsumer mTaskQueueConsumer;
+		private PostgreSqlTaskQueueConsumer mTaskQueueConsumer;
 
-		private ITaskBuffer mTaskBuffer;
+		private StandardTaskBuffer mTaskBuffer;
 
-		private ITaskPoller mTaskPoller;
+		private StandardTaskPoller mTaskPoller;
 
 		private ITaskExecutorRegistry mExecutorRegistry;
 
-		private IExecutionPerformanceMonitor mExecutionPerfMon;
+		private StandardExecutionPerformanceMonitor mExecutionPerfMon;
 
 		private IExecutionPerformanceMonitorWriter mExecutionPerfMonWriter;
 
-		private ITaskResultQueue mTaskResultQueue;
+		private PostgreSqlTaskResultQueue mTaskResultQueue;
 
-		private ITaskQueueProducer mTaskQueueProducer;
+		private PostgreSqlTaskQueueProducer mTaskQueueProducer;
 
-		private List<ITaskWorker> mWorkers = new List<ITaskWorker>();
+		private List<StandardTaskWorker> mWorkers =
+			new List<StandardTaskWorker>();
 
 		private StateController mStateController
 			= new StateController();
@@ -131,7 +133,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			//Start the task poller and then start workers
 			await StartResultQueueProcessingAsync();
-			await StartFlushingPerformanceStatsAsync();
+			await StartExecutionPerformanceMonitorAsync();
 			await StartPollerAsync( requiredPayloadTypes );
 			await StartWorkersAsync( requiredPayloadTypes );
 
@@ -157,7 +159,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			await StopPollerAsync();
 			await StopWorkersAsync();
 			await StopResultQueueProcessingAsync();
-			await StopFlushingPerformanceStatsAsync();
+			await StopExecutionPerformanceMonitorAsync();
 
 			mLogger.Debug( "The task engine has been successfully stopped." );
 		}
@@ -202,14 +204,18 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Successfully stopped result queue processing." );
 		}
 
-		private async Task StartFlushingPerformanceStatsAsync ()
+		private async Task StartExecutionPerformanceMonitorAsync ()
 		{
+			mLogger.Debug( "Starting execution performance monitor..." );
 			await mExecutionPerfMon.StartFlushingAsync( mExecutionPerfMonWriter );
+			mLogger.Debug( "Successfully started execution performance monitor." );
 		}
 
-		private async Task StopFlushingPerformanceStatsAsync ()
+		private async Task StopExecutionPerformanceMonitorAsync ()
 		{
+			mLogger.Debug( "Stopping execution performance monitor..." );
 			await mExecutionPerfMon.StopFlushingAsync();
+			mLogger.Debug( "Successfully stopped execution performance monitor." );
 		}
 
 		private async Task StartPollerAsync ( string[] requiredPayloadTypes )
@@ -232,7 +238,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			for ( int i = 0; i < mOptions.WorkerCount; i++ )
 			{
-				ITaskWorker taskWorker = new StandardTaskWorker( mOptions.TaskProcessingOptions,
+				StandardTaskWorker taskWorker = new StandardTaskWorker( mOptions.TaskProcessingOptions,
 					mTaskBuffer,
 					mExecutorRegistry,
 					mExecutionPerfMon,
@@ -295,6 +301,27 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
+		public AppMetric QueryMetric ( AppMetricId metricId )
+		{
+			return AppMetricsCollection.JoinQueryMetric( metricId,
+				mTaskBuffer,
+				mTaskPoller,
+				mTaskQueueConsumer,
+				mTaskResultQueue,
+				mExecutionPerfMon,
+				AppMetricsCollection.JoinProviders( mWorkers ) );
+		}
+
+		public IEnumerable<AppMetric> CollectMetrics ()
+		{
+			return AppMetricsCollection.JoinCollectMetrics( mTaskBuffer,
+				mTaskPoller,
+				mTaskQueueConsumer,
+				mTaskResultQueue,
+				mExecutionPerfMon,
+				AppMetricsCollection.JoinProviders( mWorkers ) );
+		}
+
 		public IEnumerable<ITaskWorker> Workers
 		{
 			get
@@ -328,6 +355,19 @@ namespace LVD.Stakhanovise.NET.Processor
 			{
 				CheckDisposedOrThrow();
 				return mStateController.IsStarted;
+			}
+		}
+
+		public IEnumerable<AppMetricId> ExportedMetrics
+		{
+			get
+			{
+				return AppMetricsCollection.JoinExportedMetrics( mTaskBuffer,
+					mTaskPoller,
+					mTaskQueueConsumer,
+					mTaskResultQueue,
+					mExecutionPerfMon,
+					AppMetricsCollection.JoinProviders( mWorkers ) );
 			}
 		}
 	}

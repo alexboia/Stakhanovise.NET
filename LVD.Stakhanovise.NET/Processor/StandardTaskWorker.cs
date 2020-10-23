@@ -36,13 +36,14 @@ using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class StandardTaskWorker : ITaskWorker
+	public class StandardTaskWorker : ITaskWorker, IAppMetricsProvider
 	{
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
@@ -75,6 +76,16 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private TaskProcessingOptions mOptions;
 
+		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		(
+			AppMetricId.WorkerProcessedPayloadCount,
+			AppMetricId.WorkerBufferWaitCount,
+			AppMetricId.WorkerTotalProcessingTime,
+			AppMetricId.WorkerSuccessfulProcessedPayloadCount,
+			AppMetricId.WorkerFailedProcessedPayloadCount,
+			AppMetricId.WorkerProcessingCancelledPayloadCount
+		);
+
 		public StandardTaskWorker (
 			TaskProcessingOptions options,
 			ITaskBuffer taskBuffer,
@@ -102,6 +113,27 @@ namespace LVD.Stakhanovise.NET.Processor
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( StandardTaskWorker ),
 					"Cannot reuse a disposed task worker" );
+		}
+
+		private void UpdateTaskProcessingStats ( TaskExecutionResult result )
+		{
+			mMetrics.UpdateMetric( AppMetricId.WorkerProcessedPayloadCount,
+				m => m.Increment() );
+
+			mMetrics.UpdateMetric( AppMetricId.WorkerTotalProcessingTime,
+				m => m.Add( result.ProcessingTimeMilliseconds ) );
+
+			if ( result.ExecutedSuccessfully )
+				mMetrics.UpdateMetric( AppMetricId.WorkerSuccessfulProcessedPayloadCount,
+					m => m.Increment() );
+
+			else if ( result.ExecutionFailed )
+				mMetrics.UpdateMetric( AppMetricId.WorkerFailedProcessedPayloadCount,
+					m => m.Increment() );
+
+			else if ( result.ExecutionCancelled )
+				mMetrics.UpdateMetric( AppMetricId.WorkerProcessingCancelledPayloadCount,
+					m => m.Increment() );
 		}
 
 		private void HandleQueuedTaskAdded ( object sender, EventArgs e )
@@ -203,7 +235,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			//Compute the amount of time to delay task execution
 			//	if execution failed
-			if ( executionContext.HasResult 
+			if ( executionContext.HasResult
 				&& executionContext.ExecutionFailed )
 				retryAt = ComputeRetryAt( executionContext.TaskToken );
 
@@ -220,6 +252,9 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			try
 			{
+				//Update worker execution stats
+				UpdateTaskProcessingStats( result );
+
 				//There is no result - most likely, no executor found;
 				//	nothing to process, just stop and return
 				if ( !result.HasResult )
@@ -280,7 +315,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 			catch ( Exception exc )
 			{
-				mLogger.Error( "Failed to compute delay. Using default value of 0.", 
+				mLogger.Error( "Failed to compute delay. Using default value of 0.",
 					exc );
 			}
 
@@ -501,12 +536,30 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
+		public AppMetric QueryMetric ( AppMetricId metricId )
+		{
+			return mMetrics.QueryMetric( metricId );
+		}
+
+		public IEnumerable<AppMetric> CollectMetrics ()
+		{
+			return mMetrics.CollectMetrics();
+		}
+
 		public bool IsRunning
 		{
 			get
 			{
 				CheckNotDisposedOrThrow();
 				return mStateController.IsStarted;
+			}
+		}
+
+		public IEnumerable<AppMetricId> ExportedMetrics
+		{
+			get
+			{
+				return mMetrics.ExportedMetrics;
 			}
 		}
 	}

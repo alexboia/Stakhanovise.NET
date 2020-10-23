@@ -35,13 +35,14 @@ using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class StandardTaskPoller : ITaskPoller
+	public class StandardTaskPoller : ITaskPoller, IAppMetricsProvider
 	{
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
@@ -70,6 +71,13 @@ namespace LVD.Stakhanovise.NET.Processor
 		private Task mPollTask;
 
 		private TaskProcessingOptions mOptions;
+
+		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		(
+			AppMetricId.PollerDequeueCount,
+			AppMetricId.PollerWaitForBufferSpaceCount,
+			AppMetricId.PollerWaitForDequeueCount
+		);
 
 		public StandardTaskPoller ( TaskProcessingOptions options,
 			ITaskQueueConsumer taskQueueConsumer,
@@ -102,8 +110,11 @@ namespace LVD.Stakhanovise.NET.Processor
 			mWaitForClearToDequeue.Set();
 		}
 
-		private async Task PollForQueuedTasksAsync ( CancellationToken stopToken )
+		private async Task PollForQueuedTasksAsync ()
 		{
+			CancellationToken stopToken = mStopTokenSource
+				.Token;
+
 			//Check cancellation token before starting 
 			//	the polling loop
 			if ( stopToken.IsCancellationRequested )
@@ -123,6 +134,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					if ( mTaskBuffer.IsFull )
 					{
 						mLogger.Debug( "Task buffer is full. Waiting for available space..." );
+						mMetrics.UpdateMetric( AppMetricId.PollerWaitForBufferSpaceCount, m => m.Increment() );
 						await mWaitForClearToAddToBuffer.ToTask();
 					}
 
@@ -134,7 +146,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					//Attempt to dequeue and then check cancellation
 					IQueuedTaskToken queuedTaskToken = await mTaskQueueConsumer
 						.DequeueAsync( mRequiredPayloadTypes );
-					
+
 					//Before posting the token to the buffer, 
 					//	check if cancellation was requested
 					stopToken.ThrowIfCancellationRequested();
@@ -148,6 +160,7 @@ namespace LVD.Stakhanovise.NET.Processor
 							queuedTaskToken.DequeuedTask.Id,
 							queuedTaskToken.DequeuedTask.Type );
 
+						mMetrics.UpdateMetric( AppMetricId.PollerDequeueCount, m => m.Increment() );
 						mTaskBuffer.TryAddNewTask( queuedTaskToken );
 					}
 					else
@@ -155,6 +168,7 @@ namespace LVD.Stakhanovise.NET.Processor
 						//If there is no task available in the queue, begin waiting for 
 						//  a notification of new added tasks
 						mLogger.Debug( "No task dequeued when polled. Waiting for available task..." );
+						mMetrics.UpdateMetric( AppMetricId.PollerWaitForDequeueCount, m => m.Increment() );
 						await mWaitForClearToDequeue.ToTask();
 					}
 
@@ -200,7 +214,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			//Run the polling thread
 			mStopTokenSource = new CancellationTokenSource();
-			mPollTask = Task.Run( async () => await PollForQueuedTasksAsync( mStopTokenSource.Token ) );
+			mPollTask = Task.Run( async ()
+				=> await PollForQueuedTasksAsync() );
 
 			mLogger.Debug( "Successfully started task poller." );
 		}
@@ -304,12 +319,30 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
+		public AppMetric QueryMetric ( AppMetricId metricId )
+		{
+			return mMetrics.QueryMetric( metricId );
+		}
+
+		public IEnumerable<AppMetric> CollectMetrics ()
+		{
+			return mMetrics.CollectMetrics();
+		}
+
 		public bool IsRunning
 		{
 			get
 			{
 				CheckNotDisposedOrThrow();
 				return mStateController.IsStarted;
+			}
+		}
+
+		public IEnumerable<AppMetricId> ExportedMetrics
+		{
+			get
+			{
+				return mMetrics.ExportedMetrics;
 			}
 		}
 	}

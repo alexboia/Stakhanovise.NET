@@ -46,10 +46,14 @@ namespace LVD.Stakhanovise.NET.Processor
 	{
 		private PostgreSqlExecutionPerformanceMonitorWriterOptions mOptions;
 
+		private string mUpsertSql;
+
 		public PostgreSqlExecutionPerformanceMonitorWriter ( PostgreSqlExecutionPerformanceMonitorWriterOptions options )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
+
+			mUpsertSql = GetUpsertSql( options.Mapping );
 		}
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync ()
@@ -57,39 +61,9 @@ namespace LVD.Stakhanovise.NET.Processor
 			return await mOptions.ConnectionOptions.TryOpenConnectionAsync();
 		}
 
-		public async Task SetupIfNeededAsync ()
+		private string GetUpsertSql ( QueuedTaskMapping mapping )
 		{
-			string createTableSql = @"CREATE TABLE IF NOT EXISTS public.sk_task_execution_time_stats_t
-				(
-					et_payload_type character varying(255) NOT NULL,
-					et_n_execution_cycles bigint NOT NULL,
-					et_last_execution_time bigint NOT NULL,
-					et_avg_execution_time bigint NOT NULL,
-					et_fastest_execution_time bigint NOT NULL,
-					et_longest_execution_time bigint NOT NULL,
-					et_total_execution_time bigint NOT NULL,
-					CONSTRAINT sk_task_execution_time_stats_t_pkey PRIMARY KEY ( et_payload_type)
-				)";
-
-			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
-			using ( NpgsqlCommand createTableCmd = new NpgsqlCommand( createTableSql, conn ) )
-			{
-				await createTableCmd.ExecuteNonQueryAsync();
-				await conn.CloseAsync();
-			}
-		}
-
-		public async Task<int> WriteAsync ( IEnumerable<TaskPerformanceStats> executionTimeInfoBatch )
-		{
-			int affectedRows = 0;
-
-			if ( executionTimeInfoBatch == null )
-				throw new ArgumentNullException( nameof( executionTimeInfoBatch ) );
-
-			if ( executionTimeInfoBatch.Count() == 0 )
-				return 0;
-
-			string upsertSql = @"INSERT INTO sk_task_execution_time_stats_t (
+			return $@"INSERT INTO {mapping.ExecutionTimeStatsTableName} (
 					et_payload_type,
 					et_n_execution_cycles,
 					et_last_execution_time,
@@ -108,21 +82,32 @@ namespace LVD.Stakhanovise.NET.Processor
 				) ON CONFLICT (et_payload_type) DO UPDATE SET 
 					et_last_execution_time = EXCLUDED.et_last_execution_time,
 					et_avg_execution_time = CEILING(
-						(sk_task_execution_time_stats_t.et_total_execution_time + EXCLUDED.et_last_execution_time)::double precision 
-							/ (sk_task_execution_time_stats_t.et_n_execution_cycles + 1)
+						({mapping.ExecutionTimeStatsTableName}.et_total_execution_time + EXCLUDED.et_last_execution_time)::double precision 
+							/ ({mapping.ExecutionTimeStatsTableName}.et_n_execution_cycles + 1)
 					)::bigint,
-					et_fastest_execution_time = LEAST(sk_task_execution_time_stats_t.et_fastest_execution_time, 
+					et_fastest_execution_time = LEAST({mapping.ExecutionTimeStatsTableName}.et_fastest_execution_time, 
 						EXCLUDED.et_last_execution_time),
-					et_longest_execution_time = GREATEST(sk_task_execution_time_stats_t.et_longest_execution_time, 
+					et_longest_execution_time = GREATEST({mapping.ExecutionTimeStatsTableName}.et_longest_execution_time, 
 						EXCLUDED.et_last_execution_time),
-					et_total_execution_time = sk_task_execution_time_stats_t.et_total_execution_time 
+					et_total_execution_time = {mapping.ExecutionTimeStatsTableName}.et_total_execution_time 
 						+ EXCLUDED.et_last_execution_time,
-					et_n_execution_cycles = sk_task_execution_time_stats_t.et_n_execution_cycles 
+					et_n_execution_cycles = {mapping.ExecutionTimeStatsTableName}.et_n_execution_cycles 
 						+ 1";
+		}
+
+		public async Task<int> WriteAsync ( IEnumerable<TaskPerformanceStats> executionTimeInfoBatch )
+		{
+			int affectedRows = 0;
+
+			if ( executionTimeInfoBatch == null )
+				throw new ArgumentNullException( nameof( executionTimeInfoBatch ) );
+
+			if ( executionTimeInfoBatch.Count() == 0 )
+				return 0;
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
-			using ( NpgsqlCommand upsertCmd = new NpgsqlCommand( upsertSql, conn, tx ) )
+			using ( NpgsqlCommand upsertCmd = new NpgsqlCommand( mUpsertSql, conn, tx ) )
 			{
 				try
 				{

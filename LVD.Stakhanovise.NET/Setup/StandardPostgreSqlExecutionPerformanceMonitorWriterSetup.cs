@@ -29,6 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
@@ -38,6 +39,8 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StandardPostgreSqlExecutionPerformanceMonitorWriterSetup : IPostgreSqlExecutionPerformanceMonitorWriterSetup
 	{
+		private QueuedTaskMapping mMapping;
+
 		private StandardConnectionSetup mConnectionSetup;
 
 		public StandardPostgreSqlExecutionPerformanceMonitorWriterSetup ( StandardConnectionSetup connectionSetup )
@@ -56,10 +59,18 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
+		public IPostgreSqlExecutionPerformanceMonitorWriterSetup WithMapping ( QueuedTaskMapping mapping )
+		{
+			if ( mapping == null )
+				throw new ArgumentNullException( nameof( mapping ) );
+			mMapping = mapping;
+			return this;
+		}
+
 		public PostgreSqlExecutionPerformanceMonitorWriterOptions BuildOptions ()
 		{
-			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( mConnectionSetup
-				.BuildOptions() );
+			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( mConnectionSetup.BuildOptions(), 
+				mapping: mMapping );
 		}
 	}
 }

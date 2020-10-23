@@ -44,7 +44,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class PostgreSqlTaskResultQueue : ITaskResultQueue, IDisposable
+	public class PostgreSqlTaskResultQueue : ITaskResultQueue, IAppMetricsProvider, IDisposable
 	{
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
@@ -67,6 +67,16 @@ namespace LVD.Stakhanovise.NET.Queue
 		private long mLastRequestId = 0;
 
 		private string mUpdateSql;
+
+		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		(
+			new AppMetric( AppMetricId.ResultQueueMinimumResultWriteDuration, long.MaxValue ),
+			new AppMetric( AppMetricId.ResultQueueMaximumResultWriteDuration, long.MinValue ),
+			new AppMetric( AppMetricId.ResultQueueResultPostCount, 0 ),
+			new AppMetric( AppMetricId.ResultQueueResultWriteCount, 0 ),
+			new AppMetric( AppMetricId.ResultQueueResultWriteRequestTimeoutCount, 0 ),
+			new AppMetric( AppMetricId.ResultQueueTotalResultWriteDuration, 0 )
+		);
 
 		public PostgreSqlTaskResultQueue ( TaskQueueOptions options )
 		{
@@ -101,6 +111,36 @@ namespace LVD.Stakhanovise.NET.Queue
 				WHERE task_id = @t_id";
 		}
 
+		private void IncrementPostResultCount ()
+		{
+			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultPostCount,
+				m => m.Increment() );
+		}
+
+		private void IncrementResultWriteCount ( TimeSpan duration )
+		{
+			long durationMilliseconds = ( long )Math.Ceiling( duration
+				.TotalMilliseconds );
+
+			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultWriteCount,
+				m => m.Increment() );
+
+			mMetrics.UpdateMetric( AppMetricId.ResultQueueTotalResultWriteDuration,
+				m => m.Add( durationMilliseconds ) );
+
+			mMetrics.UpdateMetric( AppMetricId.ResultQueueMinimumResultWriteDuration,
+				m => m.Min( durationMilliseconds ) );
+
+			mMetrics.UpdateMetric( AppMetricId.ResultQueueMaximumResultWriteDuration,
+				m => m.Max( durationMilliseconds ) );
+		}
+
+		private void IncrementResultWriteRequestTimeoutCount ()
+		{
+			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultWriteRequestTimeoutCount,
+				m => m.Increment() );
+		}
+
 		private async Task<NpgsqlConnection> OpenConnectionAsync ( CancellationToken cancellationToken )
 		{
 			return await mOptions
@@ -124,6 +164,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			long requestId = Interlocked.Increment( ref mLastRequestId );
 
+			//TODO: this needs to be provided by the consumer
+			//	 - can very well be created by the request itself!!!
 			TaskCompletionSource<int> completionToken =
 				new TaskCompletionSource<int>( TaskCreationOptions
 					.RunContinuationsAsynchronously );
@@ -136,9 +178,14 @@ namespace LVD.Stakhanovise.NET.Queue
 					maxFailCount: 3 );
 
 			mResultProcessingQueue.Add( processRequest );
+			IncrementPostResultCount();
 
-			return completionToken.Task.WithCleanup( ( prev )
-				=> processRequest.Dispose() );
+			return completionToken.Task.WithCleanup( ( prev ) =>
+			{
+				if ( processRequest.IsTimedOut )
+					IncrementResultWriteRequestTimeoutCount();
+				processRequest.Dispose();
+			} );
 		}
 
 		public Task<int> PostResultAsync ( IQueuedTaskToken token )
@@ -149,6 +196,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task ProcessResultBatchAsync ( Queue<PostgreSqlTaskResultQueueProcessRequest> currentBatch )
 		{
+			MonotonicTimestamp startWrite = MonotonicTimestamp
+				.Now();
+
 			//An explicit choice has been made not to use transactions
 			//	since failing to update a result MUST NOT 
 			//	cause the other successful updates to be rolled back.
@@ -200,6 +250,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 						int affectedRows = await updateCmd.ExecuteNonQueryAsync();
 						processRq.SetCompleted( affectedRows );
+
+						IncrementResultWriteCount( MonotonicTimestamp
+							.Since( startWrite ) );
 					}
 					catch ( OperationCanceledException )
 					{
@@ -223,7 +276,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private async Task RunProcessingLoopAsync ()
 		{
 			CancellationToken stopToken = mResultProcessingStopRequest
-					.Token;
+				.Token;
 
 			if ( stopToken.IsCancellationRequested )
 				return;
@@ -294,7 +347,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			mResultProcessingStopRequest = new CancellationTokenSource();
 			mResultProcessingQueue = new BlockingCollection<PostgreSqlTaskResultQueueProcessRequest>();
 
-			mResultProcessingTask = Task.Run( async () 
+			mResultProcessingTask = Task.Run( async ()
 				=> await RunProcessingLoopAsync() );
 		}
 
@@ -354,12 +407,30 @@ namespace LVD.Stakhanovise.NET.Queue
 			GC.SuppressFinalize( this );
 		}
 
+		public AppMetric QueryMetric ( AppMetricId metricId )
+		{
+			return mMetrics.QueryMetric( metricId );
+		}
+
+		public IEnumerable<AppMetric> CollectMetrics ()
+		{
+			return mMetrics.CollectMetrics();
+		}
+
 		public bool IsRunning
 		{
 			get
 			{
 				CheckNotDisposedOrThrow();
 				return mStateController.IsStarted;
+			}
+		}
+
+		public IEnumerable<AppMetricId> ExportedMetrics
+		{
+			get
+			{
+				return mMetrics.ExportedMetrics;
 			}
 		}
 	}

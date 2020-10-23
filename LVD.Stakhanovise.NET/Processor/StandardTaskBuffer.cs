@@ -38,7 +38,7 @@ using LVD.Stakhanovise.NET.Queue;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class StandardTaskBuffer : ITaskBuffer
+	public class StandardTaskBuffer : ITaskBuffer, IAppMetricsProvider
 	{
 		private int mCapacity;
 
@@ -49,6 +49,14 @@ namespace LVD.Stakhanovise.NET.Processor
 		public event EventHandler QueuedTaskRetrieved;
 
 		public event EventHandler QueuedTaskAdded;
+
+		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		(
+			new AppMetric( AppMetricId.BufferMinCount, long.MaxValue ),
+			new AppMetric( AppMetricId.BufferMaxCount, long.MinValue ),
+			new AppMetric( AppMetricId.BufferTimesEmptied, 0 ),
+			new AppMetric( AppMetricId.BufferTimesFilled, 0 )
+		);
 
 		public StandardTaskBuffer ( int capacity )
 		{
@@ -62,8 +70,46 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckDisposedOrThrow ()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( StandardTaskBuffer ), 
+				throw new ObjectDisposedException( nameof( StandardTaskBuffer ),
 					"Cannot reuse a disposed task buffer" );
+		}
+
+		private void IncrementTimesFilled ()
+		{
+			mMetrics.UpdateMetric( AppMetricId.BufferTimesFilled,
+				m => m.Increment() );
+		}
+
+		private void IncrementTimesEmptied ()
+		{
+			mMetrics.UpdateMetric( AppMetricId.BufferTimesEmptied,
+				m => m.Increment() );
+		}
+
+		private void UpdateOnBufferItemAdd ( int newCount, bool wasFull )
+		{
+			bool isFull = newCount == mCapacity;
+
+			UpdateBufferCountStats( newCount );
+			if ( !wasFull && isFull )
+				IncrementTimesFilled();
+		}
+
+		private void UpdateOnBufferItemRemove ( int newCount, bool wasEmpty )
+		{
+			bool isEmpty = newCount == 0;
+
+			UpdateBufferCountStats( newCount );
+			if ( !wasEmpty && isEmpty )
+				IncrementTimesEmptied();
+		}
+
+		private void UpdateBufferCountStats ( int newCount )
+		{
+			mMetrics.UpdateMetric( AppMetricId.BufferMaxCount,
+				m => m.Max( newCount ) );
+			mMetrics.UpdateMetric( AppMetricId.BufferMinCount,
+				m => m.Min( newCount ) );
 		}
 
 		private void NotifyQueuedTaskRetrieved ()
@@ -90,9 +136,15 @@ namespace LVD.Stakhanovise.NET.Processor
 			if ( mInnerBuffer.IsAddingCompleted )
 				return false;
 
+			int oldCount = mInnerBuffer.Count;
+			bool wasFull = ( oldCount == mCapacity );
 			bool isAdded = mInnerBuffer.TryAdd( task );
+
 			if ( isAdded )
+			{
 				NotifyQueuedTaskAdded();
+				UpdateOnBufferItemAdd( Math.Min( mCapacity, oldCount + 1 ), wasFull );
+			}
 
 			return isAdded;
 		}
@@ -101,12 +153,16 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			CheckDisposedOrThrow();
 
-			IQueuedTaskToken newTaskToken;
-			if ( !mInnerBuffer.TryTake( out newTaskToken ) )
+			int oldCount = mInnerBuffer.Count;
+			bool wasEmpty = ( oldCount == 0 );
+			if ( !mInnerBuffer.TryTake( out IQueuedTaskToken newTaskToken ) )
 				newTaskToken = null;
 
 			if ( newTaskToken != null )
+			{
 				NotifyQueuedTaskRetrieved();
+				UpdateOnBufferItemRemove( Math.Max( 0, oldCount - 1 ), wasEmpty );
+			}
 
 			return newTaskToken;
 		}
@@ -137,14 +193,28 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
+		public AppMetric QueryMetric ( AppMetricId metricId )
+		{
+			return mMetrics.QueryMetric( metricId );
+		}
+
+		public IEnumerable<AppMetric> CollectMetrics ()
+		{
+			return mMetrics.CollectMetrics();
+		}
+
 		public int Count => mInnerBuffer.Count;
 
 		public bool HasTasks => mInnerBuffer.Count > 0;
+
+		public bool IsEmpty => !HasTasks;
 
 		public bool IsFull => mInnerBuffer.Count == mCapacity;
 
 		public int Capacity => mCapacity;
 
 		public bool IsCompleted => mInnerBuffer.IsCompleted;
+
+		public IEnumerable<AppMetricId> ExportedMetrics => mMetrics.ExportedMetrics;
 	}
 }

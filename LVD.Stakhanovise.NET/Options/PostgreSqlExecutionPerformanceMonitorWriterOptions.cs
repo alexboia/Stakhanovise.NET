@@ -38,10 +38,12 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class PostgreSqlExecutionPerformanceMonitorWriterOptions
 	{
-		public PostgreSqlExecutionPerformanceMonitorWriterOptions ( ConnectionOptions connectionOptions )
+		public PostgreSqlExecutionPerformanceMonitorWriterOptions ( ConnectionOptions connectionOptions, QueuedTaskMapping mapping )
 		{
 			ConnectionOptions = connectionOptions 
 				?? throw new ArgumentNullException( nameof( connectionOptions ) );
+			Mapping = mapping
+				?? throw new ArgumentNullException( nameof( mapping ) );
 		}
 
 		public ConnectionOptions ConnectionOptions { get; private set; }

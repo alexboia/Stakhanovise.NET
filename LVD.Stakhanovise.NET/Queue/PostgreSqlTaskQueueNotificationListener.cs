@@ -31,15 +31,20 @@
 // 
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Logging;
+using LVD.Stakhanovise.NET.Model;
 using Npgsql;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class PostgreSqlTaskQueueNotificationListener : ITaskQueueNotificationListener, IDisposable
+	public class PostgreSqlTaskQueueNotificationListener : ITaskQueueNotificationListener,
+		IAppMetricsProvider,
+		IDisposable
 	{
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
@@ -60,18 +65,24 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string mNewTaskNotificationChannelName;
 
-		private PostgreSqlTaskQueueNotificationListenerDiagnostics mDiagnostics =
-			PostgreSqlTaskQueueNotificationListenerDiagnostics.Zero;
-
-		private StateController mNewTaskUpdatesStateController =
+		private StateController mStateController =
 			new StateController();
 
-		private CancellationTokenSource mWaitForTaskUpdatesCancellationTokenSource;
+		private CancellationTokenSource mStopTokenSource;
 
 		private ManualResetEvent mWaitForFirstStartWaitHandle =
 			new ManualResetEvent( initialState: false );
 
 		private Task mNewTaskUpdatesListenerTask;
+
+		private int mListenerConnectionBackendProcessId;
+
+		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		(
+			AppMetricId.ListenerTaskNotificationCount,
+			AppMetricId.ListenerReconnectCount,
+			AppMetricId.ListenerNotificationWaitTimeoutCount
+		);
 
 		public PostgreSqlTaskQueueNotificationListener ( string signalingConnectionString, string newTaskNotificationChannelName )
 		{
@@ -92,17 +103,32 @@ namespace LVD.Stakhanovise.NET.Queue
 					"Cannot reuse a disposed task queue notification listener" );
 		}
 
-		private void HandleTaskUpdateReceived ( object sender, NpgsqlNotificationEventArgs e )
+		private void UpdateListenerConnectionBackendProcessId ( int connectionProcessId )
 		{
-			ProcessNewTaskPosted();
+			mListenerConnectionBackendProcessId = connectionProcessId;
 		}
 
-		private void ProcessNewTaskPosted ()
+		private void IncrementListenerReconnectCount ()
 		{
-			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount + 1,
-				mDiagnostics.ReconnectCount,
-				mDiagnostics.ConnectionBackendProcessId,
-				mDiagnostics.WaitTimeoutCount );
+			mMetrics.UpdateMetric( AppMetricId.ListenerReconnectCount,
+				m => m.Increment() );
+		}
+
+		private void IncrementListenerTaskNotificationCount ()
+		{
+			mMetrics.UpdateMetric( AppMetricId.ListenerTaskNotificationCount,
+				m => m.Increment() );
+		}
+
+		private void IncrementListenerNotificationWaitTimeoutCount ()
+		{
+			mMetrics.UpdateMetric( AppMetricId.ListenerNotificationWaitTimeoutCount,
+				m => m.Increment() );
+		}
+
+		private void HandleTaskUpdateReceived ( object sender, NpgsqlNotificationEventArgs e )
+		{
+			IncrementListenerTaskNotificationCount();
 
 			EventHandler<NewTaskPostedEventArgs> eventHandler = NewTaskPosted;
 			if ( eventHandler != null )
@@ -111,10 +137,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void ProcessListenerConnectionRestored ( int connectionProcessId )
 		{
-			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount,
-				mDiagnostics.ReconnectCount + 1,
-				connectionProcessId,
-				mDiagnostics.WaitTimeoutCount );
+			IncrementListenerReconnectCount();
+			UpdateListenerConnectionBackendProcessId( connectionProcessId );
 
 			EventHandler<ListenerConnectionRestoredEventArgs> eventHandler = ListenerConnectionRestored;
 			if ( eventHandler != null )
@@ -124,10 +148,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private void ProcessListenerConnected ( int connectionProcessId )
 		{
 			mWaitForFirstStartWaitHandle.Set();
-			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount,
-				mDiagnostics.ReconnectCount,
-				connectionProcessId,
-				mDiagnostics.WaitTimeoutCount );
+			UpdateListenerConnectionBackendProcessId( connectionProcessId );
 
 			EventHandler<ListenerConnectedEventArgs> eventHandler = ListenerConnected;
 			if ( eventHandler != null )
@@ -136,10 +157,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void ProcessListenerTimedOutWhileWaiting ()
 		{
-			mDiagnostics = new PostgreSqlTaskQueueNotificationListenerDiagnostics( mDiagnostics.NotificationCount,
-				mDiagnostics.ReconnectCount,
-				mDiagnostics.ConnectionBackendProcessId,
-				mDiagnostics.WaitTimeoutCount + 1 );
+			IncrementListenerNotificationWaitTimeoutCount();
 
 			EventHandler<ListenerTimedOutEventArgs> eventHandler = ListenerTimedOutWhileWaiting;
 			if ( eventHandler != null )
@@ -197,13 +215,10 @@ namespace LVD.Stakhanovise.NET.Queue
 					if ( !hadNotification )
 					{
 						ProcessListenerTimedOutWhileWaiting();
-						mLogger.Debug( "Listener timed out while waiting. Checking cancellation token and restarting wait" );
+						mLogger.Debug( "Listener timed out while waiting. Checking stop token and restarting wait..." );
 					}
 					else
-					{
-						mLogger.DebugFormat( "Notification received on channel {0}...",
-							mNewTaskNotificationChannelName );
-					}
+						mLogger.Debug( "Task Notification received." );
 				}
 				catch ( NullReferenceException exc )
 				{
@@ -218,11 +233,14 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private async Task ListenForNewTaskUpdatesAsync ()
+		private async Task ListenForTaskUpdates ()
 		{
 			NpgsqlConnection signalingConn = null;
-			CancellationToken cancellationToken = mWaitForTaskUpdatesCancellationTokenSource
+			CancellationToken stopToken = mStopTokenSource
 				.Token;
+
+			if ( stopToken.IsCancellationRequested )
+				return;
 
 			try
 			{
@@ -230,7 +248,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				{
 					try
 					{
-						cancellationToken.ThrowIfCancellationRequested();
+						stopToken.ThrowIfCancellationRequested();
 						//Signaling connection is not open:
 						//  either is the first time we are connecting
 						//  or the connection failed and we must attempt a reconnect
@@ -241,13 +259,13 @@ namespace LVD.Stakhanovise.NET.Queue
 						//  set the wait handle for the first connection 
 						//  to signal the completion of the initial listener start-up;
 						//  otherwise notify that the connection has been lost and subsequently restored.
-						if ( mDiagnostics.ConnectionBackendProcessId <= 0 )
+						if ( mListenerConnectionBackendProcessId <= 0 )
 							ProcessListenerConnected( signalingConn.ProcessID );
 						else
 							ProcessListenerConnectionRestored( signalingConn.ProcessID );
 
 						///Start notification wait loop
-						WaitForNotifications( signalingConn, cancellationToken );
+						WaitForNotifications( signalingConn, stopToken );
 					}
 					catch ( NpgsqlException exc )
 					{
@@ -278,36 +296,66 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
+		private async Task DoStartupSequenceAsync ()
+		{
+			mLogger.DebugFormat( "Starting queue notification listener for channel {0}...",
+				mNewTaskNotificationChannelName );
+
+			//Reset wait handle and create cancellation token source
+			mWaitForFirstStartWaitHandle.Reset();
+			mStopTokenSource = new CancellationTokenSource();
+
+			//Reset diagnostics and start the listener thread
+			mListenerConnectionBackendProcessId = 0;
+			mNewTaskUpdatesListenerTask = Task.Run( async ()
+				=> await ListenForTaskUpdates() );
+
+			//Wait for connection to be established
+			await mWaitForFirstStartWaitHandle.ToTask();
+
+			mLogger.DebugFormat( "Successfully started queue notification listener for channel {0}.",
+				mNewTaskNotificationChannelName );
+		}
+
 		public async Task StartAsync ()
 		{
 			CheckDisposedOrThrow();
 
 			mLogger.Debug( "Received request to start listening for queue notifications." );
-			if ( mNewTaskUpdatesStateController.IsStopped )
-			{
-				await mNewTaskUpdatesStateController.TryRequestStartAsync( async () =>
-				{
-					mLogger.DebugFormat( "Starting queue notification listener for channel {0}...",
-						mNewTaskNotificationChannelName );
-
-					//Reset wait handle and create cancellation token source
-					mWaitForFirstStartWaitHandle.Reset();
-					mWaitForTaskUpdatesCancellationTokenSource =
-						new CancellationTokenSource();
-
-					//Reset diagnostics and start the listener thread
-					mDiagnostics = PostgreSqlTaskQueueNotificationListenerDiagnostics.Zero;
-					mNewTaskUpdatesListenerTask = Task.Run( ListenForNewTaskUpdatesAsync );
-
-					//Wait for connection to be established
-					await mWaitForFirstStartWaitHandle.ToTask();
-
-					mLogger.DebugFormat( "Successfully started queue notification listener for channel {0}.",
-						mNewTaskNotificationChannelName );
-				} );
-			}
+			if ( mStateController.IsStopped )
+				await mStateController.TryRequestStartAsync( async () =>
+					await DoStartupSequenceAsync() );
 			else
 				mLogger.Debug( "Queue notification listener is not stopped. Nothing to do." );
+		}
+
+		private async Task DoShutdownSequenceAsync ()
+		{
+			mLogger.DebugFormat( "Stopping queue notification listener for channel {0}...",
+				mNewTaskNotificationChannelName );
+
+			try
+			{
+				//Request cancellation and wait 
+				//  for the task to complete
+				mStopTokenSource.Cancel();
+				await mNewTaskUpdatesListenerTask;
+			}
+			finally
+			{
+				//Reset wait handle and diagnostics
+				mWaitForFirstStartWaitHandle.Reset();
+				mListenerConnectionBackendProcessId = 0;
+
+				//Cleanup cancellation token source 
+				//	and the listener task
+				mStopTokenSource?.Dispose();
+				mStopTokenSource = null;
+				mNewTaskUpdatesListenerTask = null;
+			}
+
+			mLogger.DebugFormat( "Successfully stopped queue notification listener for channel {0}.",
+				mNewTaskNotificationChannelName );
 		}
 
 		public async Task StopAsync ()
@@ -315,37 +363,9 @@ namespace LVD.Stakhanovise.NET.Queue
 			CheckDisposedOrThrow();
 
 			mLogger.Debug( "Received request to stop listening for queue notifications." );
-			if ( mNewTaskUpdatesStateController.IsStarted )
-			{
-				await mNewTaskUpdatesStateController.TryRequestStopASync( async () =>
-				{
-					mLogger.DebugFormat( "Stopping queue notification listener for channel {0}...",
-						mNewTaskNotificationChannelName );
-
-					try
-					{
-						//Request cancellation and wait 
-						//  for the task to complete
-						mWaitForTaskUpdatesCancellationTokenSource.Cancel();
-						await mNewTaskUpdatesListenerTask;
-					}
-					finally
-					{
-						//Reset wait handle and diagnostics
-						mWaitForFirstStartWaitHandle.Reset();
-						mDiagnostics = PostgreSqlTaskQueueNotificationListenerDiagnostics.Zero;
-
-						//Cleanup cancellation token source 
-						//	and the listener task
-						mWaitForTaskUpdatesCancellationTokenSource?.Dispose();
-						mWaitForTaskUpdatesCancellationTokenSource = null;
-						mNewTaskUpdatesListenerTask = null;
-					}
-
-					mLogger.DebugFormat( "Successfully stopped queue notification listener for channel {0}.",
-						mNewTaskNotificationChannelName );
-				} );
-			}
+			if ( mStateController.IsStarted )
+				await mStateController.TryRequestStopASync( async () => 
+					await DoShutdownSequenceAsync() );
 			else
 				mLogger.Debug( "Queue notification listener is not started. Nothing to do." );
 		}
@@ -364,9 +384,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				{
 					StopAsync().Wait();
 
-					if ( mWaitForFirstStartWaitHandle != null )
-						mWaitForFirstStartWaitHandle.Dispose();
-
+					mWaitForFirstStartWaitHandle?.Dispose();
 					mWaitForFirstStartWaitHandle = null;
 				}
 
@@ -374,21 +392,39 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
+		public AppMetric QueryMetric ( AppMetricId metricId )
+		{
+			return mMetrics.QueryMetric( metricId );
+		}
+
+		public IEnumerable<AppMetric> CollectMetrics ()
+		{
+			return mMetrics.CollectMetrics();
+		}
+
 		public bool IsStarted
 		{
 			get
 			{
 				CheckDisposedOrThrow();
-				return mNewTaskUpdatesStateController.IsStarted;
+				return mStateController.IsStarted;
 			}
 		}
 
-		public PostgreSqlTaskQueueNotificationListenerDiagnostics Diagnostics
+		public int ListenerConnectionBackendProcessId
 		{
 			get
 			{
 				CheckDisposedOrThrow();
-				return mDiagnostics;
+				return mListenerConnectionBackendProcessId;
+			}
+		}
+
+		public IEnumerable<AppMetricId> ExportedMetrics
+		{
+			get
+			{
+				return mMetrics.ExportedMetrics;
 			}
 		}
 	}
