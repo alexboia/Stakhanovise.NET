@@ -95,9 +95,10 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public static PostgreSqlExecutionPerformanceMonitorWriterOptions GetDefaultPostgreSqlExecutionPerformanceMonitorWriterOptions ( string connectionString )
 		{
 			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( new ConnectionOptions( connectionString,
-				keepAliveSeconds: 0,
-				retryCount: 3,
-				retryDelayMilliseconds: 250 ) );
+					keepAliveSeconds: 0,
+					retryCount: 3,
+					retryDelayMilliseconds: 250 ), 
+				mapping: DefaultMapping );
 		}
 	}
 }

@@ -285,7 +285,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private async Task SendNewTaskNotificationAsync ()
 		{
 			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
-				await db.NotifyAsync( mConsumerOptions.Mapping.NewTaskNotificaionChannelName, null );
+				await db.NotifyAsync( mConsumerOptions.Mapping.NewTaskNotificationChannelName, null );
 			await Task.Delay( 100 );
 		}
 

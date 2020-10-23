@@ -113,7 +113,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					reconnectsRemaining = Math.Max( reconnectsRemaining - 1, 0 );
 					if ( reconnectsRemaining > 0 )
 					{
-						WaitAndTerminateConnectionAsync( listener.Diagnostics.ConnectionBackendProcessId,
+						WaitAndTerminateConnectionAsync( listener.ListenerConnectionBackendProcessId,
 							syncHandle: null,
 							timeout: RandomTimeout() );
 					}
@@ -123,7 +123,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				await listener.StartAsync();
 
-				WaitAndTerminateConnectionAsync( listener.Diagnostics.ConnectionBackendProcessId,
+				WaitAndTerminateConnectionAsync( listener.ListenerConnectionBackendProcessId,
 					syncHandle: null,
 					timeout: 1000 ).WithoutAwait();
 
@@ -151,7 +151,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					notificationsReceived++;
 					if ( reconnectsRemaining > 0 )
 					{
-						WaitAndTerminateConnectionAsync( listener.Diagnostics.ConnectionBackendProcessId,
+						WaitAndTerminateConnectionAsync( listener.ListenerConnectionBackendProcessId,
 							syncHandle: null,
 							timeout: RandomTimeout() );
 					}
@@ -167,7 +167,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				await listener.StartAsync();
 
-				WaitAndTerminateConnectionAsync( listener.Diagnostics.ConnectionBackendProcessId,
+				WaitAndTerminateConnectionAsync( listener.ListenerConnectionBackendProcessId,
 					syncHandle: null,
 					timeout: RandomTimeout() ).WithoutAwait();
 

@@ -69,7 +69,6 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<TaskPerformanceStats> actualWrittenStats =
 				new List<TaskPerformanceStats>();
 
-			writerMock.Setup( w => w.SetupIfNeededAsync() );
 			writerMock.Setup( w => w.WriteAsync( It.IsAny<IEnumerable<TaskPerformanceStats>>() ) )
 				.Callback<IEnumerable<TaskPerformanceStats>>( ws => actualWrittenStats.AddRange( ws ) );
 
@@ -111,7 +110,6 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			Task[] producers = new Task[ nProducers ];
 
-			writerMock.Setup( w => w.SetupIfNeededAsync() );
 			writerMock.Setup( w => w.WriteAsync( It.IsAny<IEnumerable<TaskPerformanceStats>>() ) )
 				.Callback<IEnumerable<TaskPerformanceStats>>( ws =>
 				{
