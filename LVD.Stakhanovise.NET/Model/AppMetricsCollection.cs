@@ -63,7 +63,7 @@ namespace LVD.Stakhanovise.NET.Model
 
 			mMetrics = new Dictionary<AppMetricId, AppMetric>();
 			foreach ( AppMetric metric in withMetrics )
-				mMetrics.Add( metric.Id, metric );
+				mMetrics.Add( metric.Id, metric.Copy() );
 		}
 
 		private static Dictionary<AppMetricId, AppMetric> JoinMetricsFromProviders ( IEnumerable<IAppMetricsProvider> collections )

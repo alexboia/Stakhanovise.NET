@@ -66,7 +66,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			for ( int i = 0; i < nThreads; i++ )
 				threadValues.Add( faker.Random.Long() );
 
-			AppMetric metric = new AppMetric( AppMetricId.BufferMaxCount,
+			AppMetric metric = new AppMetric( faker.PickRandom( AppMetricId.BuiltInAppMetricIds ),
 				initialValue );
 
 			for ( int i = 0; i < nThreads; i++ )
@@ -103,7 +103,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			Thread[] threads = new Thread[ nThreads ];
 
-			AppMetric metric = new AppMetric( AppMetricId.BufferMaxCount,
+			AppMetric metric = new AppMetric( faker.PickRandom( AppMetricId.BuiltInAppMetricIds ),
 				0 );
 
 			for ( int i = 0; i < nThreads; i++ )
@@ -129,7 +129,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker = new Faker();
 			Thread[] threads = new Thread[ nThreads ];
 
-			AppMetric metric = new AppMetric( AppMetricId.BufferMaxCount,
+			AppMetric metric = new AppMetric( faker.PickRandom( AppMetricId.BuiltInAppMetricIds ),
 				nThreads );
 
 			for ( int i = 0; i < nThreads; i++ )
@@ -156,7 +156,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Thread[] threads = new Thread[ nThreads ];
 			long valueToAdd = faker.Random.Long( 1, 10 );
 
-			AppMetric metric = new AppMetric( AppMetricId.BufferMaxCount,
+			AppMetric metric = new AppMetric( faker.PickRandom( AppMetricId.BuiltInAppMetricIds ),
 				0 );
 
 			for ( int i = 0; i < nThreads; i++ )
@@ -191,7 +191,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			for ( int i = 0; i < nThreads; i++ )
 				threadValues.Add( initialValue - i - 1 );
 
-			AppMetric metric = new AppMetric( AppMetricId.BufferMaxCount,
+			AppMetric metric = new AppMetric( faker.PickRandom( AppMetricId.BuiltInAppMetricIds ),
 				long.MaxValue );
 
 			for ( int i = 0; i < nThreads; i++ )
@@ -231,7 +231,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			for ( int i = 0; i < nThreads; i++ )
 				threadValues.Add( initialValue + i + 1 );
 
-			AppMetric metric = new AppMetric( AppMetricId.BufferMaxCount,
+			AppMetric metric = new AppMetric( faker.PickRandom( AppMetricId.BuiltInAppMetricIds ),
 				long.MinValue );
 
 			for ( int i = 0; i < nThreads; i++ )
@@ -260,9 +260,11 @@ namespace LVD.Stakhanovise.NET.Tests
 			long value1 = faker.Random.Long( 1, 1000 );
 			long value2 = faker.Random.Long( 1, 1000 );
 
-			AppMetric metric1 = new AppMetric( AppMetricId.BufferMaxCount,
+			AppMetricId metricId = faker.PickRandom( AppMetricId.BuiltInAppMetricIds );
+
+			AppMetric metric1 = new AppMetric( metricId,
 				value1 );
-			AppMetric metric2 = new AppMetric( AppMetricId.BufferMaxCount,
+			AppMetric metric2 = new AppMetric( metricId,
 				value2 );
 
 			AppMetric metric = metric1.JoinWith( metric2 );

@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Processor;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
 
@@ -163,6 +164,9 @@ namespace LVD.Stakhanovise.NET.Model
 			new AppMetricId( "perf-mon@report-requests-timeout-count", 
 				valueCategory: "execution-perf-mon" );
 
+		private static readonly SupportedValuesContainer<AppMetricId, string> mBuiltInAppMetricIds
+			= new SupportedValuesContainer<AppMetricId, string>( m => m.ValueId );
+
 		public AppMetricId ( string valueId, string valueCategory )
 		{
 			if ( string.IsNullOrEmpty( valueId ) )
@@ -172,6 +176,16 @@ namespace LVD.Stakhanovise.NET.Model
 
 			ValueId = valueId;
 			ValueCategory = valueCategory;
+		}
+
+		public static bool IsSupported(string valueId)
+		{
+			return mBuiltInAppMetricIds.IsSupported( valueId );
+		}
+
+		public static AppMetricId TryParse(string valueId)
+		{
+			return mBuiltInAppMetricIds.TryParse( valueId );
 		}
 
 		public bool Equals ( AppMetricId other )
@@ -204,5 +218,8 @@ namespace LVD.Stakhanovise.NET.Model
 		public string ValueId { get; private set; }
 
 		public string ValueCategory { get; private set; }
+
+		public static IEnumerable<AppMetricId> BuiltInAppMetricIds 
+			=> mBuiltInAppMetricIds.SupportedValues;
 	}
 }
