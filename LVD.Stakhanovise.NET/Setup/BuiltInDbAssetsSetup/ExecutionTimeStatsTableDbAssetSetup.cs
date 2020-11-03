@@ -29,14 +29,46 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Helpers;
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
-	public interface IPostgreSqlAppMetricsMonitorWriterSetup
+	public class ExecutionTimeStatsTableDbAssetSetup : ISetupDbAsset
 	{
-		IPostgreSqlAppMetricsMonitorWriterSetup WithConnectionOptions ( Action<IConnectionSetup> setupAction );
+		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
+		{
+			return $@"CREATE TABLE public.{mapping.ExecutionTimeStatsTableName}
+				(
+					et_payload_type character varying(255) NOT NULL,
+					et_n_execution_cycles bigint NOT NULL,
+					et_last_execution_time bigint NOT NULL,
+					et_avg_execution_time bigint NOT NULL,
+					et_fastest_execution_time bigint NOT NULL,
+					et_longest_execution_time bigint NOT NULL,
+					et_total_execution_time bigint NOT NULL,
+					CONSTRAINT pk_{mapping.ExecutionTimeStatsTableName}_et_payload_tpe PRIMARY KEY ( et_payload_type)
+				);";
+		}
+
+		public async Task SetupDbAssetAsync ( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
+		{
+			if ( queueConnectionOptions == null )
+				throw new ArgumentNullException( nameof( queueConnectionOptions ) );
+			if ( mapping == null )
+				throw new ArgumentNullException( nameof( mapping ) );
+
+			using ( NpgsqlConnection conn = await queueConnectionOptions.TryOpenConnectionAsync() )
+			{
+				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), conn ) )
+					await cmdTable.ExecuteNonQueryAsync();
+			}
+		}
 	}
 }

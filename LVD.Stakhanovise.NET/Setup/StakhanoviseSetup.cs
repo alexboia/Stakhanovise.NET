@@ -68,14 +68,25 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardAppMetricsMonitorSetup mAppMetricsMonitorSetup;
 
+		private StandardConnectionSetup mSetupDbAssetsConnectionSetup;
+
 		private IStakhanoviseLoggingProvider mLoggingProvider;
 
 		private bool mRegisterOwnDependencies = true;
+
+		private bool mSetupBuiltInDbAsssets = true;
+
+		private QueuedTaskMapping mMapping;
 
 		public StakhanoviseSetup ( StakhanoviseSetupDefaults defaults )
 		{
 			if ( defaults == null )
 				throw new ArgumentNullException( nameof( defaults ) );
+
+			mMapping = defaults.Mapping;
+
+			mSetupBuiltInDbAsssets = defaults
+				.SetupBuiltInDbAsssets;
 
 			mAppMetricsMonitoringEnabled = defaults
 				.AppMetricsMonitoringEnabled;
@@ -98,6 +109,9 @@ namespace LVD.Stakhanovise.NET.Setup
 			StandardConnectionSetup builtInAppMetricsWriterConnectionSetup =
 				new StandardConnectionSetup();
 
+			mSetupDbAssetsConnectionSetup =
+				new StandardConnectionSetup();
+
 			mTaskQueueProducerSetup = new StandardTaskQueueProducerSetup( queueProducerConnectionSetup,
 				defaultMapping: defaults.Mapping );
 
@@ -109,7 +123,8 @@ namespace LVD.Stakhanovise.NET.Setup
 				queueInfoConnectionSetup,
 				builtInTimingBeltConnectionSetup,
 				builtInWriterConnectionSetup,
-				builtInAppMetricsWriterConnectionSetup );
+				builtInAppMetricsWriterConnectionSetup,
+				mSetupDbAssetsConnectionSetup );
 
 			mTaskQueueConsumerSetup = new StandardTaskQueueConsumerSetup( queueConsumerConnectionSetup,
 				defaults );
@@ -208,6 +223,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			mPerformanceMonitorWriterSetup.WithMappingForBuiltInWriter( mapping );
 			mAppMetricsMonitorWriterSetup.WithMappingForBuiltInWriter( mapping );
 
+			mMapping = mapping;
 			return this;
 		}
 
@@ -257,6 +273,36 @@ namespace LVD.Stakhanovise.NET.Setup
 		{
 			mRegisterOwnDependencies = false;
 			return this;
+		}
+
+		public IStakhanoviseSetup DontSetupBuiltInDbAssets ()
+		{
+			mSetupBuiltInDbAsssets = false;
+			return this;
+		}
+
+		public DbAssetFactory BuildDbAssetFactory ()
+		{
+			List<ISetupDbAsset> dbAssetSetup = new List<ISetupDbAsset>();
+			ConnectionOptions setupDbAssetsConnectionOptions = mSetupDbAssetsConnectionSetup
+				.BuildOptions();
+
+			if ( mSetupBuiltInDbAsssets )
+			{
+				dbAssetSetup.Add( new QueueTableDbAssetSetup() );
+				dbAssetSetup.Add( new DequeueFunctionDbAssetSetup() );
+				dbAssetSetup.Add( new QueueResultTableDbAssetSetup() );
+
+				if ( mAppMetricsMonitoringEnabled && mAppMetricsMonitorWriterSetup.UseBuiltInWriter )
+					dbAssetSetup.Add( new AppMetricsTableDbAssetSetup() );
+
+				if ( mPerformanceMonitorWriterSetup.UseBuiltInWriter )
+					dbAssetSetup.Add( new ExecutionTimeStatsTableDbAssetSetup() );
+			}
+
+			return new DbAssetFactory( dbAssetSetup,
+				setupDbAssetsConnectionOptions,
+				mMapping );
 		}
 
 		public ITaskEngine BuildTaskEngine ()

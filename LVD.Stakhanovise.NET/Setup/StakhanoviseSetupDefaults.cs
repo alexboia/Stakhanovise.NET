@@ -55,5 +55,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		public int AppMetricsCollectionIntervalMilliseconds { get; set; }
 
 		public bool AppMetricsMonitoringEnabled { get; set; }
+
+		public bool SetupBuiltInDbAsssets { get; set; }
 	}
 }

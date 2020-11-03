@@ -29,14 +29,17 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
-	public interface IPostgreSqlAppMetricsMonitorWriterSetup
+	public interface ISetupDbAsset
 	{
-		IPostgreSqlAppMetricsMonitorWriterSetup WithConnectionOptions ( Action<IConnectionSetup> setupAction );
+		Task SetupDbAssetAsync ( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping );
 	}
 }

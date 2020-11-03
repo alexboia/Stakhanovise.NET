@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Setup.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -50,6 +51,8 @@ namespace LVD.Stakhanovise.NET
 		private ITaskEngine mEngine;
 
 		private IAppMetricsMonitor mAppMetricsMonitor;
+
+		private DbAssetFactory mDbAssetFactory;
 
 		public Stakhanovise ()
 		{
@@ -72,7 +75,8 @@ namespace LVD.Stakhanovise.NET
 				FaultErrorThresholdCount = 5,
 
 				AppMetricsCollectionIntervalMilliseconds = 10000,
-				AppMetricsMonitoringEnabled = true
+				AppMetricsMonitoringEnabled = true,
+				SetupBuiltInDbAsssets = true
 			};
 
 			//Init setup API
@@ -114,11 +118,17 @@ namespace LVD.Stakhanovise.NET
 		{
 			CheckNotDisposedOrThrow();
 
+			if ( mDbAssetFactory != null )
+				mDbAssetFactory = mStakhanoviseSetup.BuildDbAssetFactory();
+
 			if ( mEngine == null )
 				mEngine = mStakhanoviseSetup.BuildTaskEngine();
 
 			if ( mAppMetricsMonitor == null )
 				mAppMetricsMonitor = mStakhanoviseSetup.BuildAppMetricsMonitor();
+
+			if ( mDbAssetFactory != null )
+				await mDbAssetFactory.CreateDbAssetsAsync();
 
 			if ( !mEngine.IsRunning )
 				await mEngine.StartAsync();
@@ -150,9 +160,14 @@ namespace LVD.Stakhanovise.NET
 			{
 				if ( disposing )
 				{
-					StopFulfillingFiveYearPlanAsync().Wait();
+					StopFulfillingFiveYearPlanAsync()
+						.Wait();
+
 					mEngine?.Dispose();
 					mEngine = null;
+
+					mAppMetricsMonitor = null;
+					mDbAssetFactory = null;
 
 					IDisposable disposableAppMetricsMonitor = mAppMetricsMonitor as IDisposable;
 					if ( disposableAppMetricsMonitor != null )

@@ -29,14 +29,53 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
+using Npgsql;
+using LVD.Stakhanovise.NET.Helpers;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
-	public interface IPostgreSqlAppMetricsMonitorWriterSetup
+	public class AppMetricsTableDbAssetSetup : ISetupDbAsset
 	{
-		IPostgreSqlAppMetricsMonitorWriterSetup WithConnectionOptions ( Action<IConnectionSetup> setupAction );
+		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
+		{
+			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.MetricsTableName}
+				(
+					metric_id character varying(250) NOT NULL,
+					metric_category character varying( 150 ) NOT NULL,
+					metric_value bigint NOT NULL DEFAULT 0,
+					metric_last_updated timestamp with time zone NOT NULL DEFAULT now(),
+					CONSTRAINT {mapping.MetricsTableName}_pkey PRIMARY KEY ( metric_id)
+				);";
+		}
+
+		private string GetDbTableIndexCreationScript ( QueuedTaskMapping mapping )
+		{
+			return $@"CREATE INDEX IF NOT EXISTS idx_{mapping.MetricsTableName}_metric_category
+					ON public.{mapping.MetricsTableName} USING btree 
+					(metric_category ASC NULLS LAST);";
+		}
+
+		public async Task SetupDbAssetAsync ( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
+		{
+			if ( queueConnectionOptions == null )
+				throw new ArgumentNullException( nameof( queueConnectionOptions ) );
+			if ( mapping == null )
+				throw new ArgumentNullException( nameof( mapping ) );
+
+			using ( NpgsqlConnection conn = await queueConnectionOptions.TryOpenConnectionAsync() )
+			{
+				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), conn ) )
+					await cmdTable.ExecuteNonQueryAsync();
+
+				using ( NpgsqlCommand cmdTableIndex = new NpgsqlCommand( GetDbTableIndexCreationScript( mapping ), conn ) )
+					await cmdTableIndex.ExecuteNonQueryAsync();
+			}
+		}
 	}
 }

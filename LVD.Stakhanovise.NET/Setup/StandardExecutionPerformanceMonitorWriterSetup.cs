@@ -92,11 +92,12 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public IExecutionPerformanceMonitorWriter BuildWriter ()
 		{
-			if ( mWriterFactory == null )
-				return new PostgreSqlExecutionPerformanceMonitorWriter( mBuiltInWriterSetup
-					.BuildOptions() );
+			if ( UseBuiltInWriter )
+				return new PostgreSqlExecutionPerformanceMonitorWriter( mBuiltInWriterSetup.BuildOptions() );
 			else
 				return mWriterFactory.Invoke();
 		}
+
+		public bool UseBuiltInWriter => mWriterFactory != null;
 	}
 }

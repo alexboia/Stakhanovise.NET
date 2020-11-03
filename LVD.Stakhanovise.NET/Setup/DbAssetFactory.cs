@@ -29,14 +29,47 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
+using LVD.Stakhanovise.NET.Setup.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
-	public interface IPostgreSqlAppMetricsMonitorWriterSetup
+	public class DbAssetFactory
 	{
-		IPostgreSqlAppMetricsMonitorWriterSetup WithConnectionOptions ( Action<IConnectionSetup> setupAction );
+		private IList<ISetupDbAsset> mAssetSetups;
+
+		private ConnectionOptions mConnectionOptions;
+
+		private QueuedTaskMapping mMapping;
+
+		public DbAssetFactory ( IList<ISetupDbAsset> assets,
+			ConnectionOptions connectionOptions,
+			QueuedTaskMapping mapping )
+		{
+			mAssetSetups = assets
+				?? throw new ArgumentNullException( nameof( assets ) );
+			mConnectionOptions = connectionOptions
+				?? throw new ArgumentNullException( nameof( connectionOptions ) );
+			mMapping = mapping
+				?? throw new ArgumentNullException( nameof( mapping ) );
+		}
+
+		public async Task CreateDbAssetsAsync ()
+		{
+			try
+			{
+				foreach ( ISetupDbAsset dbAssetSetup in mAssetSetups )
+					await dbAssetSetup.SetupDbAssetAsync( mConnectionOptions, mMapping );
+			}
+			catch ( Exception exc )
+			{
+				throw new StakhanoviseSetupException( "One or more database assets could not be installed.", exc );
+			}
+		}
 	}
 }

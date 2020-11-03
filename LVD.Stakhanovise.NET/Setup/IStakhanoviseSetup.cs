@@ -29,6 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Logging;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -41,6 +42,8 @@ namespace LVD.Stakhanovise.NET.Setup
 		IStakhanoviseSetup SetupPerformanceMonitorWriter ( Action<IExecutionPerformanceMonitorWriterSetup> setupAction );
 
 		IStakhanoviseSetup DisableAppMetricsMonitoring ();
+
+		IStakhanoviseSetup WithLoggingProvider ( IStakhanoviseLoggingProvider loggingProvider );
 
 		IStakhanoviseSetup SetupAppMetricsMonitor ( Action<IAppMetricsMonitorSetup> setupAction );
 
@@ -59,5 +62,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		IStakhanoviseSetup SetupTaskQueueProducer ( Action<ITaskQueueProducerSetup> setupAction );
 
 		IStakhanoviseSetup SetupTaskQueueInfo ( Action<ITaskQueueInfoSetup> setupAction );
+
+		IStakhanoviseSetup DontSetupBuiltInDbAssets ();
 	}
 }

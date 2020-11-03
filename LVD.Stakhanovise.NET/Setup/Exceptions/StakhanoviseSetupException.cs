@@ -33,10 +33,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Setup
+namespace LVD.Stakhanovise.NET.Setup.Exceptions
 {
-	public interface IPostgreSqlAppMetricsMonitorWriterSetup
+	public class StakhanoviseSetupException : System.Exception
 	{
-		IPostgreSqlAppMetricsMonitorWriterSetup WithConnectionOptions ( Action<IConnectionSetup> setupAction );
+		public StakhanoviseSetupException ( string message, System.Exception exc )
+			: base( message, exc )
+		{
+			return;
+		}
 	}
 }
