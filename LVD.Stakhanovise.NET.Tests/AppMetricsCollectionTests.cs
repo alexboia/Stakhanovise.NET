@@ -187,30 +187,17 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 5 )]
 		public void Test_JoinMetricsFromProviders_NoOverlappingMetricIds_DefaultInitialValues ( int nCollections )
 		{
-			AppMetricId[] allMetricIds = AppMetricId
-				.BuiltInAppMetricIds
-				.ToArray();
-
-			int batchSize = allMetricIds.Length / nCollections;
+			List<AppMetricId>[] metricIdsBatches =
+				GetAppMetricIdsBatches( nCollections );
 
 			List<AppMetricId> expectedMetricIds =
-				new List<AppMetricId>();
+				GetUniqueMetricIds( metricIdsBatches );
 
-			AppMetricId[][] metricIdsBatches = allMetricIds
-				.Batch( batchSize, b => b.ToArray() )
-				.ToArray();
-
-			AppMetricsCollection[] collectionBatches =
-				new AppMetricsCollection[ metricIdsBatches.Length ];
-
-			for ( int i = 0; i < metricIdsBatches.Length; i++ )
-			{
-				collectionBatches[ i ] = new AppMetricsCollection( metricIdsBatches[ i ] );
-				expectedMetricIds.AddRange( metricIdsBatches[ i ] );
-			}
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
 
 			AppMetricsCollection finalCollection = AppMetricsCollection
-				.JoinProviders( collectionBatches );
+				.JoinProviders( collections );
 
 			Assert_AppMetricsCollection_CorrectlyInitialized( expectedMetricIds,
 				finalCollection );
@@ -225,39 +212,17 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker =
 				new Faker();
 
-			AppMetricId[] allMetricIds = AppMetricId
-				.BuiltInAppMetricIds
-				.ToArray();
+			List<AppMetricId>[] metricIdsBatches =
+				GetAppMetricIdsBatches( nCollections );
 
-			int batchSize = allMetricIds.Length / nCollections;
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithCustomValues( metricIdsBatches );
 
 			List<AppMetric> expectedMetrics =
-				new List<AppMetric>();
-
-			AppMetricId[][] metricIdsBatches = allMetricIds
-				.Batch( batchSize, b => b.ToArray() )
-				.ToArray();
-
-			AppMetricsCollection[] collectionBatches =
-				new AppMetricsCollection[ metricIdsBatches.Length ];
-
-			for ( int i = 0; i < metricIdsBatches.Length; i++ )
-			{
-				List<AppMetric> batchMetrics = new List<AppMetric>();
-
-				foreach ( AppMetricId mId in metricIdsBatches[ i ] )
-				{
-					AppMetric newMetric = new AppMetric( mId, faker.Random.Long( 0 ) );
-					expectedMetrics.Add( newMetric.Copy() );
-					batchMetrics.Add( newMetric );
-				}
-
-				collectionBatches[ i ] = new AppMetricsCollection( batchMetrics
-					.ToArray() );
-			}
+				MergeAppMetrics( collections );
 
 			AppMetricsCollection finalCollection = AppMetricsCollection
-				.JoinProviders( collectionBatches );
+				.JoinProviders( collections );
 
 			Assert_AppMetricsCollection_CorrectlyInitialized( expectedMetrics,
 				finalCollection );
@@ -269,36 +234,19 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 5 )]
 		public void Test_JoinMetricsFromProviders_WithOverlappingMetricIds_DefaultInitialValues ( int nCollections )
 		{
-			AppMetricId[] allMetricIds = AppMetricId
-				.BuiltInAppMetricIds
-				.ToArray();
-
-			int batchSize = allMetricIds.Length / nCollections;
+			List<AppMetricId>[] metricIdsBatches =
+				GetAppMetricIdsBatches( nCollections );
 
 			List<AppMetricId> expectedMetricIds =
-				new List<AppMetricId>();
-
-			List<AppMetricId>[] metricIdsBatches = allMetricIds
-				.Batch( batchSize, b => b.ToList() )
-				.ToArray();
-
-			AppMetricsCollection[] collectionBatches =
-				new AppMetricsCollection[ metricIdsBatches.Length ];
+				GetUniqueMetricIds( metricIdsBatches );
 
 			metricIdsBatches = InterleaveAppMetricIdsBatches( metricIdsBatches );
 
-			for ( int i = 0; i < metricIdsBatches.Length; i++ )
-			{
-				collectionBatches[ i ] = new AppMetricsCollection( metricIdsBatches[ i ]
-					.ToArray() );
-
-				foreach ( AppMetricId mId in metricIdsBatches[ i ] )
-					if ( !expectedMetricIds.Contains( mId ) )
-						expectedMetricIds.Add( mId );
-			}
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
 
 			AppMetricsCollection finalCollection = AppMetricsCollection
-				.JoinProviders( collectionBatches );
+				.JoinProviders( collections );
 
 			Assert_AppMetricsCollection_CorrectlyInitialized( expectedMetricIds,
 				finalCollection );
@@ -310,38 +258,19 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 5 )]
 		public void Test_JoinMetricsFromProviders_WithOverlappingMetricIds_CustomInitialValues ( int nCollections )
 		{
-			Faker faker =
-				new Faker();
-
-			AppMetricId[] allMetricIds = AppMetricId
-				.BuiltInAppMetricIds
-				.ToArray();
-
-			int batchSize = allMetricIds.Length / nCollections;
-
-			List<AppMetric> expectedMetrics =
-				new List<AppMetric>();
-
-			List<AppMetricId>[] metricIdsBatches = allMetricIds
-				.Batch( batchSize, b => b.ToList() )
-				.ToArray();
-
-			AppMetricsCollection[] collectionBatches =
-				new AppMetricsCollection[ metricIdsBatches.Length ];
+			List<AppMetricId>[] metricIdsBatches =
+				GetAppMetricIdsBatches( nCollections );
 
 			metricIdsBatches = InterleaveAppMetricIdsBatches( metricIdsBatches );
 
-			for ( int i = 0; i < metricIdsBatches.Length; i++ )
-			{
-				List<AppMetric> batchMetrics = GenerateMetricsForMetricIdsBatch( metricIdsBatches[ i ],
-					expectedMetrics );
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithCustomValues( metricIdsBatches );
 
-				collectionBatches[ i ] = new AppMetricsCollection( batchMetrics
-					.ToArray() );
-			}
+			List<AppMetric> expectedMetrics =
+				MergeAppMetrics( collections );
 
 			AppMetricsCollection finalCollection = AppMetricsCollection
-				.JoinProviders( collectionBatches );
+				.JoinProviders( collections );
 
 			Assert_AppMetricsCollection_CorrectlyInitialized( expectedMetrics,
 				finalCollection );
@@ -353,9 +282,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 5 )]
 		public void Test_JoinMetricsFromProviders_SameMetricIds_DefaultInitialValues ( int nCollections )
 		{
-			AppMetricId[] allMetricIds = AppMetricId
-				.BuiltInAppMetricIds
-				.ToArray();
+			AppMetricId[] allMetricIds = AllBuiltInMetricIds;
 
 			List<AppMetricId> expectedMetricIds =
 				new List<AppMetricId>( allMetricIds );
@@ -363,17 +290,11 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<AppMetricId>[] metricIdsBatches = allMetricIds
 				.MultiplyCollection( nCollections );
 
-			AppMetricsCollection[] collectionBatches =
-				new AppMetricsCollection[ metricIdsBatches.Length ];
-
-			for ( int i = 0; i < metricIdsBatches.Length; i++ )
-			{
-				collectionBatches[ i ] = new AppMetricsCollection( metricIdsBatches[ i ]
-					.ToArray() );
-			}
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
 
 			AppMetricsCollection finalCollection = AppMetricsCollection
-				.JoinProviders( collectionBatches );
+				.JoinProviders( collections );
 
 			Assert_AppMetricsCollection_CorrectlyInitialized( expectedMetricIds,
 				finalCollection );
@@ -385,39 +306,168 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 5 )]
 		public void Test_JoinMetricsFromProviders_SameMetricIds_CustomInitialValues ( int nCollections )
 		{
-			Faker faker =
-				new Faker();
-
-			AppMetricId[] allMetricIds = AppMetricId
-				.BuiltInAppMetricIds
-				.ToArray();
-
-			List<AppMetric> expectedMetrics =
-				new List<AppMetric>();
+			AppMetricId[] allMetricIds = AllBuiltInMetricIds;
 
 			List<AppMetricId>[] metricIdsBatches = allMetricIds
 				.MultiplyCollection( nCollections );
 
-			AppMetricsCollection[] collectionBatches =
-				new AppMetricsCollection[ metricIdsBatches.Length ];
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithCustomValues( metricIdsBatches );
 
-			for ( int i = 0; i < metricIdsBatches.Length; i++ )
-			{
-				List<AppMetric> batchMetrics = GenerateMetricsForMetricIdsBatch( metricIdsBatches[ i ], 
-					expectedMetrics );
-
-				collectionBatches[ i ] = new AppMetricsCollection( batchMetrics
-					.ToArray() );
-			}
+			List<AppMetric> expectedMetrics =
+				MergeAppMetrics( collections );
 
 			AppMetricsCollection finalCollection = AppMetricsCollection
-				.JoinProviders( collectionBatches );
+				.JoinProviders( collections );
 
 			Assert_AppMetricsCollection_CorrectlyInitialized( expectedMetrics,
 				finalCollection );
 		}
 
-		private void Assert_AppMetricsCollection_CorrectlyInitialized ( IEnumerable<AppMetricId> expectedMetricIds, AppMetricsCollection metrics )
+		[Test]
+		[TestCase( 2 )]
+		[TestCase( 3 )]
+		[TestCase( 5 )]
+		public void Test_CanJoinExportedMetrics_NoOverlappingMetricIds ( int nCollections )
+		{
+			List<AppMetricId>[] metricIdsBatches =
+				GetAppMetricIdsBatches( nCollections );
+
+			List<AppMetricId> expectedMetricIds =
+				GetUniqueMetricIds( metricIdsBatches );
+
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
+
+			IEnumerable<AppMetricId> metricIds = AppMetricsCollection
+				.JoinExportedMetrics( collections );
+
+			Assert.NotNull( metricIds );
+			CollectionAssert.AreEquivalent( expectedMetricIds,
+				metricIds );
+		}
+
+		[Test]
+		[TestCase( 2 )]
+		[TestCase( 3 )]
+		[TestCase( 5 )]
+		public void Test_CanJoinExportedMetrics_WithOverlappingMetricIds ( int nCollections )
+		{
+			List<AppMetricId>[] metricIdsBatches =
+				GetAppMetricIdsBatches( nCollections );
+
+			List<AppMetricId> expectedMetricIds =
+				GetUniqueMetricIds( metricIdsBatches );
+
+			metricIdsBatches = InterleaveAppMetricIdsBatches( metricIdsBatches );
+
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
+
+			IEnumerable<AppMetricId> metricIds = AppMetricsCollection
+				.JoinExportedMetrics( collections );
+
+			Assert.NotNull( metricIds );
+			CollectionAssert.AreEquivalent( expectedMetricIds,
+				metricIds );
+		}
+
+		[Test]
+		[TestCase( 2 )]
+		[TestCase( 3 )]
+		[TestCase( 5 )]
+		public void Test_CanJoinExportedMetrics_SameMetricIds ( int nCollections )
+		{
+			AppMetricId[] allMetricIds = AllBuiltInMetricIds;
+
+			List<AppMetricId> expectedMetricIds =
+				new List<AppMetricId>( allMetricIds );
+
+			List<AppMetricId>[] metricIdsBatches = allMetricIds
+				.MultiplyCollection( nCollections );
+
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
+
+			IEnumerable<AppMetricId> metricIds = AppMetricsCollection
+				.JoinExportedMetrics( collections );
+
+			Assert.NotNull( metricIds );
+			CollectionAssert.AreEquivalent( expectedMetricIds,
+				metricIds );
+		}
+
+		[Test]
+		[TestCase( 1 )]
+		[TestCase( 2 )]
+		[TestCase( 5 )]
+		[TestCase( 10 )]
+		public void Test_CanJoinQueryMetric_PresentInAllProviders ( int nCollections )
+		{
+			AppMetricId[] allMetricIds = AllBuiltInMetricIds;
+
+			List<AppMetricId>[] metricIdsBatches = allMetricIds
+				.MultiplyCollection( nCollections );
+
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithCustomValues( metricIdsBatches );
+
+			Assert_CorrectJoinQueryAppMetrics( allMetricIds,
+				collections );
+		}
+
+		[Test]
+		[TestCase( 2 )]
+		[TestCase( 3 )]
+		[TestCase( 5 )]
+		public void Test_CanJoinQueryMetric_PresentInSomeProviders ( int nCollections )
+		{
+			List<AppMetricId>[] metricIdsBatches =
+				GetAppMetricIdsBatches( nCollections );
+
+			metricIdsBatches = InterleaveAppMetricIdsBatches( metricIdsBatches );
+
+			AppMetricsCollection[] collections =
+				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
+
+			List<AppMetricId> checkAppMetricIds =
+				GetUniqueMetricIds( metricIdsBatches );
+
+			Assert_CorrectJoinQueryAppMetrics( checkAppMetricIds,
+				collections );
+		}
+
+		[Test]
+		[TestCase( 1 )]
+		[TestCase( 2 )]
+		[TestCase( 3 )]
+		[TestCase( 5 )]
+		[TestCase( 10 )]
+		public void Test_CanJoinQueryMetric_AbsentFromAllProviders ( int nCollections )
+		{
+			AppMetricId[] allMetricIds = AllBuiltInMetricIds;
+
+			foreach ( AppMetricId testMetricId in allMetricIds )
+			{
+				AppMetricId[] metricIds = AllBuiltInMetricIds
+					.Where( m => !m.Equals( testMetricId ) )
+					.ToArray();
+
+				List<AppMetricId>[] metricIdsBatches = metricIds
+					.MultiplyCollection( nCollections );
+
+				AppMetricsCollection[] collections = 
+					GetCollectionsFromMetricIdsBatchesWithCustomValues( metricIdsBatches );
+
+				AppMetric testMetric = AppMetricsCollection.JoinQueryMetric( testMetricId, 
+					collections );
+
+				Assert.IsNull( testMetric );
+			}
+		}
+
+		private void Assert_AppMetricsCollection_CorrectlyInitialized ( IEnumerable<AppMetricId> expectedMetricIds,
+			AppMetricsCollection metrics )
 		{
 			IEnumerable<AppMetricId> actualMetricIds = metrics
 				.ExportedMetrics;
@@ -443,7 +493,24 @@ namespace LVD.Stakhanovise.NET.Tests
 				Assert.AreEqual( 0, metric.Value );
 		}
 
-		private void Assert_AppMetricsCollection_CorrectlyInitialized ( IEnumerable<AppMetric> expectedMetrics, AppMetricsCollection metrics )
+		private void Assert_CorrectJoinQueryAppMetrics ( IEnumerable<AppMetricId> checkMetricIds,
+			AppMetricsCollection[] collectionBatches )
+		{
+			foreach ( AppMetricId metricId in checkMetricIds )
+			{
+				long expectedValue = SumMetricValues( collectionBatches,
+					metricId );
+
+				AppMetric metric = AppMetricsCollection.JoinQueryMetric( metricId,
+					collectionBatches );
+
+				Assert.NotNull( metric );
+				Assert.AreEqual( expectedValue, metric.Value );
+			}
+		}
+
+		private void Assert_AppMetricsCollection_CorrectlyInitialized ( IEnumerable<AppMetric> expectedMetrics,
+			AppMetricsCollection metrics )
 		{
 			IEnumerable<AppMetricId> actualMetricIds = metrics
 				.ExportedMetrics;
@@ -464,29 +531,6 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.AreEqual( expectedMetrics.Count(), metrics
 				.CollectMetrics()
 				.Count() );
-		}
-
-		private List<AppMetric> GenerateMetricsForMetricIdsBatch ( List<AppMetricId> forMetricIdsBatch,
-			List<AppMetric> expectedMetrics )
-		{
-			Faker faker = new Faker();
-
-			List<AppMetric> batchMetrics =
-				new List<AppMetric>();
-
-			foreach ( AppMetricId mId in forMetricIdsBatch )
-			{
-				AppMetric newMetric = new AppMetric( mId, faker.Random.Long( 0 ) );
-				batchMetrics.Add( newMetric );
-
-				AppMetric existingMetric = expectedMetrics.FirstOrDefault( m => m.Id.Equals( mId ) );
-				if ( existingMetric != null )
-					existingMetric.Add( newMetric.Value );
-				else
-					expectedMetrics.Add( newMetric.Copy() );
-			}
-
-			return batchMetrics;
 		}
 
 		private List<AppMetricId>[] InterleaveAppMetricIdsBatches ( List<AppMetricId>[] metricIdsBatches )
@@ -510,5 +554,115 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			return metricIdsBatches;
 		}
+
+		private List<AppMetricId>[] GetAppMetricIdsBatches ( int nCollections )
+		{
+			AppMetricId[] allMetricIds = AllBuiltInMetricIds;
+
+			int batchSize = allMetricIds.Length / nCollections;
+
+			List<AppMetricId>[] metricIdsBatches = allMetricIds
+				.Batch( batchSize, b => b.ToList() )
+				.ToArray();
+
+			return metricIdsBatches;
+		}
+
+		private List<AppMetricId> GetUniqueMetricIds ( List<AppMetricId>[] metricIdsBatches )
+		{
+			List<AppMetricId> uniqueMetricIds =
+				new List<AppMetricId>();
+
+			metricIdsBatches.ForEach( batch =>
+			{
+				batch.ForEach( mId =>
+				{
+					if ( !uniqueMetricIds.Contains( mId ) )
+						uniqueMetricIds.Add( mId );
+				} );
+			} );
+
+			return uniqueMetricIds;
+		}
+
+		private List<AppMetric> MergeAppMetrics ( AppMetricsCollection[] collections )
+		{
+			List<AppMetric> metrics =
+				new List<AppMetric>();
+
+			foreach ( AppMetricsCollection col in collections )
+			{
+				foreach ( AppMetric metric in col.CollectMetrics() )
+				{
+					AppMetric existingMetric = metrics.FirstOrDefault( m
+						=> m.Id.Equals( metric.Id ) );
+
+					if ( existingMetric != null )
+						existingMetric.Add( metric.Value );
+					else
+						metrics.Add( metric.Copy() );
+				}
+			}
+
+			return metrics;
+		}
+
+		private AppMetricsCollection[] GetCollectionsFromMetricIdsBatchesWithInitialValues ( List<AppMetricId>[] metricIdsBatches )
+		{
+			AppMetricsCollection[] collectionBatches =
+				new AppMetricsCollection[ metricIdsBatches.Length ];
+
+			for ( int i = 0; i < metricIdsBatches.Length; i++ )
+			{
+				collectionBatches[ i ] = new AppMetricsCollection( metricIdsBatches[ i ]
+					.ToArray() );
+			}
+
+			return collectionBatches;
+		}
+
+		private AppMetricsCollection[] GetCollectionsFromMetricIdsBatchesWithCustomValues ( List<AppMetricId>[] metricIdsBatches )
+		{
+			Faker faker =
+				new Faker();
+
+			AppMetricsCollection[] collectionBatches =
+				new AppMetricsCollection[ metricIdsBatches.Length ];
+
+			for ( int i = 0; i < metricIdsBatches.Length; i++ )
+			{
+				List<AppMetric> metrics = faker.RandomAppMetrics( metricIdsBatches[ i ],
+					minValue: 0,
+					maxValue: 100000 );
+
+				collectionBatches[ i ] = new AppMetricsCollection( metrics
+					.ToArray() );
+			}
+
+			return collectionBatches;
+		}
+
+		public long SumMetricValues ( AppMetricsCollection[] collections, AppMetricId metricId )
+		{
+			long value = 0;
+
+			foreach ( AppMetricsCollection col in collections )
+			{
+				foreach ( AppMetric m in col.CollectMetrics() )
+				{
+					if ( m.Id.Equals( metricId ) )
+					{
+						value += m.Value;
+						break;
+					}
+				}
+			}
+
+			return value;
+		}
+
+		AppMetricId[] AllBuiltInMetricIds => AppMetricId
+			.BuiltInAppMetricIds
+			.ToArray();
 	}
 }

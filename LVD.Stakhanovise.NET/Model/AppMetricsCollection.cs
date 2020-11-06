@@ -110,7 +110,7 @@ namespace LVD.Stakhanovise.NET.Model
 				throw new ArgumentNullException( nameof( collections ) );
 
 			Dictionary<AppMetricId, AppMetric> joinedProviderMetrics =
-				JoinMetricsFromProviders( collections );
+				JoinMetricsFromProviders( ( IEnumerable<IAppMetricsProvider> )collections );
 
 			return joinedProviderMetrics.Values
 				.ToList();
@@ -147,7 +147,7 @@ namespace LVD.Stakhanovise.NET.Model
 				throw new ArgumentNullException( nameof( providers ) );
 
 			Dictionary<AppMetricId, AppMetric> joinedProviderMetrics =
-				JoinMetricsFromProviders( providers );
+				JoinMetricsFromProviders( ( IEnumerable<IAppMetricsProvider> )providers );
 
 			return new AppMetricsCollection( joinedProviderMetrics );
 		}
