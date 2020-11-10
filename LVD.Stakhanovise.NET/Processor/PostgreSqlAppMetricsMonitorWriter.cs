@@ -90,7 +90,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				{
 					NpgsqlParameter pMetricId = upsertCmd.Parameters.Add( "m_id",
 						NpgsqlDbType.Varchar );
-					NpgsqlParameter pMetricCategory = upsertCmd.Parameters.Add( "metric_category",
+					NpgsqlParameter pMetricCategory = upsertCmd.Parameters.Add( "m_category",
 						NpgsqlDbType.Varchar );
 					NpgsqlParameter pMetricValue = upsertCmd.Parameters.Add( "m_value",
 						NpgsqlDbType.Bigint );

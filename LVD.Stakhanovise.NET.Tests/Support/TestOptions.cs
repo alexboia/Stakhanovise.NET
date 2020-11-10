@@ -99,5 +99,14 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 					retryDelayMilliseconds: 250 ),
 				mapping: DefaultMapping );
 		}
+
+		public static PostgreSqlAppMetricsMonitorWriterOptions GetDefaultPostgreSqlAppMetricsMonitorWriterOptions ( string connectionString )
+		{
+			return new PostgreSqlAppMetricsMonitorWriterOptions( new ConnectionOptions( connectionString,
+					keepAliveSeconds: 0,
+					retryCount: 3,
+					retryDelayMilliseconds: 250 ),
+				mapping: DefaultMapping );
+		}
 	}
 }
