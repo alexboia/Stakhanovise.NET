@@ -29,28 +29,67 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
-	public class TestTaskQueueTimestampProvider : ITimestampProvider
+	public class ExecutionPerformanceInfoRecord : IEquatable<ExecutionPerformanceInfoRecord>
 	{
-		private Func<DateTimeOffset> mCurrentTimeProvider;
-
-		public TestTaskQueueTimestampProvider ( Func<DateTimeOffset> currentTimeProvider )
+		public bool Equals ( ExecutionPerformanceInfoRecord other )
 		{
-			mCurrentTimeProvider = currentTimeProvider
-				?? throw new ArgumentNullException( nameof( currentTimeProvider ) );
+			return other != null &&
+				string.Equals( PayloadType, other.PayloadType ) &&
+				NExecutionCycles == other.NExecutionCycles &&
+				LastExecutionTime == other.LastExecutionTime &&
+				AvgExecutionTime == other.AvgExecutionTime &&
+				FastestExecutionTime == other.FastestExecutionTime &&
+				LongestExecutionTime == other.LongestExecutionTime &&
+				TotalExecutionTime == other.TotalExecutionTime;
 		}
 
-		public DateTimeOffset GetNow ()
+		public override bool Equals ( object obj )
 		{
-			return mCurrentTimeProvider.Invoke();
+			return Equals( obj as ExecutionPerformanceInfoRecord );
 		}
+
+		public override int GetHashCode ()
+		{
+			int result = 1;
+
+			result = result * 13 + PayloadType.GetHashCode();
+			result = result * 13 + NExecutionCycles.GetHashCode();
+			result = result * 13 + LastExecutionTime.GetHashCode();
+			result = result * 13 + AvgExecutionTime.GetHashCode();
+			result = result * 13 + FastestExecutionTime.GetHashCode();
+			result = result * 13 + LongestExecutionTime.GetHashCode();
+			result = result * 13 + TotalExecutionTime.GetHashCode();
+
+			return result;
+		}
+
+		public bool AllZeroValues ()
+		{
+			return LastExecutionTime == 0
+				&& AvgExecutionTime == 0
+				&& FastestExecutionTime == 0
+				&& LongestExecutionTime == 0
+				&& TotalExecutionTime == 0;
+		}
+
+		public string PayloadType { get; set; }
+
+		public long NExecutionCycles { get; set; }
+
+		public long LastExecutionTime { get; set; }
+
+		public long AvgExecutionTime { get; set; }
+
+		public long FastestExecutionTime { get; set; }
+
+		public long LongestExecutionTime { get; set; }
+
+		public long TotalExecutionTime { get; set; }
 	}
 }

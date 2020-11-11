@@ -82,6 +82,9 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			int affectedRows = 0;
 
+			if ( appMetrics == null )
+				throw new ArgumentNullException( nameof( appMetrics ) );
+
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
 			using ( NpgsqlCommand upsertCmd = new NpgsqlCommand( mMetricsUpsertSql, conn, tx ) )

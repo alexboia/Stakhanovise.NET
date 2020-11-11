@@ -44,6 +44,7 @@ using System.Threading;
 using LVD.Stakhanovise.NET.Options;
 using Moq;
 using System.Diagnostics;
+using LVD.Stakhanovise.NET.Tests.Helpers;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -141,34 +142,15 @@ namespace LVD.Stakhanovise.NET.Tests
 			Faker faker =
 				new Faker();
 
-			Type[] payloadTypes = new Type[]
-			{
-				typeof(AnotherSampleTaskPayload),
-				typeof(ErroredTaskPayload),
-				typeof(ImplicitSuccessfulTaskPayload),
-				typeof(SampleNoExecutorPayload),
-				typeof(SuccessfulTaskPayload),
-				typeof(ThrowsExceptionTaskPayload)
-			};
-
 			ConcurrentQueue<Tuple<string, long>> execTimes =
 				new ConcurrentQueue<Tuple<string, long>>();
 
-			expectedWrittenStats =
-				new List<TaskPerformanceStats>();
-
-			for ( int i = 0; i < count; i++ )
+			expectedWrittenStats = faker.RandomExecutionPerformanceStats( count );
+			foreach (TaskPerformanceStats s in expectedWrittenStats)
 			{
-				long time = faker.Random.Long( 1, 10000 );
-				Type taskType = faker.PickRandom( payloadTypes );
-
-				execTimes.Enqueue( new Tuple<string, long>( 
-					taskType.FullName, 
-					time ) );
-
-				expectedWrittenStats.Add( new TaskPerformanceStats( 
-					taskType.FullName,
-					time ) );
+				execTimes.Enqueue( new Tuple<string, long>(
+					s.PayloadType,
+					s.DurationMilliseconds ) );
 			}
 
 			return execTimes;
