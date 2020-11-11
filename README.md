@@ -11,12 +11,11 @@ That's it and nothing more. Interested? Read on, komrade!
 
 1. Features
 2. Compatibility
-3. Is it good for you?
-4. Installation
-5. Basic usage
-6. Advanced usage
-7. Add-on packages
-8. In-depth architectural description
+3. Installation
+4. Basic usage
+5. Advanced usage
+6. Add-on packages
+7. In-depth architectural description
 
 ## Features
 
@@ -24,6 +23,7 @@ That's it and nothing more. Interested? Read on, komrade!
 
 Stakhanovise only depends on:
 - a pre-existing PostgreSQL back-end and;
+- the `Newtonsoft.Json` library;
 - the `Npgsql` library.
 
 ### 2. Job definition
@@ -76,3 +76,11 @@ Additionally, there's a fairly decent amount of options which one may use to fur
 
 Stakhanovise only requires you to provie a connection string and it will either figure out or use sensible defaults for the rest.
 However, should you need to pass in some custom values for the supported options, there's a fluent API available for doing just that.
+
+## Compatibility
+
+Stakhanovise is built for:
+- PostgrSQL 9.5 or higher;
+- .NET Standard 2.0;
+- `Npgsql 4.1.5` or higher;
+- `Newtonsoft.Json 12.0.3` or higher.
