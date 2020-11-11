@@ -74,8 +74,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			PostgreSqlExecutionPerformanceMonitorWriter writer =
 				GetWriter();
 
-			List<TaskPerformanceStats> sampleStats = DuplicatePayloadTypes( faker
-				.RandomExecutionPerformanceStats( nStats ) );
+			List<TaskPerformanceStats> sampleStats = faker
+				.RandomExecutionPerformanceStats( nStats );
 
 			List<ExecutionPerformanceInfoRecord> expectedRecords =
 				GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats( sampleStats );
@@ -87,6 +87,9 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			CollectionAssert.AreEquivalent( expectedRecords,
 				dbRecords );
+
+			foreach ( ExecutionPerformanceInfoRecord r in dbRecords )
+				Assert.AreEqual( 1, r.NExecutionCycles );
 		}
 
 		[Test]
@@ -103,8 +106,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			PostgreSqlExecutionPerformanceMonitorWriter writer =
 				GetWriter();
 
-			List<TaskPerformanceStats> sampleStats = faker
-				.RandomExecutionPerformanceStats( nStats );
+			List<TaskPerformanceStats> sampleStats = DuplicatePayloadTypes( faker
+				.RandomExecutionPerformanceStats( nStats ) );
 
 			List<ExecutionPerformanceInfoRecord> expectedRecords =
 				GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats( sampleStats );
@@ -116,6 +119,15 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			CollectionAssert.AreEquivalent( expectedRecords,
 				dbRecords );
+
+			foreach ( ExecutionPerformanceInfoRecord r in dbRecords )
+			{
+				int expectedCycleCount = sampleStats.Count( s => s.PayloadType
+					== r.PayloadType );
+
+				Assert.AreEqual( expectedCycleCount,
+					r.NExecutionCycles );
+			}
 		}
 
 		[Test]
@@ -149,6 +161,17 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			CollectionAssert.AreEquivalent( expectedRecords,
 				dbRecords );
+
+			foreach ( ExecutionPerformanceInfoRecord r in dbRecords )
+			{
+				int expectedCycleCount = dbStats.Count( s => s.PayloadType
+						== r.PayloadType ) +
+					newStats.Count( s => s.PayloadType
+						== r.PayloadType );
+
+				Assert.AreEqual( expectedCycleCount,
+					r.NExecutionCycles );
+			}
 		}
 
 		[Test]
@@ -181,6 +204,17 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			CollectionAssert.AreEquivalent( expectedRecords,
 				dbRecords );
+
+			foreach ( ExecutionPerformanceInfoRecord r in dbRecords )
+			{
+				int expectedCycleCount = dbStats.Count( s => s.PayloadType
+						== r.PayloadType ) +
+					newStats.Count( s => s.PayloadType
+						== r.PayloadType );
+
+				Assert.AreEqual( expectedCycleCount,
+					r.NExecutionCycles );
+			}
 		}
 
 		[Test]
@@ -220,7 +254,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					sampleStats[ i ] = faker.RandomAllZeroExecutionPerformanceStats( sampleStats[ 0 ]
 						.Select( s => s.PayloadType )
 						.AsEnumerable() );
-				}	
+				}
 				else
 					sampleStats[ i ] = faker.RandomAllZeroExecutionPerformanceStats( nStats );
 			}

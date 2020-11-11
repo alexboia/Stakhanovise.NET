@@ -169,7 +169,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Repeat( 10 )]
 		public async Task Test_CanWrite_WithInitialAppMetrics_AllBuiltInAppMetricIds ()
 		{
-			await GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync();
+			await GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync( allZeroValues: false );
 
 			PostgreSqlAppMetricsMonitorWriter writer =
 				GetWriter();
@@ -188,7 +188,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[Test]
 		public async Task Test_CanWriteEmptyData_WithInitialAppMetrics ()
 		{
-			await GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync();
+			await GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync( allZeroValues: false );
 
 			List<AppMetric> expectedDbMetrics =
 				await GetDbAppMetricsAsync();
@@ -206,6 +206,52 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			CollectionAssert.AreEquivalent( expectedDbMetrics,
 				dbMetrics );
+		}
+
+		[Test]
+		public async Task Test_CanWrite_AllZeroValues_NoInitialAppMetrics ()
+		{
+			PostgreSqlAppMetricsMonitorWriter writer =
+				GetWriter();
+			List<AppMetric> metrics =
+				GenerateAllZeroAppMetricsForBuiltInAppMetricIds();
+
+			await writer.WriteAsync( metrics );
+
+			List<AppMetric> dbMetrics =
+				await GetDbAppMetricsAsync();
+
+			CollectionAssert.AreEquivalent( metrics,
+				dbMetrics );
+
+			AssertAppMetricsAreAllZero( dbMetrics );
+		}
+
+		[Test]
+		public async Task Test_CanWrite_AllZeroValues_WithInitialAppMetrics ()
+		{
+			await GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync( allZeroValues: true );
+
+			PostgreSqlAppMetricsMonitorWriter writer =
+				GetWriter();
+			List<AppMetric> metrics =
+				GenerateAllZeroAppMetricsForBuiltInAppMetricIds();
+
+			await writer.WriteAsync( metrics );
+
+			List<AppMetric> dbMetrics =
+				await GetDbAppMetricsAsync();
+
+			CollectionAssert.AreEquivalent( metrics,
+				dbMetrics );
+
+			AssertAppMetricsAreAllZero( dbMetrics );
+		}
+
+		private static void AssertAppMetricsAreAllZero ( List<AppMetric> dbMetrics )
+		{
+			foreach ( AppMetric m in dbMetrics )
+				Assert.AreEqual( 0, m.Value );
 		}
 
 		private List<List<AppMetric>> InterleaveAppMetricLists ( List<List<AppMetric>> appMetricLists )
@@ -260,7 +306,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			return dbMetrics;
 		}
 
-		private async Task GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync ()
+		private async Task GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync ( bool allZeroValues )
 		{
 			Faker faker =
 				new Faker();
@@ -294,7 +340,9 @@ namespace LVD.Stakhanovise.NET.Tests
 				{
 					pMetricId.Value = mId.ValueId;
 					pMetricCategory.Value = mId.ValueCategory;
-					pMetricValue.Value = faker.Random.Long( 0 );
+					pMetricValue.Value = !allZeroValues
+						? faker.Random.Long( 0 )
+						: 0;
 
 					await cmd.ExecuteNonQueryAsync();
 				}
@@ -322,6 +370,19 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			foreach ( AppMetricId mId in AllBuiltInMetricIds )
 				appMetrics.Add( faker.RandomAppMetric( mId ) );
+
+			return appMetrics;
+		}
+
+		private List<AppMetric> GenerateAllZeroAppMetricsForBuiltInAppMetricIds ()
+		{
+			Faker faker =
+				new Faker();
+			List<AppMetric> appMetrics =
+				new List<AppMetric>();
+
+			foreach ( AppMetricId mId in AllBuiltInMetricIds )
+				appMetrics.Add( new AppMetric( mId, 0 ) );
 
 			return appMetrics;
 		}
