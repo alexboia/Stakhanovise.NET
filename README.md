@@ -59,19 +59,20 @@ To ascertain the result of an executed job, a dual approach is used:
 ### 5. ~~Exhaustive~~ Key application insights
 
 Stakhanovise maintains two sets of critical application insights:
-- job execution performance, per job type;
+- detailed job execution performance, per job type;
 - application metrics, such as (but not limited to): actual processing types, completed job counts, counts for various types of failures etc.
 
 ### 6. ~~Highly~~ Decently customizable
 
-Stakhanovise allows you one customize a couple of important aspects of it's execution flow:
+Stakhanovise allows one to customize a couple of important aspects of it's execution flow:
 - custom logging providers, of which two are provided for `NLog` and `Log4Net`, as separate packages;
 - inversion of control providers, of which two are provided for `NInject` and `Castle Windsow`, as separate packages;
 - storage providers for application insights;
 - timeline providers, which allows you to implement custom strategies for measuring time.
 
-Additionally, there are a number of options which ones may use to further tailor Stakhanovise to one's needs.
+Additionally, there's a fairly decent amount of options which one may use to further tailor Stakhanovise to one's needs.
 
-### 7. Almost zero configuration
+### 7. Easy setup and configuration
 
 Stakhanovise only requires you to provie a connection string and it will either figure out or use sensible defaults for the rest.
+However, should you need to pass in some custom values for the supported options, there's a fluent API available for doing just that.
