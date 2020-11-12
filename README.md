@@ -35,7 +35,7 @@ Key aspectes of job executor management:
 - auto-discovery: just specifiy a set of assemblies (or none at all to use the current one);
 - dependency-injected: the library comes with built-in copy of `TinyIOC`, but one may also provide one's own.
 
-Here's a quick example:
+Here's a quick example. First, the job definition (also referred to as payload):
 
 ```csharp
 class ExtractCoalFromMine 
@@ -49,7 +49,8 @@ And the executor:
 ```csharp
 class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine> 
 {
-	public async Task ExecuteAsync ( ExtractCoalFromMine payload, ITaskExecutionContext executionContext )
+	public async Task ExecuteAsync ( ExtractCoalFromMine payload, 
+		ITaskExecutionContext executionContext )
 	{
 		MiningCoalResult result = await MineCoalAsync(payload.TimesToExceedTheQuota);
 		if (result.QuotaExceededByRequiredTimes)
