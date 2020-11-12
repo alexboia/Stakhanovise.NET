@@ -26,7 +26,7 @@ Stakhanovise only depends on:
 - the `Newtonsoft.Json` library;
 - the `Npgsql` library.
 
-### 2. Job definition
+### 2. Strongly-typed job definition
 
 Stakhanovise allows you to separate your job payload definition (the thing that describes what's supposed to be done and the data arguments with which to do it) and your job executor definition (the that thing that actually does it). 
 This allows one to decouple one's consumer apps and producer apps.
@@ -38,7 +38,7 @@ Key aspectes of job executor management:
 Here's a quick example. First, the job definition (also referred to as payload):
 
 ```csharp
-class ExtractCoalFromMine 
+public class ExtractCoalFromMine 
 {
 	public int TimesToExceedTheQuota { get;set; }
 }
@@ -47,7 +47,7 @@ class ExtractCoalFromMine
 And the executor: 
 
 ```csharp
-class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine> 
+public class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine> 
 {
 	public async Task ExecuteAsync ( ExtractCoalFromMine payload, 
 		ITaskExecutionContext executionContext )
