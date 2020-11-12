@@ -15,9 +15,11 @@ That's it and nothing more. Interested? Read on, komrade!
 4. Basic usage
 5. Advanced usage
 6. Add-on packages
-7. In-depth architectural description
+7. Samples
+8. Architecture description
 
 ## Features
+<a name="sk-features"></a>
 
 ### 1. Low dependency
 
@@ -102,9 +104,39 @@ Stakhanovise only requires you to provie a connection string and it will either 
 However, should you need to pass in some custom values for the supported options, there's a fluent API available for doing just that.
 
 ## Compatibility
+<a name="sk-compatibility"></a>
 
 Stakhanovise is built for:
 - PostgrSQL 9.5 or higher;
 - .NET Standard 2.0;
 - `Npgsql 4.1.5` or higher;
 - `Newtonsoft.Json 12.0.3` or higher.
+
+
+## Installation
+<a name="sk-installation"></a>
+
+Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.Stakhanovise.NET/).
+
+### 1. Via Package Manager
+
+`Install-Package LVD.Stakhanovise.NET -Version 1.1.0`
+
+### 2. Via .NET CLI
+`dotnet add package LVD.Stakhanovise.NET --version 1.1.0`
+
+## Basic usage
+<a name="sk-basic-usage"></a>
+
+
+## Advanced usage
+<a name="sk-advanced-usage"></a>
+
+## Add-on packages
+<a name="sk-addon-packages"></a>
+
+## Samples
+<a name="sk-samples"></a>
+
+## Architecture description
+<a name="sk-architecture description"></a>
