@@ -4,7 +4,7 @@
 
 # Stakhanovise.NET
 
-Despite the project title and tagline which are very much in jest, the project does attempt to solve the down-to-earth and pragmatic task of putting together a job processing over an existing PostgreSQL instance, queue for .NET Standard 2.0. 
+Despite the project title and tagline which are very much in jest, the project does attempt to solve the down-to-earth and pragmatic task of putting together a job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. 
 That's it and nothing more. Interested? Read on, komrade!
 
 ## Contents
@@ -34,6 +34,29 @@ This allows one to decouple one's consumer apps and producer apps.
 Key aspectes of job executor management:
 - auto-discovery: just specifiy a set of assemblies (or none at all to use the current one);
 - dependency-injected: the library comes with built-in copy of `TinyIOC`, but one may also provide one's own.
+
+Here's a quick example:
+
+```csharp
+class ExtractCoalFromMine 
+{
+	public int TimesToExceedTheQuota { get;set; }
+}
+```
+
+And the executor: 
+
+```csharp
+class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine> 
+{
+	public async Task ExecuteAsync ( ExtractCoalFromMine payload, ITaskExecutionContext executionContext )
+	{
+		MiningCoalResult result = await MineCoalAsync(payload.TimesToExceedTheQuota);
+		if (result.QuotaExceededByRequiredTimes)
+			await AwardMedalAsync(MedalTypes.HeroOfSocialistLabour);
+	}
+}
+```
 
 ### 3. ~~Smart~~ Straightforward Queue management
 
