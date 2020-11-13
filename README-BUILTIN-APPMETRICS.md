@@ -29,7 +29,7 @@ Alll application metric values are expressed as 64bit integer values (`Int64`/`l
 | Result Queue (`task-result-queue`) | `result-queue@result-post-count` | `AppMetricId.ResultQueueResultPostCount` | How many job results have been posted. |
 |  | `result-queue@result-writes-count` | `AppMetricId.ResultQueueResultWriteCount` | How many posted job results have actually been written. |
 |  | `result-queue@maximum-result-write-duration` | `AppMetricId.ResultQueueMaximumResultWriteDuration` | The maximum time (measured in milliseconds) spent by the result queue to write a set of results (i.e. the slowest result write operation). |
-|  | `result-queue@minimum-result-write-duration` | `AppMetricId.ResultQueueMinimumResultWriteDuration` | The minimum time (measured in milliseconds) spent by the result queue to write a set of results (i.e. the fastest result write operation). |
+|  | `result-queue@minimum-result-write-duration` | `AppMetricId.ResultQueueMinimumResultWriteDuration` | The minimum time (measured in milliseconds) spent by the result queue to write a set of results (i.e. the quickest result write operation). |
 |  | `result-queue@total-result-write-duration` | `AppMetricId.ResultQueueTotalResultWriteDuration` | The time time (measured in milliseconds) spent by the result queue to write result sets. |
 |  | `result-queue@result-write-rq-timeout-count` | `AppMetricId.ResultQueueResultWriteRequestTimeoutCount` | How many result write operations have timed out. |
 | --- | --- | --- | --- |
@@ -41,5 +41,5 @@ Alll application metric values are expressed as 64bit integer values (`Int64`/`l
 | Job Execution Performance Monitoring (`execution-perf-mon`) | `perf-mon@report-post-count` | `AppMetricId.PerfMonReportPostCount` | How many execution performance reports have been posted. |
 |  | `perf-mon@report-write-count` | `AppMetricId.PerfMonReportWriteCount` | How many posted execution performance reports have actually been written. |
 |  | `perf-mon@minimum-report-write-duration` | `AppMetricId.PerfMonMinimumReportWriteDuration` | The minimum time (measured in milliseconds) spent writing a set of execution performance reports (i.e. quickest write operation). |
-|  | `perf-mon@maximum-report-write-duration` | `AppMetricId.PerfMonMaximumReportWriteDuration` | The minimum time (measured in milliseconds) spent writing a set of execution performance reports (i.e. quickest write operation). |
+|  | `perf-mon@maximum-report-write-duration` | `AppMetricId.PerfMonMaximumReportWriteDuration` | The maximum time (measured in milliseconds) spent writing a set of execution performance reports (i.e. slowest write operation). |
 |  | `perf-mon@report-requests-timeout-count` | `AppMetricId.PerfMonReportWriteRequestsTimeoutCount` | How many execution performance report write operations have timed out. |
