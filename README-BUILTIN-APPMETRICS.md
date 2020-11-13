@@ -32,3 +32,9 @@ Alll application metric values are expressed as 64bit integer values (`Int64`/`l
 |  | `result-queue@minimum-result-write-duration` | `AppMetricId.ResultQueueMinimumResultWriteDuration` | The minimum time (measured in milliseconds) spent by the result queue to write a set of results (i.e. the fastest result write operation). |
 |  | `result-queue@total-result-write-duration` | `AppMetricId.ResultQueueTotalResultWriteDuration` | The time time (measured in milliseconds) spent by the result queue to write result sets. |
 |  | `result-queue@result-write-rq-timeout-count` | `AppMetricId.ResultQueueResultWriteRequestTimeoutCount` | How many result write requests have timed out. |
+| --- | --- | --- | --- |
+| Buffer (`task-buffer`) | `task-buffer@max-count` | `AppMetricId.BufferMaxCount` | The maximum number of job payloads that have ever been held in buffer. |
+|  | `task-buffer@min-count` | `AppMetricId.BufferMinCounts` | The minimum number of job payloads that have ever been held in buffer. |
+|  | `task-buffer@times-filled` | `AppMetricId.BufferTimesFilled` | How many times has the buffer been filled. |
+|  | `task-buffer@times-emptied` | `AppMetricId.BufferTimesEmptied` | How many times has the buffer been emptied. |
+| --- | --- | --- | --- |
