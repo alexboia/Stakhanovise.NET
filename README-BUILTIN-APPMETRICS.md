@@ -16,12 +16,19 @@ Alll application metric values are expressed as 64bit integer values (`Int64`/`l
 | --- | --- | --- | --- |
 | Worker (`task-worer`) | `worker@processed-payload-count` | `AppMetricId.WorkerProcessedPayloadCount` | How many jobs have been processed by the workers. |
 |  | `worker@buffer-wait-count` | `AppMetricId.WorkerBufferWaitCount` | How many times have the workers have waited for jobs to become available. |
-|  | `worker@total-processing-time` | `AppMetricId.WorkerTotalProcessingTime` | How much time have the workers spent performing actual job processing. |
+|  | `worker@total-processing-time` | `AppMetricId.WorkerTotalProcessingTime` | How much time (measured in milliseconds) have the workers spent performing actual job processing. |
 |  | `worker@successful-processed-payload-count` | `AppMetricId.WorkerSuccessfulProcessedPayloadCount` | How many jobs have been successfully processed. |
 |  | `worker@failed-processed-payload-count` | `AppMetricId.WorkerFailedProcessedPayloadCount` | How many jobs have failed. |
 |  | `worker@processing-cancelled-payload-count` | `AppMetricId.WorkerProcessingCancelledPayloadCount` | How many jobs have been cancelled. |
 | --- | --- | --- | --- |
 | Queue Consumer (`task-queue-consumer`) | `queue-consumer@dequeue-count` | `AppMetricId.QueueConsumerDequeueCount` | How many jobs has the queue consumer dequeued. |
-|  | `queue-consumer@total-dequeue-duration` | `AppMetricId.QueueConsumerTotalDequeueDuration` | How much time has the queue consumer spent fetching jobs from the queue. |
-|  | `queue-consumer@minimum-dequeue-duration` | `AppMetricId.QueueConsumerMinimumDequeueDuration` | The minimum time spent by the queue consumer to fetch jobs from the queue (i.e. the quickest dequeue operation). |
-|  | `queue-consumer@maximum-dequeue-duration` | `AppMetricId.QueueConsumerMaximumDequeueDuration` | The maximum time spent by the queue consumer to fetch jobs from the queue (i.e. the slowest dequeue operation). |
+|  | `queue-consumer@total-dequeue-duration` | `AppMetricId.QueueConsumerTotalDequeueDuration` | How much time (measured in milliseconds) has the queue consumer spent fetching jobs from the queue. |
+|  | `queue-consumer@minimum-dequeue-duration` | `AppMetricId.QueueConsumerMinimumDequeueDuration` | The minimum time (measured in milliseconds) spent by the queue consumer to fetch jobs from the queue (i.e. the quickest dequeue operation). |
+|  | `queue-consumer@maximum-dequeue-duration` | `AppMetricId.QueueConsumerMaximumDequeueDuration` | The maximum time (measured in milliseconds) spent by the queue consumer to fetch jobs from the queue (i.e. the slowest dequeue operation). |
+| --- | --- | --- | --- |
+| Result Queue (`task-result-queue`) | `result-queue@result-post-count` | `AppMetricId.ResultQueueResultPostCount` | How many job results have been posted. |
+|  | `result-queue@result-writes-count` | `AppMetricId.ResultQueueResultWriteCount` | How many posted job results have actually been written. |
+|  | `result-queue@maximum-result-write-duration` | `AppMetricId.ResultQueueMaximumResultWriteDuration` | The maximum time (measured in milliseconds) spent by the result queue to write a set of results (i.e. the slowest result write operation). |
+|  | `result-queue@minimum-result-write-duration` | `AppMetricId.ResultQueueMinimumResultWriteDuration` | The minimum time (measured in milliseconds) spent by the result queue to write a set of results (i.e. the fastest result write operation). |
+|  | `result-queue@total-result-write-duration` | `AppMetricId.ResultQueueTotalResultWriteDuration` | The time time (measured in milliseconds) spent by the result queue to write result sets. |
+|  | `result-queue@result-write-rq-timeout-count` | `AppMetricId.ResultQueueResultWriteRequestTimeoutCount` | How many result write requests have timed out. |
