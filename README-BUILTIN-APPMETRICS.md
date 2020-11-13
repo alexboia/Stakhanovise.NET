@@ -20,3 +20,8 @@ Alll application metric values are expressed as 64bit integer values (`Int64`/`l
 |  | `worker@successful-processed-payload-count` | `AppMetricId.WorkerSuccessfulProcessedPayloadCount` | How many jobs have been successfully processed. |
 |  | `worker@failed-processed-payload-count` | `AppMetricId.WorkerFailedProcessedPayloadCount` | How many jobs have failed. |
 |  | `worker@processing-cancelled-payload-count` | `AppMetricId.WorkerProcessingCancelledPayloadCount` | How many jobs have been cancelled. |
+| --- | --- | --- | --- |
+| Queue Consumer (`task-queue-consumer`) | `queue-consumer@dequeue-count` | `AppMetricId.QueueConsumerDequeueCount` | How many jobs has the queue consumer dequeued. |
+|  | `queue-consumer@total-dequeue-duration` | `AppMetricId.QueueConsumerTotalDequeueDuration` | How much time has the queue consumer spent fetching jobs from the queue. |
+|  | `queue-consumer@minimum-dequeue-duration` | `AppMetricId.QueueConsumerMinimumDequeueDuration` | The minimum time spent by the queue consumer to fetch jobs from the queue (i.e. the quickest dequeue operation). |
+|  | `queue-consumer@maximum-dequeue-duration` | `AppMetricId.QueueConsumerMaximumDequeueDuration` | The maximum time spent by the queue consumer to fetch jobs from the queue (i.e. the slowest dequeue operation). |
