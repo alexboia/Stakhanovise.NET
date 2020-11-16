@@ -157,7 +157,7 @@ public class ExtractCoalFromMine
 ### 3. Create your job executors
 
 The job executors provide the actual functionality for the job payloads you defined at the previous step.
-You define a job executor by extending [https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Executors/BaseTaskExecutor.cs](`BaseTaskExecutor<TPayload>`).
+You define a job executor by extending [https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Executors/BaseTaskExecutor.cs](`BaseTaskExecutor < TPayload >`).
 
 For instance, an executor for the previously demonstrated payload, would look something like:
 
@@ -168,10 +168,13 @@ public class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine>
 
 	private IPropagandaEngine mPropagandEngine;
 
-	public ExtractCoalFromMineExecutor(IMineRepository mineRepository, IPropagandaEngine propagandEngine)
+	public ExtractCoalFromMineExecutor(IMineRepository mineRepository, 
+		IPropagandaEngine propagandEngine)
 	{
-		mMineRepository = mineRepository ?? throw new ArgumentNullException(nameof(mineRepository));
-		mPropagandEngine = propagandEngine ?? throw new ArgumentNullException(nameof(propagandEngine));
+		mMineRepository = mineRepository 
+			?? throw new ArgumentNullException(nameof(mineRepository));
+		mPropagandEngine = propagandEngine 
+			?? throw new ArgumentNullException(nameof(propagandEngine));
 	}
 
 	public async Task ExecuteAsync ( ExtractCoalFromMine payload, 
@@ -189,8 +192,11 @@ public class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine>
 		int timesToExceedQuota, 
 		string propagandaSlogan)
 	{
-		MiningCoalResult result = new MiningCoalResult();
-		Mine mine = await mMineRepository.FindWorkingPeoplesMineAsync(mineIdentifier);
+		MiningCoalResult result = 
+			new MiningCoalResult();
+
+		Mine mine = await mMineRepository
+			.FindWorkingPeoplesMineAsync(mineIdentifier);
 		
 		try
 		{
@@ -199,7 +205,8 @@ public class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine>
 				//A true working man/woman does not stop if 
 				//	he/she cannot find the mine - 
 				//	He/she builds it!
-				mine = await mMineRepository.DigMineForTheMotherlandAsync(propagandaSlogan);
+				mine = await mMineRepository
+					.DigMineForTheMotherlandAsync(propagandaSlogan);
 			}
 
 			for (int i = 0; i < timesToExceedQuota; i ++)
@@ -220,8 +227,10 @@ public class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine>
 
 	private async Task AwardMedalAsync(MedalTypes medalType)
 	{
-		await mPropagandEngine.DistributeMeaninglessBullAboutMedal(medalType);
-		await mPropagandEngine.DistributePrizeAsync(priceValue: PrizeValue.Meaningless);
+		await mPropagandEngine
+			.DistributeMeaninglessBullAboutMedal(medalType);
+		await mPropagandEngine
+			.DistributePrizeAsync(priceValue: PrizeValue.Meaningless);
 	}
 }
 ```
