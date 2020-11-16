@@ -47,7 +47,6 @@ namespace LVD.Stakhanovise.NET
 
 		private StakhanoviseSetup mStakhanoviseSetup;
 
-
 		private ITaskEngine mEngine;
 
 		private IAppMetricsMonitor mAppMetricsMonitor;
