@@ -240,7 +240,7 @@ While it would be nice to see an actual implementation for `IMineRepository` or 
 - secondly, executors can be defined (the same as job payloads can) in a separated, dedicated assembly, or in the same assembly as your Stakhanovise application;
 - last but not least, when implementing an executor, you get, besides the payload, an execution context ([`ITaskExecutionContext`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/ITaskExecutionContext.cs)) that allows you to manage a couple of aspects of job execution, which we'll expound upon in due time.
 
-### 4. Putting all together
+### 4. Putting it all together
 
 ```csharp
 await Stakhanovise
@@ -267,10 +267,28 @@ await Stakhanovise
 <a name="sk-samples"></a>
 
 ## Architecture description
-<a name="sk-architecture description"></a>
+<a name="sk-architecture-description"></a>
 
-Stakhanovise's high-level processing workflow and primitives are described in the following diagram:
+Stakhanovise's high-level processing workflow and primitives are described in the following diagram (click it for an enlarged version):
 
 <p align="center">
    <img align="center" width="870" src="https://github.com/alexboia/Stakhanovise.NET/blob/master/_Docs/overall-arch-diagram.png?raw=true" style="margin-bottom: 20px; margin-right: 20px;" />
 </p>
+
+## License
+<a name="sk-license"></a> 
+
+The source code is published under the terms of the [BSD New License](https://opensource.org/licenses/BSD-3-Clause) licence.
+
+## Credits
+<a name="sk-credits"></a>
+
+1. [Npgsql](https://github.com/npgsql/npgsql) - The .NET data provider for PostgreSQL. 
+2. [Json.NET / Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) - Json.NET is a popular high-performance JSON framework for .NET.
+
+## Donate
+
+I put some of my free time into developing and maintaining this plugin.
+If helped you in your projects and you are happy with it, you can...
+
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q01KGLM)
