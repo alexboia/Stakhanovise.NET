@@ -157,7 +157,7 @@ public class ExtractCoalFromMine
 ### 3. Create your job executors
 
 The job executors provide the actual functionality for the job payloads you defined at the previous step.
-You define a job executor by extending [`BaseTaskExecutor < TPayload >](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Executors/BaseTaskExecutor.cs`).
+You define a job executor by extending [`BaseTaskExecutor < TPayload >`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Executors/BaseTaskExecutor.cs).
 
 For instance, an executor for the previously demonstrated payload, would look something like:
 
