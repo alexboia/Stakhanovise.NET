@@ -12,7 +12,7 @@ That's it and nothing more. Interested? Read on, komrade!
 1. Features
 2. Compatibility
 3. Installation
-4. Basic usage
+4. Getting started
 5. Advanced usage
 6. Add-on packages
 7. Samples
@@ -268,3 +268,9 @@ await Stakhanovise
 
 ## Architecture description
 <a name="sk-architecture description"></a>
+
+Stakhanovise's high-level processing workflow and primitives are described in the following diagram:
+
+<p align="center">
+   <img align="center" width="870" src="https://github.com/alexboia/Stakhanovise.NET/blob/master/_Docs/overall-arch-diagram.png?raw=true" style="margin-bottom: 20px; margin-right: 20px;" />
+</p>
