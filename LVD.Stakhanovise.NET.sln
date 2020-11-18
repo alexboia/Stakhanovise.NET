@@ -12,7 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		LICENSE = LICENSE
 		logo.png = logo.png
+		_Docs\overall-arch-diagram.png = _Docs\overall-arch-diagram.png
 		README-BUILTIN-APPMETRICS.md = README-BUILTIN-APPMETRICS.md
+		README-CONFIG.md = README-CONFIG.md
 		README-DB.md = README-DB.md
 		README.md = README.md
 	EndProjectSection
@@ -25,7 +27,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Loggin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.IoC.NInject", "LVD.Stakhanovise.NET.IoC.NInject\LVD.Stakhanovise.NET.IoC.NInject.csproj", "{C2C96455-6A2A-4BD7-BE1E-C5823701FC01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings", "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.csproj", "{24581D02-8C7C-44CF-B0C4-697C9BC4FA52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings", "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.csproj", "{24581D02-8C7C-44CF-B0C4-697C9BC4FA52}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.IoC.CastleWindsor", "LVD.Stakhanovise.NET.IoC.CastleWindsor\LVD.Stakhanovise.NET.IoC.CastleWindsor.csproj", "{EE4C6C6E-0081-4C03-AA14-80283407FF79}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Ioc.StructureMap", "LVD.Stakhanovise.NET.Ioc.StructureMap\LVD.Stakhanovise.NET.Ioc.StructureMap.csproj", "{8084811E-8CAE-4F98-ACD0-FD3C8404B922}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Logging.Serilog", "LVD.Stakhanovise.NET.Logging.Serilog\LVD.Stakhanovise.NET.Logging.Serilog.csproj", "{CEA42415-92A4-469A-9BBB-72E4DE57D2A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests", "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests.csproj", "{81518143-5824-414B-8BCA-0789E502DE85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,6 +71,22 @@ Global
 		{24581D02-8C7C-44CF-B0C4-697C9BC4FA52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24581D02-8C7C-44CF-B0C4-697C9BC4FA52}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24581D02-8C7C-44CF-B0C4-697C9BC4FA52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE4C6C6E-0081-4C03-AA14-80283407FF79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE4C6C6E-0081-4C03-AA14-80283407FF79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE4C6C6E-0081-4C03-AA14-80283407FF79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE4C6C6E-0081-4C03-AA14-80283407FF79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8084811E-8CAE-4F98-ACD0-FD3C8404B922}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8084811E-8CAE-4F98-ACD0-FD3C8404B922}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8084811E-8CAE-4F98-ACD0-FD3C8404B922}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8084811E-8CAE-4F98-ACD0-FD3C8404B922}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEA42415-92A4-469A-9BBB-72E4DE57D2A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEA42415-92A4-469A-9BBB-72E4DE57D2A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEA42415-92A4-469A-9BBB-72E4DE57D2A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEA42415-92A4-469A-9BBB-72E4DE57D2A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81518143-5824-414B-8BCA-0789E502DE85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81518143-5824-414B-8BCA-0789E502DE85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81518143-5824-414B-8BCA-0789E502DE85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81518143-5824-414B-8BCA-0789E502DE85}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

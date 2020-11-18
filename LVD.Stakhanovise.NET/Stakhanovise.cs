@@ -53,33 +53,13 @@ namespace LVD.Stakhanovise.NET
 
 		private DbAssetFactory mDbAssetFactory;
 
-		public Stakhanovise ()
+		public Stakhanovise ( IStakhanoviseSetupDefaultsProvider defaultsProvider )
 		{
-			int defaultWorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
-
-			//Define default values that will be fed to the setup API
-			StakhanoviseSetupDefaults defaults = new StakhanoviseSetupDefaults()
-			{
-				Mapping = new QueuedTaskMapping(),
-				ExecutorAssemblies = GetDefaultAssembliesToScan(),
-				WorkerCount = defaultWorkerCount,
-
-				CalculateDelayTicksTaskAfterFailure = token
-					=> ( long )Math.Pow( 10, token.LastQueuedTaskResult.ErrorCount + 1 ),
-
-				IsTaskErrorRecoverable = ( task, exc )
-					=> !( exc is NullReferenceException )
-						&& !( exc is ArgumentException ),
-
-				FaultErrorThresholdCount = 5,
-
-				AppMetricsCollectionIntervalMilliseconds = 10000,
-				AppMetricsMonitoringEnabled = true,
-				SetupBuiltInDbAsssets = true
-			};
+			if ( defaultsProvider == null )
+				throw new ArgumentNullException( nameof( defaultsProvider ) );
 
 			//Init setup API
-			mStakhanoviseSetup = new StakhanoviseSetup( defaults );
+			mStakhanoviseSetup = new StakhanoviseSetup( defaultsProvider.GetDefaults() );
 		}
 
 		private void CheckNotDisposedOrThrow ()
@@ -89,17 +69,14 @@ namespace LVD.Stakhanovise.NET
 					"Cannot reuse a Stakhanovise instance" );
 		}
 
-		private Assembly[] GetDefaultAssembliesToScan ()
+		public static Stakhanovise CreateForTheMotherland ( IStakhanoviseSetupDefaultsProvider defaultsProvider )
 		{
-			return new Assembly[]
-			{
-				Assembly.GetExecutingAssembly()
-			};
+			return new Stakhanovise( defaultsProvider );
 		}
 
 		public static Stakhanovise CreateForTheMotherland ()
 		{
-			return new Stakhanovise();
+			return CreateForTheMotherland( new ReasonableStakhanoviseDefaultsProvider() );
 		}
 
 		public Stakhanovise SetupWorkingPeoplesCommittee ( Action<IStakhanoviseSetup> setupAction )

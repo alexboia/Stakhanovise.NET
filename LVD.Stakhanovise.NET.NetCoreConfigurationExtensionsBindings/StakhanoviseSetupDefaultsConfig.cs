@@ -29,26 +29,23 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Setup
+namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 {
-	public class StakhanoviseSetupDefaults
+	public class StakhanoviseSetupDefaultsConfig
 	{
-		public Assembly[] ExecutorAssemblies { get; set; }
+		public List<string> ExecutorAssemblies { get; set; }
 
 		public int WorkerCount { get; set; }
 
-		public QueuedTaskMapping Mapping { get; set; }
+		public QueuedTaskMappingConfig Mapping { get; set; }
 
-		public Func<IQueuedTaskToken, long> CalculateDelayTicksTaskAfterFailure { get; set; }
+		public string CalculateDelayTicksTaskAfterFailure { get; set; }
 
-		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; set; }
+		public string IsTaskErrorRecoverable { get; set; }
 
 		public int FaultErrorThresholdCount { get; set; }
 
