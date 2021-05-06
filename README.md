@@ -7,6 +7,14 @@
 Despite the project title and tagline which are very much in jest, the project does attempt to solve the down-to-earth and pragmatic task of putting together a job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. 
 That's it and nothing more. Interested? Read on, komrade!
 
+## Current status
+
+The codebase is pretty much completed, but there are still a number of items that must be tended to:
+- [ ] Additional testing;
+- [ ] Additional documentation;
+- [ ] Nice to have-ish: finish work on some of the companion libraries;
+- [ ] Publish the package tot he NuGet package repository.
+
 ## Contents
 
 1. Features
