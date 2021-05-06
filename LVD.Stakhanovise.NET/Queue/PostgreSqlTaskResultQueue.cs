@@ -46,6 +46,8 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskResultQueue : ITaskResultQueue, IAppMetricsProvider, IDisposable
 	{
+		private const int RESULT_QUEUE_PROCESSING_BATCH_SIZE = 5;
+		
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
 				.GetCurrentMethod()
@@ -296,7 +298,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 					//See if there are other items available 
 					//	and add them to current batch
-					while ( currentBatch.Count < 5 && mResultProcessingQueue.TryTake( out processItem ) )
+					while ( currentBatch.Count < RESULT_QUEUE_PROCESSING_BATCH_SIZE && mResultProcessingQueue.TryTake( out processItem ) )
 						currentBatch.Enqueue( processItem );
 
 					//Process the entire batch - don't observe 
@@ -305,11 +307,12 @@ namespace LVD.Stakhanovise.NET.Queue
 				}
 				catch ( OperationCanceledException )
 				{
+					mLogger.Debug( "Cancellation requested. Breaking result processing loop..." );
+
 					//Best effort to cancel all tasks
 					foreach ( PostgreSqlTaskResultQueueProcessRequest rq in mResultProcessingQueue.ToArray() )
 						rq.SetCancelled();
 
-					mLogger.Debug( "Cancellation requested. Breaking result processing loop..." );
 					break;
 				}
 				catch ( Exception exc )
