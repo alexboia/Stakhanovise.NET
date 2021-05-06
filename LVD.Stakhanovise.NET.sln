@@ -35,7 +35,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Ioc.St
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Logging.Serilog", "LVD.Stakhanovise.NET.Logging.Serilog\LVD.Stakhanovise.NET.Logging.Serilog.csproj", "{CEA42415-92A4-469A-9BBB-72E4DE57D2A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests", "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests.csproj", "{81518143-5824-414B-8BCA-0789E502DE85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests", "LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests.csproj", "{81518143-5824-414B-8BCA-0789E502DE85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests", "LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests\LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests.csproj", "{247BCB47-799C-4A50-83FD-94EE4671B03A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -87,6 +89,10 @@ Global
 		{81518143-5824-414B-8BCA-0789E502DE85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81518143-5824-414B-8BCA-0789E502DE85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81518143-5824-414B-8BCA-0789E502DE85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{247BCB47-799C-4A50-83FD-94EE4671B03A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{247BCB47-799C-4A50-83FD-94EE4671B03A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{247BCB47-799C-4A50-83FD-94EE4671B03A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{247BCB47-799C-4A50-83FD-94EE4671B03A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

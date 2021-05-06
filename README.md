@@ -13,6 +13,7 @@ The codebase is pretty much completed, but there are still a number of items tha
 - [ ] Additional testing;
 - [ ] Additional documentation;
 - [ ] Nice to have-ish: finish work on some of the companion libraries;
+- [ ] Sample application;
 - [ ] Publish the package tot he NuGet package repository.
 
 ## Contents
