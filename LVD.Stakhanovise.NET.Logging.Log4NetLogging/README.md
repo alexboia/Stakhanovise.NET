@@ -15,7 +15,8 @@ TODO
 ### 2. Registering the log4net logging provider
 
 ```csharp
-.CreateForTheMotherland()
+await Stakhanovise
+	.CreateForTheMotherland()
 	.SetupWorkingPeoplesCommittee(setup => 
 	{
 		setup.WithLog4NetLogging();
