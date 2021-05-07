@@ -39,7 +39,7 @@ using NUnit.Framework;
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class BaseTestWithConfiguration
+	public abstract class BaseTestWithConfiguration
 	{
 		private IConfiguration mConfiguration;
 

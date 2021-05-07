@@ -42,21 +42,32 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class AppMetricsTableDbAssetSetup : ISetupDbAsset
 	{
+		public const string MetricIdColumnName = "metric_id";
+
+		public const string MetricCategoryColumnName = "metric_category";
+
+		public const string MetricValueColumnName = "metric_value";
+
+		public const string MetricLastUpdatedColumnName = "metric_last_updated";
+
+		public const string MetricCategoryIndexFormat = "idx_{0}_metric_category";
+
 		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
 		{
 			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.MetricsTableName}
 				(
-					metric_id character varying(250) NOT NULL,
-					metric_category character varying( 150 ) NOT NULL,
-					metric_value bigint NOT NULL DEFAULT 0,
-					metric_last_updated timestamp with time zone NOT NULL DEFAULT now(),
+					{MetricIdColumnName} character varying(250) NOT NULL,
+					{MetricCategoryColumnName} character varying( 150 ) NOT NULL,
+					{MetricValueColumnName} bigint NOT NULL DEFAULT 0,
+					{MetricLastUpdatedColumnName} timestamp with time zone NOT NULL DEFAULT now(),
 					CONSTRAINT {mapping.MetricsTableName}_pkey PRIMARY KEY ( metric_id)
 				);";
 		}
 
 		private string GetDbTableIndexCreationScript ( QueuedTaskMapping mapping )
 		{
-			return $@"CREATE INDEX IF NOT EXISTS idx_{mapping.MetricsTableName}_metric_category
+			string indexName = string.Format( MetricCategoryIndexFormat, mapping.MetricsTableName );
+			return $@"CREATE INDEX IF NOT EXISTS {indexName} 
 					ON public.{mapping.MetricsTableName} USING btree 
 					(metric_category ASC NULLS LAST);";
 		}

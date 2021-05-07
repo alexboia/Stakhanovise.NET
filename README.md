@@ -74,7 +74,7 @@ public class ExtractCoalFromMineExecutor : BaseTaskExecutor<ExtractCoalFromMine>
 
 First of all, Stakhanovise does not block when polling for jobs: it uses ~~`FOR UPDATE SKIP LOCKED`~~ magic to quickly find a job for execution (or nothing at all). 
 If no job is available for execution, the library will stop polling until any of the following occurs:
-- a notification is received when a new job is posted (via the PostgreSQL `LISTEN/NOTIFY` mechanism, using a dedicated listener connection);
+- a notification is received when a new job is posted (via the PostgreSQL ~~`LISTEN/NOTIFY` mechanism~~ more magic, using a dedicated listener connection);
 - something goes wrong with the connection used for listening events (as a safety precaution, to compensate for potentially missed notifications).
 
 ### 4. ~~Even smarter~~ Simple result management

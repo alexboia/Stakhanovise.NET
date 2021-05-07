@@ -38,7 +38,7 @@ using System.Threading.Tasks;
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
-	public class BaseDbTests : BaseTestWithConfiguration
+	public abstract class BaseDbTests : BaseTestWithConfiguration
 	{
 		protected async Task<NpgsqlConnection> OpenDbConnectionAsync ( string connectionString )
 		{

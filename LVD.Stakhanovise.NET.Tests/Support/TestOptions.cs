@@ -45,6 +45,19 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public static readonly int DefaultFaultErrorThresholdCount = 5;
 
+		public static ConnectionOptions GetConnectionOptions ( string connectionString, int keepAliveSeconds )
+		{
+			return new ConnectionOptions( connectionString,
+				keepAliveSeconds: keepAliveSeconds,
+				retryCount: 3,
+				retryDelayMilliseconds: 250 );
+		}
+
+		public static ConnectionOptions GetDefaultConnectionOptions ( string connectionString )
+		{
+			return GetConnectionOptions( connectionString, keepAliveSeconds: 0 );
+		}
+
 		public static TaskProcessingOptions GetDefaultTaskProcessingOptions ()
 		{
 			return new TaskProcessingOptions( calculateDelayTicksTaskAfterFailure: token
@@ -57,55 +70,37 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public static TaskQueueConsumerOptions GetDefaultTaskQueueConsumerOptions ( string connectionString )
 		{
-			return new TaskQueueConsumerOptions( new ConnectionOptions( connectionString,
-					keepAliveSeconds: 5,
-					retryCount: 3,
-					retryDelayMilliseconds: 250 ),
+			return new TaskQueueConsumerOptions( GetConnectionOptions( connectionString, keepAliveSeconds: 5 ),
 				mapping: DefaultMapping );
 		}
 
 		public static TaskQueueInfoOptions GetDefaultTaskQueueInfoOptions ( string connectionString )
 		{
-			return new TaskQueueInfoOptions( new ConnectionOptions( connectionString,
-					keepAliveSeconds: 0,
-					retryCount: 3,
-					retryDelayMilliseconds: 250 ),
+			return new TaskQueueInfoOptions( GetConnectionOptions( connectionString, keepAliveSeconds: 0 ),
 				mapping: DefaultMapping );
 		}
 
 		public static TaskQueueOptions GetDefaultTaskQueueProducerAndResultOptions ( string connectionString )
 		{
-			return new TaskQueueOptions( new ConnectionOptions( connectionString,
-					keepAliveSeconds: 0,
-					retryCount: 3,
-					retryDelayMilliseconds: 250 ),
+			return new TaskQueueOptions( GetConnectionOptions( connectionString, keepAliveSeconds: 0 ),
 				DefaultMapping );
 		}
 
 		public static TaskQueueOptions GetDefaultTaskResultQueueOptions ( string connectionString )
 		{
-			return new TaskQueueOptions( new ConnectionOptions( connectionString,
-					keepAliveSeconds: 0,
-					retryCount: 3,
-					retryDelayMilliseconds: 250 ),
+			return new TaskQueueOptions( GetConnectionOptions( connectionString, keepAliveSeconds: 0 ),
 				DefaultMapping );
 		}
 
 		public static PostgreSqlExecutionPerformanceMonitorWriterOptions GetDefaultPostgreSqlExecutionPerformanceMonitorWriterOptions ( string connectionString )
 		{
-			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( new ConnectionOptions( connectionString,
-					keepAliveSeconds: 0,
-					retryCount: 3,
-					retryDelayMilliseconds: 250 ),
+			return new PostgreSqlExecutionPerformanceMonitorWriterOptions( GetConnectionOptions( connectionString, keepAliveSeconds: 0 ),
 				mapping: DefaultMapping );
 		}
 
 		public static PostgreSqlAppMetricsMonitorWriterOptions GetDefaultPostgreSqlAppMetricsMonitorWriterOptions ( string connectionString )
 		{
-			return new PostgreSqlAppMetricsMonitorWriterOptions( new ConnectionOptions( connectionString,
-					keepAliveSeconds: 0,
-					retryCount: 3,
-					retryDelayMilliseconds: 250 ),
+			return new PostgreSqlAppMetricsMonitorWriterOptions( GetConnectionOptions( connectionString, keepAliveSeconds: 0 ),
 				mapping: DefaultMapping );
 		}
 	}
