@@ -11,7 +11,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
 	[TestFixture]
 	[SingleThreaded]
-	public class AppMetricsTableDbAssetSetupTests : BaseSetupDbTests
+	public class ExecutionTimeStatsTableDbAssetSetupTests : BaseSetupDbTests
 	{
 		[Test]
 		[Repeat( 5 )]
@@ -33,51 +33,39 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 
 		private async Task RunDbAssetSetupTestsAsync ( QueuedTaskMapping mapping )
 		{
-			AppMetricsTableDbAssetSetup setup =
-				new AppMetricsTableDbAssetSetup();
+			ExecutionTimeStatsTableDbAssetSetup setup =
+				new ExecutionTimeStatsTableDbAssetSetup();
 
 			await setup.SetupDbAssetAsync( GetSetupTestDbConnectionOptions(),
 				mapping );
 
 			await AssertTableExistsAsync( mapping );
 			await AssertTableHasExpectedColumnsAsync( mapping );
-			await AssertTableHasExpectedIndexesAsync( mapping );
 		}
 
 		private async Task AssertTableExistsAsync ( QueuedTaskMapping mapping )
 		{
-			bool tableExists = await TableExistsAsync( mapping.MetricsTableName );
+			bool tableExists = await TableExistsAsync( mapping.ExecutionTimeStatsTableName );
 
 			Assert.IsTrue( tableExists,
 				"Table {0} does not exist!",
-				mapping.MetricsTableName );
+				mapping.ExecutionTimeStatsTableName );
 		}
 
 		private async Task AssertTableHasExpectedColumnsAsync ( QueuedTaskMapping mapping )
 		{
-			bool tableHasColumns = await TableHasColumnsAsync( mapping.MetricsTableName,
-				AppMetricsTableDbAssetSetup.MetricIdColumnName,
-				AppMetricsTableDbAssetSetup.MetricCategoryColumnName,
-				AppMetricsTableDbAssetSetup.MetricLastUpdatedColumnName,
-				AppMetricsTableDbAssetSetup.MetricValueColumnName );
+			bool tableHasColumns = await TableHasColumnsAsync( mapping.ExecutionTimeStatsTableName,
+				ExecutionTimeStatsTableDbAssetSetup.PayloadTypeColumnName,
+				ExecutionTimeStatsTableDbAssetSetup.NExecutionCyclesColumnName,
+				ExecutionTimeStatsTableDbAssetSetup.LastExecutionTimeColumnName,
+				ExecutionTimeStatsTableDbAssetSetup.AverageExecutionTimeColumnName,
+				ExecutionTimeStatsTableDbAssetSetup.FastestExecutionTimeColumnName,
+				ExecutionTimeStatsTableDbAssetSetup.LongestExecutionTimeColumnName,
+				ExecutionTimeStatsTableDbAssetSetup.TotalExecutionTimeColumnName );
 
 			Assert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",
 				mapping.MetricsTableName );
-		}
-
-		private async Task AssertTableHasExpectedIndexesAsync ( QueuedTaskMapping mapping )
-		{
-			string expectedMetricCategoryIndexName = string.Format( AppMetricsTableDbAssetSetup.MetricCategoryIndexFormat,
-				mapping.MetricsTableName );
-
-			bool metricCategoryIndexExists = await TableIndexExistsAsync( mapping.MetricsTableName,
-				expectedMetricCategoryIndexName );
-
-			Assert.IsTrue( metricCategoryIndexExists,
-				"Table {0} does not have expected index {1}",
-				mapping.MetricsTableName,
-				expectedMetricCategoryIndexName );
 		}
 
 		private QueuedTaskMapping GetDefaultMapping ()
@@ -88,7 +76,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		private QueuedTaskMapping GenerateNonDefaultMapping ()
 		{
 			QueuedTaskMapping mapping = new QueuedTaskMapping();
-			mapping.MetricsTableName = RandomizeTableName( mapping.MetricsTableName );
+			mapping.ExecutionTimeStatsTableName = RandomizeTableName( mapping.ExecutionTimeStatsTableName );
 			return mapping;
 		}
 	}

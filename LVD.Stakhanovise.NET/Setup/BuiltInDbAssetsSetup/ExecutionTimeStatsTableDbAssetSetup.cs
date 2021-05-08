@@ -42,17 +42,31 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class ExecutionTimeStatsTableDbAssetSetup : ISetupDbAsset
 	{
+		public const string PayloadTypeColumnName = "et_payload_type";
+
+		public const string NExecutionCyclesColumnName = "et_n_execution_cycles";
+
+		public const string LastExecutionTimeColumnName = "et_last_execution_time";
+
+		public const string AverageExecutionTimeColumnName = "et_avg_execution_time";
+
+		public const string FastestExecutionTimeColumnName = "et_fastest_execution_time";
+
+		public const string LongestExecutionTimeColumnName = "et_longest_execution_time";
+
+		public const string TotalExecutionTimeColumnName = "et_total_execution_time";
+
 		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
 		{
 			return $@"CREATE TABLE public.{mapping.ExecutionTimeStatsTableName}
 				(
-					et_payload_type character varying(255) NOT NULL,
-					et_n_execution_cycles bigint NOT NULL,
-					et_last_execution_time bigint NOT NULL,
-					et_avg_execution_time bigint NOT NULL,
-					et_fastest_execution_time bigint NOT NULL,
-					et_longest_execution_time bigint NOT NULL,
-					et_total_execution_time bigint NOT NULL,
+					{PayloadTypeColumnName} character varying(255) NOT NULL,
+					{NExecutionCyclesColumnName} bigint NOT NULL,
+					{LastExecutionTimeColumnName} bigint NOT NULL,
+					{AverageExecutionTimeColumnName} bigint NOT NULL,
+					{FastestExecutionTimeColumnName} bigint NOT NULL,
+					{LongestExecutionTimeColumnName} bigint NOT NULL,
+					{TotalExecutionTimeColumnName} bigint NOT NULL,
 					CONSTRAINT pk_{mapping.ExecutionTimeStatsTableName}_et_payload_tpe PRIMARY KEY ( et_payload_type)
 				);";
 		}

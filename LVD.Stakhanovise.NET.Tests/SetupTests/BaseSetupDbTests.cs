@@ -6,6 +6,7 @@ using Npgsql;
 using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Tests.Support;
+using Bogus;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
@@ -167,6 +168,13 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			}
 
 			return columns;
+		}
+
+		protected string RandomizeTableName ( string tableName )
+		{
+			Faker faker = new Faker();
+			tableName = faker.Lorem.Letter( 5 ) + "_" + tableName;
+			return tableName;
 		}
 
 		private string GetSetupTestDbConnectionString ()
