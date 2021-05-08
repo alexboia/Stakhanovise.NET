@@ -65,7 +65,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 
 			Assert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",
-				mapping.MetricsTableName );
+				mapping.ExecutionTimeStatsTableName );
 		}
 
 		private QueuedTaskMapping GetDefaultMapping ()
