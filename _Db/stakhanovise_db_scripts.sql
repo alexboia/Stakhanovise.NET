@@ -182,6 +182,25 @@ ALTER TABLE ONLY public.sk_task_results_t
 ALTER TABLE ONLY public.sk_tasks_queue_t
     ADD CONSTRAINT pk_sk_tasks_queue_t_task_id PRIMARY KEY (task_id);
 
+--
+-- Index: idx_sk_tasks_queue_t_filter_index
+-- DROP INDEX public.idx_sk_tasks_queue_t_filter_index;
+-- 
+
+CREATE INDEX idx_sk_tasks_queue_t_filter_index
+    ON public.sk_tasks_queue_t USING btree
+    (task_type COLLATE pg_catalog."default" ASC NULLS LAST, task_locked_until_ts ASC NULLS LAST)
+    TABLESPACE pg_default;	
+	
+-- 
+-- Index: idx_sk_tasks_queue_t_sort_index
+-- DROP INDEX public.idx_sk_tasks_queue_t_sort_index;
+--
+
+CREATE INDEX idx_sk_tasks_queue_t_sort_index
+    ON public.sk_tasks_queue_t USING btree
+    (task_priority ASC NULLS LAST, task_locked_until_ts ASC NULLS LAST, task_lock_handle_id ASC NULLS LAST)
+    TABLESPACE pg_default;
 
 --
 -- TOC entry 2732 (class 2606 OID 24908)

@@ -42,9 +42,48 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class QueueTableDbAssetSetup : ISetupDbAsset
 	{
+		public const string TaskIdColumnName = "task_id";
+
+		public const string TaskLocKHandleIdColumnName = "task_lock_handle_id";
+
+		public const string TaskTypeColumnName = "task_type";
+
+		public const string TaskSourceColumnName = "task_source";
+
+		public const string TaskPayloadColumnName = "task_payload";
+
+		public const string TaskPriorityColumnName = "task_priority";
+
+		public const string TaskPostedAtColumnName = "task_posted_at_ts";
+
+		public const string TaskLockedUntilColumnName = "task_locked_until_ts";
+
+		public const string LockHandleIdSequenceNameFormat = "{0}_task_lock_handle_id_seq";
+
+		public const string FilterIndexNameFormat = "idx_{0}_filter_index";
+
+		public const string SortIndexNameFormat = "idx_{0}_sort_index";
+
+		private bool mCreateSortIndex;
+
+		private bool mCreateFilterIndex;
+
+		public QueueTableDbAssetSetup ()
+		{
+			mCreateSortIndex = true;
+			mCreateFilterIndex = true;
+		}
+
+		public QueueTableDbAssetSetup ( bool createSortIndex, bool createFilterIndex )
+		{
+			mCreateSortIndex = createSortIndex;
+			mCreateFilterIndex = createFilterIndex;
+		}
+
 		private string GetLockHandleIdSequenceCreationScript ( QueuedTaskMapping mapping )
 		{
-			return $@"CREATE SEQUENCE IF NOT EXISTS public.{mapping.QueueTableName}_task_lock_handle_id_seq
+			string lockHandleIdSeqName = GetLockHandleIdSequenceName( mapping );
+			return $@"CREATE SEQUENCE IF NOT EXISTS public.{lockHandleIdSeqName}
 				INCREMENT 1
 				START 1
 				MINVALUE 1
@@ -52,26 +91,46 @@ namespace LVD.Stakhanovise.NET.Setup
 				CACHE 1;";
 		}
 
+		private string GetLockHandleIdSequenceName ( QueuedTaskMapping mapping )
+		{
+			return string.Format( LockHandleIdSequenceNameFormat, mapping.QueueTableName );
+		}
+
 		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
 		{
+			string lockHandleIdSeqName = GetLockHandleIdSequenceName( mapping );
 			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.QueueTableName}
 				(
-					task_id uuid NOT NULL,
-					task_lock_handle_id bigint NOT NULL DEFAULT nextval('{mapping.QueueTableName}_task_lock_handle_id_seq'::regclass),
-					task_type character varying(250) NOT NULL,
-					task_source character varying( 250 ) NOT NULL,
-					task_payload text,
-					task_priority integer NOT NULL,
-					task_posted_at_ts timestamp with time zone NOT NULL DEFAULT now (),
-					task_locked_until_ts timestamp with time zone NOT NULL,
+					{TaskIdColumnName} uuid NOT NULL,
+					{TaskLocKHandleIdColumnName} bigint NOT NULL DEFAULT nextval('{lockHandleIdSeqName}'::regclass),
+					{TaskTypeColumnName} character varying(250) NOT NULL,
+					{TaskSourceColumnName} character varying( 250 ) NOT NULL,
+					{TaskPayloadColumnName} text,
+					{TaskPriorityColumnName} integer NOT NULL,
+					{TaskPostedAtColumnName} timestamp with time zone NOT NULL DEFAULT now (),
+					{TaskLockedUntilColumnName} timestamp with time zone NOT NULL,
 					CONSTRAINT pk_{mapping.QueueTableName}_task_id PRIMARY KEY ( task_id),
 					CONSTRAINT unq_{mapping.QueueTableName}_task_lock_handle_id UNIQUE( task_lock_handle_id )
 				);";
 		}
 
-		private string GetDbTableIndexCreationScript ( QueuedTaskMapping mapping )
+		private string GetFilterIndexCreationScript ( QueuedTaskMapping mapping )
 		{
-			return $@"";
+			string indexName = string.Format( FilterIndexNameFormat, mapping.QueueTableName );
+			return $@"CREATE INDEX IF NOT EXISTS {indexName}
+				ON public.{mapping.QueueTableName} USING btree
+				(task_type ASC NULLS LAST, 
+					task_locked_until_ts ASC NULLS LAST);";
+		}
+
+		private string GetSortIndexCreationScript ( QueuedTaskMapping mapping )
+		{
+			string indexName = string.Format( SortIndexNameFormat, mapping.QueueTableName );
+			return $@"CREATE INDEX IF NOT EXISTS {indexName}
+				ON public.{mapping.QueueTableName} USING btree
+				(task_priority ASC NULLS LAST, 
+					task_locked_until_ts ASC NULLS LAST, 
+					task_lock_handle_id ASC NULLS LAST);";
 		}
 
 		public async Task SetupDbAssetAsync ( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
@@ -83,11 +142,27 @@ namespace LVD.Stakhanovise.NET.Setup
 
 			using ( NpgsqlConnection conn = await queueConnectionOptions.TryOpenConnectionAsync() )
 			{
-				using ( NpgsqlCommand cmdLockHandleIdSeq = new NpgsqlCommand( GetLockHandleIdSequenceCreationScript( mapping ), conn ) )
+				using ( NpgsqlCommand cmdLockHandleIdSeq = new NpgsqlCommand( GetLockHandleIdSequenceCreationScript( mapping ), 
+						conn ) )
 					await cmdLockHandleIdSeq.ExecuteNonQueryAsync();
 
-				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), conn ) )
+				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), 
+						conn ) )
 					await cmdTable.ExecuteNonQueryAsync();
+
+				if ( mCreateSortIndex )
+				{
+					using ( NpgsqlCommand cmdCreateSortIndex = new NpgsqlCommand( GetSortIndexCreationScript( mapping ), 
+							conn ) )
+						await cmdCreateSortIndex.ExecuteNonQueryAsync();
+				}
+
+				if ( mCreateFilterIndex )
+				{
+					using ( NpgsqlCommand cmdCreateFilterIndex = new NpgsqlCommand( GetFilterIndexCreationScript( mapping ), 
+							conn ) )
+						await cmdCreateFilterIndex.ExecuteNonQueryAsync();
+				}
 			}
 		}
 	}
