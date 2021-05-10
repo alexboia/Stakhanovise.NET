@@ -70,6 +70,8 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			await AssertTableHasExpectedIndexesAsync( mapping,
 				shouldHaveSortIndex: withSortIndex,
 				shouldHaveFilterIndex: withFilterIndex );
+
+			await AssertExpectedSequencesExistAsync( mapping );
 		}
 
 		private async Task AssertTableExistsAsync ( QueuedTaskMapping mapping )
@@ -117,6 +119,18 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 
 			Assert.AreEqual( shouldHaveFilterIndex,
 				filterIndexExists );
+		}
+
+		private async Task AssertExpectedSequencesExistAsync(QueuedTaskMapping mapping)
+		{
+			string sequenceName = string.Format( QueueTableDbAssetSetup.LockHandleIdSequenceNameFormat, 
+				mapping.QueueTableName );
+
+			bool sequenceExists = await SequenceExistsAsync( sequenceName );
+
+			Assert.IsTrue( sequenceExists, 
+				"Expected sequence {0} does not exist!", 
+				sequenceName );
 		}
 
 		private QueuedTaskMapping GetDefaultMapping ()

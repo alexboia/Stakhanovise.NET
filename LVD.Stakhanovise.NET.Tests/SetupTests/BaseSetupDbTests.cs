@@ -170,6 +170,27 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			return columns;
 		}
 
+		protected async Task<bool> SequenceExistsAsync ( string sequenceName )
+		{
+			bool sequenceExists = false;
+
+			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( GetSetupTestDbConnectionString() ) )
+			{
+				string checkSequenceSql = $@"SELECT COUNT(1) AS seq_count 
+					FROM pg_sequences 
+					WHERE sequencename = '{sequenceName}'";
+
+				using ( NpgsqlCommand cmd = new NpgsqlCommand( checkSequenceSql, conn ) )
+				using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
+				{
+					if ( await rdr.ReadAsync() )
+						sequenceExists = rdr.GetInt64( 0 ) > 0;
+				}
+			}
+
+			return sequenceExists;
+		}
+
 		protected string RandomizeTableName ( string tableName )
 		{
 			Faker faker = new Faker();
