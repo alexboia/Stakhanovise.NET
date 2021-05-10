@@ -64,7 +64,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				);";
 		}
 
-		private string GetDbTableIndexCreationScript ( QueuedTaskMapping mapping )
+		private string GetMetricCategoryIndexCreationScript ( QueuedTaskMapping mapping )
 		{
 			string indexName = string.Format( MetricCategoryIndexFormat, mapping.MetricsTableName );
 			return $@"CREATE INDEX IF NOT EXISTS {indexName} 
@@ -81,10 +81,12 @@ namespace LVD.Stakhanovise.NET.Setup
 
 			using ( NpgsqlConnection conn = await queueConnectionOptions.TryOpenConnectionAsync() )
 			{
-				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), conn ) )
+				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), 
+						conn ) )
 					await cmdTable.ExecuteNonQueryAsync();
 
-				using ( NpgsqlCommand cmdTableIndex = new NpgsqlCommand( GetDbTableIndexCreationScript( mapping ), conn ) )
+				using ( NpgsqlCommand cmdTableIndex = new NpgsqlCommand( GetMetricCategoryIndexCreationScript( mapping ), 
+						conn ) )
 					await cmdTableIndex.ExecuteNonQueryAsync();
 			}
 		}
