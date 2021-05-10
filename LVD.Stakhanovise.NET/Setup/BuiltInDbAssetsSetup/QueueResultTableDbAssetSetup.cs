@@ -42,34 +42,88 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class QueueResultTableDbAssetSetup : ISetupDbAsset
 	{
+		public const string TaskIdColumnName = "task_id";
+
+		public const string TaskTypeColumnName = "task_type";
+
+		public const string TaskSourceColumnName = "task_source";
+
+		public const string TaskPayloadColumnName = "task_payload";
+
+		public const string TaskStatusColumnName = "task_status";
+
+		public const string TaskPriorityColumnName = "task_priority";
+
+		public const string TaskLastErrorColumnName = "task_last_error";
+
+		public const string TaskErrorCountColumnName = "task_error_count";
+
+		public const string TaskLastErrorIsRecoverableColumnName = "task_last_error_is_recoverable";
+
+		public const string TaskProcessingTimeMillisecondsColumnName = "task_processing_time_milliseconds";
+
+		public const string TaskPostedAtColumnName = "task_posted_at_ts";
+
+		public const string TaskFirstProcessingAttemptedAtColumnName = "task_first_processing_attempted_at_ts";
+
+		public const string TaskLastProcessingAttemptedAtColumnName = "task_last_processing_attempted_at_ts";
+
+		public const string TaskProcessingFinalizedAtColumnName = "task_processing_finalized_at_ts";
+
+		public const string TaskStatusIndexNameFormat = "idx_{0}_task_status";
+
+		public const string TaskTypeIndexNameFormat = "idx_{0}_task_type";
+
+		private bool mCreateTaskStatusIndex = false;
+
+		private bool mCreateTaskTypeIndex = false;
+
+		public QueueResultTableDbAssetSetup ()
+		{
+			mCreateTaskStatusIndex = true;
+			mCreateTaskTypeIndex = true;
+		}
+
+		public QueueResultTableDbAssetSetup ( bool createTaskStatusIndex, bool createTaskTypeIndex )
+		{
+			mCreateTaskStatusIndex = createTaskStatusIndex;
+			mCreateTaskTypeIndex = createTaskTypeIndex;
+		}
+
 		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
 		{
 			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.ResultsQueueTableName}
 				(
-					task_id uuid NOT NULL,
-					task_type character varying(250) NOT NULL,
-					task_source character varying( 250 ) NOT NULL,
-					task_payload text ,
-					task_status integer NOT NULL,
-					task_priority integer NOT NULL,
-					task_last_error text ,
-					task_error_count integer NOT NULL DEFAULT 0,
-					task_last_error_is_recoverable boolean NOT NULL DEFAULT false,
-					task_processing_time_milliseconds bigint NOT NULL DEFAULT 0,
-					task_posted_at_ts timestamp with time zone NOT NULL,
-					task_first_processing_attempted_at_ts timestamp with time zone,
-					task_last_processing_attempted_at_ts timestamp with time zone,
-					task_processing_finalized_at_ts timestamp with time zone,
+					{TaskIdColumnName} uuid NOT NULL,
+					{TaskTypeColumnName} character varying(250) NOT NULL,
+					{TaskSourceColumnName} character varying( 250 ) NOT NULL,
+					{TaskPayloadColumnName} text ,
+					{TaskStatusColumnName} integer NOT NULL,
+					{TaskPriorityColumnName} integer NOT NULL,
+					{TaskLastErrorColumnName} text ,
+					{TaskErrorCountColumnName} integer NOT NULL DEFAULT 0,
+					{TaskLastErrorIsRecoverableColumnName} boolean NOT NULL DEFAULT false,
+					{TaskProcessingTimeMillisecondsColumnName} bigint NOT NULL DEFAULT 0,
+					{TaskPostedAtColumnName} timestamp with time zone NOT NULL,
+					{TaskFirstProcessingAttemptedAtColumnName} timestamp with time zone,
+					{TaskLastProcessingAttemptedAtColumnName} timestamp with time zone,
+					{TaskProcessingFinalizedAtColumnName} timestamp with time zone,
 					CONSTRAINT pk_{mapping.ResultsQueueTableName}_task_id PRIMARY KEY ( task_id)
 				);";
 		}
 
-		private string GetDbTableIndexCreationScript ( QueuedTaskMapping mapping )
+		private string GetTaskStatusIndexCreationScript ( QueuedTaskMapping mapping )
 		{
-			return $@"CREATE INDEX idx_{mapping.ResultsQueueTableName}_task_status
+			string indexName = string.Format( TaskStatusIndexNameFormat, mapping.ResultsQueueTableName );
+			return $@"CREATE INDEX IF NOT EXISTS {indexName}
 					ON public.{mapping.ResultsQueueTableName} USING btree
-					(task_status ASC NULLS LAST);
-				CREATE INDEX idx_{mapping.ResultsQueueTableName}_task_type
+					(task_status ASC NULLS LAST);";
+		}
+
+		private string GetTaskTypeIndexCreationScript ( QueuedTaskMapping mapping )
+		{
+			string indexName = string.Format( TaskTypeIndexNameFormat, mapping.ResultsQueueTableName );
+			return $@"CREATE INDEX IF NOT EXISTS {indexName}
 					ON public.{mapping.ResultsQueueTableName} USING btree
 					(task_type ASC NULLS LAST);";
 		}
@@ -83,11 +137,23 @@ namespace LVD.Stakhanovise.NET.Setup
 
 			using ( NpgsqlConnection conn = await queueConnectionOptions.TryOpenConnectionAsync() )
 			{
-				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), conn ) )
+				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ),
+						conn ) )
 					await cmdTable.ExecuteNonQueryAsync();
 
-				using ( NpgsqlCommand cmdTableIndex = new NpgsqlCommand( GetDbTableIndexCreationScript( mapping ), conn ) )
-					await cmdTableIndex.ExecuteNonQueryAsync();
+				if ( mCreateTaskStatusIndex )
+				{
+					using ( NpgsqlCommand cmdCreateTaskStatusIndex = new NpgsqlCommand( GetTaskStatusIndexCreationScript( mapping ),
+							conn ) )
+						await cmdCreateTaskStatusIndex.ExecuteNonQueryAsync();
+				}
+
+				if ( mCreateTaskTypeIndex )
+				{
+					using ( NpgsqlCommand cmdCreateTaskTypeIndex = new NpgsqlCommand( GetTaskTypeIndexCreationScript( mapping ),
+							conn ) )
+						await cmdCreateTaskTypeIndex.ExecuteNonQueryAsync();
+				}
 			}
 		}
 	}
