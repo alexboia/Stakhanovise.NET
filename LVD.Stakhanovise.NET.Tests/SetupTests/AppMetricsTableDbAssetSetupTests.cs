@@ -88,7 +88,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		private QueuedTaskMapping GenerateNonDefaultMapping ()
 		{
 			QueuedTaskMapping mapping = new QueuedTaskMapping();
-			mapping.MetricsTableName = RandomizeTableName( mapping.MetricsTableName );
+			mapping.MetricsTableName = RandomizeDbAssetName( mapping.MetricsTableName );
 			return mapping;
 		}
 	}

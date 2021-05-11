@@ -76,7 +76,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		private QueuedTaskMapping GenerateNonDefaultMapping ()
 		{
 			QueuedTaskMapping mapping = new QueuedTaskMapping();
-			mapping.ExecutionTimeStatsTableName = RandomizeTableName( mapping.ExecutionTimeStatsTableName );
+			mapping.ExecutionTimeStatsTableName = RandomizeDbAssetName( mapping.ExecutionTimeStatsTableName );
 			return mapping;
 		}
 	}

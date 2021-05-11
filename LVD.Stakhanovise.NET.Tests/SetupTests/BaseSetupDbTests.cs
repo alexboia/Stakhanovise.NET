@@ -191,7 +191,51 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			return sequenceExists;
 		}
 
-		protected string RandomizeTableName ( string tableName )
+		protected async Task<bool> PgFunctionExists ( string functionName, Dictionary<string, char> expectedParams )
+		{
+			bool functionExists = false;
+
+			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( GetSetupTestDbConnectionString() ) )
+			{
+				string checkFunctionSql = $@"SELECT proargnames, proargmodes
+					FROM pg_proc 
+					WHERE proname = '{functionName}'
+						AND prokind = 'f'";
+
+				using ( NpgsqlCommand cmd = new NpgsqlCommand( checkFunctionSql, conn ) )
+				using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
+				{
+					if ( await rdr.ReadAsync() )
+					{
+						string[] actualArgNames = rdr.GetValue( rdr.GetOrdinal( "proargnames" ) )
+							as string[];
+						char[] actualArgModes = rdr.GetValue( rdr.GetOrdinal( "proargmodes" ) )
+							as char[];
+
+						if ( actualArgNames.Length == expectedParams.Count )
+						{
+							functionExists = true;
+							for ( int i = 0; i < actualArgNames.Length; i++ )
+							{
+								string actualArgName = actualArgNames[ i ];
+								char actualArgMode = actualArgModes[ i ];
+
+								if ( !expectedParams.ContainsKey( actualArgName ) 
+									|| expectedParams[ actualArgName ] != actualArgMode )
+								{
+									functionExists = false;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			return functionExists;
+		}
+
+		protected string RandomizeDbAssetName ( string tableName )
 		{
 			Faker faker = new Faker();
 			tableName = faker.Lorem.Letter( 5 ) + "_" + tableName;
