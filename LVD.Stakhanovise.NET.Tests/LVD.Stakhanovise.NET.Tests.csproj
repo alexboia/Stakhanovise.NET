@@ -39,4 +39,8 @@
     <ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="OptionsTests\" />
+  </ItemGroup>
+
 </Project>
