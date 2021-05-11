@@ -42,25 +42,47 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class DequeueFunctionDbAssetSetup : ISetupDbAsset
 	{
+		public const string SelectTypesParamName = "select_types";
+
+		public const string ExcludeIdsParamName = "exclude_ids";
+
+		public const string RefNowParamName = "ref_now";
+
+		public const string TaskIdTableParamName = "task_id";
+
+		public const string TaskLockHandleIdTableParamName = "task_lock_handle_id";
+
+		public const string TaskTypeTableParamName = "task_type";
+
+		public const string TaskSourceTableParamName = "task_source";
+
+		public const string TaskPayloadTableParamName = "task_payload";
+
+		public const string TaskPriorityTableParamName = "task_priority";
+
+		public const string TaskPostedAtTableParamName = "task_posted_at_ts";
+
+		public const string TaskLockedUntilTableParamName = "task_locked_until_ts";
+
 		private string GetDequeueFunctionCreationScript ( QueuedTaskMapping mapping )
 		{
 			return $@"CREATE OR REPLACE FUNCTION public.{mapping.DequeueFunctionName}(
-					select_types character varying[],
-					exclude_ids uuid[],
-					ref_now timestamp with time zone)
-				RETURNS TABLE(task_id uuid, 
-					task_lock_handle_id bigint, 
-					task_type character varying, 
-					task_source character varying, 
-					task_payload text, 
-					task_priority integer, 
-					task_posted_at_ts timestamp with time zone, 
-					task_locked_until_ts timestamp with time zone) 
+					{SelectTypesParamName} character varying[],
+					{ExcludeIdsParamName} uuid[],
+					{RefNowParamName} timestamp with time zone)
+				RETURNS TABLE({TaskIdTableParamName} uuid, 
+					{TaskLockHandleIdTableParamName} bigint, 
+					{TaskTypeTableParamName} character varying, 
+					{TaskSourceTableParamName} character varying, 
+					{TaskPayloadTableParamName} text, 
+					{TaskPriorityTableParamName} integer, 
+					{TaskPostedAtTableParamName} timestamp with time zone, 
+					{TaskLockedUntilTableParamName} timestamp with time zone) 
 				LANGUAGE 'plpgsql'
 
 			AS $BODY$
 				DECLARE
-					n_select_types integer = CARDINALITY(select_types);
+					n_select_types integer = CARDINALITY({SelectTypesParamName});
 	
 				BEGIN
 					RETURN QUERY 
@@ -68,9 +90,9 @@ namespace LVD.Stakhanovise.NET.Setup
 						(DELETE FROM {mapping.QueueTableName} td WHERE td.task_id = (
 							SELECT t0.task_id
 									FROM {mapping.QueueTableName} t0 
-									WHERE (t0.task_type = ANY(select_types) OR n_select_types = 0)
-										AND t0.task_id <> ALL(exclude_ids)
-										AND t0.task_locked_until_ts < ref_now
+									WHERE (t0.task_type = ANY({SelectTypesParamName}) OR n_select_types = 0)
+										AND t0.task_locked_until_ts < {RefNowParamName}
+										AND t0.task_id <> ALL({ExcludeIdsParamName})
 									ORDER BY t0.task_priority ASC,
 										t0.task_locked_until_ts ASC,
 										t0.task_lock_handle_id ASC
