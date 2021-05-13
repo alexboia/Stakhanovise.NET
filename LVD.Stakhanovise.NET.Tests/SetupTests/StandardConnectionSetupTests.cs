@@ -5,11 +5,12 @@ using NUnit.Framework;
 using LVD.Stakhanovise.NET.Setup;
 using Bogus;
 using LVD.Stakhanovise.NET.Options;
+using LVD.Stakhanovise.NET.Tests.SetupTests.Support;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
 	[TestFixture]
-	public class StandardConnectionSetupTests
+	public class StandardConnectionSetupTests : BaseConnectionSetupTests
 	{
 		[Test]
 		public void Test_NewInstance_ReportsAllNotConfigured ()
@@ -25,28 +26,28 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		[Repeat( 5 )]
 		public void Test_ConfiguredInstance_CorrectlyReportsConfiguredMembers ()
 		{
-			Faker faker = new Faker();
 			StandardConnectionSetup setup = new StandardConnectionSetup();
+			ConnectionOptionsSourceData sourceData = GenerateConnectionOptionsData();
 
-			setup.WithConnectionKeepAlive( faker.Random.Int( 0, 250 ) );
+			setup.WithConnectionKeepAlive( sourceData.ConnectionKeepAliveSeconds );
 			Assert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
 			Assert.IsFalse( setup.IsConnectionRetryCountUserConfigured );
 			Assert.IsFalse( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
 			Assert.IsFalse( setup.IsConnectionStringUserConfigured );
 
-			setup.WithConnectionRetryCount( faker.Random.Int( 0, 10 ) );
+			setup.WithConnectionRetryCount( sourceData.ConnectionRetryCount );
 			Assert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
 			Assert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
 			Assert.IsFalse( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
 			Assert.IsFalse( setup.IsConnectionStringUserConfigured );
 
-			setup.WithConnectionRetryDelayMilliseconds( faker.Random.Int( 100, 1000 ) );
+			setup.WithConnectionRetryDelayMilliseconds( sourceData.ConnectionRetryDelayMilliseconds );
 			Assert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
 			Assert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
 			Assert.IsTrue( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
 			Assert.IsFalse( setup.IsConnectionStringUserConfigured );
 
-			setup.WithConnectionString( faker.Random.String( 250 ) );
+			setup.WithConnectionString( sourceData.ConnectionString );
 			Assert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
 			Assert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
 			Assert.IsTrue( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
@@ -57,30 +58,17 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		[Repeat( 5 )]
 		public void Test_ConfiguredInstance_CorrectlyBuildsConnectionOptions ()
 		{
-			Faker faker = new Faker();
 			StandardConnectionSetup setup = new StandardConnectionSetup();
+			ConnectionOptionsSourceData sourceData = GenerateConnectionOptionsData();
 
-			string connectionString = faker.Random.String( 250 );
-			int connectionKeepAliveSeconds = faker.Random.Int( 0, 250 );
-			int connectionRetryCount = faker.Random.Int( 0, 10 );
-			int connectionRetryDelayMilliseconds = faker.Random.Int( 100, 1000 );
+			ConfigureSetupWithSourceData( setup, 
+				sourceData );
 
-			setup.WithConnectionKeepAlive( connectionKeepAliveSeconds )
-				.WithConnectionRetryCount( connectionRetryCount )
-				.WithConnectionRetryDelayMilliseconds( connectionRetryDelayMilliseconds )
-				.WithConnectionString( connectionString );
+			ConnectionOptions options = setup
+				.BuildOptions();
 
-			ConnectionOptions options = setup.BuildOptions();
-
-			Assert.NotNull( options );
-			Assert.AreEqual( connectionString, 
-				options.ConnectionString );
-			Assert.AreEqual( connectionKeepAliveSeconds, 
-				options.ConnectionKeepAliveSeconds );
-			Assert.AreEqual( connectionRetryCount, 
-				options.ConnectionRetryCount );
-			Assert.AreEqual( connectionRetryDelayMilliseconds, 
-				options.ConnectionRetryDelayMilliseconds );
+			AssertConnectionOptionsMatchesSourceData( sourceData, 
+				options );
 		}
 	}
 }
