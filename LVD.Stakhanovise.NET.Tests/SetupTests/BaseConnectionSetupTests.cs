@@ -29,14 +29,11 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+using Bogus;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Setup;
-using Bogus;
 using LVD.Stakhanovise.NET.Tests.SetupTests.Support;
+using NUnit.Framework;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {

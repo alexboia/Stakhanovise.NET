@@ -112,7 +112,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 						CompileCalculateDelayTicksTaskAfterFailureFnFromConfig( defaultsConfig, parseOptions );
 
 					if ( calculateDelayTicksTaskAfterFailureFn != null )
-						defaults.CalculateDelayTicksTaskAfterFailure = calculateDelayTicksTaskAfterFailureFn;
+						defaults.CalculateDelayMillisecondsTaskAfterFailure = calculateDelayTicksTaskAfterFailureFn;
 
 					Func<IQueuedTask, Exception, bool> isTaskErrorRecoverableFn =
 						CompileIsTaskErrorRecoverableFnFromConfig( defaultsConfig, parseOptions );

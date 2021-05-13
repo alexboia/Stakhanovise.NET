@@ -9,6 +9,11 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class ReasonableStakhanoviseDefaultsProvider : IStakhanoviseSetupDefaultsProvider
 	{
+		public const int DefaultFaultErrorThresholdCount = 5;
+
+		public const int DefaultAppMetricsCollectionIntervalMilliseconds = 10000;
+
+
 		public StakhanoviseSetupDefaults GetDefaults ()
 		{
 			int defaultWorkerCount = Math.Max( 1, Environment.ProcessorCount - 1 );
@@ -19,16 +24,15 @@ namespace LVD.Stakhanovise.NET.Setup
 				ExecutorAssemblies = GetDefaultAssembliesToScan(),
 				WorkerCount = defaultWorkerCount,
 
-				CalculateDelayTicksTaskAfterFailure = token
+				CalculateDelayMillisecondsTaskAfterFailure = token
 					=> ( long )Math.Pow( 10, token.LastQueuedTaskResult.ErrorCount + 1 ),
 
 				IsTaskErrorRecoverable = ( task, exc )
 					=> !( exc is NullReferenceException )
 						&& !( exc is ArgumentException ),
 
-				FaultErrorThresholdCount = 5,
-
-				AppMetricsCollectionIntervalMilliseconds = 10000,
+				FaultErrorThresholdCount = DefaultFaultErrorThresholdCount,
+				AppMetricsCollectionIntervalMilliseconds = DefaultAppMetricsCollectionIntervalMilliseconds,
 				AppMetricsMonitoringEnabled = true,
 				SetupBuiltInDbAsssets = true
 			};
@@ -40,7 +44,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		{
 			return new Assembly[]
 			{
-				Assembly.GetExecutingAssembly()
+				Assembly.GetEntryAssembly()
 			};
 		}
 	}

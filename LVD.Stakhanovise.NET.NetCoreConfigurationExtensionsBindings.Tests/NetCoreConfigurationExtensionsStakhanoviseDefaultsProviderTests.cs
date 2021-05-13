@@ -61,7 +61,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			Assert.AreEqual( 1, defaults.ExecutorAssemblies.Length );
 			Assert.AreEqual( "WinSCPnet.dll", Path.GetFileName( defaults.ExecutorAssemblies[ 0 ].Location ) );
 
-			Assert.NotNull( defaults.CalculateDelayTicksTaskAfterFailure );
+			Assert.NotNull( defaults.CalculateDelayMillisecondsTaskAfterFailure );
 			AssertCalculateDelayTicksTaskAfterFailureFnCorrect( defaults,
 				expected: ( token ) => ( long )Math.Ceiling( Math.Exp( token.LastQueuedTaskResult.ErrorCount + 1 ) ),
 				numberOfRuns: 100 );
@@ -90,7 +90,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 				long expectedVal = expected
 					.Invoke( tokenMock.Object );
-				long actualVal = defaults.CalculateDelayTicksTaskAfterFailure
+				long actualVal = defaults.CalculateDelayMillisecondsTaskAfterFailure
 					.Invoke( tokenMock.Object );
 
 				Assert.AreEqual( expectedVal, actualVal );

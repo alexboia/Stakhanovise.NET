@@ -46,7 +46,7 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public QueuedTaskMapping Mapping { get; set; }
 
-		public Func<IQueuedTaskToken, long> CalculateDelayTicksTaskAfterFailure { get; set; }
+		public Func<IQueuedTaskToken, long> CalculateDelayMillisecondsTaskAfterFailure { get; set; }
 
 		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; set; }
 

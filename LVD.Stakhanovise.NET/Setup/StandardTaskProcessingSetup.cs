@@ -52,7 +52,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( defaults ) );
 
 			mCalculateDelayTicksTaskAfterFailure = defaults
-				.CalculateDelayTicksTaskAfterFailure;
+				.CalculateDelayMillisecondsTaskAfterFailure;
 			mIsTaskErrorRecoverable = defaults
 				.IsTaskErrorRecoverable;
 			mFaultErrorThresholdCount = defaults
