@@ -41,7 +41,7 @@ using System.IO;
 namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 {
 	[TestFixture]
-	public class NetCoreConfigurationExtensionsStakhanoviseDefaultsProviderTests
+	public class NetCoreConfigurationStakhanoviseDefaultsProviderTests
 	{
 		private const string SampleSettingsFileFull = "appsettingssample-full.json";
 
@@ -54,8 +54,8 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			ReasonableStakhanoviseDefaultsProvider reasonableDefaultsProvider =
 				new ReasonableStakhanoviseDefaultsProvider();
 
-			NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider provider =
-				new NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider( TestDataDirectory,
+			NetCoreConfigurationStakhanoviseDefaultsProvider provider =
+				new NetCoreConfigurationStakhanoviseDefaultsProvider( TestDataDirectory,
 					SampleSettingsFileConnStringOnly,
 					"Lvd.Stakhanovise.Net.Config" );
 
@@ -102,8 +102,8 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 		[Repeat( 5 )]
 		public void Test_CanRead_FullConfig ()
 		{
-			NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider provider =
-				new NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider( TestDataDirectory,
+			NetCoreConfigurationStakhanoviseDefaultsProvider provider =
+				new NetCoreConfigurationStakhanoviseDefaultsProvider( TestDataDirectory,
 					SampleSettingsFileFull,
 					"Lvd.Stakhanovise.Net.Config" );
 

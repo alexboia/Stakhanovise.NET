@@ -41,7 +41,7 @@ using System.Reflection;
 
 namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 {
-	public class NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider : IStakhanoviseSetupDefaultsProvider
+	public class NetCoreConfigurationStakhanoviseDefaultsProvider : IStakhanoviseSetupDefaultsProvider
 	{
 		public const string DefaultConfigFileName = "appsettings.json";
 
@@ -57,13 +57,13 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 
 		private string[] mImports;
 
-		public NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider ()
+		public NetCoreConfigurationStakhanoviseDefaultsProvider ()
 			: this( new ReasonableStakhanoviseDefaultsProvider() )
 		{
 			return;
 		}
 
-		public NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider ( IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider )
+		public NetCoreConfigurationStakhanoviseDefaultsProvider ( IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider )
 			: this( Directory.GetCurrentDirectory(),
 					DefaultConfigFileName,
 					DefaultConfigSectionName,
@@ -72,7 +72,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return;
 		}
 
-		public NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider ( string basePath,
+		public NetCoreConfigurationStakhanoviseDefaultsProvider ( string basePath,
 			string configFileName,
 			string configSectionName )
 			: this( basePath,
@@ -84,7 +84,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return;
 		}
 
-		public NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider ( string basePath,
+		public NetCoreConfigurationStakhanoviseDefaultsProvider ( string basePath,
 			string configFileName,
 			string configSectionName,
 			IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider )
