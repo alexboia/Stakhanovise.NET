@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using NUnit.Framework;
-using LVD.Stakhanovise.NET.Setup;
-using LVD.Stakhanovise.NET.Model;
-using Moq;
+﻿using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Setup;
+using Moq;
+using NUnit.Framework;
+using System;
+using System.Reflection;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {

@@ -51,10 +51,10 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 
 		public int AppMetricsCollectionIntervalMilliseconds { get; set; }
 
-		public bool AppMetricsMonitoringEnabled { get; set; }
+		public bool? AppMetricsMonitoringEnabled { get; set; }
 
-		public bool SetupBuiltInDbAsssets { get; set; }
+		public bool? SetupBuiltInDbAsssets { get; set; }
 
-		public string ConnectionString { get; set; }
+		public string ConnectionStringName { get; set; }
 	}
 }

@@ -6,11 +6,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TestData\appsettingssample-connstringonly.json" />
     <None Remove="TestData\appsettingssample-full.json" />
     <None Remove="TestData\Assemblies\WinSCPnet.dll" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="TestData\appsettingssample-connstringonly.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="TestData\appsettingssample-full.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

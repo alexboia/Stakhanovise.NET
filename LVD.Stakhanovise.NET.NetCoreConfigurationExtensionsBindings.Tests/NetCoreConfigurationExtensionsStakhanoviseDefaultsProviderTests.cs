@@ -29,28 +29,82 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using Bogus;
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Setup;
-using NUnit.Framework;
 using Moq;
-using LVD.Stakhanovise.NET.Model;
-using Bogus;
+using NUnit.Framework;
+using System;
+using System.IO;
 
 namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 {
 	[TestFixture]
 	public class NetCoreConfigurationExtensionsStakhanoviseDefaultsProviderTests
 	{
+		private const string SampleSettingsFileFull = "appsettingssample-full.json";
+
+		private const string SampleSettingsFileConnStringOnly = "appsettingssample-connstringonly.json";
+
 		[Test]
+		[Repeat( 5 )]
+		public void Test_CanRead_ConnStringOnly ()
+		{
+			ReasonableStakhanoviseDefaultsProvider reasonableDefaultsProvider =
+				new ReasonableStakhanoviseDefaultsProvider();
+
+			NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider provider =
+				new NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider( TestDataDirectory,
+					SampleSettingsFileConnStringOnly,
+					"Lvd.Stakhanovise.Net.Config" );
+
+			StakhanoviseSetupDefaults defaults =
+				provider.GetDefaults();
+
+			StakhanoviseSetupDefaults reasonableDefaults =
+				reasonableDefaultsProvider.GetDefaults();
+
+			Assert.NotNull( defaults );
+
+			AssertDefaultsFromConfigMatchReasonableDefaults( defaults, reasonableDefaults );
+			AssertConnectionStringCorrect( defaults );
+		}
+
+		private void AssertConnectionStringCorrect ( StakhanoviseSetupDefaults defaults )
+		{
+			Assert.NotNull( defaults.ConnectionString );
+			Assert.IsNotEmpty( defaults.ConnectionString );
+		}
+
+		private void AssertDefaultsFromConfigMatchReasonableDefaults ( StakhanoviseSetupDefaults defaults,
+			StakhanoviseSetupDefaults reasonableDefaults )
+		{
+			Assert.AreEqual( reasonableDefaults.WorkerCount,
+				defaults.WorkerCount );
+			CollectionAssert.AreEqual( reasonableDefaults.ExecutorAssemblies,
+				defaults.ExecutorAssemblies );
+			Assert.AreEqual( reasonableDefaults.CalculateDelayMillisecondsTaskAfterFailure,
+				defaults.CalculateDelayMillisecondsTaskAfterFailure );
+			Assert.AreEqual( reasonableDefaults.IsTaskErrorRecoverable,
+				defaults.IsTaskErrorRecoverable );
+			Assert.AreEqual( reasonableDefaults.FaultErrorThresholdCount,
+				defaults.FaultErrorThresholdCount );
+			Assert.AreEqual( reasonableDefaults.AppMetricsCollectionIntervalMilliseconds,
+				defaults.AppMetricsCollectionIntervalMilliseconds );
+			Assert.AreEqual( reasonableDefaults.AppMetricsMonitoringEnabled,
+				defaults.AppMetricsMonitoringEnabled );
+			Assert.AreEqual( reasonableDefaults.SetupBuiltInDbAsssets,
+				defaults.SetupBuiltInDbAsssets );
+		}
+
+		[Test]
+		[Repeat( 5 )]
 		public void Test_CanRead_FullConfig ()
 		{
 			NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider provider =
 				new NetCoreConfigurationExtensionsStakhanoviseDefaultsProvider( TestDataDirectory,
-					"appsettingssample-full.json",
+					SampleSettingsFileFull,
 					"Lvd.Stakhanovise.Net.Config" );
 
 			StakhanoviseSetupDefaults defaults =
@@ -72,6 +126,8 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 					&& !( exc is ArgumentException )
 					&& !( exc is ApplicationException ),
 				numberOfRuns: 100 );
+
+			AssertConnectionStringCorrect( defaults );
 		}
 
 		private void AssertCalculateDelayTicksTaskAfterFailureFnCorrect ( StakhanoviseSetupDefaults defaults,
@@ -130,7 +186,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			for ( int i = 0; i < numberOfRuns; i++ )
 			{
 				Exception exc = faker.System.Exception();
-				Assert.AreEqual( expected.Invoke( taskMock.Object, exc ), 
+				Assert.AreEqual( expected.Invoke( taskMock.Object, exc ),
 					defaults.IsTaskErrorRecoverable.Invoke( taskMock.Object, exc ) );
 			}
 		}
