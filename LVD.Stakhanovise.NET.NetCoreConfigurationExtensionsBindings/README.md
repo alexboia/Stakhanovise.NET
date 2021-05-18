@@ -14,7 +14,7 @@ TODO
 
 ### 2. Registering the defaults provider
 
-```
+```csharp
 await Stakhanovise
 	.CreateForTheMotherland(new NetCoreConfigurationStakhanoviseDefaultsProvider())
 	.SetupWorkingPeoplesCommittee(setup => 
