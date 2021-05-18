@@ -1,4 +1,4 @@
-﻿#LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
+﻿# LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 
 This is a [Stakhanovise.NET](https://github.com/alexboia/Stakhanovise.NET) add-on package that enables configuration via the `Microsoft.Extensions.Configuration` package, using the json format.
 
@@ -40,11 +40,18 @@ The configuration options are stored under a dedicated key, which by default is 
 The model (structure and types) for the configuration options can be found [here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings/StakhanoviseSetupDefaultsConfig.cs).
 Special notes:
 
-- the `CalculateDelayTicksTaskAfterFailure` option is a `Func<IQueuedTaskToken, long>` and can be specified using plain C# code, which will be compiled when the configuration options are read;
-- the `IsTaskErrorRecoverable` option is a `Func<IQueuedTask, Exception, bool>` and can be specified using plain C# code, which will be compiled when the configuration options are read;
+- the `ConnectionStringName` option must refer to a valid connection string entry in the file's `ConnectionStrings` section;
+- the `CalculateDelayTicksTaskAfterFailure` option is a `Func<IQueuedTaskToken, long>` and must be specified using plain C# lambda literal code, which will be compiled when the configuration options are read;
+- the `IsTaskErrorRecoverable` option is a `Func<IQueuedTask, Exception, bool>` and must be specified using plain C# lambda literal code, which will be compiled when the configuration options are read;
 - the `ExecutorAssemblies` option, that is, the list of executor assemblies, is processed by loading each entry using `Assembly.LoadFrom()`.
 
 Please see the corresponding [test project](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests) for [a set of sample configuration files](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests/TestData).
+
+#### The fallback provider
+
+There is no need to specify all the configuration options in the configuration file. 
+The ones that are missing will be pulled from a fallback provider, which by default is Stakhanovise.NET's built-in [ReasonableStakhanoviseDefaultsProvider](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Setup/ReasonableStakhanoviseDefaultsProvider.cs).
+One may specify a custom fallback provider when setting up a `NetCoreConfigurationStakhanoviseDefaultsProvider` instance.
 
 ## Dependencies
 
