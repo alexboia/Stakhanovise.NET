@@ -47,6 +47,10 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 		private const string SampleSettingsFileConnStringOnly = "appsettingssample-connstringonly.json";
 
+		private const string SampleSettingsFileConnStringAndMapping = "appsettingssample-connstring+mapping.json";
+
+		private const string TestConnectionString = "Host=localmotherland;Port=61117;Database=coal_mining_db;Username=postgres;Password=forthemotherland1917;";
+
 		[Test]
 		[Repeat( 5 )]
 		public void Test_CanRead_ConnStringOnly ()
@@ -69,12 +73,14 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 			AssertDefaultsFromConfigMatchReasonableDefaults( defaults, reasonableDefaults );
 			AssertConnectionStringCorrect( defaults );
+			AssertMappingMatchesDefaultMapping( defaults );
 		}
 
 		private void AssertConnectionStringCorrect ( StakhanoviseSetupDefaults defaults )
 		{
 			Assert.NotNull( defaults.ConnectionString );
 			Assert.IsNotEmpty( defaults.ConnectionString );
+			Assert.AreEqual( TestConnectionString, defaults.ConnectionString );
 		}
 
 		private void AssertDefaultsFromConfigMatchReasonableDefaults ( StakhanoviseSetupDefaults defaults,
@@ -98,6 +104,31 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 				defaults.SetupBuiltInDbAsssets );
 		}
 
+		private void AssertMappingMatchesDefaultMapping ( StakhanoviseSetupDefaults defaults )
+		{
+			QueuedTaskMapping defaultMapping =
+				GetDefaultMapping();
+			AssertMappingsEqual( defaultMapping,
+				defaults.Mapping );
+		}
+
+		private void AssertMappingsEqual ( QueuedTaskMapping expected, QueuedTaskMapping actual )
+		{
+			Assert.NotNull( actual );
+			Assert.AreEqual( expected.QueueTableName,
+				actual.QueueTableName );
+			Assert.AreEqual( expected.ResultsQueueTableName,
+				actual.ResultsQueueTableName );
+			Assert.AreEqual( expected.NewTaskNotificationChannelName,
+				actual.NewTaskNotificationChannelName );
+			Assert.AreEqual( expected.ExecutionTimeStatsTableName,
+				actual.ExecutionTimeStatsTableName );
+			Assert.AreEqual( expected.MetricsTableName,
+				actual.MetricsTableName );
+			Assert.AreEqual( expected.DequeueFunctionName,
+				actual.DequeueFunctionName );
+		}
+
 		[Test]
 		[Repeat( 5 )]
 		public void Test_CanRead_FullConfig ()
@@ -111,6 +142,13 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 				provider.GetDefaults();
 
 			Assert.NotNull( defaults );
+
+			Assert.AreEqual( 12, defaults.WorkerCount );
+			Assert.AreEqual( 13, defaults.FaultErrorThresholdCount );
+			Assert.AreEqual( 1234, defaults.AppMetricsCollectionIntervalMilliseconds );
+			Assert.AreEqual( true, defaults.AppMetricsMonitoringEnabled );
+			Assert.AreEqual( true, defaults.SetupBuiltInDbAsssets );
+
 			Assert.NotNull( defaults.ExecutorAssemblies );
 			Assert.AreEqual( 1, defaults.ExecutorAssemblies.Length );
 			Assert.AreEqual( "WinSCPnet.dll", Path.GetFileName( defaults.ExecutorAssemblies[ 0 ].Location ) );
@@ -128,6 +166,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 				numberOfRuns: 100 );
 
 			AssertConnectionStringCorrect( defaults );
+			AssertMappingMatchesNonDefaultTestMapping( defaults );
 		}
 
 		private void AssertCalculateDelayTicksTaskAfterFailureFnCorrect ( StakhanoviseSetupDefaults defaults,
@@ -157,10 +196,22 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			Func<IQueuedTask, Exception, bool> expected,
 			int numberOfRuns )
 		{
+			AssertIsTaskErrorRecoverableFnCorrectForNonRecoverableErrors( defaults,
+				numberOfRuns );
+
+			AssertIsTaskErrorRecoverableFnCorrectForRecoverableErrors( defaults,
+				numberOfRuns );
+
+			AssertIsTascKErrorRecoverableFnCorrectCompareWithExpectedFn( defaults,
+				expected,
+				numberOfRuns );
+		}
+
+		private void AssertIsTaskErrorRecoverableFnCorrectForNonRecoverableErrors ( StakhanoviseSetupDefaults defaults, int numberOfRuns )
+		{
 			Faker faker = new Faker();
 			Mock<IQueuedTask> taskMock = new Mock<IQueuedTask>();
 
-			//1. Check with exceptions known to return true
 			for ( int i = 0; i < numberOfRuns; i++ )
 			{
 				Assert.IsFalse( defaults.IsTaskErrorRecoverable( taskMock.Object,
@@ -170,8 +221,13 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 				Assert.IsFalse( defaults.IsTaskErrorRecoverable( taskMock.Object,
 					new ApplicationException( faker.Lorem.Sentence() ) ) );
 			}
+		}
 
-			//2. Check with exceptions known to return false
+		private void AssertIsTaskErrorRecoverableFnCorrectForRecoverableErrors ( StakhanoviseSetupDefaults defaults, int numberOfRuns )
+		{
+			Faker faker = new Faker();
+			Mock<IQueuedTask> taskMock = new Mock<IQueuedTask>();
+
 			for ( int i = 0; i < numberOfRuns; i++ )
 			{
 				Assert.IsTrue( defaults.IsTaskErrorRecoverable( taskMock.Object,
@@ -181,14 +237,71 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 				Assert.IsTrue( defaults.IsTaskErrorRecoverable( taskMock.Object,
 					new ArithmeticException( faker.Lorem.Sentence() ) ) );
 			}
+		}
 
-			//3. Check with randomly generated exceptions
+		private void AssertIsTascKErrorRecoverableFnCorrectCompareWithExpectedFn ( StakhanoviseSetupDefaults defaults,
+			Func<IQueuedTask, Exception, bool> expected,
+			int numberOfRuns )
+		{
+			Faker faker = new Faker();
+			Mock<IQueuedTask> taskMock = new Mock<IQueuedTask>();
+
 			for ( int i = 0; i < numberOfRuns; i++ )
 			{
 				Exception exc = faker.System.Exception();
 				Assert.AreEqual( expected.Invoke( taskMock.Object, exc ),
 					defaults.IsTaskErrorRecoverable.Invoke( taskMock.Object, exc ) );
 			}
+		}
+
+		private void AssertMappingMatchesNonDefaultTestMapping ( StakhanoviseSetupDefaults defaults )
+		{
+			QueuedTaskMapping nonDefaultTestMapping =
+				GetNonDefaultTestMapping();
+			AssertMappingsEqual( nonDefaultTestMapping,
+				defaults.Mapping );
+		}
+
+		[Test]
+		public void Test_CanRead_ConnStringAndMapping()
+		{
+			ReasonableStakhanoviseDefaultsProvider reasonableDefaultsProvider =
+				new ReasonableStakhanoviseDefaultsProvider();
+
+			NetCoreConfigurationStakhanoviseDefaultsProvider provider =
+				new NetCoreConfigurationStakhanoviseDefaultsProvider( TestDataDirectory,
+					SampleSettingsFileConnStringAndMapping,
+					"Lvd.Stakhanovise.Net.Config" );
+
+			StakhanoviseSetupDefaults defaults =
+				provider.GetDefaults();
+
+			StakhanoviseSetupDefaults reasonableDefaults =
+				reasonableDefaultsProvider.GetDefaults();
+
+			Assert.NotNull( defaults );
+
+			AssertDefaultsFromConfigMatchReasonableDefaults( defaults, reasonableDefaults );
+			AssertConnectionStringCorrect( defaults );
+			AssertMappingMatchesNonDefaultTestMapping( defaults );
+		}
+
+		private QueuedTaskMapping GetNonDefaultTestMapping ()
+		{
+			return new QueuedTaskMapping()
+			{
+				QueueTableName = "sk1_queue_t",
+				ResultsQueueTableName = "sk1_results_queue_t",
+				NewTaskNotificationChannelName = "sk1_new_task_posted",
+				ExecutionTimeStatsTableName = "sk1_task_execution_time_stats_t",
+				MetricsTableName = "sk1_metrics_t",
+				DequeueFunctionName = "sk1_try_dequeue_task"
+			};
+		}
+
+		private QueuedTaskMapping GetDefaultMapping ()
+		{
+			return new QueuedTaskMapping();
 		}
 
 		private string TestDataDirectory => Path.Combine( Directory.GetCurrentDirectory(),
