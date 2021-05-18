@@ -47,7 +47,7 @@ Special notes:
 
 Please see the corresponding [test project](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests) for [a set of sample configuration files](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests/TestData).
 
-#### The fallback provider
+### 4. The fallback provider
 
 There is no need to specify all the configuration options in the configuration file. 
 The ones that are missing will be pulled from a fallback provider, which by default is Stakhanovise.NET's built-in [ReasonableStakhanoviseDefaultsProvider](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Setup/ReasonableStakhanoviseDefaultsProvider.cs).
