@@ -49,7 +49,48 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 		private const string SampleSettingsFileConnStringAndMapping = "appsettingssample-connstring+mapping.json";
 
+		private const string SampleSettingsFileExecutorAssembliesOnly = "appsettingssample-assembliesonly.json";
+
+		private const string SampleSettingsFileEmptySection = "appsettingssample-emptysection.json";
+
 		private const string TestConnectionString = "Host=localmotherland;Port=61117;Database=coal_mining_db;Username=postgres;Password=forthemotherland1917;";
+
+		[Test]
+		[Repeat( 5 )]
+		public void Test_CanRead_EmptySection ()
+		{
+			ReasonableStakhanoviseDefaultsProvider reasonableDefaultsProvider =
+				new ReasonableStakhanoviseDefaultsProvider();
+
+			NetCoreConfigurationStakhanoviseDefaultsProvider provider =
+				new NetCoreConfigurationStakhanoviseDefaultsProvider( TestDataDirectory,
+					SampleSettingsFileEmptySection,
+					"Lvd.Stakhanovise.Net.Config" );
+
+			StakhanoviseSetupDefaults defaults =
+				provider.GetDefaults();
+
+			StakhanoviseSetupDefaults reasonableDefaults =
+				reasonableDefaultsProvider.GetDefaults();
+
+			Assert.NotNull( defaults );
+
+			AssertDefaultsFromConfigMatchReasonableDefaults( defaults,
+				reasonableDefaults );
+
+			AssertExecutorAssembliesMatchReasonableDefaultsAssemblies( defaults,
+				reasonableDefaults );
+
+			AssertConnectionStringEmpty( defaults );
+
+			AssertMappingMatchesReasonableDefaultsMapping( defaults,
+				reasonableDefaults );
+		}
+
+		private void AssertConnectionStringEmpty ( StakhanoviseSetupDefaults defaults )
+		{
+			Assert.Null( defaults.ConnectionString );
+		}
 
 		[Test]
 		[Repeat( 5 )]
@@ -71,9 +112,16 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 			Assert.NotNull( defaults );
 
-			AssertDefaultsFromConfigMatchReasonableDefaults( defaults, reasonableDefaults );
+			AssertDefaultsFromConfigMatchReasonableDefaults( defaults,
+				reasonableDefaults );
+
+			AssertExecutorAssembliesMatchReasonableDefaultsAssemblies( defaults,
+				reasonableDefaults );
+
 			AssertConnectionStringCorrect( defaults );
-			AssertMappingMatchesDefaultMapping( defaults );
+
+			AssertMappingMatchesReasonableDefaultsMapping( defaults,
+				reasonableDefaults );
 		}
 
 		private void AssertConnectionStringCorrect ( StakhanoviseSetupDefaults defaults )
@@ -83,13 +131,20 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			Assert.AreEqual( TestConnectionString, defaults.ConnectionString );
 		}
 
+		private void AssertExecutorAssembliesMatchReasonableDefaultsAssemblies ( StakhanoviseSetupDefaults defaults,
+			StakhanoviseSetupDefaults reasonableDefaults )
+		{
+			Assert.AreEqual( reasonableDefaults.ExecutorAssemblies.Length,
+				defaults.ExecutorAssemblies.Length );
+			CollectionAssert.AreEqual( reasonableDefaults.ExecutorAssemblies,
+				defaults.ExecutorAssemblies );
+		}
+
 		private void AssertDefaultsFromConfigMatchReasonableDefaults ( StakhanoviseSetupDefaults defaults,
 			StakhanoviseSetupDefaults reasonableDefaults )
 		{
 			Assert.AreEqual( reasonableDefaults.WorkerCount,
 				defaults.WorkerCount );
-			CollectionAssert.AreEqual( reasonableDefaults.ExecutorAssemblies,
-				defaults.ExecutorAssemblies );
 			Assert.AreEqual( reasonableDefaults.CalculateDelayMillisecondsTaskAfterFailure,
 				defaults.CalculateDelayMillisecondsTaskAfterFailure );
 			Assert.AreEqual( reasonableDefaults.IsTaskErrorRecoverable,
@@ -104,10 +159,11 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 				defaults.SetupBuiltInDbAsssets );
 		}
 
-		private void AssertMappingMatchesDefaultMapping ( StakhanoviseSetupDefaults defaults )
+		private void AssertMappingMatchesReasonableDefaultsMapping ( StakhanoviseSetupDefaults defaults,
+			StakhanoviseSetupDefaults reasonableDefaults )
 		{
 			QueuedTaskMapping defaultMapping =
-				GetDefaultMapping();
+				reasonableDefaults.Mapping;
 			AssertMappingsEqual( defaultMapping,
 				defaults.Mapping );
 		}
@@ -149,9 +205,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			Assert.AreEqual( true, defaults.AppMetricsMonitoringEnabled );
 			Assert.AreEqual( true, defaults.SetupBuiltInDbAsssets );
 
-			Assert.NotNull( defaults.ExecutorAssemblies );
-			Assert.AreEqual( 1, defaults.ExecutorAssemblies.Length );
-			Assert.AreEqual( "WinSCPnet.dll", Path.GetFileName( defaults.ExecutorAssemblies[ 0 ].Location ) );
+			AssertExecutorAssembliesMatchTestAssemblies( defaults );
 
 			Assert.NotNull( defaults.CalculateDelayMillisecondsTaskAfterFailure );
 			AssertCalculateDelayTicksTaskAfterFailureFnCorrect( defaults,
@@ -167,6 +221,13 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 			AssertConnectionStringCorrect( defaults );
 			AssertMappingMatchesNonDefaultTestMapping( defaults );
+		}
+
+		private void AssertExecutorAssembliesMatchTestAssemblies ( StakhanoviseSetupDefaults defaults )
+		{
+			Assert.NotNull( defaults.ExecutorAssemblies );
+			Assert.AreEqual( 1, defaults.ExecutorAssemblies.Length );
+			Assert.AreEqual( "WinSCPnet.dll", Path.GetFileName( defaults.ExecutorAssemblies[ 0 ].Location ) );
 		}
 
 		private void AssertCalculateDelayTicksTaskAfterFailureFnCorrect ( StakhanoviseSetupDefaults defaults,
@@ -263,7 +324,8 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 		}
 
 		[Test]
-		public void Test_CanRead_ConnStringAndMapping()
+		[Repeat( 5 )]
+		public void Test_CanRead_ConnStringAndMapping ()
 		{
 			ReasonableStakhanoviseDefaultsProvider reasonableDefaultsProvider =
 				new ReasonableStakhanoviseDefaultsProvider();
@@ -281,9 +343,42 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 			Assert.NotNull( defaults );
 
-			AssertDefaultsFromConfigMatchReasonableDefaults( defaults, reasonableDefaults );
+			AssertDefaultsFromConfigMatchReasonableDefaults( defaults,
+				reasonableDefaults );
+
 			AssertConnectionStringCorrect( defaults );
 			AssertMappingMatchesNonDefaultTestMapping( defaults );
+		}
+
+		[Test]
+		[Repeat( 5 )]
+		public void Test_CanRead_ExecutorAssembliesOnly ()
+		{
+			ReasonableStakhanoviseDefaultsProvider reasonableDefaultsProvider =
+				new ReasonableStakhanoviseDefaultsProvider();
+
+			NetCoreConfigurationStakhanoviseDefaultsProvider provider =
+				new NetCoreConfigurationStakhanoviseDefaultsProvider( TestDataDirectory,
+					SampleSettingsFileExecutorAssembliesOnly,
+					"Lvd.Stakhanovise.Net.Config" );
+
+			StakhanoviseSetupDefaults defaults =
+				provider.GetDefaults();
+
+			StakhanoviseSetupDefaults reasonableDefaults =
+				reasonableDefaultsProvider.GetDefaults();
+
+			Assert.NotNull( defaults );
+
+			AssertDefaultsFromConfigMatchReasonableDefaults( defaults,
+				reasonableDefaults );
+
+			AssertConnectionStringEmpty( defaults );
+
+			AssertMappingMatchesReasonableDefaultsMapping( defaults,
+				reasonableDefaults );
+
+			AssertExecutorAssembliesMatchTestAssemblies( defaults );
 		}
 
 		private QueuedTaskMapping GetNonDefaultTestMapping ()
@@ -297,11 +392,6 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 				MetricsTableName = "sk1_metrics_t",
 				DequeueFunctionName = "sk1_try_dequeue_task"
 			};
-		}
-
-		private QueuedTaskMapping GetDefaultMapping ()
-		{
-			return new QueuedTaskMapping();
 		}
 
 		private string TestDataDirectory => Path.Combine( Directory.GetCurrentDirectory(),
