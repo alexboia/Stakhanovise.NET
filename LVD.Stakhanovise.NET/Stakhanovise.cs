@@ -53,7 +53,7 @@ namespace LVD.Stakhanovise.NET
 
 		private DbAssetFactory mDbAssetFactory;
 
-		public Stakhanovise ( IStakhanoviseSetupDefaultsProvider defaultsProvider )
+		public Stakhanovise( IStakhanoviseSetupDefaultsProvider defaultsProvider )
 		{
 			if ( defaultsProvider == null )
 				throw new ArgumentNullException( nameof( defaultsProvider ) );
@@ -62,24 +62,24 @@ namespace LVD.Stakhanovise.NET
 			mStakhanoviseSetup = new StakhanoviseSetup( defaultsProvider.GetDefaults() );
 		}
 
-		private void CheckNotDisposedOrThrow ()
+		private void CheckNotDisposedOrThrow()
 		{
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( Stakhanovise ),
 					"Cannot reuse a Stakhanovise instance" );
 		}
 
-		public static Stakhanovise CreateForTheMotherland ( IStakhanoviseSetupDefaultsProvider defaultsProvider )
+		public static Stakhanovise CreateForTheMotherland( IStakhanoviseSetupDefaultsProvider defaultsProvider )
 		{
 			return new Stakhanovise( defaultsProvider );
 		}
 
-		public static Stakhanovise CreateForTheMotherland ()
+		public static Stakhanovise CreateForTheMotherland()
 		{
 			return CreateForTheMotherland( new ReasonableStakhanoviseDefaultsProvider() );
 		}
 
-		public Stakhanovise SetupWorkingPeoplesCommittee ( Action<IStakhanoviseSetup> setupAction )
+		public Stakhanovise SetupWorkingPeoplesCommittee( Action<IStakhanoviseSetup> setupAction )
 		{
 			CheckNotDisposedOrThrow();
 
@@ -90,7 +90,7 @@ namespace LVD.Stakhanovise.NET
 			return this;
 		}
 
-		public async Task<Stakhanovise> StartFulfillingFiveYearPlanAsync ()
+		public async Task<Stakhanovise> StartFulfillingFiveYearPlanAsync()
 		{
 			CheckNotDisposedOrThrow();
 
@@ -112,12 +112,18 @@ namespace LVD.Stakhanovise.NET
 			if ( mAppMetricsMonitor != null
 					&& !mAppMetricsMonitor.IsRunning
 					&& mEngine is IAppMetricsProvider )
-				await mAppMetricsMonitor.StartAsync( ( IAppMetricsProvider )mEngine );
+				await mAppMetricsMonitor.StartAsync( ( IAppMetricsProvider ) mEngine );
 
 			return this;
 		}
 
-		public async Task<Stakhanovise> StopFulfillingFiveYearPlanAsync ()
+		public Stakhanovise StartFulfillingFiveYearPlan()
+		{
+			return StartFulfillingFiveYearPlanAsync()
+				.Result;
+		}
+
+		public async Task<Stakhanovise> StopFulfillingFiveYearPlanAsync()
 		{
 			CheckNotDisposedOrThrow();
 
@@ -130,7 +136,13 @@ namespace LVD.Stakhanovise.NET
 			return this;
 		}
 
-		private void Dispose ( bool disposing )
+		public Stakhanovise StopFulfillingFiveYearPlan()
+		{
+			return StopFulfillingFiveYearPlanAsync()
+				.Result;
+		}
+
+		private void Dispose( bool disposing )
 		{
 			if ( !mIsDisposed )
 			{
@@ -154,7 +166,7 @@ namespace LVD.Stakhanovise.NET
 			}
 		}
 
-		public void Dispose ()
+		public void Dispose()
 		{
 			Dispose( true );
 			GC.SuppressFinalize( this );

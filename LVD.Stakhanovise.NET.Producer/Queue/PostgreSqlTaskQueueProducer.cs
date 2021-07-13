@@ -51,7 +51,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private ITimestampProvider mTimestampProvider;
 
-		public PostgreSqlTaskQueueProducer ( TaskQueueOptions options, ITimestampProvider timestampProvider )
+		public PostgreSqlTaskQueueProducer( TaskQueueOptions options, ITimestampProvider timestampProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
@@ -65,7 +65,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			mAddOrUpdateResultSql = GetAddOrUpdateResultSql( mOptions.Mapping );
 		}
 
-		private string GetInsertSql ( QueuedTaskMapping mapping )
+		private string GetInsertSql( QueuedTaskMapping mapping )
 		{
 			return $@"INSERT INTO {mapping.QueueTableName} (
 					task_id, task_payload, task_type, task_source, task_priority, task_posted_at_ts, task_locked_until_ts
@@ -74,7 +74,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				) RETURNING task_lock_handle_id";
 		}
 
-		private string GetAddOrUpdateResultSql ( QueuedTaskMapping mapping )
+		private string GetAddOrUpdateResultSql( QueuedTaskMapping mapping )
 		{
 			return $@"INSERT INTO {mapping.ResultsQueueTableName} (
 					task_id, task_type, task_source, task_payload, task_status, task_priority, task_posted_at_ts
@@ -87,14 +87,14 @@ namespace LVD.Stakhanovise.NET.Queue
 					task_posted_at_ts = EXCLUDED.task_posted_at_ts";
 		}
 
-		private async Task<NpgsqlConnection> TryOpenConnectionAsync ()
+		private async Task<NpgsqlConnection> TryOpenConnectionAsync()
 		{
 			return await mOptions
 				.ConnectionOptions
 				.TryOpenConnectionAsync();
 		}
 
-		public async Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload,
+		public async Task<IQueuedTask> EnqueueAsync<TPayload>( TPayload payload,
 			string source,
 			int priority )
 		{
@@ -119,7 +119,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			} );
 		}
 
-		public async Task<IQueuedTask> EnqueueAsync ( QueuedTaskInfo queuedTaskInfo )
+		public async Task<IQueuedTask> EnqueueAsync( QueuedTaskInfo queuedTaskInfo )
 		{
 			if ( queuedTaskInfo == null )
 				throw new ArgumentNullException( nameof( queuedTaskInfo ) );
@@ -141,7 +141,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			return queuedTask;
 		}
 
-		private async Task<QueuedTask> TryPostTaskAsync ( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
+		private async Task<QueuedTask> TryPostTaskAsync( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
 		{
 			using ( NpgsqlCommand insertCmd = new NpgsqlCommand( mInsertSql, conn, tx ) )
 			{
@@ -160,14 +160,14 @@ namespace LVD.Stakhanovise.NET.Queue
 				insertCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
 					queuedTask.PostedAtTs );
 
-				queuedTask.LockHandleId = ( long )await insertCmd
+				queuedTask.LockHandleId = ( long ) await insertCmd
 					.ExecuteScalarAsync();
 			}
 
 			return queuedTask;
 		}
 
-		private async Task TryInitOrUpdateResultAsync ( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
+		private async Task TryInitOrUpdateResultAsync( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
 		{
 			using ( NpgsqlCommand addOrUpdateResultCmd = new NpgsqlCommand( mAddOrUpdateResultSql, conn, tx ) )
 			{
@@ -180,7 +180,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_payload", NpgsqlDbType.Text,
 					queuedTask.Payload.ToJson( includeTypeInformation: true ) );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_status", NpgsqlDbType.Integer,
-					( int )QueuedTaskStatus.Unprocessed );
+					( int ) QueuedTaskStatus.Unprocessed );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_priority", NpgsqlDbType.Integer,
 					queuedTask.Priority );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
@@ -191,14 +191,14 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private QueuedTask NewTaskFromInfo ( QueuedTaskInfo queuedTaskInfo )
+		private QueuedTask NewTaskFromInfo( QueuedTaskInfo queuedTaskInfo )
 		{
 			QueuedTask queuedTask =
 				new QueuedTask();
 
-			queuedTask.Id = queuedTaskInfo.Id.Equals( Guid.Empty )
-				? Guid.NewGuid()
-				: queuedTaskInfo.Id;
+			queuedTask.Id = queuedTaskInfo.HasId
+				? queuedTaskInfo.Id
+				: Guid.NewGuid();
 
 			queuedTask.Payload = queuedTaskInfo.Payload;
 			queuedTask.Type = queuedTaskInfo.Type;
@@ -210,7 +210,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			return queuedTask;
 		}
 
-		public ITimestampProvider TimestampProvider 
+		public ITimestampProvider TimestampProvider
 			=> mTimestampProvider;
 	}
 }

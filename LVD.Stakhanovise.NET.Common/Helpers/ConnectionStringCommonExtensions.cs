@@ -38,39 +38,19 @@ using Npgsql;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
-	public static class ConnectionStringExtensions
+	public static class ConnectionStringCommonExtensions
 	{
-		public static string DeriveSignalingConnectionString ( this string connectionString, TaskQueueConsumerOptions options )
+		public static NpgsqlConnectionStringBuilder Copy( this NpgsqlConnectionStringBuilder builder )
 		{
-			if ( string.IsNullOrEmpty( connectionString ) )
-				throw new ArgumentNullException( nameof( connectionString ) );
+			if ( builder == null )
+				return null;
 
-			if ( options == null )
-				throw new ArgumentNullException( nameof( options ) );
+			NpgsqlConnectionStringBuilder builderCopy = new NpgsqlConnectionStringBuilder();
 
-			NpgsqlConnectionStringBuilder builder = new NpgsqlConnectionStringBuilder( connectionString );
-			return builder.DeriveSignalingConnectionString( options );
-		}
+			foreach ( string key in builder.Keys )
+				builderCopy[ key ] = builder[ key ];
 
-		public static string DeriveSignalingConnectionString ( this NpgsqlConnectionStringBuilder info, TaskQueueConsumerOptions options )
-		{
-			if ( info == null )
-				throw new ArgumentNullException( nameof( info ) );
-
-			//The connection used for signaling will be 
-			//  the same as the one used for read-only queue operation 
-			//  with the notable exceptions that: 
-			//  a) we need  to activate the Npgsql keepalive mechanism (see: http://www.npgsql.org/doc/keepalive.html)
-			//  b) we do not need a large pool - one connection will do
-
-			NpgsqlConnectionStringBuilder signalingConnectionStringInfo = info.Copy();
-
-			signalingConnectionStringInfo.Pooling = true;
-			signalingConnectionStringInfo.MinPoolSize = 1;
-			signalingConnectionStringInfo.MaxPoolSize = 2;
-			signalingConnectionStringInfo.KeepAlive = options.ConnectionOptions.ConnectionKeepAliveSeconds;
-
-			return signalingConnectionStringInfo.ToString();
+			return builderCopy;
 		}
 	}
 }

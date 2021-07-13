@@ -50,8 +50,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private bool mIsDisposed = false;
 
-		private long mLastRequestId;
-
 		private IAppMetricsMonitorWriter mWriter;
 
 		private IEnumerable<IAppMetricsProvider> mProviders;

@@ -36,6 +36,7 @@ using Npgsql;
 using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -84,6 +85,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			if ( appMetrics == null )
 				throw new ArgumentNullException( nameof( appMetrics ) );
+
+			if ( appMetrics.Count() == 0 )
+				return affectedRows;
 
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )

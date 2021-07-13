@@ -74,25 +74,26 @@ namespace LVD.Stakhanovise.NET.Model
 					"Maximum allowed fail count must be greater than or equal to 0" );
 
 			mRequestId = requestId;
-			mCancellationTokenSource = new CancellationTokenSource();
+			mMaxFailCount = maxFailCount;
+			mCompletionToken = new TaskCompletionSource<TResult>();
 
 			//If timeout is specified, then schedule the CTS 
 			//	to automatically request cancellation
 			if ( timeoutMilliseconds > 0 )
-			{
-				mTimer = new ServerTimer();
-				mTimer.Interval = timeoutMilliseconds;
-				mTimer.AutoReset = false;
-				mTimer.Elapsed += HandleCancellationTimerElapsed;
-				mTimer.Start();
-			}
+				StartCancellationTimer( timeoutMilliseconds );
 
-			//Register a handler for when cancellation is requested
-			mCancellationToken = mCancellationTokenSource.Token;
-			mCancellationTokenRegistration = mCancellationToken.Register( () => HandleCancellationRequested() );
+			SetupCancellation();
+		}
 
-			mCompletionToken = new TaskCompletionSource<TResult>();
-			mMaxFailCount = maxFailCount;
+		private void SetupCancellation()
+		{
+			//TODO: simplify cancellation: tokens might not be required after all...
+			mCancellationTokenSource = 
+				new CancellationTokenSource();
+			mCancellationToken = mCancellationTokenSource
+				.Token;
+			mCancellationTokenRegistration = mCancellationToken.Register( () 
+				=> HandleCancellationRequested() );
 		}
 
 		private void HandleCancellationTimerElapsed ( object sender, ElapsedEventArgs e )
@@ -107,15 +108,13 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		private void ShutdownCancellationTimer ()
+		private void StartCancellationTimer ( int timeoutMilliseconds )
 		{
-			if ( mTimer != null )
-			{
-				mTimer.Elapsed -= HandleCancellationTimerElapsed;
-				mTimer.Stop();
-				mTimer.Dispose();
-				mTimer = null;
-			}
+			mTimer = new ServerTimer();
+			mTimer.Interval = timeoutMilliseconds;
+			mTimer.AutoReset = false;
+			mTimer.Elapsed += HandleCancellationTimerElapsed;
+			mTimer.Start();
 		}
 
 		private void HandleCancellationRequested ()
@@ -150,6 +149,17 @@ namespace LVD.Stakhanovise.NET.Model
 				IncrementFailCount();
 				if ( !CanBeRetried )
 					mCompletionToken.TrySetException( exc );
+			}
+		}
+
+		private void ShutdownCancellationTimer ()
+		{
+			if ( mTimer != null )
+			{
+				mTimer.Elapsed -= HandleCancellationTimerElapsed;
+				mTimer.Stop();
+				mTimer.Dispose();
+				mTimer = null;
 			}
 		}
 

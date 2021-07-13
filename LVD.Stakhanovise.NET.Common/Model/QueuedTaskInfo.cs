@@ -48,5 +48,7 @@ namespace LVD.Stakhanovise.NET.Model
 		public int Priority { get; set; }
 
 		public DateTimeOffset LockedUntilTs { get; set; }
+
+		public bool HasId => !Id.Equals(Guid.Empty);
 	}
 }
