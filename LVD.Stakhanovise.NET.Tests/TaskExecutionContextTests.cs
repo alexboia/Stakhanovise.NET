@@ -46,8 +46,13 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	public class TaskExecutionContextTests
 	{
+		/// <summary>
+		/// Thread.Sleep that we use to simulate timeouts is rather inaccurate
+		/// </summary>
+		private const double RelativeDurationDelta = 0.15;
+
 		[Test]
-		public void Test_CanNotifyTaskCompleted ()
+		public void Test_CanNotifyTaskCompleted()
 		{
 			Faker faker = new Faker();
 
@@ -68,7 +73,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public void Test_CanNotifyTaskErrored ()
+		public void Test_CanNotifyTaskErrored()
 		{
 			Faker faker = new Faker();
 
@@ -101,7 +106,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public void Test_CanNotifyCancellationObserved ()
+		public void Test_CanNotifyCancellationObserved()
 		{
 			Faker faker = new Faker();
 
@@ -121,7 +126,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public void Test_CanThrowIfCancellationRequested ()
+		public void Test_CanThrowIfCancellationRequested()
 		{
 			Faker faker = new Faker();
 
@@ -143,7 +148,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 1200 )]
 		[TestCase( 2500 )]
 		[Repeat( 10 )]
-		public void Test_CanTimeExecution_ExplicitStop ( int duration )
+		public void Test_CanTimeExecution_ExplicitStop( int duration )
 		{
 			Mock<IQueuedTaskToken> taskMock =
 				new Mock<IQueuedTaskToken>( MockBehavior.Loose );
@@ -157,7 +162,8 @@ namespace LVD.Stakhanovise.NET.Tests
 				ctx.StopTimingExecution();
 
 				double measureDuration = ctx.Duration.TotalMilliseconds;
-				Assert.LessOrEqual(  Math.Abs( measureDuration - duration ), 15 );
+				Assert.LessOrEqual( Math.Abs( measureDuration - duration ) / duration,
+					RelativeDurationDelta );
 			}
 		}
 
@@ -168,7 +174,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 1200 )]
 		[TestCase( 2500 )]
 		[Repeat( 10 )]
-		public void Test_CanTimeExecution_ImplicitStop ( int duration )
+		public void Test_CanTimeExecution_ImplicitStop( int duration )
 		{
 			Mock<IQueuedTaskToken> taskMock =
 				new Mock<IQueuedTaskToken>( MockBehavior.Loose );
@@ -181,7 +187,8 @@ namespace LVD.Stakhanovise.NET.Tests
 				Thread.Sleep( duration );
 
 				double measureDuration = ctx.Duration.TotalMilliseconds;
-				Assert.LessOrEqual( Math.Abs( measureDuration - duration ), 15 );
+				Assert.LessOrEqual( Math.Abs( measureDuration - duration ) / duration,
+					RelativeDurationDelta );
 			}
 		}
 	}
