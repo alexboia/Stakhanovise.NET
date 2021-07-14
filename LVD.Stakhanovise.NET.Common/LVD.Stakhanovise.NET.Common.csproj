@@ -1,9 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.licenseheader" Link="LVD.Stakhanovise.NET.licenseheader" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
