@@ -275,6 +275,8 @@ await Stakhanovise
 ## Samples
 <a name="sk-samples"></a>
 
+1. [File hashing sample application](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Samples.FileHasher) - generates some random files and then computes a SHA-256 for each one using a Stakhanovise instance.
+
 ## Architecture description
 <a name="sk-architecture-description"></a>
 
@@ -294,6 +296,7 @@ The source code is published under the terms of the [BSD New License](https://op
 
 1. [Npgsql](https://github.com/npgsql/npgsql) - The .NET data provider for PostgreSQL. 
 2. [Json.NET / Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) - Json.NET is a popular high-performance JSON framework for .NET.
+3. [Monotonic timestamp implementation](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Model/MonotonicTimestamp.cs) - coutesy of [https://antonymale.co.uk/monotonic-timestamps-in-csharp.html](https://antonymale.co.uk/monotonic-timestamps-in-csharp.html).
 
 ## Donate
 
