@@ -8,6 +8,8 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Configuration
 	{
 		public string WorkingDirectory { get; set; }
 
+		public string ProducerConnectionStringName { get; set; }
+
 		public IntervalConfig FileCount { get; set; }
 
 		public IntervalConfig FileSizeBytes { get; set; }

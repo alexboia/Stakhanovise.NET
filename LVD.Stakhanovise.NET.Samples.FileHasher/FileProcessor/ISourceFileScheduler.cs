@@ -2,11 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor
 {
 	public interface ISourceFileScheduler
 	{
-		void ScheduleFiles( ISourceFileRepository sourceFileRepository );
+		Task ScheduleFilesAsync( ISourceFileRepository sourceFileRepository, IProcessingWatcher processingWatcher );
 	}
 }

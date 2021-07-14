@@ -12,6 +12,6 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor
 
 		void NotifyFileHashed( FileHandle fileHandle );
 
-		Task WaitForCompletion();
+		Task WaitForCompletionAsync();
 	}
 }

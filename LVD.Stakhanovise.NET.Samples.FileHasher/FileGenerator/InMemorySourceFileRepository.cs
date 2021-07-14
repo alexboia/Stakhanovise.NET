@@ -30,6 +30,8 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator
 			return result;
 		}
 
+		public IEnumerable<Guid> AllFileHandleIds => mFileHandleDictionary.Keys;
+
 		public int TotalFileCount => mFileHandleDictionary.Count;
 	}
 }

@@ -8,6 +8,8 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator
 	{
 		FileHandle ResolveFileByHandleId( Guid handleId );
 
+		IEnumerable<Guid> AllFileHandleIds { get; }
+
 		int TotalFileCount { get; }
 	}
 }

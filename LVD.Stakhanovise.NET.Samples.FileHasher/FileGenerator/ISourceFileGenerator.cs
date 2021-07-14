@@ -9,5 +9,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator
 	public interface ISourceFileGenerator
 	{
 		Task<ISourceFileRepository> GenerateSourceFilesAsync( FileHasherAppConfig appConfig );
+
+		Task CleanupSourceFilesAsync( FileHasherAppConfig appConfig );
 	}
 }

@@ -4,7 +4,11 @@ using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Samples.FileHasher.Configuration;
 using LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator;
 using LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor;
+using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Options;
+using LVD.Stakhanovise.NET.Model;
 using Microsoft.Extensions.Configuration;
+using LVD.Stakhanovise.NET.Samples.FileHasher.Setup;
 
 namespace LVD.Stakhanovise.NET.Samples.FileHasher
 {
@@ -14,6 +18,14 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 
 		private const string ConfigurationSectionName = "Lvd.Stakhanovise.Net.Samples.FileHasher.Config";
 
+		private IConfiguration mConfiguration;
+
+		private FileHasherAppConfig mAppConfiguration;
+
+		private string mConnectionString;
+
+		private FileHasherAppSetup mAppSetup;
+
 		public static void Main( string[] args )
 		{
 			new Program()
@@ -21,33 +33,21 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 				.Wait();
 		}
 
-		private async Task RunAsync()
+		public Program()
 		{
-			FileHasherAppConfig appConfig =
-				ReadAppConfig();
-
-			ISourceFileGenerator fileGenerator =
-				CreateSourceFileGenerator();
-			ISourceFileRepository sourceFileRepository = await fileGenerator
-				.GenerateSourceFilesAsync( appConfig );
-
-			ISourceFileScheduler scheduler =
-				CreateSourceFileScheduler();
-
-			scheduler.ScheduleFiles( sourceFileRepository );
-
-			IFileHashRepository fileHashRepository =
-				CreatFileHashRepository();
-
-			ISourceFileProcessor processor =
-				CreateSourceFileProcessor();
-
-			await processor.StartProcesingFilesAsync( fileHashRepository );
+			mConfiguration = ProcessConfiguration();
+			mAppConfiguration = GetAppConfiguration( mConfiguration );
+			mConnectionString = mConfiguration.GetConnectionString( mAppConfiguration.ProducerConnectionStringName );
+			mAppSetup = new FileHasherAppSetup( mConnectionString );
 		}
 
-		private FileHasherAppConfig ReadAppConfig()
+		private IConfiguration ProcessConfiguration() => new ConfigurationBuilder()
+			.SetBasePath( Directory.GetCurrentDirectory() )
+			.AddJsonFile( ConfigurationFileName, optional: false, reloadOnChange: false )
+			.Build();
+
+		private FileHasherAppConfig GetAppConfiguration( IConfiguration configuration )
 		{
-			IConfiguration configuration = GetConfiguration();
 			IConfigurationSection appConfigurationSection = configuration
 				.GetSection( ConfigurationSectionName );
 
@@ -55,10 +55,57 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 				.Get<FileHasherAppConfig>();
 		}
 
-		private IConfiguration GetConfiguration() => new ConfigurationBuilder()
-			.SetBasePath( Directory.GetCurrentDirectory() )
-			.AddJsonFile( ConfigurationFileName, optional: false, reloadOnChange: false )
-			.Build();
+		private async Task RunAsync()
+		{
+			await SetupAsync();
+
+			Console.WriteLine( "Generating files to hash..." );
+
+			ISourceFileGenerator fileGenerator =
+				CreateSourceFileGenerator();
+
+			await fileGenerator.CleanupSourceFilesAsync( mAppConfiguration );
+
+			ISourceFileRepository sourceFileRepository = await fileGenerator
+				.GenerateSourceFilesAsync( mAppConfiguration );
+
+			Console.WriteLine( "Generated {0} files to hash.",
+				sourceFileRepository.TotalFileCount );
+
+			IProcessingWatcher processingWatcher =
+				CreateProcessingWatcher( sourceFileRepository );
+
+			ISourceFileScheduler sourceFileScheduler =
+				CreateSourceFileScheduler();
+
+			IFileHashRepository fileHashRepository =
+				CreatFileHashRepository();
+
+			ISourceFileProcessor processor =
+				CreateSourceFileProcessor( sourceFileScheduler );
+
+			Console.WriteLine( "Begin processing files..." );
+
+			await processor.StartProcesingFilesAsync( sourceFileRepository,
+				fileHashRepository,
+				processingWatcher );
+
+			await processingWatcher.WaitForCompletionAsync();
+
+			Console.WriteLine( "Processing files completed. Number of hashed files: {0}. Shutting down...",
+				fileHashRepository.TotalHashCount );
+
+			await processor.StopProcessingFilesAsync();
+
+			Console.WriteLine( "Successfully shut down. Press any key to continue..." );
+			Console.ReadKey();
+		}
+
+		private async Task<Program> SetupAsync()
+		{
+			await mAppSetup.SetupAsync();
+			return this;
+		}
 
 		private ISourceFileGenerator CreateSourceFileGenerator()
 		{
@@ -67,17 +114,35 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 
 		private ISourceFileScheduler CreateSourceFileScheduler()
 		{
-			throw new NotImplementedException();
+
+			return new AllAtOnceSourceFileScheduler( CreateTaskQueueProducer() );
+		}
+
+		private ITaskQueueProducer CreateTaskQueueProducer()
+		{
+			return new PostgreSqlTaskQueueProducer( GetTaskQueueProducerOptions(),
+				new UtcNowTimestampProvider() );
+		}
+
+		private TaskQueueOptions GetTaskQueueProducerOptions()
+		{
+			return new TaskQueueOptions( new ConnectionOptions( mConnectionString ),
+				QueuedTaskMapping.Default );
+		}
+
+		private IProcessingWatcher CreateProcessingWatcher( ISourceFileRepository sourceFileRepository )
+		{
+			return new DefaultProcessingWatcher( sourceFileRepository );
 		}
 
 		private IFileHashRepository CreatFileHashRepository()
 		{
-			throw new NotImplementedException();
+			return new InMemoryFileHashRepository();
 		}
 
-		private ISourceFileProcessor CreateSourceFileProcessor()
+		private ISourceFileProcessor CreateSourceFileProcessor( ISourceFileScheduler sourceFileScheduler )
 		{
-			throw new NotImplementedException();
+			return new StakhanoviseSourceFileProcessor( sourceFileScheduler );
 		}
 	}
 }

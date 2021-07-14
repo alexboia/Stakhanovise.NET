@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -24,6 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.csproj" />
+    <ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
     <ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
   </ItemGroup>
 

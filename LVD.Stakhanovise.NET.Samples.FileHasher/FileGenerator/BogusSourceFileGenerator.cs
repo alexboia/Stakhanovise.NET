@@ -10,6 +10,8 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator
 {
 	public class BogusSourceFileGenerator : ISourceFileGenerator
 	{
+		private const string CurrentDirectoryPlaceholder = "${current-directory}";
+
 		public Task<ISourceFileRepository> GenerateSourceFilesAsync( FileHasherAppConfig appConfig )
 		{
 			if ( appConfig == null )
@@ -27,6 +29,9 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator
 				new List<FileHandle>();
 
 			string workingDirectory = GetMappedWorkingDirectory( appConfig );
+			if ( !Directory.Exists( workingDirectory ) )
+				Directory.CreateDirectory( workingDirectory );
+
 			int fileCount = faker.GenerateFileCount( appConfig );
 
 			for ( int i = 0; i < fileCount; i++ )
@@ -46,22 +51,41 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator
 
 		private string GetMappedWorkingDirectory( FileHasherAppConfig appConfig )
 		{
-			string workingDirectory = ".";
+			string workingDirectory = CurrentDirectoryPlaceholder;
 
 			if ( !string.IsNullOrWhiteSpace( appConfig.WorkingDirectory ) )
 				workingDirectory = appConfig.WorkingDirectory;
 
-			if ( workingDirectory == "." )
-				return Directory.GetCurrentDirectory();
-			else if ( workingDirectory == ".." )
-				return Directory.GetParent( Directory.GetCurrentDirectory() )?.FullName;
-			else
-				return workingDirectory;
+			return workingDirectory.Replace( CurrentDirectoryPlaceholder,
+				Directory.GetCurrentDirectory() );
 		}
 
 		private string ComputeFilePath( string workingDirectory, Guid fileId )
 		{
 			return Path.Combine( workingDirectory, $"{fileId.ToString()}.dat" );
+		}
+
+		public Task CleanupSourceFilesAsync( FileHasherAppConfig appConfig )
+		{
+			if ( appConfig == null )
+				throw new ArgumentNullException( nameof( appConfig ) );
+
+			return Task.Run( () => CleanupSourceFiles( appConfig ) );
+		}
+
+		private void CleanupSourceFiles( FileHasherAppConfig appConfig )
+		{
+			string workingDirectory = GetMappedWorkingDirectory( appConfig );
+			if ( !Directory.Exists( workingDirectory ) )
+				return;
+
+			string[] sourceFiles = Directory.GetFiles( workingDirectory, "*.dat" );
+
+			if ( sourceFiles != null && sourceFiles.Length > 0 )
+			{
+				foreach ( string sourceFile in sourceFiles )
+					File.Delete( sourceFile );
+			}
 		}
 	}
 }
