@@ -98,6 +98,6 @@ namespace LVD.Stakhanovise.NET.Setup
 				return mWriterFactory.Invoke();
 		}
 
-		public bool UseBuiltInWriter => mWriterFactory != null;
+		public bool UseBuiltInWriter => mWriterFactory == null;
 	}
 }

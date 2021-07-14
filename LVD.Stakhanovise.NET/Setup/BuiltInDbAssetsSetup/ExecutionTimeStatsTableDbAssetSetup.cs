@@ -58,7 +58,7 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
 		{
-			return $@"CREATE TABLE public.{mapping.ExecutionTimeStatsTableName}
+			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.ExecutionTimeStatsTableName}
 				(
 					{PayloadTypeColumnName} character varying(255) NOT NULL,
 					{NExecutionCyclesColumnName} bigint NOT NULL,

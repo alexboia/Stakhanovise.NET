@@ -43,7 +43,7 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardPostgreSqlAppMetricsMonitorWriterSetup mBuiltInWriterSetup;
 
-		public StandardAppMetricsMonitorWriterSetup ( StandardConnectionSetup builtInWriterConnectionSetup,
+		public StandardAppMetricsMonitorWriterSetup( StandardConnectionSetup builtInWriterConnectionSetup,
 			StakhanoviseSetupDefaults defaults )
 		{
 			if ( defaults == null )
@@ -53,7 +53,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				defaults );
 		}
 
-		public IAppMetricsMonitorWriterSetup SetupBuiltInWriter ( Action<IPostgreSqlAppMetricsMonitorWriterSetup> setupAction )
+		public IAppMetricsMonitorWriterSetup SetupBuiltInWriter( Action<IPostgreSqlAppMetricsMonitorWriterSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -65,7 +65,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IAppMetricsMonitorWriterSetup UseWriter ( IAppMetricsMonitorWriter writer )
+		public IAppMetricsMonitorWriterSetup UseWriter( IAppMetricsMonitorWriter writer )
 		{
 			if ( writer == null )
 				throw new ArgumentNullException( nameof( writer ) );
@@ -73,7 +73,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return UseWriterFactory( () => writer );
 		}
 
-		public IAppMetricsMonitorWriterSetup UseWriterFactory ( Func<IAppMetricsMonitorWriter> writerFactory )
+		public IAppMetricsMonitorWriterSetup UseWriterFactory( Func<IAppMetricsMonitorWriter> writerFactory )
 		{
 			if ( writerFactory == null )
 				throw new ArgumentNullException( nameof( writerFactory ) );
@@ -82,7 +82,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IAppMetricsMonitorWriterSetup WithMappingForBuiltInWriter ( QueuedTaskMapping mapping )
+		public IAppMetricsMonitorWriterSetup WithMappingForBuiltInWriter( QueuedTaskMapping mapping )
 		{
 			if ( mapping == null )
 				throw new ArgumentNullException( nameof( mapping ) );
@@ -90,7 +90,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IAppMetricsMonitorWriter BuildWriter ()
+		public IAppMetricsMonitorWriter BuildWriter()
 		{
 			if ( UseBuiltInWriter )
 				return new PostgreSqlAppMetricsMonitorWriter( mBuiltInWriterSetup.BuildOptions() );
@@ -98,6 +98,6 @@ namespace LVD.Stakhanovise.NET.Setup
 				return mWriterFactory.Invoke();
 		}
 
-		public bool UseBuiltInWriter => mWriterFactory != null;
+		public bool UseBuiltInWriter => mWriterFactory == null;
 	}
 }

@@ -36,13 +36,14 @@ using Npgsql;
 using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskQueueProducer : ITaskQueueProducer
 	{
+		private const int ImmediatePastSecondsInterval = 1;
+
 		private TaskQueueOptions mOptions;
 
 		private string mInsertSql;
@@ -62,7 +63,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			mTimestampProvider = timestampProvider;
 
 			mInsertSql = GetInsertSql( mOptions.Mapping );
-			mAddOrUpdateResultSql = GetAddOrUpdateResultSql( mOptions.Mapping );
+			mAddOrUpdateResultSql = GetInsertOrUpdateResultSql( mOptions.Mapping );
 		}
 
 		private string GetInsertSql( QueuedTaskMapping mapping )
@@ -74,7 +75,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				) RETURNING task_lock_handle_id";
 		}
 
-		private string GetAddOrUpdateResultSql( QueuedTaskMapping mapping )
+		private string GetInsertOrUpdateResultSql( QueuedTaskMapping mapping )
 		{
 			return $@"INSERT INTO {mapping.ResultsQueueTableName} (
 					task_id, task_type, task_source, task_payload, task_status, task_priority, task_posted_at_ts
@@ -85,13 +86,6 @@ namespace LVD.Stakhanovise.NET.Queue
 					task_priority = EXCLUDED.task_priority,
 					task_source = EXCLUDED.task_source,
 					task_posted_at_ts = EXCLUDED.task_posted_at_ts";
-		}
-
-		private async Task<NpgsqlConnection> TryOpenConnectionAsync()
-		{
-			return await mOptions
-				.ConnectionOptions
-				.TryOpenConnectionAsync();
 		}
 
 		public async Task<IQueuedTask> EnqueueAsync<TPayload>( TPayload payload,
@@ -110,13 +104,24 @@ namespace LVD.Stakhanovise.NET.Queue
 			return await EnqueueAsync( new QueuedTaskInfo()
 			{
 				Payload = payload,
-				Type = typeof( TPayload ).FullName,
+				Type = DeterminePayloadTypeFullName<TPayload>(),
 				Priority = priority,
 				Source = source,
-				LockedUntilTs = mTimestampProvider
-					.GetNow()
-					.AddSeconds( -1 )
+				LockedUntilTs = GenerateImmediatePastLockedTimestamp()
 			} );
+		}
+
+		private string DeterminePayloadTypeFullName<TPayload>()
+		{
+			return typeof( TPayload )
+				.FullName;
+		}
+
+		private DateTimeOffset GenerateImmediatePastLockedTimestamp()
+		{
+			return mTimestampProvider
+				.GetNow()
+				.AddSeconds( -ImmediatePastSecondsInterval );
 		}
 
 		public async Task<IQueuedTask> EnqueueAsync( QueuedTaskInfo queuedTaskInfo )
@@ -127,16 +132,42 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( queuedTaskInfo.Priority < 0 )
 				throw new ArgumentOutOfRangeException( nameof( queuedTaskInfo ), "Priority must be greater than or equal to 0" );
 
-			QueuedTask queuedTask = NewTaskFromInfo( queuedTaskInfo );
+			QueuedTask queuedTask = CreateNewTaskFromInfo( queuedTaskInfo );
 
 			using ( NpgsqlConnection conn = await TryOpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
 			{
 				queuedTask = await TryPostTaskAsync( queuedTask, conn, tx );
 				await TryInitOrUpdateResultAsync( queuedTask, conn, tx );
-				await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificationChannelName, tx );
+				await NotifyNewTaskPostedAsync( queuedTask, conn, tx );
 				tx.Commit();
 			}
+
+			return queuedTask;
+		}
+
+		private async Task<NpgsqlConnection> TryOpenConnectionAsync()
+		{
+			return await mOptions
+				.ConnectionOptions
+				.TryOpenConnectionAsync();
+		}
+
+		private QueuedTask CreateNewTaskFromInfo( QueuedTaskInfo queuedTaskInfo )
+		{
+			QueuedTask queuedTask =
+				new QueuedTask();
+
+			queuedTask.Id = queuedTaskInfo.HasId
+				? queuedTaskInfo.Id
+				: Guid.NewGuid();
+
+			queuedTask.Payload = queuedTaskInfo.Payload;
+			queuedTask.Type = queuedTaskInfo.Type;
+			queuedTask.Source = queuedTaskInfo.Source;
+			queuedTask.Priority = queuedTaskInfo.Priority;
+			queuedTask.PostedAtTs = mTimestampProvider.GetNow();
+			queuedTask.LockedUntilTs = queuedTaskInfo.LockedUntilTs;
 
 			return queuedTask;
 		}
@@ -191,23 +222,10 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private QueuedTask NewTaskFromInfo( QueuedTaskInfo queuedTaskInfo )
+		private async Task NotifyNewTaskPostedAsync( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
 		{
-			QueuedTask queuedTask =
-				new QueuedTask();
-
-			queuedTask.Id = queuedTaskInfo.HasId
-				? queuedTaskInfo.Id
-				: Guid.NewGuid();
-
-			queuedTask.Payload = queuedTaskInfo.Payload;
-			queuedTask.Type = queuedTaskInfo.Type;
-			queuedTask.Source = queuedTaskInfo.Source;
-			queuedTask.Priority = queuedTaskInfo.Priority;
-			queuedTask.PostedAtTs = mTimestampProvider.GetNow();
-			queuedTask.LockedUntilTs = queuedTaskInfo.LockedUntilTs;
-
-			return queuedTask;
+			await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificationChannelName, 
+				tx );
 		}
 
 		public ITimestampProvider TimestampProvider

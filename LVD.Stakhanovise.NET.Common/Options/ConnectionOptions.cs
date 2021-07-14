@@ -37,7 +37,7 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class ConnectionOptions
 	{
-		public ConnectionOptions ( string connectionString,
+		public ConnectionOptions( string connectionString,
 			int keepAliveSeconds,
 			int retryCount,
 			int retryDelayMilliseconds )
@@ -48,6 +48,15 @@ namespace LVD.Stakhanovise.NET.Options
 			ConnectionRetryCount = retryCount;
 			ConnectionRetryDelayMilliseconds = retryDelayMilliseconds;
 			ConnectionKeepAliveSeconds = keepAliveSeconds;
+		}
+
+		public ConnectionOptions( string connectionString )
+			: this( connectionString,
+				  ConnectionOptionsDefaults.KeepAliveSeconds,
+				  ConnectionOptionsDefaults.MaxRetryCount,
+				  ConnectionOptionsDefaults.RetryDelayMilliseconds )
+		{
+			return;
 		}
 
 		public int ConnectionRetryCount { get; private set; }

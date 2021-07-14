@@ -78,7 +78,7 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private QueuedTaskMapping mMapping;
 
-		public StakhanoviseSetup ( StakhanoviseSetupDefaults defaults )
+		public StakhanoviseSetup( StakhanoviseSetupDefaults defaults )
 		{
 			if ( defaults == null )
 				throw new ArgumentNullException( nameof( defaults ) );
@@ -92,31 +92,31 @@ namespace LVD.Stakhanovise.NET.Setup
 				.AppMetricsMonitoringEnabled;
 
 			StandardConnectionSetup queueConsumerConnectionSetup =
-				new StandardConnectionSetup();
+				new StandardConnectionSetup( defaults );
 
 			StandardConnectionSetup queueProducerConnectionSetup =
-				new StandardConnectionSetup();
+				new StandardConnectionSetup( defaults );
 
 			StandardConnectionSetup queueInfoConnectionSetup =
-				new StandardConnectionSetup();
+				new StandardConnectionSetup( defaults );
 
 			StandardConnectionSetup builtInTimingBeltConnectionSetup =
-				new StandardConnectionSetup();
+				new StandardConnectionSetup( defaults );
 
 			StandardConnectionSetup builtInWriterConnectionSetup =
-				new StandardConnectionSetup();
+				new StandardConnectionSetup( defaults );
 
 			StandardConnectionSetup builtInAppMetricsWriterConnectionSetup =
-				new StandardConnectionSetup();
+				new StandardConnectionSetup( defaults );
 
 			mSetupDbAssetsConnectionSetup =
-				new StandardConnectionSetup();
+				new StandardConnectionSetup( defaults );
 
 			mTaskQueueProducerSetup = new StandardTaskQueueProducerSetup( queueProducerConnectionSetup,
-				defaultMapping: defaults.Mapping );
+				defaults );
 
 			mTaskQueueInfoSetup = new StandardTaskQueueInfoSetup( queueInfoConnectionSetup,
-				defaultMapping: defaults.Mapping );
+				defaults );
 
 			mCommonTaskQueueConnectionSetup = new CollectiveConnectionSetup( queueConsumerConnectionSetup,
 				queueProducerConnectionSetup,
@@ -141,7 +141,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				defaults );
 		}
 
-		public IStakhanoviseSetup SetupEngine ( Action<ITaskEngineSetup> setupAction )
+		public IStakhanoviseSetup SetupEngine( Action<ITaskEngineSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -150,7 +150,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup SetupPerformanceMonitorWriter ( Action<IExecutionPerformanceMonitorWriterSetup> setupAction )
+		public IStakhanoviseSetup SetupPerformanceMonitorWriter( Action<IExecutionPerformanceMonitorWriterSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -159,13 +159,13 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup DisableAppMetricsMonitoring ()
+		public IStakhanoviseSetup DisableAppMetricsMonitoring()
 		{
 			mAppMetricsMonitoringEnabled = false;
 			return this;
 		}
 
-		public IStakhanoviseSetup SetupAppMetricsMonitorWriter ( Action<IAppMetricsMonitorWriterSetup> setupAction )
+		public IStakhanoviseSetup SetupAppMetricsMonitorWriter( Action<IAppMetricsMonitorWriterSetup> setupAction )
 		{
 
 			if ( setupAction == null )
@@ -175,7 +175,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup SetupAppMetricsMonitor ( Action<IAppMetricsMonitorSetup> setupAction )
+		public IStakhanoviseSetup SetupAppMetricsMonitor( Action<IAppMetricsMonitorSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -184,7 +184,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup SetupTaskExecutorRegistry ( Action<ITaskExecutorRegistrySetup> setupAction )
+		public IStakhanoviseSetup SetupTaskExecutorRegistry( Action<ITaskExecutorRegistrySetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -193,7 +193,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup WithExecutorAssemblies ( params Assembly[] assemblies )
+		public IStakhanoviseSetup WithExecutorAssemblies( params Assembly[] assemblies )
 		{
 			if ( assemblies == null || assemblies.Length == 0 )
 				throw new ArgumentNullException( nameof( assemblies ) );
@@ -202,7 +202,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup SetupTaskQueueConnection ( Action<IConnectionSetup> setupAction )
+		public IStakhanoviseSetup SetupTaskQueueConnection( Action<IConnectionSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -211,7 +211,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup WithTaskQueueMapping ( QueuedTaskMapping mapping )
+		public IStakhanoviseSetup WithTaskQueueMapping( QueuedTaskMapping mapping )
 		{
 			if ( mapping == null )
 				throw new ArgumentNullException( nameof( mapping ) );
@@ -227,7 +227,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup SetupTaskQueueConsumer ( Action<ITaskQueueConsumerSetup> setupAction )
+		public IStakhanoviseSetup SetupTaskQueueConsumer( Action<ITaskQueueConsumerSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -236,7 +236,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup SetupTaskQueueProducer ( Action<ITaskQueueProducerSetup> setupAction )
+		public IStakhanoviseSetup SetupTaskQueueProducer( Action<ITaskQueueProducerSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -245,7 +245,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup SetupTaskQueueInfo ( Action<ITaskQueueInfoSetup> setupAction )
+		public IStakhanoviseSetup SetupTaskQueueInfo( Action<ITaskQueueInfoSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -254,7 +254,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup WithLoggingProvider ( IStakhanoviseLoggingProvider loggingProvider )
+		public IStakhanoviseSetup WithLoggingProvider( IStakhanoviseLoggingProvider loggingProvider )
 		{
 			if ( loggingProvider == null )
 				throw new ArgumentNullException( nameof( loggingProvider ) );
@@ -263,25 +263,25 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IStakhanoviseSetup WithConsoleLogging ( StakhanoviseLogLevel level, bool writeToStdOut = false )
+		public IStakhanoviseSetup WithConsoleLogging( StakhanoviseLogLevel level, bool writeToStdOut = false )
 		{
 			return WithLoggingProvider( new ConsoleLoggingProvider( level,
 				writeToStdOut ) );
 		}
 
-		public IStakhanoviseSetup DontRegisterOwnDependencies ()
+		public IStakhanoviseSetup DontRegisterOwnDependencies()
 		{
 			mRegisterOwnDependencies = false;
 			return this;
 		}
 
-		public IStakhanoviseSetup DontSetupBuiltInDbAssets ()
+		public IStakhanoviseSetup DontSetupBuiltInDbAssets()
 		{
 			mSetupBuiltInDbAsssets = false;
 			return this;
 		}
 
-		public DbAssetFactory BuildDbAssetFactory ()
+		public DbAssetFactory BuildDbAssetFactory()
 		{
 			List<ISetupDbAsset> dbAssetSetup = new List<ISetupDbAsset>();
 			ConnectionOptions setupDbAssetsConnectionOptions = mSetupDbAssetsConnectionSetup
@@ -305,7 +305,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				mMapping );
 		}
 
-		public ITaskEngine BuildTaskEngine ()
+		public ITaskEngine BuildTaskEngine()
 		{
 			ITaskExecutorRegistry executorRegistry = mTaskExecutorRegistrySetup
 				.BuildTaskExecutorRegistry();
@@ -328,7 +328,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			ITaskQueueProducer taskQueueProducer = new PostgreSqlTaskQueueProducer( producerOptions,
 				timestampProvider );
 
-			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup.BuiltOptions(),
+			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup.BuildOptions(),
 				timestampProvider );
 
 			if ( mRegisterOwnDependencies )
@@ -349,7 +349,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				timestampProvider );
 		}
 
-		public IAppMetricsMonitor BuildAppMetricsMonitor ()
+		public IAppMetricsMonitor BuildAppMetricsMonitor()
 		{
 			return mAppMetricsMonitoringEnabled
 				? mAppMetricsMonitorSetup.BuildMonitor( mAppMetricsMonitorWriterSetup.BuildWriter() )

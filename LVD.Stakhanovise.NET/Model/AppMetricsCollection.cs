@@ -41,12 +41,12 @@ namespace LVD.Stakhanovise.NET.Model
 	{
 		private Dictionary<AppMetricId, AppMetric> mMetrics;
 
-		private AppMetricsCollection ( Dictionary<AppMetricId, AppMetric> metrics )
+		private AppMetricsCollection( Dictionary<AppMetricId, AppMetric> metrics )
 		{
 			mMetrics = metrics;
 		}
 
-		public AppMetricsCollection ( params AppMetricId[] withMetricIds )
+		public AppMetricsCollection( params AppMetricId[] withMetricIds )
 		{
 			if ( withMetricIds == null || withMetricIds.Length == 0 )
 				throw new ArgumentNullException( nameof( withMetricIds ) );
@@ -56,7 +56,7 @@ namespace LVD.Stakhanovise.NET.Model
 				mMetrics.Add( metricId, new AppMetric( metricId, value: 0 ) );
 		}
 
-		public AppMetricsCollection ( params AppMetric[] withMetrics )
+		public AppMetricsCollection( params AppMetric[] withMetrics )
 		{
 			if ( withMetrics == null || withMetrics.Length == 0 )
 				throw new ArgumentNullException( nameof( withMetrics ) );
@@ -66,12 +66,12 @@ namespace LVD.Stakhanovise.NET.Model
 				mMetrics.Add( metric.Id, metric.Copy() );
 		}
 
-		private static Dictionary<AppMetricId, AppMetric> JoinMetricsFromProviders ( IEnumerable<IAppMetricsProvider> collections )
+		private static Dictionary<AppMetricId, AppMetric> JoinMetricsFromProviders( IEnumerable<IAppMetricsProvider> collections )
 		{
 			Dictionary<AppMetricId, AppMetric> metrics =
 				new Dictionary<AppMetricId, AppMetric>();
 
-			foreach ( AppMetricsCollection c in collections )
+			foreach ( IAppMetricsProvider c in collections )
 			{
 				foreach ( AppMetric cMetric in c.CollectMetrics() )
 				{
@@ -86,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Model
 			return metrics;
 		}
 
-		public static IEnumerable<AppMetricId> JoinExportedMetrics ( params IAppMetricsProvider[] collections )
+		public static IEnumerable<AppMetricId> JoinExportedMetrics( params IAppMetricsProvider[] collections )
 		{
 			if ( collections == null || collections.Length == 0 )
 				throw new ArgumentNullException( nameof( collections ) );
@@ -94,7 +94,7 @@ namespace LVD.Stakhanovise.NET.Model
 			List<AppMetricId> metricIds =
 				new List<AppMetricId>();
 
-			foreach ( AppMetricsCollection c in collections )
+			foreach ( IAppMetricsProvider c in collections )
 			{
 				foreach ( AppMetricId cMetricId in c.ExportedMetrics )
 					if ( !metricIds.Contains( cMetricId ) )
@@ -104,19 +104,19 @@ namespace LVD.Stakhanovise.NET.Model
 			return metricIds;
 		}
 
-		public static IEnumerable<AppMetric> JoinCollectMetrics ( params IAppMetricsProvider[] collections )
+		public static IEnumerable<AppMetric> JoinCollectMetrics( params IAppMetricsProvider[] collections )
 		{
 			if ( collections == null || collections.Length == 0 )
 				throw new ArgumentNullException( nameof( collections ) );
 
 			Dictionary<AppMetricId, AppMetric> joinedProviderMetrics =
-				JoinMetricsFromProviders( ( IEnumerable<IAppMetricsProvider> )collections );
+				JoinMetricsFromProviders( collections );
 
 			return joinedProviderMetrics.Values
 				.ToList();
 		}
 
-		public static AppMetric JoinQueryMetric ( AppMetricId metricId, params IAppMetricsProvider[] collections )
+		public static AppMetric JoinQueryMetric( AppMetricId metricId, params IAppMetricsProvider[] collections )
 		{
 			if ( metricId == null )
 				throw new ArgumentNullException( nameof( metricId ) );
@@ -126,7 +126,7 @@ namespace LVD.Stakhanovise.NET.Model
 
 			AppMetric retVal = null;
 
-			foreach ( AppMetricsCollection c in collections )
+			foreach ( IAppMetricsProvider c in collections )
 			{
 				AppMetric cMetric = c.QueryMetric( metricId );
 				if ( cMetric != null )
@@ -141,18 +141,18 @@ namespace LVD.Stakhanovise.NET.Model
 			return retVal;
 		}
 
-		public static AppMetricsCollection JoinProviders ( params IAppMetricsProvider[] providers )
+		public static AppMetricsCollection JoinProviders( params IAppMetricsProvider[] providers )
 		{
 			if ( providers == null || providers.Length == 0 )
 				throw new ArgumentNullException( nameof( providers ) );
 
 			Dictionary<AppMetricId, AppMetric> joinedProviderMetrics =
-				JoinMetricsFromProviders( ( IEnumerable<IAppMetricsProvider> )providers );
+				JoinMetricsFromProviders( providers );
 
 			return new AppMetricsCollection( joinedProviderMetrics );
 		}
 
-		public static AppMetricsCollection JoinProviders ( IEnumerable<IAppMetricsProvider> providers )
+		public static AppMetricsCollection JoinProviders( IEnumerable<IAppMetricsProvider> providers )
 		{
 			if ( providers == null || providers.Count() == 0 )
 				throw new ArgumentNullException( nameof( providers ) );
@@ -163,7 +163,7 @@ namespace LVD.Stakhanovise.NET.Model
 			return new AppMetricsCollection( joinedProviderMetrics );
 		}
 
-		public long UpdateMetric ( AppMetricId metricId, Func<AppMetric, long> updateFn )
+		public long UpdateMetric( AppMetricId metricId, Func<AppMetric, long> updateFn )
 		{
 			if ( metricId == null )
 				throw new ArgumentNullException( nameof( metricId ) );
@@ -177,7 +177,7 @@ namespace LVD.Stakhanovise.NET.Model
 				throw new InvalidOperationException( $"Attempted to update unsupported metric: {metricId}" );
 		}
 
-		public AppMetric QueryMetric ( AppMetricId metricId )
+		public AppMetric QueryMetric( AppMetricId metricId )
 		{
 			if ( mMetrics.TryGetValue( metricId, out AppMetric targetMetric ) )
 				return targetMetric.Copy();
@@ -185,7 +185,7 @@ namespace LVD.Stakhanovise.NET.Model
 				return null;
 		}
 
-		public IEnumerable<AppMetric> CollectMetrics ()
+		public IEnumerable<AppMetric> CollectMetrics()
 		{
 			foreach ( AppMetric m in mMetrics.Values )
 				yield return m.Copy();

@@ -40,40 +40,53 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private bool mIsConnectionStringUserConfigured = false;
 
-		private int mConnectionKeepAliveSeconds = 0;
+		private int mConnectionKeepAliveSeconds = ConnectionOptionsDefaults.KeepAliveSeconds;
 
 		private bool mIsConnectionKeepAliveSecondsUserConfigured = false;
 
-		private int mConnectionRetryCount = 3;
+		private int mConnectionRetryCount = ConnectionOptionsDefaults.MaxRetryCount;
 
 		private bool mIsConnectionRetryCountUserConfigured = false;
 
-		private int mConnectionRetryDelayMilliseconds = 100;
+		private int mConnectionRetryDelayMilliseconds = ConnectionOptionsDefaults.RetryDelayMilliseconds;
 
 		private bool mIsConnectionRetryDelayMillisecondsUserConfigured = false;
 
-		public IConnectionSetup WithConnectionKeepAlive ( int connectionKeepAliveSeconds )
+		public StandardConnectionSetup()
+		{
+			return;
+		}
+
+		public StandardConnectionSetup( StakhanoviseSetupDefaults defaults )
+		{
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
+
+			mConnectionString = defaults.ConnectionString;
+		}
+
+		public IConnectionSetup WithConnectionKeepAlive( int connectionKeepAliveSeconds )
 		{
 			mConnectionKeepAliveSeconds = connectionKeepAliveSeconds;
 			mIsConnectionKeepAliveSecondsUserConfigured = true;
 			return this;
 		}
 
-		public IConnectionSetup WithConnectionRetryCount ( int connectionRetryCount )
+		public IConnectionSetup WithConnectionRetryCount( int connectionRetryCount )
 		{
 			mConnectionRetryCount = connectionRetryCount;
 			mIsConnectionRetryCountUserConfigured = true;
 			return this;
 		}
 
-		public IConnectionSetup WithConnectionRetryDelayMilliseconds ( int connectionRetryDelayMilliseconds )
+		public IConnectionSetup WithConnectionRetryDelayMilliseconds( int connectionRetryDelayMilliseconds )
 		{
 			mConnectionRetryDelayMilliseconds = connectionRetryDelayMilliseconds;
 			mIsConnectionRetryDelayMillisecondsUserConfigured = true;
 			return this;
 		}
 
-		public IConnectionSetup WithConnectionString ( string connectionString )
+		public IConnectionSetup WithConnectionString( string connectionString )
 		{
 			if ( string.IsNullOrEmpty( connectionString ) )
 				throw new ArgumentNullException( nameof( connectionString ) );
@@ -85,19 +98,19 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public ConnectionOptions BuildOptions()
 		{
-			return new ConnectionOptions( mConnectionString, 
-				mConnectionKeepAliveSeconds, 
-				mConnectionRetryCount, 
+			return new ConnectionOptions( mConnectionString,
+				mConnectionKeepAliveSeconds,
+				mConnectionRetryCount,
 				mConnectionRetryDelayMilliseconds );
 		}
 
-		public bool IsConnectionStringUserConfigured 
+		public bool IsConnectionStringUserConfigured
 			=> mIsConnectionStringUserConfigured;
 
 		public bool IsConnectionKeepAliveSecondsUserConfigured
 			=> mIsConnectionKeepAliveSecondsUserConfigured;
 
-		public bool IsConnectionRetryCountUserConfigured 
+		public bool IsConnectionRetryCountUserConfigured
 			=> mIsConnectionRetryCountUserConfigured;
 
 		public bool IsConnectionRetryDelayMillisecondsUserConfigured

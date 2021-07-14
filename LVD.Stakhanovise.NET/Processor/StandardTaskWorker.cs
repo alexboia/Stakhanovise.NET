@@ -341,8 +341,9 @@ namespace LVD.Stakhanovise.NET.Processor
 			//	during result processing:
 			//	if task executed till the end, we must at least 
 			//	attempt to set the result
-			await ProcessResultAsync( queuedTaskToken,
-				executionResult );
+			if (executionResult != null)
+				await ProcessResultAsync( queuedTaskToken,
+					executionResult );
 
 			mLogger.DebugFormat( "Done executing task with id = {0}.",
 				queuedTaskToken.DequeuedTask.Id );

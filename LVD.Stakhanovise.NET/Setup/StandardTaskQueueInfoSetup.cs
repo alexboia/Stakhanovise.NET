@@ -43,20 +43,20 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private QueuedTaskMapping mMapping;
 
-		public StandardTaskQueueInfoSetup ( StandardConnectionSetup connectionSetup,
-			QueuedTaskMapping defaultMapping )
+		public StandardTaskQueueInfoSetup( StandardConnectionSetup connectionSetup,
+			StakhanoviseSetupDefaults defaults )
 		{
 			if ( connectionSetup == null )
 				throw new ArgumentNullException( nameof( connectionSetup ) );
 
-			if ( defaultMapping == null )
-				throw new ArgumentNullException( nameof( defaultMapping ) );
+			if ( defaults == null )
+				throw new ArgumentNullException( nameof( defaults ) );
 
 			mConnectionSetup = connectionSetup;
-			mMapping = defaultMapping;
+			mMapping = defaults.Mapping;
 		}
 
-		public ITaskQueueInfoSetup SetupConnection ( Action<IConnectionSetup> setupAction )
+		public ITaskQueueInfoSetup SetupConnection( Action<IConnectionSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -65,7 +65,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public ITaskQueueInfoSetup WithMapping ( QueuedTaskMapping mapping )
+		public ITaskQueueInfoSetup WithMapping( QueuedTaskMapping mapping )
 		{
 			if ( mapping == null )
 				throw new ArgumentNullException( nameof( mapping ) );
@@ -74,7 +74,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public TaskQueueInfoOptions BuiltOptions ()
+		public TaskQueueInfoOptions BuildOptions()
 		{
 			return new TaskQueueInfoOptions( mConnectionSetup.BuildOptions(),
 				mMapping );

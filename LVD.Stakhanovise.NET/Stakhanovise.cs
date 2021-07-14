@@ -94,7 +94,7 @@ namespace LVD.Stakhanovise.NET
 		{
 			CheckNotDisposedOrThrow();
 
-			if ( mDbAssetFactory != null )
+			if ( mDbAssetFactory == null )
 				mDbAssetFactory = mStakhanoviseSetup.BuildDbAssetFactory();
 
 			if ( mEngine == null )
@@ -127,11 +127,11 @@ namespace LVD.Stakhanovise.NET
 		{
 			CheckNotDisposedOrThrow();
 
-			if ( mEngine != null && mEngine.IsRunning )
-				await mEngine.StopAync();
-
 			if ( mAppMetricsMonitor != null && mAppMetricsMonitor.IsRunning )
 				await mAppMetricsMonitor.StopAsync();
+
+			if ( mEngine != null && mEngine.IsRunning )
+				await mEngine.StopAync();
 
 			return this;
 		}

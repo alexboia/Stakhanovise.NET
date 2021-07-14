@@ -59,8 +59,8 @@ namespace LVD.Stakhanovise.NET.Helpers
 		}
 
 		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this string connectionString,
-			int maxRetryCount = 3,
-			int retryDelayMilliseconds = 100 )
+			int maxRetryCount = ConnectionOptionsDefaults.MaxRetryCount,
+			int retryDelayMilliseconds = ConnectionOptionsDefaults.RetryDelayMilliseconds )
 		{
 			return await connectionString.TryOpenConnectionAsync( CancellationToken.None,
 				maxRetryCount,
@@ -69,8 +69,8 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this string connectionString,
 			CancellationToken cancellationToken,
-			int maxRetryCount = 3,
-			int retryDelay = 100 )
+			int maxRetryCount = ConnectionOptionsDefaults.MaxRetryCount,
+			int retryDelayMilliseconds = ConnectionOptionsDefaults.RetryDelayMilliseconds )
 		{
 			if ( string.IsNullOrEmpty( connectionString ) )
 				throw new ArgumentNullException( nameof( connectionString ) );
@@ -79,8 +79,8 @@ namespace LVD.Stakhanovise.NET.Helpers
 				throw new ArgumentOutOfRangeException( nameof( maxRetryCount ),
 					"Max retry count must be greater than 1" );
 
-			if ( retryDelay < 1 )
-				throw new ArgumentOutOfRangeException( nameof( retryDelay ),
+			if ( retryDelayMilliseconds < 1 )
+				throw new ArgumentOutOfRangeException( nameof( retryDelayMilliseconds ),
 					"Retry delay must be greater than 1" );
 
 			int retryCount = 0;
@@ -111,7 +111,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 						cancellationToken.ThrowIfCancellationRequested();
 
 					if ( retryCount > 0 )
-						await Task.Delay( retryDelay );
+						await Task.Delay( retryDelayMilliseconds );
 				}
 			}
 

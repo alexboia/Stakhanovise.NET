@@ -37,7 +37,7 @@ namespace LVD.Stakhanovise.NET.Model
 {
 	public class QueuedTaskMapping
 	{
-		public QueuedTaskMapping ()
+		public QueuedTaskMapping()
 		{
 			QueueTableName = "sk_tasks_queue_t";
 			ResultsQueueTableName = "sk_task_results_t";
@@ -47,13 +47,16 @@ namespace LVD.Stakhanovise.NET.Model
 			DequeueFunctionName = "sk_try_dequeue_task";
 		}
 
-		public void AddTablePrefix ( string tablePrefix )
+		public void AddTablePrefix( string tablePrefix )
 		{
 			QueueTableName = $"{tablePrefix}{QueueTableName}";
 			ResultsQueueTableName = $"{tablePrefix}{ResultsQueueTableName}";
 			ExecutionTimeStatsTableName = $"{tablePrefix}{ExecutionTimeStatsTableName}";
 			MetricsTableName = $"{tablePrefix}{MetricsTableName}";
 		}
+
+		public static QueuedTaskMapping Default 
+			=> new QueuedTaskMapping();
 
 		public string QueueTableName { get; set; }
 

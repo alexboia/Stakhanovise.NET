@@ -375,13 +375,14 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public AppMetric QueryMetric ( AppMetricId metricId )
 		{
-			return AppMetricsCollection.JoinQueryMetric( metricId, this,
+			return AppMetricsCollection.JoinQueryMetric( metricId, 
+				mMetrics,
 				mNotificationListener );
 		}
 
 		public IEnumerable<AppMetric> CollectMetrics ()
 		{
-			return AppMetricsCollection.JoinCollectMetrics( this,
+			return AppMetricsCollection.JoinCollectMetrics( mMetrics,
 				mNotificationListener );
 		}
 
@@ -407,7 +408,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			get
 			{
-				return AppMetricsCollection.JoinExportedMetrics( this,
+				return AppMetricsCollection.JoinExportedMetrics( mMetrics,
 					mNotificationListener );
 			}
 		}

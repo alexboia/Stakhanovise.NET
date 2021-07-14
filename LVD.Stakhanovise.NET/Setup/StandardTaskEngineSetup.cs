@@ -52,7 +52,9 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardTaskQueueConsumerSetup mTaskQueueConsumerSetup;
 
-		public StandardTaskEngineSetup ( StandardTaskQueueConsumerSetup taskQueueConsumerSetup, StakhanoviseSetupDefaults defaults )
+		private Assembly[] mExecutorAssemblies;
+
+		public StandardTaskEngineSetup( StandardTaskQueueConsumerSetup taskQueueConsumerSetup, StakhanoviseSetupDefaults defaults )
 		{
 			if ( taskQueueConsumerSetup == null )
 				throw new ArgumentNullException( nameof( taskQueueConsumerSetup ) );
@@ -63,9 +65,19 @@ namespace LVD.Stakhanovise.NET.Setup
 			mWorkerCount = defaults.WorkerCount;
 			mTaskProcessingSetup = new StandardTaskProcessingSetup( defaults );
 			mTaskQueueConsumerSetup = taskQueueConsumerSetup;
+			mExecutorAssemblies = defaults.ExecutorAssemblies;
 		}
 
-		public ITaskEngineSetup SetupTaskProcessing ( Action<ITaskProcessingSetup> setupAction )
+		public ITaskEngineSetup WithExecutorAssemblies( params Assembly[] assemblies )
+		{
+			if ( assemblies == null || assemblies.Length == 0 )
+				throw new ArgumentNullException( nameof( assemblies ) );
+
+			mExecutorAssemblies = assemblies;
+			return this;
+		}
+
+		public ITaskEngineSetup SetupTaskProcessing( Action<ITaskProcessingSetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -74,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public ITaskEngineSetup WithWorkerCount ( int workerCount )
+		public ITaskEngineSetup WithWorkerCount( int workerCount )
 		{
 			if ( workerCount < 1 )
 				throw new ArgumentOutOfRangeException( nameof( workerCount ),
@@ -84,13 +96,13 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		private TaskEngineOptions BuildOptions ()
+		private TaskEngineOptions BuildOptions()
 		{
 			return new TaskEngineOptions( mWorkerCount,
 				mTaskProcessingSetup.BuildOptions() );
 		}
 
-		public ITaskEngine BuildTaskEngine ( TaskQueueConsumerOptions consumerOptions,
+		public ITaskEngine BuildTaskEngine( TaskQueueConsumerOptions consumerOptions,
 			TaskQueueOptions producerAndResultOptions,
 			ITaskExecutorRegistry executorRegistry,
 			IExecutionPerformanceMonitorWriter executionPerfMonWriter,
@@ -108,12 +120,15 @@ namespace LVD.Stakhanovise.NET.Setup
 			if ( executionPerfMonWriter == null )
 				throw new ArgumentNullException( nameof( executionPerfMonWriter ) );
 
-			return new StandardTaskEngine( BuildOptions(),
+			StandardTaskEngine taskEngine = new StandardTaskEngine( BuildOptions(),
 				producerAndResultOptions,
 				consumerOptions,
 				executorRegistry,
 				executionPerfMonWriter,
 				timestampProvider );
+
+			taskEngine.ScanAssemblies( mExecutorAssemblies );
+			return taskEngine;
 		}
 	}
 }

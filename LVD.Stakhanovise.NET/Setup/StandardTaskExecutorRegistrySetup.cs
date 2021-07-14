@@ -43,7 +43,7 @@ namespace LVD.Stakhanovise.NET.Setup
 		private StandardStandardTaskExecutorRegistrySetup mBuiltInTaskExecutorRegistrySetup =
 			new StandardStandardTaskExecutorRegistrySetup();
 
-		public ITaskExecutorRegistrySetup SetupBuiltInTaskExecutorRegistry ( Action<IStandardTaskExecutorRegistrySetup> setupAction )
+		public ITaskExecutorRegistrySetup SetupBuiltInTaskExecutorRegistry( Action<IStandardTaskExecutorRegistrySetup> setupAction )
 		{
 			if ( setupAction == null )
 				throw new ArgumentNullException( nameof( setupAction ) );
@@ -55,7 +55,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public ITaskExecutorRegistrySetup UseTaskExecutorRegistry ( ITaskExecutorRegistry registry )
+		public ITaskExecutorRegistrySetup UseTaskExecutorRegistry( ITaskExecutorRegistry registry )
 		{
 			if ( registry == null )
 				throw new ArgumentNullException( nameof( registry ) );
@@ -63,7 +63,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return UseTaskExecutorRegistryFactory( () => registry );
 		}
 
-		public ITaskExecutorRegistrySetup UseTaskExecutorRegistryFactory ( Func<ITaskExecutorRegistry> registryFactory )
+		public ITaskExecutorRegistrySetup UseTaskExecutorRegistryFactory( Func<ITaskExecutorRegistry> registryFactory )
 		{
 			if ( registryFactory == null )
 				throw new ArgumentNullException( nameof( registryFactory ) );
@@ -72,13 +72,16 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public ITaskExecutorRegistry BuildTaskExecutorRegistry ()
+		public ITaskExecutorRegistry BuildTaskExecutorRegistry()
 		{
-			if ( mTaskExecutorRegistryFactory == null )
+			if ( UseBuiltInTaskExecutorRegistry )
 				return new StandardTaskExecutorRegistry( mBuiltInTaskExecutorRegistrySetup
 					.BuildDependencyResolver() );
 			else
 				return mTaskExecutorRegistryFactory.Invoke();
 		}
+
+		public bool UseBuiltInTaskExecutorRegistry
+			=> mTaskExecutorRegistryFactory == null;
 	}
 }
