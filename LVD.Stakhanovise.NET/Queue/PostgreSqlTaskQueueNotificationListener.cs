@@ -59,8 +59,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public event EventHandler<ListenerTimedOutEventArgs> ListenerTimedOutWhileWaiting;
 
-		private bool mIsDisposed = false;
-
 		private string mSignalingConnectionString;
 
 		private string mNewTaskNotificationChannelName;
@@ -73,7 +71,9 @@ namespace LVD.Stakhanovise.NET.Queue
 		private ManualResetEvent mWaitForFirstStartWaitHandle =
 			new ManualResetEvent( initialState: false );
 
-		private Task mNewTaskUpdatesListenerTask;
+		private Task mNewTaskUpdatesListenerWorker;
+
+		private NpgsqlConnection mSignalingConn = null;
 
 		private int mListenerConnectionBackendProcessId;
 
@@ -85,6 +85,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			AppMetricId.ListenerReconnectCount,
 			AppMetricId.ListenerNotificationWaitTimeoutCount
 		);
+
+		private bool mIsDisposed = false;
 
 		public PostgreSqlTaskQueueNotificationListener( string signalingConnectionString, string newTaskNotificationChannelName )
 		{
@@ -120,21 +122,19 @@ namespace LVD.Stakhanovise.NET.Queue
 				m => m.Increment() );
 		}
 
-		private async Task ListenForTaskUpdates()
+		private async Task ListenForTaskUpdatesAsync()
 		{
-			CancellationToken stopToken = mStopTokenSource
-				.Token;
-
+			CancellationToken stopToken = mStopTokenSource.Token;
 			if ( stopToken.IsCancellationRequested )
 				return;
 
 			try
 			{
-				await RunTaskUpdatesListeningLoop( stopToken );
+				await RunTaskUpdatesListeningLoopAsync( stopToken );
 			}
 			catch ( OperationCanceledException )
 			{
-				mLogger.Debug( "New task notification wait token cancelled." );
+				mLogger.Debug( "Stop requested. Listening loop has ended." );
 			}
 			catch ( Exception exc )
 			{
@@ -143,50 +143,51 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private async Task RunTaskUpdatesListeningLoop( CancellationToken stopToken )
+		private async Task RunTaskUpdatesListeningLoopAsync( CancellationToken stopToken )
 		{
-			NpgsqlConnection signalingConn = null;
-
 			while ( true )
+				await RunTaskUpdatesListeningIterationAsync( stopToken );
+		}
+
+		private async Task RunTaskUpdatesListeningIterationAsync( CancellationToken stopToken )
+		{
+			try
 			{
-				try
-				{
-					stopToken.ThrowIfCancellationRequested();
-					//Signaling connection is not open:
-					//  either is the first time we are connecting
-					//  or the connection failed and we must attempt a reconnect
-					if ( signalingConn == null )
-						signalingConn = await InitiateSignalingConnectionAsync();
+				stopToken.ThrowIfCancellationRequested();
+				//Signaling connection is not open:
+				//  either is the first time we are connecting
+				//  or the connection failed and we must attempt a reconnect
+				if ( mSignalingConn == null )
+					mSignalingConn = await InitiateSignalingConnectionAsync();
 
-					if ( IsFirstConnectionAttempt )
-						ProcessListenerConnected( signalingConn.ProcessID );
-					else
-						ProcessListenerConnectionRestored( signalingConn.ProcessID );
+				if ( IsFirstConnectionAttempt )
+					ProcessListenerConnected( mSignalingConn.ProcessID );
+				else
+					ProcessListenerConnectionRestored( mSignalingConn.ProcessID );
 
-					///Start notification wait loop
-					WaitForNotifications( signalingConn, stopToken );
-				}
-				catch ( NullReferenceException exc )
-				{
-					//Npgsql's Wait() may throw a NullReferenceException when the connection breaks
-					mLogger.Error( "Possible connection failure while waiting", exc );
-				}
-				catch ( NpgsqlException exc )
-				{
-					//Catch and log database connection error so we can cleanup and re-connect;
-					//  every other exception will flow to the caller's catch block and will break the loop
-					mLogger.Error( "Database error detected while listening for new task notifications.", exc );
-				}
-				finally
-				{
-					//Clean-up database connection here. 
-					//  This is reached when either the connection is lost, 
-					//  so we need to clean-up before restoring
-					//  or some other condition occurs (such as cancellation or other error)
-					//  so we need to clean-up before exiting
-					await CleanupSignalingConnectionAsync( signalingConn );
-					signalingConn = null;
-				}
+				///Start notification wait loop
+				WaitForNotifications( mSignalingConn, stopToken );
+			}
+			catch ( NullReferenceException exc )
+			{
+				//Npgsql's Wait() may throw a NullReferenceException when the connection breaks
+				mLogger.Error( "Possible connection failure while waiting", exc );
+			}
+			catch ( NpgsqlException exc )
+			{
+				//Catch and log database connection error so we can cleanup and re-connect;
+				//  every other exception will flow to the caller's catch block and will break the loop
+				mLogger.Error( "Database error detected while listening for new task notifications.", exc );
+			}
+			finally
+			{
+				//Clean-up database connection here. 
+				//  This is reached when either the connection is lost, 
+				//  so we need to clean-up before restoring
+				//  or some other condition occurs (such as cancellation or other error)
+				//  so we need to clean-up before exiting
+				await CleanupSignalingConnectionAsync( mSignalingConn );
+				mSignalingConn = null;
 			}
 		}
 
@@ -317,18 +318,24 @@ namespace LVD.Stakhanovise.NET.Queue
 			mLogger.DebugFormat( "Starting notification listener for channel {0}...",
 				mNewTaskNotificationChannelName );
 
-			mWaitForFirstStartWaitHandle.Reset();
-			mStopTokenSource = new CancellationTokenSource();
-
-			mListenerConnectionBackendProcessId = 0;
-			mNewTaskUpdatesListenerTask = Task.Run( async ()
-				=> await ListenForTaskUpdates() );
-
-			//Wait for connection to be established
-			await mWaitForFirstStartWaitHandle.ToTask();
+			ResetSynchronization();
+			await StartListeningForTaskUpdatesAsync();
 
 			mLogger.DebugFormat( "Successfully started notification listener for channel {0}.",
 				mNewTaskNotificationChannelName );
+		}
+
+		private void ResetSynchronization()
+		{
+			mWaitForFirstStartWaitHandle.Reset();
+			mListenerConnectionBackendProcessId = 0;
+		}
+
+		private async Task StartListeningForTaskUpdatesAsync()
+		{
+			mStopTokenSource = new CancellationTokenSource();
+			mNewTaskUpdatesListenerWorker = Task.Run( async () => await ListenForTaskUpdatesAsync() );
+			await mWaitForFirstStartWaitHandle.ToTask();
 		}
 
 		public async Task StopAsync()
@@ -355,23 +362,34 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			try
 			{
-				//Request cancellation and wait 
-				//  for the task to complete
-				mStopTokenSource.Cancel();
-				await mNewTaskUpdatesListenerTask;
+				RequestTaskUpdatesListeningCancellation();
+				await WaitForTaskUpdatesListeningShutdownAsync();
 			}
 			finally
 			{
-				mWaitForFirstStartWaitHandle.Reset();
-				mListenerConnectionBackendProcessId = 0;
-
-				mStopTokenSource?.Dispose();
-				mStopTokenSource = null;
-				mNewTaskUpdatesListenerTask = null;
+				ResetSynchronization();
+				CleanupTaskUpdatesListening();
 			}
 
 			mLogger.DebugFormat( "Successfully stopped notification listener for channel {0}.",
 				mNewTaskNotificationChannelName );
+		}
+
+		private void RequestTaskUpdatesListeningCancellation()
+		{
+			mStopTokenSource.Cancel();
+		}
+
+		private async Task WaitForTaskUpdatesListeningShutdownAsync()
+		{
+			await mNewTaskUpdatesListenerWorker;
+		}
+
+		private void CleanupTaskUpdatesListening()
+		{
+			mStopTokenSource?.Dispose();
+			mStopTokenSource = null;
+			mNewTaskUpdatesListenerWorker = null;
 		}
 
 		public void Dispose()
@@ -387,13 +405,17 @@ namespace LVD.Stakhanovise.NET.Queue
 				if ( disposing )
 				{
 					StopAsync().Wait();
-
-					mWaitForFirstStartWaitHandle?.Dispose();
-					mWaitForFirstStartWaitHandle = null;
+					CleanupTaskUpdatesListeningSynchronization();
 				}
 
 				mIsDisposed = true;
 			}
+		}
+
+		private void CleanupTaskUpdatesListeningSynchronization()
+		{
+			mWaitForFirstStartWaitHandle?.Dispose();
+			mWaitForFirstStartWaitHandle = null;
 		}
 
 		public AppMetric QueryMetric( AppMetricId metricId )

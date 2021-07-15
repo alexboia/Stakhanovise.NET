@@ -49,11 +49,17 @@ namespace LVD.Stakhanovise.NET.Processor
 				.GetCurrentMethod()
 				.DeclaringType );
 
-		private ITaskBuffer mTaskBuffer;
+		private ITaskBuffer mQueuedTaskBuffer;
 
 		private ITaskQueueConsumer mTaskQueueConsumer;
 
-		private bool mIsDisposed = false;
+		private string[] mRequiredPayloadTypes;
+
+		private CancellationTokenSource mStopTokenSource;
+
+		private Task mQueuedTaskPollingWorker;
+
+		private TaskProcessingOptions mOptions;
 
 		private StateController mStateController
 			= new StateController();
@@ -64,14 +70,6 @@ namespace LVD.Stakhanovise.NET.Processor
 		private ManualResetEvent mWaitForClearToAddToBuffer
 			= new ManualResetEvent( initialState: false );
 
-		private string[] mRequiredPayloadTypes;
-
-		private CancellationTokenSource mStopTokenSource;
-
-		private Task mPollTask;
-
-		private TaskProcessingOptions mOptions;
-
 		private AppMetricsCollection mMetrics = new AppMetricsCollection
 		(
 			AppMetricId.PollerDequeueCount,
@@ -79,13 +77,15 @@ namespace LVD.Stakhanovise.NET.Processor
 			AppMetricId.PollerWaitForDequeueCount
 		);
 
+		private bool mIsDisposed = false;
+
 		public StandardTaskPoller( TaskProcessingOptions options,
 			ITaskQueueConsumer taskQueueConsumer,
 			ITaskBuffer taskBuffer )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
-			mTaskBuffer = taskBuffer
+			mQueuedTaskBuffer = taskBuffer
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
@@ -112,72 +112,76 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task PollForQueuedTasksAsync()
 		{
-			CancellationToken stopToken = mStopTokenSource
-				.Token;
-
-			//Check cancellation token before starting 
-			//	the polling loop
+			CancellationToken stopToken = mStopTokenSource.Token;
 			if ( stopToken.IsCancellationRequested )
 				return;
 
-			while ( true )
+			try
 			{
-				try
-				{
-					//Check for token cancellation at the beginning of the loop
-					stopToken.ThrowIfCancellationRequested();
-
-					//If the buffer is full, we wait for some space to become available,
-					//  since, even if we can dequeue an task, 
-					//  we won't have anywhere to place it yet and we 
-					//  may be needlessly helding a lock to that task 
-					if ( IsTaskBufferFull() )
-						await WaitForTaskBufferAvailableSpaceAsync();
-
-					//It may be that the wait handle was signaled 
-					//  as part of the Stop operation,
-					//  so we need to check for that as well.
-					stopToken.ThrowIfCancellationRequested();
-
-					IQueuedTaskToken queuedTaskToken = 
-						await TryDequeueTaskAsync();
-
-					//Before posting the token to the buffer, 
-					//	check if cancellation was requested
-					stopToken.ThrowIfCancellationRequested();
-
-					if ( queuedTaskToken != null )
-						AddTaskToBuffer( queuedTaskToken );
-					else
-						await WaitForAvailableTaskAsync();
-
-					//It may be that the wait handle was signaled 
-					//  as part of the Stop operation,
-					//  so we need to check for that as well.
-					stopToken.ThrowIfCancellationRequested();
-
-					ResetTaskPollingSynchronization();
-				}
-				catch ( OperationCanceledException )
-				{
-					mLogger.Debug( "Stop requested. Breaking polling loop..." );
-					break;
-				}
+				await RunQueuedTaskPollingLoopAsync( stopToken );
 			}
+			catch ( OperationCanceledException )
+			{
+				mLogger.Debug( "Stop requested. Polling loop has ended." );
+			}
+			finally
+			{
+				mQueuedTaskBuffer.CompleteAdding();
+			}
+		}
 
-			mTaskBuffer.CompleteAdding();
+		private async Task RunQueuedTaskPollingLoopAsync( CancellationToken stopToken )
+		{
+			while ( true )
+				await RunQueuedTaskPollingIterationAsync( stopToken );
+		}
+
+		private async Task RunQueuedTaskPollingIterationAsync( CancellationToken stopToken )
+		{
+			//Check for token cancellation at the beginning of the loop
+			stopToken.ThrowIfCancellationRequested();
+
+			//If the buffer is full, we wait for some space to become available,
+			//  since, even if we can dequeue an task, 
+			//  we won't have anywhere to place it yet and we 
+			//  may be needlessly helding a lock to that task 
+			if ( IsTaskBufferFull() )
+				await WaitForTaskBufferAvailableSpaceAsync();
+
+			//It may be that the wait handle was signaled 
+			//  as part of the Stop operation,
+			//  so we need to check for that as well.
+			stopToken.ThrowIfCancellationRequested();
+
+			IQueuedTaskToken queuedTaskToken =
+				await TryDequeueTaskAsync();
+
+			//Before posting the token to the buffer, 
+			//	check if cancellation was requested
+			stopToken.ThrowIfCancellationRequested();
+
+			if ( queuedTaskToken != null )
+				AddDequeuedTaskToBuffer( queuedTaskToken );
+			else
+				await WaitForAvailableTaskAsync();
+
+			//It may be that the wait handle was signaled 
+			//  as part of the Stop operation,
+			//  so we need to check for that as well.
+			stopToken.ThrowIfCancellationRequested();
+			ResetTaskPollingSynchronization();
 		}
 
 		private bool IsTaskBufferFull()
 		{
-			return mTaskBuffer.IsFull;
+			return mQueuedTaskBuffer.IsFull;
 		}
 
 		private async Task WaitForTaskBufferAvailableSpaceAsync()
 		{
 			mLogger.Debug( "Task buffer is full. Waiting for available space..." );
 
-			mMetrics.UpdateMetric( AppMetricId.PollerWaitForBufferSpaceCount, 
+			mMetrics.UpdateMetric( AppMetricId.PollerWaitForBufferSpaceCount,
 				m => m.Increment() );
 
 			await mWaitForClearToAddToBuffer.ToTask();
@@ -188,7 +192,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			return await mTaskQueueConsumer.DequeueAsync( mRequiredPayloadTypes );
 		}
 
-		private void AddTaskToBuffer( IQueuedTaskToken queuedTaskToken )
+		private void AddDequeuedTaskToBuffer( IQueuedTaskToken queuedTaskToken )
 		{
 			//If we have found a token, attempt to set it as started
 			//	 and only then add it to buffer for processing.
@@ -197,10 +201,10 @@ namespace LVD.Stakhanovise.NET.Processor
 				queuedTaskToken.DequeuedTask.Id,
 				queuedTaskToken.DequeuedTask.Type );
 
-			mMetrics.UpdateMetric( AppMetricId.PollerDequeueCount, 
+			mMetrics.UpdateMetric( AppMetricId.PollerDequeueCount,
 				m => m.Increment() );
 
-			mTaskBuffer.TryAddNewTask( queuedTaskToken );
+			mQueuedTaskBuffer.TryAddNewTask( queuedTaskToken );
 		}
 
 		private async Task WaitForAvailableTaskAsync()
@@ -209,10 +213,11 @@ namespace LVD.Stakhanovise.NET.Processor
 			//  a notification of new added tasks
 			mLogger.Debug( "No task dequeued when polled. Waiting for available task..." );
 
-			mMetrics.UpdateMetric( AppMetricId.PollerWaitForDequeueCount, 
+			mMetrics.UpdateMetric( AppMetricId.PollerWaitForDequeueCount,
 				m => m.Increment() );
 
-			await mWaitForClearToDequeue.ToTask();
+			await mWaitForClearToDequeue
+				.ToTask();
 		}
 
 		public async Task StartAsync( params string[] requiredPayloadTypes )
@@ -260,7 +265,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			mTaskQueueConsumer.ClearForDequeue +=
 				HandlePollForDequeueRequired;
-			mTaskBuffer.QueuedTaskRetrieved +=
+			mQueuedTaskBuffer.QueuedTaskRetrieved +=
 				HandleQueuedTaskRetrievedFromBuffer;
 
 			if ( !mTaskQueueConsumer.IsReceivingNewTaskUpdates )
@@ -270,7 +275,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void StartTaskPolling()
 		{
 			mStopTokenSource = new CancellationTokenSource();
-			mPollTask = Task.Run( async () => await PollForQueuedTasksAsync() );
+			mQueuedTaskPollingWorker = Task.Run( async () => await PollForQueuedTasksAsync() );
 		}
 
 		public async Task StopAync()
@@ -322,12 +327,12 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task WaitForTaskPollingShutdownAsync()
 		{
-			await mPollTask;
+			await mQueuedTaskPollingWorker;
 		}
 
 		private async Task CleanupTaskQueueConsumerAsync()
 		{
-			mTaskBuffer.QueuedTaskRetrieved -=
+			mQueuedTaskBuffer.QueuedTaskRetrieved -=
 				HandleQueuedTaskRetrievedFromBuffer;
 			mTaskQueueConsumer.ClearForDequeue -=
 				HandlePollForDequeueRequired;
@@ -338,7 +343,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void CleanupTaskPolling()
 		{
-			mPollTask = null;
+			mQueuedTaskPollingWorker = null;
 			mStopTokenSource.Dispose();
 			mStopTokenSource = null;
 		}
@@ -374,7 +379,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void ReleaseDependencies()
 		{
-			mTaskBuffer = null;
+			mQueuedTaskBuffer = null;
 			mTaskQueueConsumer = null;
 			mStateController = null;
 		}
