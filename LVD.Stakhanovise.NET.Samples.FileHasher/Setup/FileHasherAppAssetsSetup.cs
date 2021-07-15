@@ -38,7 +38,7 @@ using LVD.Stakhanovise.NET.Helpers;
 
 namespace LVD.Stakhanovise.NET.Samples.FileHasher.Setup
 {
-	public class FileHasherAppSetup
+	public class FileHasherAppAssetsSetup
 	{
 		private string mServerDbConnectionString;
 
@@ -46,7 +46,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Setup
 
 		private string mDbName;
 
-		public FileHasherAppSetup( string connectionString )
+		public FileHasherAppAssetsSetup( string connectionString )
 		{
 			NpgsqlConnectionStringBuilder sourceConnectionStringBuilder =
 				new NpgsqlConnectionStringBuilder( connectionString );

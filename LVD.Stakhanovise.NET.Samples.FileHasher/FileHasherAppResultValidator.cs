@@ -29,19 +29,35 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using System;
+using System.Collections.Generic;
+using System.Text;
+using LVD.Stakhanovise.NET.Queue;
+using Npgsql;
+
 namespace LVD.Stakhanovise.NET.Samples.FileHasher
 {
-	public class Program
+	public class FileHasherAppResultValidator
 	{
-		private const string ConfigurationFileName = "appsettings.json";
+		private ITaskQueueInfo mTaskQueueInfo;
 
-		private const string ConfigurationSectionName = "Lvd.Stakhanovise.Net.Samples.FileHasher.Config";
+		private string mConnectionString;
 
-		public static void Main( string[] args )
-		{
-			new FileHasherAppRunner( ConfigurationFileName, ConfigurationSectionName )
-				.RunAsync()
-				.Wait();
-		}
+		//We need to combine multiple validation methods:
+		// 1. Use public task queue info API to check that queue state 
+		//		corresponds to the processing completed state
+		// 2. Directly lookup queue tables (queue and results tables, respectively)
+		//		for detailed checks: 
+		//		- no records in queue table
+		//		- expected record count in results table
+		//		- task payloads are correct
+		//		- task statuses are correct
+		//	3. Lookup execution time stats and check that number of execution cycles is correct
+		//	4. Lookup metrics table and check that the relevant metrics are correct:
+		//		- listener@task-notification-count - this may be affected by potential connect dropouts,
+		//			so also check listener@reconnect-count
+		//		- poller@dequeue-count
+		//		- queue-consumer@dequeue-count
+		//		- worker@processed-payload-count
 	}
 }
