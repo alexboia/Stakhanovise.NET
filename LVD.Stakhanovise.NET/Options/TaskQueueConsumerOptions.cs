@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020, Boia Alexandru
+// Copyright (c) 2020-201, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -29,21 +29,26 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskQueueConsumerOptions : TaskQueueOptions
 	{
-		public TaskQueueConsumerOptions ( ConnectionOptions connectionOptions,
+		public TaskQueueConsumerOptions( ConnectionOptions connectionOptions,
 			QueuedTaskMapping mapping )
 			: base( connectionOptions,
 				  mapping )
 		{
 			return;
+		}
+
+		public string DeriveSignalingConnectionString()
+		{
+			return ConnectionOptions
+				.ConnectionString
+				.DeriveSignalingConnectionString( this );
 		}
 	}
 }

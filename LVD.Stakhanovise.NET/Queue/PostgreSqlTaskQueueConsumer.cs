@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020, Boia Alexandru
+// Copyright (c) 2020-201, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -56,8 +56,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private TaskQueueConsumerOptions mOptions;
 
-		private string mSignalingConnectionString;
-
 		private PostgreSqlTaskQueueNotificationListener mNotificationListener;
 
 		private string mTaskDequeueSql;
@@ -76,7 +74,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			new AppMetric( AppMetricId.QueueConsumerTotalDequeueDuration, 0 )
 		);
 
-		public PostgreSqlTaskQueueConsumer ( TaskQueueConsumerOptions options, ITimestampProvider timestampProvider )
+		public PostgreSqlTaskQueueConsumer( TaskQueueConsumerOptions options, ITimestampProvider timestampProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
@@ -86,11 +84,18 @@ namespace LVD.Stakhanovise.NET.Queue
 			mOptions = options;
 			mTimestampProvider = timestampProvider;
 
-			mSignalingConnectionString = options.ConnectionOptions
-				.ConnectionString
-				.DeriveSignalingConnectionString( options );
+			mTaskDequeueSql = GetTaskDequeueSql( options.Mapping );
+			mTaskAcquireSql = GetTaskAcquireSql( options.Mapping );
+			mTaskResultUpdateSql = GetTaskResultUpdateSql( options.Mapping );
 
-			mNotificationListener = new PostgreSqlTaskQueueNotificationListener( mSignalingConnectionString,
+			SetupNotificationListener( options );
+		}
+
+		private void SetupNotificationListener( TaskQueueConsumerOptions options )
+		{
+			string signalingConnectionString = options.DeriveSignalingConnectionString();
+
+			mNotificationListener = new PostgreSqlTaskQueueNotificationListener( signalingConnectionString,
 				options.Mapping.NewTaskNotificationChannelName );
 
 			mNotificationListener.ListenerConnectionRestored +=
@@ -99,74 +104,60 @@ namespace LVD.Stakhanovise.NET.Queue
 				HandleNewTaskUpdateReceived;
 			mNotificationListener.ListenerTimedOutWhileWaiting +=
 				HandleListenerTimedOut;
-
-			mTaskDequeueSql = GetTaskDequeueSql( options.Mapping );
-			mTaskAcquireSql = GetTaskAcquireSql( options.Mapping );
-			mTaskResultUpdateSql = GetTaskResultUpdateSql( options.Mapping );
 		}
 
-		private async Task<NpgsqlConnection> OpenSignalingConnectionAsync ()
-		{
-			return await mSignalingConnectionString.TryOpenConnectionAsync(
-				mOptions.ConnectionOptions
-					.ConnectionRetryCount,
-				mOptions.ConnectionOptions
-					.ConnectionRetryDelayMilliseconds
-			);
-		}
-
-		private async Task<NpgsqlConnection> OpenQueueConnectionAsync ()
+		private async Task<NpgsqlConnection> OpenQueueConnectionAsync()
 		{
 			return await mOptions
 				.ConnectionOptions
 				.TryOpenConnectionAsync();
 		}
 
-		private void NotifyClearForDequeue ( ClearForDequeReason reason )
+		private void NotifyClearForDequeue( ClearForDequeReason reason )
 		{
 			EventHandler<ClearForDequeueEventArgs> eventHandler = ClearForDequeue;
 			if ( eventHandler != null )
 				eventHandler( this, new ClearForDequeueEventArgs( reason ) );
 		}
 
-		private void HandleNewTaskUpdateReceived ( object sender, NewTaskPostedEventArgs e )
+		private void HandleNewTaskUpdateReceived( object sender, NewTaskPostedEventArgs e )
 		{
 			NotifyClearForDequeue( ClearForDequeReason
 				.NewTaskPostedNotificationReceived );
 		}
 
-		private void HandleListenerConnectionRestored ( object sender, ListenerConnectionRestoredEventArgs e )
+		private void HandleListenerConnectionRestored( object sender, ListenerConnectionRestoredEventArgs e )
 		{
 			NotifyClearForDequeue( ClearForDequeReason
 				.NewTaskListenerConnectionStateChange );
 		}
 
-		private void HandleListenerTimedOut ( object sender, ListenerTimedOutEventArgs e )
+		private void HandleListenerTimedOut( object sender, ListenerTimedOutEventArgs e )
 		{
 			NotifyClearForDequeue( ClearForDequeReason
 				.ListenerTimedOut );
 		}
 
-		private void CheckNotDisposedOrThrow ()
+		private void CheckNotDisposedOrThrow()
 		{
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( PostgreSqlTaskQueueConsumer ),
 					"Cannot reuse a disposed postgre sql task queue consumer" );
 		}
 
-		private string GetTaskDequeueSql ( QueuedTaskMapping mapping )
+		private string GetTaskDequeueSql( QueuedTaskMapping mapping )
 		{
 			//See https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
 			return $@"SELECT tq.* FROM { mapping.DequeueFunctionName }(@types, @excluded, @ref_now) tq";
 		}
 
-		private string GetTaskAcquireSql ( QueuedTaskMapping mapping )
+		private string GetTaskAcquireSql( QueuedTaskMapping mapping )
 		{
 			return $@"DELETE FROM {mapping.QueueTableName} 
 				WHERE task_id = @t_id";
 		}
 
-		private string GetTaskResultUpdateSql ( QueuedTaskMapping mapping )
+		private string GetTaskResultUpdateSql( QueuedTaskMapping mapping )
 		{
 			return $@"UPDATE {mapping.ResultsQueueTableName} SET
 					task_status = @t_status,
@@ -176,9 +167,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				RETURNING *";
 		}
 
-		private void IncrementDequeueCount ( TimeSpan duration )
+		private void IncrementDequeueCount( TimeSpan duration )
 		{
-			long durationMilliseconds = ( long )Math.Ceiling( duration
+			long durationMilliseconds = ( long ) Math.Ceiling( duration
 				.TotalMilliseconds );
 
 			mMetrics.UpdateMetric( AppMetricId.QueueConsumerDequeueCount,
@@ -194,7 +185,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				m => m.Max( durationMilliseconds ) );
 		}
 
-		public async Task<IQueuedTaskToken> DequeueAsync ( params string[] selectTaskTypes )
+		public async Task<IQueuedTaskToken> DequeueAsync( params string[] selectTaskTypes )
 		{
 			NpgsqlConnection conn = null;
 			QueuedTask dequeuedTask = null;
@@ -231,7 +222,7 @@ namespace LVD.Stakhanovise.NET.Queue
 						//2. Mark the task as being "Processing" and pull result info
 						//	The result is stored separately and it's what allows us to remove 
 						//	the task from the queue at step #2, 
-						//	whils also tracking it's processing status and previous results
+						//	whils also tracking its processing status and previous results
 						dequeuedTaskResult = await TryUpdateTaskResultAsync( dequeuedTask, conn, tx );
 						if ( dequeuedTaskResult != null )
 						{
@@ -246,7 +237,6 @@ namespace LVD.Stakhanovise.NET.Queue
 						IncrementDequeueCount( MonotonicTimestamp.Since( startDequeue ) );
 					else
 						await tx.RollbackAsync();
-
 				}
 			}
 			finally
@@ -261,7 +251,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			return dequeuedTaskToken;
 		}
 
-		private async Task<QueuedTask> TryDequeueTaskAsync ( string[] selectTaskTypes,
+		private async Task<QueuedTask> TryDequeueTaskAsync( string[] selectTaskTypes,
 			DateTimeOffset refNow,
 			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
@@ -293,7 +283,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			return dequeuedTask;
 		}
 
-		private async Task<QueuedTaskResult> TryUpdateTaskResultAsync ( QueuedTask dequeuedTask,
+		private async Task<QueuedTaskResult> TryUpdateTaskResultAsync( QueuedTask dequeuedTask,
 			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
 		{
@@ -305,7 +295,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					dequeuedTask.Id );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_status",
 					NpgsqlDbType.Integer,
-					( int )QueuedTaskStatus.Processing );
+					( int ) QueuedTaskStatus.Processing );
 
 				await addOrUpdateResultCmd.PrepareAsync();
 				using ( NpgsqlDataReader resultRdr = await addOrUpdateResultCmd.ExecuteReaderAsync() )
@@ -323,25 +313,25 @@ namespace LVD.Stakhanovise.NET.Queue
 			return dequeuedTaskResult;
 		}
 
-		public IQueuedTaskToken Dequeue ( params string[] supportedTypes )
+		public IQueuedTaskToken Dequeue( params string[] supportedTypes )
 		{
 			Task<IQueuedTaskToken> asyncTask = DequeueAsync( supportedTypes );
 			return asyncTask.Result;
 		}
 
-		public async Task StartReceivingNewTaskUpdatesAsync ()
+		public async Task StartReceivingNewTaskUpdatesAsync()
 		{
 			CheckNotDisposedOrThrow();
 			await mNotificationListener.StartAsync();
 		}
 
-		public async Task StopReceivingNewTaskUpdatesAsync ()
+		public async Task StopReceivingNewTaskUpdatesAsync()
 		{
 			CheckNotDisposedOrThrow();
 			await mNotificationListener.StopAsync();
 		}
 
-		protected void Dispose ( bool disposing )
+		protected void Dispose( bool disposing )
 		{
 			if ( !mIsDisposed )
 			{
@@ -367,20 +357,20 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		public void Dispose ()
+		public void Dispose()
 		{
 			Dispose( true );
 			GC.SuppressFinalize( this );
 		}
 
-		public AppMetric QueryMetric ( AppMetricId metricId )
+		public AppMetric QueryMetric( AppMetricId metricId )
 		{
-			return AppMetricsCollection.JoinQueryMetric( metricId, 
+			return AppMetricsCollection.JoinQueryMetric( metricId,
 				mMetrics,
 				mNotificationListener );
 		}
 
-		public IEnumerable<AppMetric> CollectMetrics ()
+		public IEnumerable<AppMetric> CollectMetrics()
 		{
 			return AppMetricsCollection.JoinCollectMetrics( mMetrics,
 				mNotificationListener );

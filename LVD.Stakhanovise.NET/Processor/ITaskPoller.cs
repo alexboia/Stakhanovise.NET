@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020, Boia Alexandru
+// Copyright (c) 2020-201, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		Task StopAync ();
 
-		bool IsRunning { get; }
+		bool IsStarted { get; }
 	}
 }
