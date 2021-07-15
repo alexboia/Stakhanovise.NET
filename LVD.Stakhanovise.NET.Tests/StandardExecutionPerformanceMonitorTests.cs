@@ -29,59 +29,54 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using Bogus;
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Processor;
+using LVD.Stakhanovise.NET.Tests.Helpers;
+using LVD.Stakhanovise.NET.Tests.Support;
+using NUnit.Framework;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using LVD.Stakhanovise.NET.Tests.Payloads;
-using NUnit.Framework;
-using Bogus;
-using System.Linq;
-using LVD.Stakhanovise.NET.Processor;
-using LVD.Stakhanovise.NET.Model;
-using System.Threading;
-using LVD.Stakhanovise.NET.Options;
-using Moq;
-using System.Diagnostics;
-using LVD.Stakhanovise.NET.Tests.Helpers;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
 	[TestFixture]
 	public class StandardExecutionPerformanceMonitorTests
 	{
+		private string mTestProcessId;
+
+		public StandardExecutionPerformanceMonitorTests()
+		{
+			mTestProcessId = Guid.NewGuid()
+				.ToString();
+		}
+
 		[Test]
 		[TestCase( 1 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
 		[Repeat( 10 )]
-		public async Task Test_CanReportExecutionStats_SerialCalls ( int nReports )
+		public async Task Test_CanReportExecutionStats_SerialCalls( int nReports )
 		{
 			StandardExecutionPerformanceMonitor perfMon =
-				new StandardExecutionPerformanceMonitor();
+				new StandardExecutionPerformanceMonitor( mTestProcessId );
 
-			ConcurrentQueue<Tuple<string, long>> perfStatsToReport = GenerateSamplePerformanceStats( nReports,
+			IEnumerable<Tuple<string, long>> perfStatsToReport = GenerateSamplePerformanceStats( nReports,
 				out List<TaskPerformanceStats> expectedWrittenStats );
 
-			Mock<IExecutionPerformanceMonitorWriter> writerMock =
-				new Mock<IExecutionPerformanceMonitorWriter>();
+			ExecutionPerformanceStatsReporter perfStatsReporter =
+				new ExecutionPerformanceStatsReporter( perfMon, perfStatsToReport );
 
-			List<TaskPerformanceStats> actualWrittenStats =
-				new List<TaskPerformanceStats>();
-
-			writerMock.Setup( w => w.WriteAsync( It.IsAny<IEnumerable<TaskPerformanceStats>>() ) )
-				.Callback<IEnumerable<TaskPerformanceStats>>( ws => actualWrittenStats.AddRange( ws ) );
+			ExecutionPerformanceMonitorWriterMockWithDataCollection writerMock =
+				new ExecutionPerformanceMonitorWriterMockWithDataCollection( mTestProcessId );
 
 			await perfMon.StartFlushingAsync( writerMock.Object );
-
-			while ( perfStatsToReport.TryDequeue( out Tuple<string, long> execTime ) )
-				await perfMon.ReportExecutionTimeAsync( execTime.Item1, execTime.Item2, 0 );
-
+			await perfStatsReporter.ReportExecutionPerformancesStatsAsync();
 			await perfMon.StopFlushingAsync();
 
-			CollectionAssert.AreEquivalent( expectedWrittenStats,
-				actualWrittenStats );
+			writerMock.AssertStatsWrittenCorrectly( expectedWrittenStats );
 		}
 
 		[TestCase( 1, 2 )]
@@ -94,49 +89,43 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 100, 5 )]
 		[TestCase( 100, 10 )]
 		[Repeat( 10 )]
-		public async Task Test_CanReportExecutionStats_ParallelCalls ( int nReports, int nProducers )
+		public async Task Test_CanReportExecutionStats_ParallelCalls( int nReports, int nWorkers )
 		{
 
 			StandardExecutionPerformanceMonitor perfMon =
-				new StandardExecutionPerformanceMonitor();
+				new StandardExecutionPerformanceMonitor( mTestProcessId );
 
-			ConcurrentQueue<Tuple<string, long>> perfStatsToReport = GenerateSamplePerformanceStats( nReports,
+			IEnumerable<Tuple<string, long>> perfStatsToReport = GenerateSamplePerformanceStats( nReports,
 				out List<TaskPerformanceStats> expectedWrittenStats );
 
-			Mock<IExecutionPerformanceMonitorWriter> writerMock =
-				new Mock<IExecutionPerformanceMonitorWriter>();
+			ExecutionPerformanceMonitorWriterMockWithDataCollection writerMock =
+				new ExecutionPerformanceMonitorWriterMockWithDataCollection( mTestProcessId );
 
-			ConcurrentBag<TaskPerformanceStats> actualWrittenStats =
-				new ConcurrentBag<TaskPerformanceStats>();
-
-			Task[] producers = new Task[ nProducers ];
-
-			writerMock.Setup( w => w.WriteAsync( It.IsAny<IEnumerable<TaskPerformanceStats>>() ) )
-				.Callback<IEnumerable<TaskPerformanceStats>>( ws =>
-				{
-					foreach ( TaskPerformanceStats s in ws )
-						actualWrittenStats.Add( s );
-				} );
+			ExecutionPerformanceStatsReporter perfStatsReporter =
+				new ExecutionPerformanceStatsReporter( perfMon, perfStatsToReport );
 
 			await perfMon.StartFlushingAsync( writerMock.Object );
-
-			for ( int i = 0; i < nProducers; i++ )
-			{
-				producers[ i ] = Task.Run( async () =>
-				 {
-					 while ( perfStatsToReport.TryDequeue( out Tuple<string, long> execTime ) )
-						 await perfMon.ReportExecutionTimeAsync( execTime.Item1, execTime.Item2, 0 );
-				 } );
-			}
-
-			await Task.WhenAll( producers );
+			await ConcurrentlyReportStatsAsync( perfStatsReporter, nWorkers );
 			await perfMon.StopFlushingAsync();
 
-			CollectionAssert.AreEquivalent( expectedWrittenStats.ToArray(),
-				actualWrittenStats.ToArray() );
+			writerMock.AssertStatsWrittenCorrectly( expectedWrittenStats );
 		}
 
-		private ConcurrentQueue<Tuple<string, long>> GenerateSamplePerformanceStats ( int count,
+		private async Task ConcurrentlyReportStatsAsync( ExecutionPerformanceStatsReporter perfStatsReporter, int nWorkers )
+		{
+			Task[] workers = CreateAndStartPerfStatsConcurrentWorkers( perfStatsReporter, nWorkers );
+			await Task.WhenAll( workers );
+		}
+
+		private Task[] CreateAndStartPerfStatsConcurrentWorkers( ExecutionPerformanceStatsReporter perfStatsReporter, int nWorkers )
+		{
+			Task[] workers = new Task[ nWorkers ];
+			for ( int i = 0; i < nWorkers; i++ )
+				workers[ i ] = Task.Run( async () => await perfStatsReporter.ReportExecutionPerformancesStatsAsync() );
+			return workers;
+		}
+
+		private IEnumerable<Tuple<string, long>> GenerateSamplePerformanceStats( int count,
 			out List<TaskPerformanceStats> expectedWrittenStats )
 		{
 			Faker faker =
@@ -146,7 +135,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				new ConcurrentQueue<Tuple<string, long>>();
 
 			expectedWrittenStats = faker.RandomExecutionPerformanceStats( count );
-			foreach (TaskPerformanceStats s in expectedWrittenStats)
+			foreach ( TaskPerformanceStats s in expectedWrittenStats )
 			{
 				execTimes.Enqueue( new Tuple<string, long>(
 					s.PayloadType,

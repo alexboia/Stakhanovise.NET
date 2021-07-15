@@ -48,14 +48,23 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	public class PostgreSqlExecutionPerformanceMonitorWriterTests : BaseDbTests
 	{
+		private string mTestProcessId;
+
+		public PostgreSqlExecutionPerformanceMonitorWriterTests()
+			: base()
+		{
+			mTestProcessId = Guid.NewGuid()
+				.ToString();
+		}
+
 		[SetUp]
-		public async Task SetUp ()
+		public async Task SetUp()
 		{
 			await CleanupPerformanceMonitorTableAsync();
 		}
 
 		[TearDown]
-		public async Task TearDown ()
+		public async Task TearDown()
 		{
 			await CleanupPerformanceMonitorTableAsync();
 		}
@@ -66,7 +75,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10 )]
 		[TestCase( 100 )]
 		[Repeat( 10 )]
-		public async Task Test_CanWrite_NoExistingStats_UniquePayloadTypes ( int nStats )
+		public async Task Test_CanWrite_NoExistingStats_UniquePayloadTypes( int nStats )
 		{
 			Faker faker =
 				new Faker();
@@ -80,7 +89,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<ExecutionPerformanceInfoRecord> expectedRecords =
 				GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats( sampleStats );
 
-			await writer.WriteAsync( sampleStats );
+			await writer.WriteAsync( mTestProcessId, sampleStats );
 
 			List<ExecutionPerformanceInfoRecord> dbRecords =
 				await GetDbTaskPerformanceStatsAsync();
@@ -98,7 +107,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10 )]
 		[TestCase( 100 )]
 		[Repeat( 10 )]
-		public async Task Test_CanWrite_NoExistingStats_WithDuplicatePayloadTypes ( int nStats )
+		public async Task Test_CanWrite_NoExistingStats_WithDuplicatePayloadTypes( int nStats )
 		{
 			Faker faker =
 				new Faker();
@@ -112,7 +121,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<ExecutionPerformanceInfoRecord> expectedRecords =
 				GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats( sampleStats );
 
-			await writer.WriteAsync( sampleStats );
+			await writer.WriteAsync( mTestProcessId, sampleStats );
 
 			List<ExecutionPerformanceInfoRecord> dbRecords =
 				await GetDbTaskPerformanceStatsAsync();
@@ -136,7 +145,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10 )]
 		[TestCase( 100 )]
 		[Repeat( 10 )]
-		public async Task Test_CanWrite_WithExistingStats_UniquePayloadTypesInSet_SamePayloadTypesAsExisting ( int nStats )
+		public async Task Test_CanWrite_WithExistingStats_UniquePayloadTypesInSet_SamePayloadTypesAsExisting( int nStats )
 		{
 			Faker faker =
 				new Faker();
@@ -154,7 +163,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<ExecutionPerformanceInfoRecord> expectedRecords =
 				GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats( dbStats, newStats );
 
-			await writer.WriteAsync( newStats );
+			await writer.WriteAsync( mTestProcessId, newStats );
 
 			List<ExecutionPerformanceInfoRecord> dbRecords =
 				await GetDbTaskPerformanceStatsAsync();
@@ -180,7 +189,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10 )]
 		[TestCase( 100 )]
 		[Repeat( 10 )]
-		public async Task Test_CanWrite_WithExistingStats_UniquePayloadTypesInSet_DifferentPayloadTypesThanExisting ( int nStats )
+		public async Task Test_CanWrite_WithExistingStats_UniquePayloadTypesInSet_DifferentPayloadTypesThanExisting( int nStats )
 		{
 			Faker faker =
 				new Faker();
@@ -197,7 +206,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<ExecutionPerformanceInfoRecord> expectedRecords =
 				GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats( dbStats, newStats );
 
-			await writer.WriteAsync( newStats );
+			await writer.WriteAsync( mTestProcessId, newStats );
 
 			List<ExecutionPerformanceInfoRecord> dbRecords =
 				await GetDbTaskPerformanceStatsAsync();
@@ -236,7 +245,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10, 5 )]
 		[TestCase( 100, 5 )]
 		[Repeat( 10 )]
-		public async Task Test_CanWrite_AllZeroValues_NoInitialValues_SamePayloadTypes ( int nStats, int nWrites )
+		public async Task Test_CanWrite_AllZeroValues_NoInitialValues_SamePayloadTypes( int nStats, int nWrites )
 		{
 			Faker faker =
 				new Faker();
@@ -263,7 +272,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats( sampleStats );
 
 			for ( int i = 0; i < nWrites; i++ )
-				await writer.WriteAsync( sampleStats[ i ] );
+				await writer.WriteAsync( mTestProcessId, sampleStats[ i ] );
 
 			List<ExecutionPerformanceInfoRecord> dbRecords =
 				await GetDbTaskPerformanceStatsAsync();
@@ -278,7 +287,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
-		private async Task<List<TaskPerformanceStats>> GenerateExecutionPerformanceStatsInDbAsync ( int nStats )
+		private async Task<List<TaskPerformanceStats>> GenerateExecutionPerformanceStatsInDbAsync( int nStats )
 		{
 			Faker faker =
 				new Faker();
@@ -295,6 +304,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				cmd.Connection = conn;
 				cmd.CommandText = $@"INSERT INTO {TestOptions.DefaultMapping.ExecutionTimeStatsTableName} (
 						et_payload_type,
+						et_owner_process_id,
 						et_n_execution_cycles,
 						et_last_execution_time,
 						et_avg_execution_time,
@@ -303,6 +313,7 @@ namespace LVD.Stakhanovise.NET.Tests
 						et_total_execution_time
 					) VALUES (
 						@payload_type,
+						@owner_process_id,
 						@n_execution_cycles,
 						@last_execution_time,
 						@avg_execution_time,
@@ -313,6 +324,8 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				NpgsqlParameter pPayloadType = cmd.Parameters
 					.Add( "payload_type", NpgsqlDbType.Varchar );
+				NpgsqlParameter pOwnerProcessId = cmd.Parameters
+					.Add( "owner_process_id", NpgsqlDbType.Varchar );
 				NpgsqlParameter pNExecutionCycles = cmd.Parameters
 					.Add( "n_execution_cycles", NpgsqlDbType.Bigint );
 				NpgsqlParameter pLastExecutionTime = cmd.Parameters
@@ -331,6 +344,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				foreach ( ExecutionPerformanceInfoRecord r in records )
 				{
 					pPayloadType.Value = r.PayloadType;
+					pOwnerProcessId.Value = mTestProcessId;
 					pNExecutionCycles.Value = r.NExecutionCycles;
 					pLastExecutionTime.Value = r.LastExecutionTime;
 					pAvgExecutionTime.Value = r.AvgExecutionTime;
@@ -347,7 +361,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			return dbStats;
 		}
 
-		private List<TaskPerformanceStats> DuplicatePayloadTypes ( List<TaskPerformanceStats> source )
+		private List<TaskPerformanceStats> DuplicatePayloadTypes( List<TaskPerformanceStats> source )
 		{
 			Faker faker =
 				new Faker();
@@ -368,7 +382,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			return result;
 		}
 
-		private List<ExecutionPerformanceInfoRecord> GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats ( params List<TaskPerformanceStats>[] statsList )
+		private List<ExecutionPerformanceInfoRecord> GetExecutionPerformanceInfoRecordsFromTaskPeformanceStats( params List<TaskPerformanceStats>[] statsList )
 		{
 			List<ExecutionPerformanceInfoRecord> perfRecords =
 				new List<ExecutionPerformanceInfoRecord>();
@@ -385,7 +399,7 @@ namespace LVD.Stakhanovise.NET.Tests
 						record.NExecutionCycles += 1;
 						record.LastExecutionTime = s.DurationMilliseconds;
 						record.TotalExecutionTime += s.DurationMilliseconds;
-						record.AvgExecutionTime = ( long )Math.Ceiling( ( double )record.TotalExecutionTime
+						record.AvgExecutionTime = ( long ) Math.Ceiling( ( double ) record.TotalExecutionTime
 							/ record.NExecutionCycles );
 						record.LongestExecutionTime = Math.Max( record.LongestExecutionTime,
 							s.DurationMilliseconds );
@@ -411,13 +425,13 @@ namespace LVD.Stakhanovise.NET.Tests
 			return perfRecords;
 		}
 
-		private async Task<List<ExecutionPerformanceInfoRecord>> GetDbTaskPerformanceStatsAsync ()
+		private async Task<List<ExecutionPerformanceInfoRecord>> GetDbTaskPerformanceStatsAsync()
 		{
 			List<ExecutionPerformanceInfoRecord> dbPerfRecords =
 				new List<ExecutionPerformanceInfoRecord>();
 
 			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( ConnectionString ) )
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( $"SELECT * FROM {TestOptions.DefaultMapping.ExecutionTimeStatsTableName}", conn ) )
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( $"SELECT * FROM {TestOptions.DefaultMapping.ExecutionTimeStatsTableName} WHERE et_owner_process_id = '{mTestProcessId}'", conn ) )
 			{
 				using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
 				{
@@ -442,7 +456,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			return dbPerfRecords;
 		}
 
-		private async Task CleanupPerformanceMonitorTableAsync ()
+		private async Task CleanupPerformanceMonitorTableAsync()
 		{
 			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( ConnectionString ) )
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( $"TRUNCATE TABLE {TestOptions.DefaultMapping.ExecutionTimeStatsTableName}", conn ) )
@@ -452,7 +466,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
-		private PostgreSqlExecutionPerformanceMonitorWriter GetWriter ()
+		private PostgreSqlExecutionPerformanceMonitorWriter GetWriter()
 		{
 			return new PostgreSqlExecutionPerformanceMonitorWriter( TestOptions
 				.GetDefaultPostgreSqlExecutionPerformanceMonitorWriterOptions( ConnectionString ) );

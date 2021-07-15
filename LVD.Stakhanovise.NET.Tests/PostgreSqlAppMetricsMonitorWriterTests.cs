@@ -49,28 +49,37 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	public class PostgreSqlAppMetricsMonitorWriterTests : BaseDbTests
 	{
+		private string mTestProcessId;
+
+		public PostgreSqlAppMetricsMonitorWriterTests()
+			: base()
+		{
+			mTestProcessId = Guid.NewGuid()
+				.ToString();
+		}
+
 		[SetUp]
-		public async Task Setup ()
+		public async Task Setup()
 		{
 			await ClearMetricsTableAsync();
 		}
 
 		[TearDown]
-		public async Task TearDown ()
+		public async Task TearDown()
 		{
 			await ClearMetricsTableAsync();
 		}
 
 		[Test]
 		[Repeat( 10 )]
-		public async Task Test_CanWrite_NoInitialAppMetrics_AllBuiltInAppMetricIds ()
+		public async Task Test_CanWrite_NoInitialAppMetrics_AllBuiltInAppMetricIds()
 		{
 			PostgreSqlAppMetricsMonitorWriter writer =
 				GetWriter();
 			List<AppMetric> metrics =
 				GenerateAppMetricsForBuiltInAppMetricIds();
 
-			await writer.WriteAsync( metrics );
+			await writer.WriteAsync( mTestProcessId, metrics );
 
 			List<AppMetric> dbMetrics =
 				await GetDbAppMetricsAsync();
@@ -83,7 +92,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 2 )]
 		[TestCase( 3 )]
 		[TestCase( 5 )]
-		public async Task Test_CanWrite_DisjointSets ( int nSets )
+		public async Task Test_CanWrite_DisjointSets( int nSets )
 		{
 			PostgreSqlAppMetricsMonitorWriter writer =
 				GetWriter();
@@ -100,7 +109,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			foreach ( List<AppMetric> writeList in writeMetricLists )
 			{
-				await writer.WriteAsync( writeList );
+				await writer.WriteAsync( mTestProcessId, writeList );
 				expectedMetrics.AddRange( writeList );
 			}
 
@@ -115,7 +124,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 2 )]
 		[TestCase( 3 )]
 		[TestCase( 5 )]
-		public async Task Test_CanWrite_PartiallyIntersectedSets ( int nSets )
+		public async Task Test_CanWrite_PartiallyIntersectedSets( int nSets )
 		{
 			PostgreSqlAppMetricsMonitorWriter writer =
 				GetWriter();
@@ -132,7 +141,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			foreach ( List<AppMetric> writeList in writeMetricLists )
 			{
-				await writer.WriteAsync( writeList );
+				await writer.WriteAsync( mTestProcessId, writeList );
 				foreach ( AppMetric wMetric in writeList )
 				{
 					int indexOfWMetric = expectedMetrics.FindIndex( m => m.Id.Equals( wMetric.Id ) );
@@ -151,12 +160,12 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public async Task Test_CanWriteEmptyData_NoInitialAppMetrics ()
+		public async Task Test_CanWriteEmptyData_NoInitialAppMetrics()
 		{
 			PostgreSqlAppMetricsMonitorWriter writer = GetWriter();
 			List<AppMetric> noMetrics = new List<AppMetric>();
 
-			await writer.WriteAsync( noMetrics );
+			await writer.WriteAsync( mTestProcessId, noMetrics );
 
 			List<AppMetric> dbMetrics =
 				await GetDbAppMetricsAsync();
@@ -167,7 +176,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 10 )]
-		public async Task Test_CanWrite_WithInitialAppMetrics_AllBuiltInAppMetricIds ()
+		public async Task Test_CanWrite_WithInitialAppMetrics_AllBuiltInAppMetricIds()
 		{
 			await GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync( allZeroValues: false );
 
@@ -176,7 +185,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<AppMetric> metrics =
 				GenerateAppMetricsForBuiltInAppMetricIds();
 
-			await writer.WriteAsync( metrics );
+			await writer.WriteAsync( mTestProcessId, metrics );
 
 			List<AppMetric> dbMetrics =
 				await GetDbAppMetricsAsync();
@@ -186,7 +195,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public async Task Test_CanWriteEmptyData_WithInitialAppMetrics ()
+		public async Task Test_CanWriteEmptyData_WithInitialAppMetrics()
 		{
 			await GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync( allZeroValues: false );
 
@@ -199,7 +208,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<AppMetric> noMetrics =
 				new List<AppMetric>();
 
-			await writer.WriteAsync( noMetrics );
+			await writer.WriteAsync( mTestProcessId, noMetrics );
 
 			List<AppMetric> dbMetrics =
 				await GetDbAppMetricsAsync();
@@ -209,14 +218,14 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public async Task Test_CanWrite_AllZeroValues_NoInitialAppMetrics ()
+		public async Task Test_CanWrite_AllZeroValues_NoInitialAppMetrics()
 		{
 			PostgreSqlAppMetricsMonitorWriter writer =
 				GetWriter();
 			List<AppMetric> metrics =
 				GenerateAllZeroAppMetricsForBuiltInAppMetricIds();
 
-			await writer.WriteAsync( metrics );
+			await writer.WriteAsync( mTestProcessId, metrics );
 
 			List<AppMetric> dbMetrics =
 				await GetDbAppMetricsAsync();
@@ -228,7 +237,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public async Task Test_CanWrite_AllZeroValues_WithInitialAppMetrics ()
+		public async Task Test_CanWrite_AllZeroValues_WithInitialAppMetrics()
 		{
 			await GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync( allZeroValues: true );
 
@@ -237,7 +246,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			List<AppMetric> metrics =
 				GenerateAllZeroAppMetricsForBuiltInAppMetricIds();
 
-			await writer.WriteAsync( metrics );
+			await writer.WriteAsync( mTestProcessId, metrics );
 
 			List<AppMetric> dbMetrics =
 				await GetDbAppMetricsAsync();
@@ -248,13 +257,13 @@ namespace LVD.Stakhanovise.NET.Tests
 			AssertAppMetricsAreAllZero( dbMetrics );
 		}
 
-		private static void AssertAppMetricsAreAllZero ( List<AppMetric> dbMetrics )
+		private static void AssertAppMetricsAreAllZero( List<AppMetric> dbMetrics )
 		{
 			foreach ( AppMetric m in dbMetrics )
 				Assert.AreEqual( 0, m.Value );
 		}
 
-		private List<List<AppMetric>> InterleaveAppMetricLists ( List<List<AppMetric>> appMetricLists )
+		private List<List<AppMetric>> InterleaveAppMetricLists( List<List<AppMetric>> appMetricLists )
 		{
 			Faker faker =
 				new Faker();
@@ -276,13 +285,13 @@ namespace LVD.Stakhanovise.NET.Tests
 			return appMetricLists;
 		}
 
-		private async Task<List<AppMetric>> GetDbAppMetricsAsync ()
+		private async Task<List<AppMetric>> GetDbAppMetricsAsync()
 		{
 			List<AppMetric> dbMetrics =
 				new List<AppMetric>();
 
 			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( ConnectionString ) )
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( $"SELECT * from {TestOptions.DefaultMapping.MetricsTableName}", conn ) )
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( $"SELECT * from {TestOptions.DefaultMapping.MetricsTableName} WHERE metric_owner_process_id = '{mTestProcessId}'", conn ) )
 			{
 				using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
 				{
@@ -306,7 +315,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			return dbMetrics;
 		}
 
-		private async Task GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync ( bool allZeroValues )
+		private async Task GenerateAppMetricsInDbForBuiltInAppMetricIdsAsync( bool allZeroValues )
 		{
 			Faker faker =
 				new Faker();
@@ -317,17 +326,21 @@ namespace LVD.Stakhanovise.NET.Tests
 				cmd.Connection = conn;
 				cmd.CommandText = $@"INSERT INTO {TestOptions.DefaultMapping.MetricsTableName} (
 						metric_id,
+						metric_owner_process_id,
 						metric_category,
 						metric_value,
 						metric_last_updated
 					) VALUES (
 						@m_id,
+						@m_owner_process_id,
 						@m_category,
 						@m_value,
 						NOW()
 					)";
 
 				NpgsqlParameter pMetricId = cmd.Parameters.Add( "m_id",
+					NpgsqlDbType.Varchar );
+				NpgsqlParameter pMetricOwnerProcessId = cmd.Parameters.Add( "m_owner_process_id",
 					NpgsqlDbType.Varchar );
 				NpgsqlParameter pMetricCategory = cmd.Parameters.Add( "m_category",
 					NpgsqlDbType.Varchar );
@@ -339,6 +352,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				foreach ( AppMetricId mId in AllBuiltInMetricIds )
 				{
 					pMetricId.Value = mId.ValueId;
+					pMetricOwnerProcessId.Value = mTestProcessId;
 					pMetricCategory.Value = mId.ValueCategory;
 					pMetricValue.Value = !allZeroValues
 						? faker.Random.Long( 0 )
@@ -351,7 +365,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
-		private async Task ClearMetricsTableAsync ()
+		private async Task ClearMetricsTableAsync()
 		{
 			using ( NpgsqlConnection conn = await OpenDbConnectionAsync( ConnectionString ) )
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( $"TRUNCATE TABLE {TestOptions.DefaultMapping.MetricsTableName}", conn ) )
@@ -361,7 +375,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
-		private List<AppMetric> GenerateAppMetricsForBuiltInAppMetricIds ()
+		private List<AppMetric> GenerateAppMetricsForBuiltInAppMetricIds()
 		{
 			Faker faker =
 				new Faker();
@@ -374,7 +388,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			return appMetrics;
 		}
 
-		private List<AppMetric> GenerateAllZeroAppMetricsForBuiltInAppMetricIds ()
+		private List<AppMetric> GenerateAllZeroAppMetricsForBuiltInAppMetricIds()
 		{
 			Faker faker =
 				new Faker();
@@ -387,7 +401,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			return appMetrics;
 		}
 
-		private PostgreSqlAppMetricsMonitorWriter GetWriter ()
+		private PostgreSqlAppMetricsMonitorWriter GetWriter()
 		{
 			return new PostgreSqlAppMetricsMonitorWriter( TestOptions
 				.GetDefaultPostgreSqlAppMetricsMonitorWriterOptions( ConnectionString ) );
