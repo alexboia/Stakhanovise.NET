@@ -35,6 +35,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
 using Moq;
+using Bogus;
 using NUnit.Framework;
 using LVD.Stakhanovise.NET.Tests.Support;
 using LVD.Stakhanovise.NET.Processor;
@@ -48,28 +49,54 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	public class StandardTaskPollerTests
 	{
+		private const int MinMillisecondDelayAmount = 250;
+
+		private const int MaxMillisecondDelayAmount = 1250;
+
+		private const int MinTaskBufferCapacity = 1;
+
+		private const int MaxTaskBufferCapacity = 100;
+
 		[Test]
-		public async Task Test_CanStartStop ()
+		[Repeat( 10 )]
+		public async Task Test_CanStartStop()
 		{
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetDefaultTaskProcessingOptions();
 
-			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( 100 ) )
-			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( 0, new UtcNowTimestampProvider() ) )
+			using ( StandardTaskBuffer taskBuffer = CreateStandardTaskBufferWithRandomCapacity() )
+			using ( MockTaskQueueConsumer taskQueue = CreateMockTaskQueuConsumer( 0 ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueue,
 				taskBuffer ) )
 			{
 				await poller.StartAsync();
 
-				Assert.IsTrue( poller.IsRunning );
+				Assert.IsTrue( poller.IsStarted );
 				Assert.IsTrue( taskQueue.IsReceivingNewTaskUpdates );
 
 				await poller.StopAync();
 
-				Assert.IsFalse( poller.IsRunning );
+				Assert.IsFalse( poller.IsStarted );
 				Assert.IsFalse( taskQueue.IsReceivingNewTaskUpdates );
 			}
+		}
+
+		private StandardTaskBuffer CreateStandardTaskBufferWithRandomCapacity()
+		{
+			return new StandardTaskBuffer( GenerateTaskBufferCapacity() );
+		}
+
+		private int GenerateTaskBufferCapacity()
+		{
+			Faker faker = new Faker();
+			return faker.Random.Int( MinTaskBufferCapacity, MaxTaskBufferCapacity );
+		}
+
+		private MockTaskQueueConsumer CreateMockTaskQueuConsumer( int numberOfTasksToGenerate )
+		{
+			return new MockTaskQueueConsumer( numberOfTasksToGenerate,
+				new UtcNowTimestampProvider() );
 		}
 
 		[Test]
@@ -79,13 +106,14 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10, 150 )]
 		[TestCase( 150, 150 )]
 		[TestCase( 10, 1 )]
-		public async Task Test_CanPoll ( int bufferCapacity, int numberOfTasks )
+		[Repeat( 10 )]
+		public async Task Test_CanPoll( int bufferCapacity, int numberOfTasks )
 		{
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetDefaultTaskProcessingOptions();
 
 			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( MockTaskQueueConsumer taskQueue = new MockTaskQueueConsumer( numberOfTasks, new UtcNowTimestampProvider() ) )
+			using ( MockTaskQueueConsumer taskQueue = CreateMockTaskQueuConsumer( numberOfTasks ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueue,
 				taskBuffer ) )
@@ -94,15 +122,11 @@ namespace LVD.Stakhanovise.NET.Tests
 					new TestBufferConsumer( taskBuffer );
 
 				await poller.StartAsync();
-
-				//Poller is filling up the buffer.
-				//We need to check the buffer to see whether 
-				//	the poller produced the appropriate data
+				
 				consumer.ConsumeBuffer();
-
 				taskQueue.WaitForQueueToBeDepleted();
+				
 				await poller.StopAync();
-
 				consumer.WaitForBufferToBeConsumed();
 
 				Assert.IsFalse( taskBuffer.HasTasks );
@@ -110,6 +134,70 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				consumer.AssertMatchesProducedTasks( taskQueue
 					.DequeuedTasksHistory );
+			}
+		}
+
+		[Test]
+		[TestCase( 1 )]
+		[TestCase( 5 )]
+		[TestCase( 10 )]
+		[Repeat( 10 )]
+		public async Task Test_TryPoll_NoTaskInQueue_ThenShutdown( int bufferCapacity )
+		{
+			TaskProcessingOptions processingOpts =
+				TestOptions.GetDefaultTaskProcessingOptions();
+
+			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
+			using ( MockTaskQueueConsumer taskQueue = CreateMockTaskQueuConsumer( 0 ) )
+			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
+				taskQueue,
+				taskBuffer ) )
+			{
+				await poller.StartAsync();
+				await Task.Delay( GenerateMilliseconDelayAmount() );
+				await poller.StopAync();
+
+				Assert.AreEqual( 1, taskQueue.DequeueCallCount );
+				Assert.IsTrue( taskBuffer.IsEmpty );
+			}
+		}
+
+		private int GenerateMilliseconDelayAmount()
+		{
+			Faker faker = new Faker();
+			return faker.Random.Int( MinMillisecondDelayAmount, MaxMillisecondDelayAmount );
+		}
+
+		[Test]
+		[TestCase( 150, 10 )]
+		[TestCase( 1, 1 )]
+		[TestCase( 1, 150 )]
+		[TestCase( 10, 150 )]
+		[TestCase( 150, 150 )]
+		[TestCase( 10, 1 )]
+		[Repeat( 10 )]
+		public async Task Test_TryPoll_FullBuffer_ThenShutdown( int bufferCapacity, int numberOfTasks )
+		{
+			TaskProcessingOptions processingOpts =
+				TestOptions.GetDefaultTaskProcessingOptions();
+
+			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
+			using ( MockTaskQueueConsumer taskQueue = CreateMockTaskQueuConsumer( 0 ) )
+			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
+				taskQueue,
+				taskBuffer ) )
+			{
+				TestBufferFiller filler =
+					new TestBufferFiller( taskBuffer );
+
+				filler.FillBuffer();
+
+				await poller.StartAsync();
+				await Task.Delay( GenerateMilliseconDelayAmount() );
+				await poller.StopAync();
+
+				Assert.AreEqual( 0, taskQueue.DequeueCallCount );
+				Assert.IsTrue( taskBuffer.IsFull );
 			}
 		}
 	}
