@@ -106,7 +106,8 @@ namespace LVD.Stakhanovise.NET.Setup
 			TaskQueueOptions producerAndResultOptions,
 			ITaskExecutorRegistry executorRegistry,
 			IExecutionPerformanceMonitorWriter executionPerfMonWriter,
-			ITimestampProvider timestampProvider )
+			ITimestampProvider timestampProvider,
+			string processId )
 		{
 			if ( consumerOptions == null )
 				throw new ArgumentNullException( nameof( consumerOptions ) );
@@ -125,7 +126,8 @@ namespace LVD.Stakhanovise.NET.Setup
 				consumerOptions,
 				executorRegistry,
 				executionPerfMonWriter,
-				timestampProvider );
+				timestampProvider,
+				processId );
 
 			taskEngine.ScanAssemblies( mExecutorAssemblies );
 			return taskEngine;

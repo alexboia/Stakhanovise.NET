@@ -75,12 +75,13 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private TaskEngineOptions mOptions;
 
-		public StandardTaskEngine ( TaskEngineOptions engineOptions,
+		public StandardTaskEngine( TaskEngineOptions engineOptions,
 			TaskQueueOptions producerAndResultOptions,
 			TaskQueueConsumerOptions consumerOptions,
 			ITaskExecutorRegistry executorRegistry,
 			IExecutionPerformanceMonitorWriter executionPerfMonWriter,
-			ITimestampProvider timestampProvider )
+			ITimestampProvider timestampProvider,
+			string processId )
 		{
 			if ( engineOptions == null )
 				throw new ArgumentNullException( nameof( engineOptions ) );
@@ -91,13 +92,16 @@ namespace LVD.Stakhanovise.NET.Processor
 			if ( producerAndResultOptions == null )
 				throw new ArgumentNullException( nameof( producerAndResultOptions ) );
 
+			if ( string.IsNullOrWhiteSpace( processId ) )
+				throw new ArgumentNullException( nameof( processId ) );
+
 			mExecutorRegistry = executorRegistry
 				?? throw new ArgumentNullException( nameof( executorRegistry ) );
 
 			mExecutionPerfMonWriter = executionPerfMonWriter
 				?? throw new ArgumentNullException( nameof( executionPerfMonWriter ) );
 
-			mExecutionPerfMon = new StandardExecutionPerformanceMonitor();
+			mExecutionPerfMon = new StandardExecutionPerformanceMonitor( processId );
 			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( consumerOptions,
 				timestampProvider );
 			mTaskQueueProducer = new PostgreSqlTaskQueueProducer( producerAndResultOptions,
@@ -113,14 +117,14 @@ namespace LVD.Stakhanovise.NET.Processor
 			mOptions = engineOptions;
 		}
 
-		private void CheckDisposedOrThrow ()
+		private void CheckDisposedOrThrow()
 		{
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( StandardTaskEngine ),
 					"Cannot reuse a disposed task result queue" );
 		}
 
-		private async Task DoStartupSequenceAsync ()
+		private async Task DoStartupSequenceAsync()
 		{
 			mLogger.DebugFormat( "Attempting to start the task engine with {0} workers",
 				mOptions.WorkerCount );
@@ -140,7 +144,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "The task engine has been successfully started." );
 		}
 
-		public async Task StartAsync ()
+		public async Task StartAsync()
 		{
 			CheckDisposedOrThrow();
 
@@ -151,7 +155,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Info( "The task engine is already started." );
 		}
 
-		private async Task DoShutdownSequenceAsync ()
+		private async Task DoShutdownSequenceAsync()
 		{
 			mLogger.Debug( "Attempting to stop the task engine." );
 
@@ -164,7 +168,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "The task engine has been successfully stopped." );
 		}
 
-		public async Task StopAync ()
+		public async Task StopAync()
 		{
 			CheckDisposedOrThrow();
 
@@ -175,7 +179,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Debug( "The task engine is already stopped." );
 		}
 
-		private string[] GetRequiredPayloadTypeNames ()
+		private string[] GetRequiredPayloadTypeNames()
 		{
 			return mExecutorRegistry
 				.DetectedPayloadTypes
@@ -183,56 +187,56 @@ namespace LVD.Stakhanovise.NET.Processor
 				.ToArray() ?? new string[ 0 ];
 		}
 
-		public void ScanAssemblies ( params Assembly[] assemblies )
+		public void ScanAssemblies( params Assembly[] assemblies )
 		{
 			mLogger.Debug( "Scanning given assemblies for task executors..." );
 			mExecutorRegistry.ScanAssemblies( assemblies );
 			mLogger.Debug( "Done scanning given assemblies for task executors." );
 		}
 
-		private async Task StartResultQueueProcessingAsync ()
+		private async Task StartResultQueueProcessingAsync()
 		{
 			mLogger.Debug( "Starting result queue processing..." );
 			await mTaskResultQueue.StartAsync();
 			mLogger.Debug( "Successfully started result queue processing." );
 		}
 
-		private async Task StopResultQueueProcessingAsync ()
+		private async Task StopResultQueueProcessingAsync()
 		{
 			mLogger.Debug( "Stopping result queue processing..." );
 			await mTaskResultQueue.StopAsync();
 			mLogger.Debug( "Successfully stopped result queue processing." );
 		}
 
-		private async Task StartExecutionPerformanceMonitorAsync ()
+		private async Task StartExecutionPerformanceMonitorAsync()
 		{
 			mLogger.Debug( "Starting execution performance monitor..." );
 			await mExecutionPerfMon.StartFlushingAsync( mExecutionPerfMonWriter );
 			mLogger.Debug( "Successfully started execution performance monitor." );
 		}
 
-		private async Task StopExecutionPerformanceMonitorAsync ()
+		private async Task StopExecutionPerformanceMonitorAsync()
 		{
 			mLogger.Debug( "Stopping execution performance monitor..." );
 			await mExecutionPerfMon.StopFlushingAsync();
 			mLogger.Debug( "Successfully stopped execution performance monitor." );
 		}
 
-		private async Task StartPollerAsync ( string[] requiredPayloadTypes )
+		private async Task StartPollerAsync( string[] requiredPayloadTypes )
 		{
 			mLogger.Debug( "Attempting to start the task poller..." );
 			await mTaskPoller.StartAsync( requiredPayloadTypes );
 			mLogger.Debug( "The task poller has been successfully started. Attempting to start workers." );
 		}
 
-		private async Task StopPollerAsync ()
+		private async Task StopPollerAsync()
 		{
 			mLogger.Debug( "Attempting to stop the task poller." );
 			await mTaskPoller.StopAync();
 			mLogger.Debug( "The task poller has been successfully stopped. Attempting to stop workers." );
 		}
 
-		private async Task StartWorkersAsync ( string[] requiredPayloadTypes )
+		private async Task StartWorkersAsync( string[] requiredPayloadTypes )
 		{
 			mLogger.Debug( "Attempting to start workers..." );
 
@@ -252,7 +256,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "All the workers have been successfully started." );
 		}
 
-		private async Task StopWorkersAsync ()
+		private async Task StopWorkersAsync()
 		{
 			mLogger.Debug( "Attempting to stop workers..." );
 
@@ -263,13 +267,13 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "All the workers have been successfully stopped." );
 		}
 
-		private async Task TryStopWorkerAsync ( ITaskWorker worker )
+		private async Task TryStopWorkerAsync( ITaskWorker worker )
 		{
 			using ( worker )
 				await worker.StopAync();
 		}
 
-		protected void Dispose ( bool disposing )
+		protected void Dispose( bool disposing )
 		{
 			if ( !mIsDisposed )
 			{
@@ -281,7 +285,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					mTaskBuffer.Dispose();
 
 					if ( mTaskResultQueue is IDisposable )
-						( ( IDisposable )mTaskResultQueue ).Dispose();
+						( ( IDisposable ) mTaskResultQueue ).Dispose();
 
 					mTaskPoller = null;
 					mTaskBuffer = null;
@@ -295,13 +299,13 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public void Dispose ()
+		public void Dispose()
 		{
 			Dispose( true );
 			GC.SuppressFinalize( this );
 		}
 
-		public AppMetric QueryMetric ( AppMetricId metricId )
+		public AppMetric QueryMetric( AppMetricId metricId )
 		{
 			return AppMetricsCollection.JoinQueryMetric( metricId,
 				mTaskBuffer,
@@ -312,7 +316,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				AppMetricsCollection.JoinProviders( mWorkers ) );
 		}
 
-		public IEnumerable<AppMetric> CollectMetrics ()
+		public IEnumerable<AppMetric> CollectMetrics()
 		{
 			return AppMetricsCollection.JoinCollectMetrics( mTaskBuffer,
 				mTaskPoller,

@@ -44,6 +44,8 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		public const string MetricIdColumnName = "metric_id";
 
+		public const string MetricOwnerProcessIdColumnName = "metric_owner_process_id";
+
 		public const string MetricCategoryColumnName = "metric_category";
 
 		public const string MetricValueColumnName = "metric_value";
@@ -57,10 +59,11 @@ namespace LVD.Stakhanovise.NET.Setup
 			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.MetricsTableName}
 				(
 					{MetricIdColumnName} character varying(250) NOT NULL,
+					{MetricOwnerProcessIdColumnName} character varying(250) NOT NULL,
 					{MetricCategoryColumnName} character varying( 150 ) NOT NULL,
 					{MetricValueColumnName} bigint NOT NULL DEFAULT 0,
 					{MetricLastUpdatedColumnName} timestamp with time zone NOT NULL DEFAULT now(),
-					CONSTRAINT {mapping.MetricsTableName}_pkey PRIMARY KEY ( metric_id)
+					CONSTRAINT pk_{mapping.MetricsTableName} PRIMARY KEY ({MetricIdColumnName},{MetricOwnerProcessIdColumnName})
 				);";
 		}
 

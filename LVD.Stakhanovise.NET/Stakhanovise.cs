@@ -51,6 +51,8 @@ namespace LVD.Stakhanovise.NET
 
 		private IAppMetricsMonitor mAppMetricsMonitor;
 
+		private IProcessIdProvider mProcessIdProvider;
+
 		private DbAssetFactory mDbAssetFactory;
 
 		public Stakhanovise( IStakhanoviseSetupDefaultsProvider defaultsProvider )
@@ -58,7 +60,7 @@ namespace LVD.Stakhanovise.NET
 			if ( defaultsProvider == null )
 				throw new ArgumentNullException( nameof( defaultsProvider ) );
 
-			//Init setup API
+			mProcessIdProvider = new AutoProcessIdProvider();
 			mStakhanoviseSetup = new StakhanoviseSetup( defaultsProvider.GetDefaults() );
 		}
 
@@ -79,6 +81,12 @@ namespace LVD.Stakhanovise.NET
 			return CreateForTheMotherland( new ReasonableStakhanoviseDefaultsProvider() );
 		}
 
+		public Stakhanovise WithProcessIdProvider( IProcessIdProvider processIdProvider )
+		{
+			mProcessIdProvider = processIdProvider ?? throw new ArgumentNullException( nameof( processIdProvider ) );
+			return this;
+		}
+
 		public Stakhanovise SetupWorkingPeoplesCommittee( Action<IStakhanoviseSetup> setupAction )
 		{
 			CheckNotDisposedOrThrow();
@@ -94,14 +102,17 @@ namespace LVD.Stakhanovise.NET
 		{
 			CheckNotDisposedOrThrow();
 
+			await mProcessIdProvider
+				.SetupAsync();
+
 			if ( mDbAssetFactory == null )
 				mDbAssetFactory = mStakhanoviseSetup.BuildDbAssetFactory();
 
 			if ( mEngine == null )
-				mEngine = mStakhanoviseSetup.BuildTaskEngine();
+				mEngine = mStakhanoviseSetup.BuildTaskEngine( mProcessIdProvider.GetProcessId() );
 
 			if ( mAppMetricsMonitor == null )
-				mAppMetricsMonitor = mStakhanoviseSetup.BuildAppMetricsMonitor();
+				mAppMetricsMonitor = mStakhanoviseSetup.BuildAppMetricsMonitor( mProcessIdProvider.GetProcessId() );
 
 			if ( mDbAssetFactory != null )
 				await mDbAssetFactory.CreateDbAssetsAsync();
@@ -127,6 +138,9 @@ namespace LVD.Stakhanovise.NET
 		{
 			CheckNotDisposedOrThrow();
 
+			//TODO: doing this before stopping the engine misses some metrics
+			//	- we need to actually do it after, but we need to ensure all the metrics 
+			//	are kept after the components are shut down
 			if ( mAppMetricsMonitor != null && mAppMetricsMonitor.IsRunning )
 				await mAppMetricsMonitor.StopAsync();
 

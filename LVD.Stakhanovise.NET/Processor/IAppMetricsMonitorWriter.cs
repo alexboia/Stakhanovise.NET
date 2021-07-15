@@ -39,6 +39,6 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public interface IAppMetricsMonitorWriter
 	{
-		Task<int> WriteAsync ( IEnumerable<AppMetric> appMetrics );
+		Task<int> WriteAsync( string processId, IEnumerable<AppMetric> appMetrics );
 	}
 }

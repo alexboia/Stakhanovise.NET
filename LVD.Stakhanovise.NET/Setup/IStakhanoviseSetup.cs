@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Logging;
+using LVD.Stakhanovise.NET.Processor;
 using System;
 using System.Collections.Generic;
 using System.Reflection;

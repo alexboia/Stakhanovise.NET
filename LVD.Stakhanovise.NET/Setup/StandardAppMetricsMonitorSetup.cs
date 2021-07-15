@@ -41,12 +41,12 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		private int mCollectionIntervalMilliseconds;
 
-		public StandardAppMetricsMonitorSetup ( StakhanoviseSetupDefaults defaults )
+		public StandardAppMetricsMonitorSetup( StakhanoviseSetupDefaults defaults )
 		{
 			mCollectionIntervalMilliseconds = defaults.AppMetricsCollectionIntervalMilliseconds;
 		}
 
-		public IAppMetricsMonitorSetup WithCollectionIntervalMilliseconds ( int collectionIntervalMilliseconds )
+		public IAppMetricsMonitorSetup WithCollectionIntervalMilliseconds( int collectionIntervalMilliseconds )
 		{
 			if ( collectionIntervalMilliseconds < 1 )
 				throw new ArgumentOutOfRangeException( nameof( collectionIntervalMilliseconds ),
@@ -56,10 +56,11 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public IAppMetricsMonitor BuildMonitor ( IAppMetricsMonitorWriter writer )
+		public IAppMetricsMonitor BuildMonitor( IAppMetricsMonitorWriter writer, string processId )
 		{
 			return new StandardAppMetricsMonitor( new AppMetricsMonitorOptions( mCollectionIntervalMilliseconds ),
-				writer: writer );
+				writer: writer,
+				processId: processId );
 		}
 	}
 }

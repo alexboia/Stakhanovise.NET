@@ -52,6 +52,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private IAppMetricsMonitorWriter mWriter;
 
+		private string mProcessId;
+
 		private IEnumerable<IAppMetricsProvider> mProviders;
 
 		private AppMetricsMonitorOptions mOptions;
@@ -62,12 +64,18 @@ namespace LVD.Stakhanovise.NET.Processor
 			new StateController();
 
 		public StandardAppMetricsMonitor( AppMetricsMonitorOptions options,
-			IAppMetricsMonitorWriter writer )
+			IAppMetricsMonitorWriter writer,
+			string processId )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
 			mWriter = writer
 				?? throw new ArgumentNullException( nameof( writer ) );
+
+			if ( string.IsNullOrWhiteSpace( processId ) )
+				throw new ArgumentNullException( nameof( processId ) );
+
+			mProcessId = processId;
 		}
 
 		private void CheckNotDisposedOrThrow()
@@ -103,7 +111,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				.JoinCollectMetrics( mProviders.ToArray() );
 
 			if ( metrics.Count() > 0 )
-				await mWriter.WriteAsync( metrics );
+				await mWriter.WriteAsync( mProcessId, metrics );
 		}
 
 		public Task StartAsync( params IAppMetricsProvider[] providers )

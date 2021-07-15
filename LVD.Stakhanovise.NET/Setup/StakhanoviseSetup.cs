@@ -141,6 +141,11 @@ namespace LVD.Stakhanovise.NET.Setup
 				defaults );
 		}
 
+		public IStakhanoviseSetup WithProcessIdProvider( IProcessIdProvider provider )
+		{
+			return this;
+		}
+
 		public IStakhanoviseSetup SetupEngine( Action<ITaskEngineSetup> setupAction )
 		{
 			if ( setupAction == null )
@@ -305,7 +310,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				mMapping );
 		}
 
-		public ITaskEngine BuildTaskEngine()
+		public ITaskEngine BuildTaskEngine( string processId )
 		{
 			ITaskExecutorRegistry executorRegistry = mTaskExecutorRegistrySetup
 				.BuildTaskExecutorRegistry();
@@ -346,13 +351,14 @@ namespace LVD.Stakhanovise.NET.Setup
 				producerOptions,
 				executorRegistry,
 				executionPerfMonWriter,
-				timestampProvider );
+				timestampProvider,
+				processId );
 		}
 
-		public IAppMetricsMonitor BuildAppMetricsMonitor()
+		public IAppMetricsMonitor BuildAppMetricsMonitor( string processId )
 		{
 			return mAppMetricsMonitoringEnabled
-				? mAppMetricsMonitorSetup.BuildMonitor( mAppMetricsMonitorWriterSetup.BuildWriter() )
+				? mAppMetricsMonitorSetup.BuildMonitor( mAppMetricsMonitorWriterSetup.BuildWriter(), processId )
 				: null;
 		}
 	}

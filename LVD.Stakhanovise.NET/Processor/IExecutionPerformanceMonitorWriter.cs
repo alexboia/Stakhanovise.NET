@@ -39,6 +39,6 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public interface IExecutionPerformanceMonitorWriter
 	{
-		Task<int> WriteAsync ( IEnumerable<TaskPerformanceStats> executionTimeInfoBatch );
+		Task<int> WriteAsync( string processId, IEnumerable<TaskPerformanceStats> executionTimeInfoBatch );
 	}
 }

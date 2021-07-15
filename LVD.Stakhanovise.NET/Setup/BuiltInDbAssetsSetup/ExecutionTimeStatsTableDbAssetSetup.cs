@@ -44,6 +44,8 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		public const string PayloadTypeColumnName = "et_payload_type";
 
+		public const string OwnerProcessIdColumnName = "et_owner_process_id";
+
 		public const string NExecutionCyclesColumnName = "et_n_execution_cycles";
 
 		public const string LastExecutionTimeColumnName = "et_last_execution_time";
@@ -56,22 +58,23 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public const string TotalExecutionTimeColumnName = "et_total_execution_time";
 
-		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
+		private string GetDbTableCreationScript( QueuedTaskMapping mapping )
 		{
 			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.ExecutionTimeStatsTableName}
 				(
 					{PayloadTypeColumnName} character varying(255) NOT NULL,
+					{OwnerProcessIdColumnName} character varying(255) NOT NULL,
 					{NExecutionCyclesColumnName} bigint NOT NULL,
 					{LastExecutionTimeColumnName} bigint NOT NULL,
 					{AverageExecutionTimeColumnName} bigint NOT NULL,
 					{FastestExecutionTimeColumnName} bigint NOT NULL,
 					{LongestExecutionTimeColumnName} bigint NOT NULL,
 					{TotalExecutionTimeColumnName} bigint NOT NULL,
-					CONSTRAINT pk_{mapping.ExecutionTimeStatsTableName}_et_payload_tpe PRIMARY KEY ( et_payload_type)
+					CONSTRAINT pk_{mapping.ExecutionTimeStatsTableName} PRIMARY KEY ({PayloadTypeColumnName}, {OwnerProcessIdColumnName})
 				);";
 		}
 
-		public async Task SetupDbAssetAsync ( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
+		public async Task SetupDbAssetAsync( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
 		{
 			if ( queueConnectionOptions == null )
 				throw new ArgumentNullException( nameof( queueConnectionOptions ) );

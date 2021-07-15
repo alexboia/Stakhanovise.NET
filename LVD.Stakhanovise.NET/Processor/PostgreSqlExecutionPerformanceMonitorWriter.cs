@@ -48,7 +48,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private string mPerfMonInfoUpsertSql;
 
-		public PostgreSqlExecutionPerformanceMonitorWriter ( PostgreSqlExecutionPerformanceMonitorWriterOptions options )
+		public PostgreSqlExecutionPerformanceMonitorWriter( PostgreSqlExecutionPerformanceMonitorWriterOptions options )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
@@ -56,15 +56,16 @@ namespace LVD.Stakhanovise.NET.Processor
 			mPerfMonInfoUpsertSql = GetPerfMonInfoUpsertSql( options.Mapping );
 		}
 
-		private async Task<NpgsqlConnection> OpenConnectionAsync ()
+		private async Task<NpgsqlConnection> OpenConnectionAsync()
 		{
 			return await mOptions.ConnectionOptions.TryOpenConnectionAsync();
 		}
 
-		private string GetPerfMonInfoUpsertSql ( QueuedTaskMapping mapping )
+		private string GetPerfMonInfoUpsertSql( QueuedTaskMapping mapping )
 		{
 			return $@"INSERT INTO {mapping.ExecutionTimeStatsTableName} (
 					et_payload_type,
+					et_owner_process_id,
 					et_n_execution_cycles,
 					et_last_execution_time,
 					et_avg_execution_time,
@@ -73,13 +74,14 @@ namespace LVD.Stakhanovise.NET.Processor
 					et_total_execution_time
 				) VALUES (
 					@payload_type,
+					@owner_process_id,
 					@n_execution_cycles,
 					@last_execution_time,
 					@avg_execution_time,
 					@fastest_execution_time,
 					@longest_execution_time,
 					@total_execution_time
-				) ON CONFLICT (et_payload_type) DO UPDATE SET 
+				) ON CONFLICT (et_payload_type, et_owner_process_id) DO UPDATE SET 
 					et_last_execution_time = EXCLUDED.et_last_execution_time,
 					et_avg_execution_time = CEILING(
 						({mapping.ExecutionTimeStatsTableName}.et_total_execution_time + EXCLUDED.et_last_execution_time)::double precision 
@@ -95,7 +97,7 @@ namespace LVD.Stakhanovise.NET.Processor
 						+ 1";
 		}
 
-		public async Task<int> WriteAsync ( IEnumerable<TaskPerformanceStats> executionTimeInfoBatch )
+		public async Task<int> WriteAsync( string processId, IEnumerable<TaskPerformanceStats> executionTimeInfoBatch )
 		{
 			int affectedRows = 0;
 
@@ -113,6 +115,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				{
 					NpgsqlParameter pPayloadType = upsertCmd.Parameters
 					   .Add( "payload_type", NpgsqlDbType.Varchar );
+					NpgsqlParameter pOwnerProcessId = upsertCmd.Parameters
+						.Add( "owner_process_id", NpgsqlDbType.Varchar );
 					NpgsqlParameter pNExecutionCycles = upsertCmd.Parameters
 						.Add( "n_execution_cycles", NpgsqlDbType.Bigint );
 					NpgsqlParameter pLastExecutionTime = upsertCmd.Parameters
@@ -131,6 +135,7 @@ namespace LVD.Stakhanovise.NET.Processor
 					foreach ( TaskPerformanceStats s in executionTimeInfoBatch )
 					{
 						pPayloadType.Value = s.PayloadType;
+						pOwnerProcessId.Value = processId;
 						pNExecutionCycles.Value = 1;
 						pLastExecutionTime.Value = s.DurationMilliseconds;
 						pAvgExecutionTime.Value = s.DurationMilliseconds;
