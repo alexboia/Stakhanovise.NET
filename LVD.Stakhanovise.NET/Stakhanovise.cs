@@ -117,7 +117,7 @@ namespace LVD.Stakhanovise.NET
 			if ( mDbAssetFactory != null )
 				await mDbAssetFactory.CreateDbAssetsAsync();
 
-			if ( !mEngine.IsRunning )
+			if ( !mEngine.IsStarted )
 				await mEngine.StartAsync();
 
 			if ( mAppMetricsMonitor != null
@@ -138,14 +138,11 @@ namespace LVD.Stakhanovise.NET
 		{
 			CheckNotDisposedOrThrow();
 
-			//TODO: doing this before stopping the engine misses some metrics
-			//	- we need to actually do it after, but we need to ensure all the metrics 
-			//	are kept after the components are shut down
+			if ( mEngine != null && mEngine.IsStarted )
+				await mEngine.StopAync();
+
 			if ( mAppMetricsMonitor != null && mAppMetricsMonitor.IsRunning )
 				await mAppMetricsMonitor.StopAsync();
-
-			if ( mEngine != null && mEngine.IsRunning )
-				await mEngine.StopAync();
 
 			return this;
 		}

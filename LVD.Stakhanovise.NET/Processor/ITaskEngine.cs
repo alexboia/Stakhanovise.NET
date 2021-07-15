@@ -52,6 +52,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		TaskEngineOptions Options { get; }
 
-		bool IsRunning { get; }
+		bool IsStarted { get; }
 	}
 }

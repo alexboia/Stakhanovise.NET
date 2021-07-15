@@ -38,6 +38,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
@@ -74,6 +75,8 @@ namespace LVD.Stakhanovise.NET.Processor
 		private bool mIsDisposed;
 
 		private TaskEngineOptions mOptions;
+
+		private AppMetricsCollection mMetricsSnapshot;
 
 		public StandardTaskEngine( TaskEngineOptions engineOptions,
 			TaskQueueOptions producerAndResultOptions,
@@ -165,6 +168,9 @@ namespace LVD.Stakhanovise.NET.Processor
 			await StopResultQueueProcessingAsync();
 			await StopExecutionPerformanceMonitorAsync();
 
+			StoreJoinedMetricsSnapshot();
+			CleanupWorkers();
+
 			mLogger.Debug( "The task engine has been successfully stopped." );
 		}
 
@@ -241,19 +247,22 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Attempting to start workers..." );
 
 			for ( int i = 0; i < mOptions.WorkerCount; i++ )
-			{
-				StandardTaskWorker taskWorker = new StandardTaskWorker( mOptions.TaskProcessingOptions,
-					mTaskBuffer,
-					mExecutorRegistry,
-					mExecutionPerfMon,
-					mTaskQueueProducer,
-					mTaskResultQueue );
-
-				await taskWorker.StartAsync( requiredPayloadTypes );
-				mWorkers.Add( taskWorker );
-			}
+				await CreateAndStartWorkerAsync( requiredPayloadTypes );
 
 			mLogger.Debug( "All the workers have been successfully started." );
+		}
+
+		private async Task CreateAndStartWorkerAsync( string[] requiredPayloadTypes )
+		{
+			StandardTaskWorker taskWorker = new StandardTaskWorker( mOptions.TaskProcessingOptions,
+				mTaskBuffer,
+				mExecutorRegistry,
+				mExecutionPerfMon,
+				mTaskQueueProducer,
+				mTaskResultQueue );
+
+			await taskWorker.StartAsync( requiredPayloadTypes );
+			mWorkers.Add( taskWorker );
 		}
 
 		private async Task StopWorkersAsync()
@@ -261,16 +270,9 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Attempting to stop workers..." );
 
 			foreach ( ITaskWorker worker in mWorkers )
-				await TryStopWorkerAsync( worker );
-			mWorkers.Clear();
+				await worker.StopAync();
 
 			mLogger.Debug( "All the workers have been successfully stopped." );
-		}
-
-		private async Task TryStopWorkerAsync( ITaskWorker worker )
-		{
-			using ( worker )
-				await worker.StopAync();
 		}
 
 		protected void Dispose( bool disposing )
@@ -280,23 +282,36 @@ namespace LVD.Stakhanovise.NET.Processor
 				if ( disposing )
 				{
 					StopAync().Wait();
-
-					mTaskPoller.Dispose();
-					mTaskBuffer.Dispose();
-
-					if ( mTaskResultQueue is IDisposable )
-						( ( IDisposable ) mTaskResultQueue ).Dispose();
-
-					mTaskPoller = null;
-					mTaskBuffer = null;
-					mTaskResultQueue = null;
-
-					mTaskQueueConsumer = null;
-					mExecutorRegistry = null;
+					Cleanup();
 				}
 
 				mIsDisposed = true;
 			}
+		}
+
+		private void Cleanup()
+		{
+			mTaskPoller.Dispose();
+			mTaskBuffer.Dispose();
+
+			if ( mTaskResultQueue is IDisposable )
+				( ( IDisposable ) mTaskResultQueue ).Dispose();
+
+			CleanupWorkers();
+
+			mTaskPoller = null;
+			mTaskBuffer = null;
+			mTaskResultQueue = null;
+
+			mTaskQueueConsumer = null;
+			mExecutorRegistry = null;
+		}
+
+		private void CleanupWorkers()
+		{
+			foreach ( ITaskWorker worker in mWorkers )
+				worker.Dispose();
+			mWorkers.Clear();
 		}
 
 		public void Dispose()
@@ -307,23 +322,34 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public AppMetric QueryMetric( AppMetricId metricId )
 		{
-			return AppMetricsCollection.JoinQueryMetric( metricId,
-				mTaskBuffer,
-				mTaskPoller,
-				mTaskQueueConsumer,
-				mTaskResultQueue,
-				mExecutionPerfMon,
-				AppMetricsCollection.JoinProviders( mWorkers ) );
+			StoreJoinedMetricsSnapshot();
+			return mMetricsSnapshot.QueryMetric( metricId );
 		}
 
 		public IEnumerable<AppMetric> CollectMetrics()
 		{
-			return AppMetricsCollection.JoinCollectMetrics( mTaskBuffer,
-				mTaskPoller,
-				mTaskQueueConsumer,
-				mTaskResultQueue,
-				mExecutionPerfMon,
-				AppMetricsCollection.JoinProviders( mWorkers ) );
+			StoreJoinedMetricsSnapshot();
+			return mMetricsSnapshot.CollectMetrics();
+		}
+
+		private void StoreJoinedMetricsSnapshot()
+		{
+			if ( ShouldStoreMetricsSnapshot() )
+			{
+				mMetricsSnapshot = AppMetricsCollection.JoinProviders( mTaskBuffer,
+					mTaskPoller,
+					mTaskQueueConsumer,
+					mTaskResultQueue,
+					mExecutionPerfMon,
+					AppMetricsCollection.JoinProviders( mWorkers ) );
+			}
+		}
+
+		private bool ShouldStoreMetricsSnapshot()
+		{
+			return mStateController != null
+				&& ( mStateController.IsStarted
+					|| mStateController.IsStopRequested );
 		}
 
 		public IEnumerable<ITaskWorker> Workers
@@ -353,7 +379,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public bool IsRunning
+		public bool IsStarted
 		{
 			get
 			{
@@ -366,12 +392,8 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			get
 			{
-				return AppMetricsCollection.JoinExportedMetrics( mTaskBuffer,
-					mTaskPoller,
-					mTaskQueueConsumer,
-					mTaskResultQueue,
-					mExecutionPerfMon,
-					AppMetricsCollection.JoinProviders( mWorkers ) );
+				StoreJoinedMetricsSnapshot();
+				return mMetricsSnapshot.ExportedMetrics;
 			}
 		}
 	}
