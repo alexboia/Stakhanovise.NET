@@ -188,9 +188,8 @@ namespace LVD.Stakhanovise.NET.Processor
 		private string[] GetRequiredPayloadTypeNames()
 		{
 			return mExecutorRegistry
-				.DetectedPayloadTypes
-				.Select( t => t.FullName )
-				.ToArray() ?? new string[ 0 ];
+				.DetectedPayloadTypeNames
+				.ToArray();
 		}
 
 		public void ScanAssemblies( params Assembly[] assemblies )

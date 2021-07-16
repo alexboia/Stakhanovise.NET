@@ -53,13 +53,13 @@ namespace LVD.Stakhanovise.NET.Executors
 		private static Type mExecutorInterface =
 		   typeof( ITaskExecutor<> );
 
-		public StandardTaskExecutorRegistry ( IDependencyResolver dependencyResolver )
+		public StandardTaskExecutorRegistry( IDependencyResolver dependencyResolver )
 		{
 			mDependencyResolver = dependencyResolver
 				?? throw new ArgumentNullException( nameof( dependencyResolver ) );
 		}
 
-		private Type GetImplementedExecutorInterface ( Type type )
+		private Type GetImplementedExecutorInterface( Type type )
 		{
 			if ( !type.IsClass || type.IsAbstract )
 				return null;
@@ -68,7 +68,7 @@ namespace LVD.Stakhanovise.NET.Executors
 				 && mExecutorInterface.IsAssignableFrom( i.GetGenericTypeDefinition() ) );
 		}
 
-		private bool IsInjectableProperty ( PropertyInfo propertyInfo )
+		private bool IsInjectableProperty( PropertyInfo propertyInfo )
 		{
 			Type propertyType = propertyInfo.PropertyType;
 			//We consider an injectable type as being anything that is not:
@@ -82,7 +82,7 @@ namespace LVD.Stakhanovise.NET.Executors
 				&& !propertyType.Equals( typeof( string ) );
 		}
 
-		private void ScanAssembly ( Assembly assembly )
+		private void ScanAssembly( Assembly assembly )
 		{
 			Type[] executorTypes = assembly.GetTypes();
 
@@ -113,21 +113,21 @@ namespace LVD.Stakhanovise.NET.Executors
 			}
 		}
 
-		public void LoadDependencies ( IDictionary<Type, object> deps )
+		public void LoadDependencies( IDictionary<Type, object> deps )
 		{
 			if ( deps == null )
 				throw new ArgumentNullException( nameof( deps ) );
 
-			List<DependencyRegistration> regs = 
+			List<DependencyRegistration> regs =
 				new List<DependencyRegistration>();
 
-			foreach (KeyValuePair<Type, object> depPair in deps)
+			foreach ( KeyValuePair<Type, object> depPair in deps )
 				regs.Add( DependencyRegistration.BindToInstance( depPair.Key, depPair.Value ) );
 
 			mDependencyResolver.Load( regs );
 		}
 
-		public void ScanAssemblies ( params Assembly[] assemblies )
+		public void ScanAssemblies( params Assembly[] assemblies )
 		{
 			if ( assemblies != null && assemblies.Length > 0 )
 			{
@@ -139,13 +139,13 @@ namespace LVD.Stakhanovise.NET.Executors
 			}
 		}
 
-		public ITaskExecutor<TPayload> ResolveExecutor<TPayload> ()
+		public ITaskExecutor<TPayload> ResolveExecutor<TPayload>()
 		{
 			return ResolveExecutor( payloadType: typeof( TPayload ) )
 				as ITaskExecutor<TPayload>;
 		}
 
-		public ITaskExecutor ResolveExecutor ( Type payloadType )
+		public ITaskExecutor ResolveExecutor( Type payloadType )
 		{
 			Type executorType;
 
@@ -155,7 +155,7 @@ namespace LVD.Stakhanovise.NET.Executors
 			if ( mMessageExecutorTypes.TryGetValue( payloadType, out executorType ) )
 			{
 				//Create executor instance, if a type is found for the payload type
-				executorInstance = ( ITaskExecutor )Activator
+				executorInstance = ( ITaskExecutor ) Activator
 					.CreateInstance( executorType );
 
 				//If we have any injectable properties, 
@@ -173,7 +173,7 @@ namespace LVD.Stakhanovise.NET.Executors
 			return executorInstance;
 		}
 
-		public Type ResolvePayloadType ( string typeName )
+		public Type ResolvePayloadType( string typeName )
 		{
 			if ( string.IsNullOrEmpty( typeName ) )
 				return null;
@@ -184,6 +184,11 @@ namespace LVD.Stakhanovise.NET.Executors
 
 			return type;
 		}
+
+		public IEnumerable<string> DetectedPayloadTypeNames
+			=> DetectedPayloadTypes
+			.Select( t => t.FullName )
+			.ToArray() ?? new string[ 0 ];
 
 		public IEnumerable<Type> DetectedPayloadTypes
 			=> mPayloadTypes.Values;

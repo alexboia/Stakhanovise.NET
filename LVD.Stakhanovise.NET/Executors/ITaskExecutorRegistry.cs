@@ -49,5 +49,7 @@ namespace LVD.Stakhanovise.NET.Executors
 		Type ResolvePayloadType ( string type );
 
 		IEnumerable<Type> DetectedPayloadTypes { get; }
+
+		IEnumerable<string> DetectedPayloadTypeNames { get; }
 	}
 }
