@@ -34,6 +34,11 @@ using System.Collections.Generic;
 using System.Text;
 using LVD.Stakhanovise.NET.Queue;
 using Npgsql;
+using LVD.Stakhanovise.NET.Samples.FileHasher.Statistics;
+using System.Threading.Tasks;
+using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator;
+using LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor;
 
 namespace LVD.Stakhanovise.NET.Samples.FileHasher
 {
@@ -41,7 +46,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 	{
 		private ITaskQueueInfo mTaskQueueInfo;
 
-		private string mConnectionString;
+		private IStatsProvider mStatsProvider;
 
 		//We need to combine multiple validation methods:
 		// 1. Use public task queue info API to check that queue state 
@@ -59,5 +64,95 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 		//		- poller@dequeue-count
 		//		- queue-consumer@dequeue-count
 		//		- worker@processed-payload-count
+
+		public FileHasherAppResultValidator( ITaskQueueInfo taskQueueInfo, IStatsProvider statsProvider )
+		{
+			mTaskQueueInfo = taskQueueInfo
+				?? throw new ArgumentNullException( nameof( taskQueueInfo ) );
+			mStatsProvider = statsProvider
+				?? throw new ArgumentNullException( nameof( statsProvider ) );
+		}
+
+		public async Task PerformBasicValidationAsync( ISourceFileRepository sourceFileRepository, IFileHashRepository fileHashRepository )
+		{
+			Console.WriteLine();
+			Console.WriteLine( "Performing processing result validation..." );
+
+			await CheckUsingTaskQueueInfoAsync( sourceFileRepository.TotalFileCount );
+			await CheckUsingGenericCounts( sourceFileRepository.TotalFileCount );
+
+			Console.WriteLine();
+			Console.WriteLine( "Processing result validation completed." );
+			Console.WriteLine();
+		}
+
+		private async Task CheckUsingTaskQueueInfoAsync( int expectedTotalCompletedTasks )
+		{
+			Console.WriteLine();
+			Console.WriteLine( "Checking using built-in task queue info metrics..." );
+
+			TaskQueueMetrics metrics = await mTaskQueueInfo
+				.ComputeMetricsAsync();
+
+			string baseMessage = string.Format( "Expected total processed = {0}; actual = {1}",
+				expectedTotalCompletedTasks,
+				metrics.TotalProcessed );
+
+			if ( metrics.TotalProcessed != expectedTotalCompletedTasks )
+				WriteWithColor( $"[Fail] {baseMessage}",
+					ConsoleColor.Red );
+			else
+				WriteWithColor( $"[Pass] {baseMessage}",
+					ConsoleColor.Green );
+		}
+
+		private async Task CheckUsingGenericCounts( int expectedTotalCompletedTasks )
+		{
+			Console.WriteLine();
+			Console.WriteLine( "Checking using generic counts..." );
+
+			GenericCounts genericCounts = await mStatsProvider
+				.ComputeGenericCountsAsync();
+
+			string baseRemainingTasksInQueueMessage = string.Format( "Expected remaining tasks in queue = 0; actual = {0}",
+				genericCounts.TotalTasksInQueue );
+
+			if ( genericCounts.TotalTasksInQueue != 0 )
+				WriteWithColor( $"[Fail] {baseRemainingTasksInQueueMessage}",
+					ConsoleColor.Red );
+			else
+				WriteWithColor( $"[Pass] {baseRemainingTasksInQueueMessage}",
+					ConsoleColor.Green );
+
+			string baseResultsInResultQueueMessage = string.Format( "Expected results in result queue = {0}; actual = {1}",
+				expectedTotalCompletedTasks,
+				genericCounts.TotalResultsInResultQueue );
+
+			if ( genericCounts.TotalResultsInResultQueue != expectedTotalCompletedTasks )
+				WriteWithColor( $"[Fail] {baseResultsInResultQueueMessage}",
+					ConsoleColor.Red );
+			else
+				WriteWithColor( $"[Success] {baseResultsInResultQueueMessage}",
+					ConsoleColor.Green );
+
+			string baseCompeltedResultsInResultQueueMessage = string.Format( "Expected completed results in result queue = {0}; actual = {1}",
+				expectedTotalCompletedTasks,
+				genericCounts.TotalCompletedResultsInResultsQueue );
+
+			if ( genericCounts.TotalCompletedResultsInResultsQueue != expectedTotalCompletedTasks )
+				WriteWithColor( $"[Fail] {baseCompeltedResultsInResultQueueMessage}",
+					ConsoleColor.Red );
+			else
+				WriteWithColor( $"[Success] {baseCompeltedResultsInResultQueueMessage}",
+					ConsoleColor.Green );
+		}
+
+		private void WriteWithColor( string message, ConsoleColor color )
+		{
+			ConsoleColor prevColor = Console.ForegroundColor;
+			Console.ForegroundColor = color;
+			Console.WriteLine( message );
+			Console.ForegroundColor = prevColor;
+		}
 	}
 }

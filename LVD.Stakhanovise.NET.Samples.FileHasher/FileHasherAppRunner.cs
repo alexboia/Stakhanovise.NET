@@ -36,6 +36,7 @@ using LVD.Stakhanovise.NET.Samples.FileHasher.Configuration;
 using LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator;
 using LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor;
 using LVD.Stakhanovise.NET.Samples.FileHasher.Setup;
+using LVD.Stakhanovise.NET.Samples.FileHasher.Statistics;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
@@ -62,6 +63,8 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 		private ISourceFileProcessor mSourceFileProcessor;
 
 		private IFileHashRepository mFileHashRepository;
+
+		private FileHasherAppResultValidator mResultValidator;
 
 		public FileHasherAppRunner( string configurationFileName, string appConfigurationSectionName )
 		{
@@ -117,6 +120,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 			mProcessingWatcher = CreateProcessingWatcher( mSourceFileRepository );
 			mFileHashRepository = CreatFileHashRepository();
 			mSourceFileProcessor = CreateSourceFileProcessor();
+			mResultValidator = CreateResultValidator();
 		}
 
 		private async Task ProcessFilesAsync()
@@ -133,6 +137,14 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 
 			await mSourceFileProcessor
 				.StopProcessingFilesAsync();
+
+			await PerformProcessingResultValidationAsync();
+		}
+
+		private async Task PerformProcessingResultValidationAsync()
+		{
+			await mResultValidator.PerformBasicValidationAsync( mSourceFileRepository, 
+				mFileHashRepository );
 		}
 
 		private void DisplayShutdownBanner()
@@ -150,12 +162,6 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 		private ISourceFileGenerator CreateSourceFileGenerator()
 		{
 			return new BogusSourceFileGenerator();
-		}
-
-		private TaskQueueOptions GetTaskQueueProducerOptions()
-		{
-			return new TaskQueueOptions( new ConnectionOptions( mConnectionString ),
-				QueuedTaskMapping.Default );
 		}
 
 		private IProcessingWatcher CreateProcessingWatcher( ISourceFileRepository sourceFileRepository )
@@ -182,6 +188,36 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 		{
 			return new PostgreSqlTaskQueueProducer( GetTaskQueueProducerOptions(),
 				new UtcNowTimestampProvider() );
+		}
+
+		private TaskQueueOptions GetTaskQueueProducerOptions()
+		{
+			return new TaskQueueOptions( new ConnectionOptions( mConnectionString ),
+				QueuedTaskMapping.Default );
+		}
+
+		private FileHasherAppResultValidator CreateResultValidator()
+		{
+			return new FileHasherAppResultValidator( CreateTaskQueueInfo(),
+				CreateStatsProvider() );
+		}
+
+		private ITaskQueueInfo CreateTaskQueueInfo()
+		{
+			return new PostgreSqlTaskQueueInfo( GetTaskQueueInfoOptions(),
+				new UtcNowTimestampProvider() );
+		}
+
+		private TaskQueueInfoOptions GetTaskQueueInfoOptions()
+		{
+			return new TaskQueueInfoOptions( new ConnectionOptions( mConnectionString ),
+				QueuedTaskMapping.Default );
+		}
+
+		private IStatsProvider CreateStatsProvider()
+		{
+			return new DirectDbStatsProvider( mConnectionString,
+				QueuedTaskMapping.Default );
 		}
 	}
 }
