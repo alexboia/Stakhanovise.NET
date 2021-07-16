@@ -132,7 +132,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 			await mProcessingWatcher
 				.WaitForCompletionAsync();
 
-			Console.WriteLine( "Processing files completed. Number of hashed files: {0}. Shutting down...",
+			Console.WriteLine( "Processing files completed. Number of hashed files: {0}.",
 				mFileHashRepository.TotalHashCount );
 
 			await mSourceFileProcessor

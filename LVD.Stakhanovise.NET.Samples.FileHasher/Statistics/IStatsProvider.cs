@@ -8,5 +8,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Statistics
 	public interface IStatsProvider
 	{
 		Task<GenericCounts> ComputeGenericCountsAsync();
+
+		Task<PayloadCounts> ComputePayloadCountsAsync();
 	}
 }

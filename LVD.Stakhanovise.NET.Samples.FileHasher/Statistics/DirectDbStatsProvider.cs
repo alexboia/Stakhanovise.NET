@@ -29,15 +29,18 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Statistics
 		{
 			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
 			{
-				return new GenericCounts()
+				GenericCounts counts = new GenericCounts()
 				{
-					TotalTasksInQueue = 
+					TotalTasksInQueue =
 						await ComputeTotalTasksInQueueAsync( conn ),
-					TotalResultsInResultQueue = 
+					TotalResultsInResultQueue =
 						await ComputeTotalResultsInResultQueueAsync( conn ),
-					TotalCompletedResultsInResultsQueue = 
+					TotalCompletedResultsInResultsQueue =
 						await ComputeTotalCompletedResultsInResultQueueAsync( conn )
 				};
+
+				await conn.CloseAsync();
+				return counts;
 			}
 		}
 
@@ -72,7 +75,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Statistics
 			string countSql = @$"SELECT COUNT(1) AS total_cnt 
 				FROM {mMapping.ResultsQueueTableName}";
 
-			using ( NpgsqlCommand cmd = new NpgsqlCommand( $"SELECT COUNT(1) FROM {mMapping.ResultsQueueTableName}", conn ) )
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( countSql, conn ) )
 			using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
 			{
 				if ( await rdr.ReadAsync() )
@@ -85,11 +88,10 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Statistics
 		private async Task<long> ComputeTotalCompletedResultsInResultQueueAsync( NpgsqlConnection conn )
 		{
 			long total = 0;
-			int intTaskStatus = ( int ) QueuedTaskStatus.Processed;
 
 			string countSql = @$"SELECT COUNT(1) AS total_cnt 
 				FROM {mMapping.ResultsQueueTableName} 
-				WHERE task_status = {intTaskStatus}";
+				WHERE task_status = {CompletedTaskStatusAsInt}";
 
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( countSql, conn ) )
 			using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
@@ -100,5 +102,76 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Statistics
 
 			return total;
 		}
+
+		public async Task<PayloadCounts> ComputePayloadCountsAsync()
+		{
+			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
+			{
+				PayloadCounts counts = new PayloadCounts()
+				{
+					TotalTasksInQueuePerPayload =
+						await ComputePerPayloadCountTasksInQueueAsync( conn ),
+					TotalResultsInResultQueuePerPayload =
+						await ComputePerPayloadCountResultsInResultQueueAsync( conn ),
+					TotalCompletedResultsInResultsQueuePerPayload =
+						await ComputePerPayloadCountCompletedResultsInResultQueueAsync( conn )
+				};
+
+				await conn.CloseAsync();
+				return counts;
+			}
+		}
+
+		private async Task<Dictionary<string, long>> ComputePerPayloadCountTasksInQueueAsync( NpgsqlConnection conn )
+		{
+			string countSql = @$"SELECT task_type, COUNT(1) AS total_cnt 
+				FROM {mMapping.QueueTableName}
+				GROUP BY task_type";
+
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( countSql, conn ) )
+			using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
+				return await ReadPayloadCountsFromDbReader( rdr );
+		}
+
+		private async Task<Dictionary<string, long>> ReadPayloadCountsFromDbReader( NpgsqlDataReader rdr )
+		{
+			Dictionary<string, long> counts =
+				new Dictionary<string, long>();
+
+			while ( await rdr.ReadAsync() )
+			{
+				string type = rdr.GetString( 0 );
+				long count = rdr.GetInt64( 1 );
+				counts[ type ] = count;
+			}
+
+			return counts;
+		}
+
+		private async Task<Dictionary<string, long>> ComputePerPayloadCountResultsInResultQueueAsync( NpgsqlConnection conn )
+		{
+			string countSql = @$"SELECT task_type, COUNT(1) AS total_cnt 
+				FROM {mMapping.ResultsQueueTableName}
+				GROUP BY task_type";
+
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( countSql, conn ) )
+			using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
+				return await ReadPayloadCountsFromDbReader( rdr );
+		}
+
+		private async Task<Dictionary<string, long>> ComputePerPayloadCountCompletedResultsInResultQueueAsync( NpgsqlConnection conn )
+		{
+			string countSql = @$"SELECT task_type, COUNT(1) AS total_cnt 
+				FROM {mMapping.ResultsQueueTableName}
+				WHERE task_status = {CompletedTaskStatusAsInt}
+				GROUP BY task_type";
+
+			using ( NpgsqlCommand cmd = new NpgsqlCommand( countSql, conn ) )
+			using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
+				return await ReadPayloadCountsFromDbReader( rdr );
+		}
+
+		private int CompletedTaskStatusAsInt
+			=> ( int ) QueuedTaskStatus.Processed;
 	}
 }

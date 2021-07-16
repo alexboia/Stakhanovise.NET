@@ -39,6 +39,7 @@ using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator;
 using LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor;
+using LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor.SeviceModel;
 
 namespace LVD.Stakhanovise.NET.Samples.FileHasher
 {
@@ -75,15 +76,34 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 
 		public async Task PerformBasicValidationAsync( ISourceFileRepository sourceFileRepository, IFileHashRepository fileHashRepository )
 		{
-			Console.WriteLine();
 			Console.WriteLine( "Performing processing result validation..." );
 
-			await CheckUsingTaskQueueInfoAsync( sourceFileRepository.TotalFileCount );
-			await CheckUsingGenericCounts( sourceFileRepository.TotalFileCount );
+			int totalFileCount = sourceFileRepository.TotalFileCount;
+
+			await CheckUsingTaskQueueInfoAsync( totalFileCount );
+			await CheckUsingGenericCountsAsync( totalFileCount );
+			await CheckUsingPayloadCountsAsync( GetExpectedPayloadCounts( totalFileCount ),
+				GetExpectedRemainingPayloadCounts( totalFileCount ) );
 
 			Console.WriteLine();
 			Console.WriteLine( "Processing result validation completed." );
 			Console.WriteLine();
+		}
+
+		private Dictionary<string, long> GetExpectedPayloadCounts( long totalFileCount )
+		{
+			return new Dictionary<string, long>()
+			{
+				{ typeof(HashFileByHandle).FullName, totalFileCount }
+			};
+		}
+
+		private Dictionary<string, long> GetExpectedRemainingPayloadCounts( long totalFileCount )
+		{
+			return new Dictionary<string, long>()
+			{
+				{ typeof(HashFileByHandle).FullName, 0 }
+			};
 		}
 
 		private async Task CheckUsingTaskQueueInfoAsync( int expectedTotalCompletedTasks )
@@ -99,14 +119,12 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 				metrics.TotalProcessed );
 
 			if ( metrics.TotalProcessed != expectedTotalCompletedTasks )
-				WriteWithColor( $"[Fail] {baseMessage}",
-					ConsoleColor.Red );
+				WriteFailMessage( baseMessage );
 			else
-				WriteWithColor( $"[Pass] {baseMessage}",
-					ConsoleColor.Green );
+				WritePassMessage( baseMessage );
 		}
 
-		private async Task CheckUsingGenericCounts( int expectedTotalCompletedTasks )
+		private async Task CheckUsingGenericCountsAsync( int expectedTotalCompletedTasks )
 		{
 			Console.WriteLine();
 			Console.WriteLine( "Checking using generic counts..." );
@@ -114,37 +132,60 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 			GenericCounts genericCounts = await mStatsProvider
 				.ComputeGenericCountsAsync();
 
-			string baseRemainingTasksInQueueMessage = string.Format( "Expected remaining tasks in queue = 0; actual = {0}",
+			CheckGenericTasksCount( genericCounts,
+				expectedTotalRemainingTasks: 0 );
+			CheckGenericResultsCount( genericCounts,
+				expectedTotalCompletedTasks );
+			CheckGenericCompletedResultsCount( genericCounts,
+				expectedTotalCompletedTasks );
+		}
+
+		private void CheckGenericTasksCount( GenericCounts genericCounts, int expectedTotalRemainingTasks )
+		{
+			string baseRemainingTasksInQueueMessage = string.Format( "Expected remaining tasks in queue = {0}; actual = {1}",
+				expectedTotalRemainingTasks,
 				genericCounts.TotalTasksInQueue );
 
-			if ( genericCounts.TotalTasksInQueue != 0 )
-				WriteWithColor( $"[Fail] {baseRemainingTasksInQueueMessage}",
-					ConsoleColor.Red );
+			if ( genericCounts.TotalTasksInQueue != expectedTotalRemainingTasks )
+				WriteFailMessage( baseRemainingTasksInQueueMessage );
 			else
-				WriteWithColor( $"[Pass] {baseRemainingTasksInQueueMessage}",
-					ConsoleColor.Green );
+				WritePassMessage( baseRemainingTasksInQueueMessage );
+		}
 
+		private void CheckGenericResultsCount( GenericCounts genericCounts, int expectedTotalCompletedTasks )
+		{
 			string baseResultsInResultQueueMessage = string.Format( "Expected results in result queue = {0}; actual = {1}",
 				expectedTotalCompletedTasks,
 				genericCounts.TotalResultsInResultQueue );
 
 			if ( genericCounts.TotalResultsInResultQueue != expectedTotalCompletedTasks )
-				WriteWithColor( $"[Fail] {baseResultsInResultQueueMessage}",
-					ConsoleColor.Red );
+				WriteFailMessage( baseResultsInResultQueueMessage );
 			else
-				WriteWithColor( $"[Success] {baseResultsInResultQueueMessage}",
-					ConsoleColor.Green );
+				WritePassMessage( baseResultsInResultQueueMessage );
+		}
 
+		private void CheckGenericCompletedResultsCount( GenericCounts genericCounts, int expectedTotalCompletedTasks )
+		{
 			string baseCompeltedResultsInResultQueueMessage = string.Format( "Expected completed results in result queue = {0}; actual = {1}",
 				expectedTotalCompletedTasks,
 				genericCounts.TotalCompletedResultsInResultsQueue );
 
 			if ( genericCounts.TotalCompletedResultsInResultsQueue != expectedTotalCompletedTasks )
-				WriteWithColor( $"[Fail] {baseCompeltedResultsInResultQueueMessage}",
-					ConsoleColor.Red );
+				WriteFailMessage( baseCompeltedResultsInResultQueueMessage );
 			else
-				WriteWithColor( $"[Success] {baseCompeltedResultsInResultQueueMessage}",
-					ConsoleColor.Green );
+				WritePassMessage( baseCompeltedResultsInResultQueueMessage );
+		}
+
+		private void WritePassMessage( string message )
+		{
+			WriteWithColor( $"[Pass] {message}",
+				ConsoleColor.Green );
+		}
+
+		private void WriteFailMessage( string message )
+		{
+			WriteWithColor( $"[Fail] {message}",
+				ConsoleColor.Red );
 		}
 
 		private void WriteWithColor( string message, ConsoleColor color )
@@ -153,6 +194,87 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 			Console.ForegroundColor = color;
 			Console.WriteLine( message );
 			Console.ForegroundColor = prevColor;
+		}
+
+		private async Task CheckUsingPayloadCountsAsync( Dictionary<string, long> expectedPayloadCounts, Dictionary<string, long> expectedRemainingPayloadCounts )
+		{
+			Console.WriteLine();
+			Console.WriteLine( "Checking using payload counts..." );
+
+			PayloadCounts payloadCounts = await mStatsProvider
+				.ComputePayloadCountsAsync();
+
+			CheckPayloadTasksCount( payloadCounts,
+				expectedRemainingPayloadCounts );
+			CheckPayloadResultsCount( payloadCounts,
+				expectedPayloadCounts );
+			CheckPayloadCompletedResultsCount( payloadCounts,
+				expectedPayloadCounts );
+		}
+
+		private void CheckPayloadTasksCount( PayloadCounts genericCounts, Dictionary<string, long> expectedRemainingPayloadCounts )
+		{
+			foreach ( KeyValuePair<string, long> expectedRemainingPayloadCount in expectedRemainingPayloadCounts )
+			{
+				long actualCount;
+				if ( !genericCounts.TotalTasksInQueuePerPayload.TryGetValue( expectedRemainingPayloadCount.Key, out actualCount ) )
+					actualCount = 0;
+
+				string baseRemainingPayloadTasksInQueueMessage = string.Format( "Expected remaining tasks for payload {0} in queue = {1}; actual = {2}",
+					FormatPayloadName( expectedRemainingPayloadCount.Key ),
+					expectedRemainingPayloadCount.Value,
+					actualCount );
+
+				if ( expectedRemainingPayloadCount.Value != actualCount )
+					WriteFailMessage( baseRemainingPayloadTasksInQueueMessage );
+				else
+					WritePassMessage( baseRemainingPayloadTasksInQueueMessage );
+			}
+		}
+
+		private void CheckPayloadResultsCount( PayloadCounts genericCounts, Dictionary<string, long> expectedPayloadCounts )
+		{
+			foreach ( KeyValuePair<string, long> expectedPayloadCount in expectedPayloadCounts )
+			{
+				long actualCount;
+				if ( !genericCounts.TotalResultsInResultQueuePerPayload.TryGetValue( expectedPayloadCount.Key, out actualCount ) )
+					actualCount = 0;
+
+				string baseRemainingResultsTasksInResultsQueueMessage = string.Format( "Expected remaining results for payload {0} in queue = {1}; actual = {2}",
+					FormatPayloadName( expectedPayloadCount.Key ),
+					expectedPayloadCount.Value,
+					actualCount );
+
+				if ( expectedPayloadCount.Value != actualCount )
+					WriteFailMessage( baseRemainingResultsTasksInResultsQueueMessage );
+				else
+					WritePassMessage( baseRemainingResultsTasksInResultsQueueMessage );
+			}
+		}
+
+		private void CheckPayloadCompletedResultsCount( PayloadCounts genericCounts, Dictionary<string, long> expectedPayloadCounts )
+		{
+			foreach ( KeyValuePair<string, long> expectedPayloadCount in expectedPayloadCounts )
+			{
+				long actualCount;
+				if ( !genericCounts.TotalCompletedResultsInResultsQueuePerPayload.TryGetValue( expectedPayloadCount.Key, out actualCount ) )
+					actualCount = 0;
+
+				string baseRemainingCompletedResultsTasksInResultsQueueMessage = string.Format( "Expected remaining completed results for payload {0} in queue = {1}; actual = {2}",
+					FormatPayloadName( expectedPayloadCount.Key ),
+					expectedPayloadCount.Value,
+					actualCount );
+
+				if ( expectedPayloadCount.Value != actualCount )
+					WriteFailMessage( baseRemainingCompletedResultsTasksInResultsQueueMessage );
+				else
+					WritePassMessage( baseRemainingCompletedResultsTasksInResultsQueueMessage );
+			}
+		}
+
+		private string FormatPayloadName( string payloadName )
+		{
+			return payloadName.Substring( payloadName.LastIndexOf( '.' ) + 1 );
 		}
 	}
 }
