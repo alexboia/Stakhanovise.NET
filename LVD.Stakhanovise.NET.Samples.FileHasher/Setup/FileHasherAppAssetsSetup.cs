@@ -84,6 +84,8 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Setup
 					if ( await rdr.ReadAsync() )
 						exists = ( rdr.GetString( 0 ) == mDbName );
 				}
+
+				await conn.CloseAsync();
 			}
 
 			return exists;
@@ -111,6 +113,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Setup
 					using ( NpgsqlCommand cmd = new NpgsqlCommand( truncateTableSql, conn ) )
 						await cmd.ExecuteNonQueryAsync();
 				}
+				await conn.CloseAsync();
 			}
 		}
 

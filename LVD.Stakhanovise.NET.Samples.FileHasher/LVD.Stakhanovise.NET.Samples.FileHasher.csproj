@@ -7,10 +7,14 @@
 
   <ItemGroup>
     <None Remove="appsettings.json" />
+    <None Remove="log4net.config" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="log4net.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -28,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LVD.Stakhanovise.NET.Logging.Log4NetLogging\LVD.Stakhanovise.NET.Logging.Log4NetLogging.csproj" />
     <ProjectReference Include="..\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings\LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.csproj" />
     <ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
     <ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />

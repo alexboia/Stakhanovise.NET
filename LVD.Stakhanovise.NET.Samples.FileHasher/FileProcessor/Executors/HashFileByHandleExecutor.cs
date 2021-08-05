@@ -48,10 +48,14 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor.Executors
 		{
 			using ( SHA256 sha256 = SHA256.Create() )
 			{
-				FileHandle fileHandle = ResolveFileHandle( payload.HandleId );
-				byte[] fileContents = await ReadFileAsync( fileHandle );
+				FileHandle fileHandle = 
+					ResolveFileHandle( payload.HandleId );
 
-				FileHashInfo fileHashInfo = ComputeHash( fileHandle, fileContents );
+				byte[] fileContents = 
+					await ReadFileAsync( fileHandle );
+
+				FileHashInfo fileHashInfo = ComputeHash( fileHandle, 
+					fileContents );
 
 				StoreFileHashAndNotifyCompletion( fileHashInfo );
 			}

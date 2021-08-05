@@ -36,6 +36,7 @@ using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings;
 using LVD.Stakhanovise.NET.Samples.FileHasher.FileGenerator;
 using LVD.Stakhanovise.NET.Setup;
+using LVD.Stakhanovise.NET.Logging.Log4NetLogging;
 
 namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor
 {
@@ -59,6 +60,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor
 				.CreateForTheMotherland( new NetCoreConfigurationStakhanoviseDefaultsProvider() )
 				.SetupWorkingPeoplesCommittee( setup =>
 				{
+					setup.WithLog4NetLogging();
 					setup.SetupBuiltInTaskExecutorRegistryDependencies( depSetup =>
 					{
 						depSetup.BindToInstance<IFileHashRepository>( fileHashRepository );
