@@ -2,6 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using log4net.Core;
+using log4net.Util;
+using System.Globalization;
 
 namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging
 {
@@ -9,52 +12,91 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging
 	{
 		private ILog mLog4NetLog;
 
-		public Log4NetLogger ( ILog log4NetLog )
+		private Type mThisType;
+
+		public Log4NetLogger( ILog log4NetLog )
 		{
 			mLog4NetLog = log4NetLog ?? throw new ArgumentNullException( nameof( log4NetLog ) );
+			mThisType = GetType();
 		}
 
-		public void Debug ( string message )
+		public void Debug( string message )
 		{
-			mLog4NetLog.Debug( message );
+			if ( mLog4NetLog.IsDebugEnabled )
+				InternalLog( Level.Debug, message );
 		}
 
-		public void DebugFormat ( string messageFormat, params object[] args )
+		private void InternalLog( Level level, object message )
 		{
-			mLog4NetLog.DebugFormat( messageFormat, args );
+			mLog4NetLog.Logger.Log( mThisType,
+				level,
+				message,
+				exception: null );
 		}
 
-		public void Error ( string message )
+		private void InternalLog( Level level, object message, Exception exception )
 		{
-			mLog4NetLog.Error( message );
+			mLog4NetLog.Logger.Log( mThisType,
+				level,
+				message,
+				exception );
 		}
 
-		public void Error ( string message, Exception exception )
+		public void DebugFormat( string messageFormat, params object[] args )
 		{
-			mLog4NetLog.Error( message, exception );
+			if ( mLog4NetLog.IsDebugEnabled )
+				InternalLogFormat( Level.Debug, messageFormat, args );
 		}
 
-		public void Fatal ( string message )
+		private void InternalLogFormat( Level level, string messageFormat, params object[] args )
 		{
-			mLog4NetLog.Fatal( message );
+			InternalLog( level, FormattedLogMessage( messageFormat, args ) );
 		}
 
-		public void Fatal ( string message, Exception exception )
+		private SystemStringFormat FormattedLogMessage( string messageFormat, params object[] args )
 		{
-			mLog4NetLog.Fatal( message, exception );
+			return new SystemStringFormat( CultureInfo.InvariantCulture,
+				messageFormat,
+				args );
 		}
 
-		public void Info ( string message )
+		public void Error( string message )
 		{
-			mLog4NetLog.Info( message );
+			if ( mLog4NetLog.IsErrorEnabled )
+				InternalLog( Level.Error, message );
 		}
 
-		public void InfoFormat ( string messageFormat, params object[] args )
+		public void Error( string message, Exception exception )
 		{
-			mLog4NetLog.InfoFormat( messageFormat, args );
+			if ( mLog4NetLog.IsErrorEnabled )
+				InternalLog( Level.Error, message, exception );
 		}
 
-		public bool IsEnabled ( StakhanoviseLogLevel level )
+		public void Fatal( string message )
+		{
+			if ( mLog4NetLog.IsFatalEnabled )
+				InternalLog( Level.Fatal, message );
+		}
+
+		public void Fatal( string message, Exception exception )
+		{
+			if ( mLog4NetLog.IsFatalEnabled )
+				InternalLog( Level.Fatal, message, exception );
+		}
+
+		public void Info( string message )
+		{
+			if ( mLog4NetLog.IsInfoEnabled )
+				InternalLog( Level.Info, message );
+		}
+
+		public void InfoFormat( string messageFormat, params object[] args )
+		{
+			if ( mLog4NetLog.IsInfoEnabled )
+				InternalLogFormat( Level.Info, messageFormat, args );
+		}
+
+		public bool IsEnabled( StakhanoviseLogLevel level )
 		{
 			switch ( level )
 			{
@@ -75,29 +117,34 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging
 			}
 		}
 
-		public void Trace ( string message )
+		public void Trace( string message )
 		{
-			mLog4NetLog.Info( message );
+			if ( mLog4NetLog.IsInfoEnabled )
+				InternalLog( Level.Info, message );
 		}
 
-		public void TraceFormat ( string messageFormat, params object[] args )
+		public void TraceFormat( string messageFormat, params object[] args )
 		{
-			mLog4NetLog.InfoFormat( messageFormat, args );
+			if ( mLog4NetLog.IsInfoEnabled )
+				InternalLogFormat( Level.Info, messageFormat, args );
 		}
 
-		public void Warn ( string message )
+		public void Warn( string message )
 		{
-			mLog4NetLog.Warn( message );
+			if ( mLog4NetLog.IsWarnEnabled )
+				InternalLog( Level.Warn, message );
 		}
 
-		public void Warn ( string message, Exception exception )
+		public void Warn( string message, Exception exception )
 		{
-			mLog4NetLog.Warn( message, exception );
+			if ( mLog4NetLog.IsWarnEnabled )
+				InternalLog( Level.Warn, message, exception );
 		}
 
-		public void WarnFormat ( string message, params object[] args )
+		public void WarnFormat( string messageFormat, params object[] args )
 		{
-			mLog4NetLog.WarnFormat( message, args );
+			if ( mLog4NetLog.IsWarnEnabled )
+				InternalLogFormat( Level.Warn, messageFormat, args );
 		}
 	}
 }
