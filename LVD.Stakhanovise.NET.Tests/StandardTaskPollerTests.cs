@@ -51,33 +51,37 @@ namespace LVD.Stakhanovise.NET.Tests
 		private const int MaxTaskBufferCapacity = 100;
 
 		[Test]
-		[Repeat( 10 )]
+		[Repeat( 5 )]
 		public async Task Test_CanStartStop()
 		{
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetDefaultTaskProcessingOptions();
 
-			using ( StandardTaskBuffer taskBuffer = CreateStandardTaskBufferWithRandomCapacity() )
-			using ( MockTaskQueueConsumer taskQueue = CreateMockTaskQueuConsumer( 0 ) )
+			MockTaskQueueProducer taskQueueProducer =
+				CreateMockTaskQueueProducer();
+
+			using ( MockTaskBuffer taskBuffer = CreateMockTaskBufferWithRandomCapacity() )
+			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueuConsumer( 0 ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
-				taskQueue,
+				taskQueueConsumer,
+				taskQueueProducer,
 				taskBuffer ) )
 			{
 				await poller.StartAsync();
 
 				Assert.IsTrue( poller.IsStarted );
-				Assert.IsTrue( taskQueue.IsReceivingNewTaskUpdates );
+				Assert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
 
 				await poller.StopAync();
 
 				Assert.IsFalse( poller.IsStarted );
-				Assert.IsFalse( taskQueue.IsReceivingNewTaskUpdates );
+				Assert.IsFalse( taskQueueConsumer.IsReceivingNewTaskUpdates );
 			}
 		}
 
-		private StandardTaskBuffer CreateStandardTaskBufferWithRandomCapacity()
+		private MockTaskBuffer CreateMockTaskBufferWithRandomCapacity()
 		{
-			return new StandardTaskBuffer( GenerateTaskBufferCapacity() );
+			return new MockTaskBuffer( GenerateTaskBufferCapacity() );
 		}
 
 		private int GenerateTaskBufferCapacity()
@@ -92,40 +96,50 @@ namespace LVD.Stakhanovise.NET.Tests
 				new UtcNowTimestampProvider() );
 		}
 
+		private MockTaskQueueProducer CreateMockTaskQueueProducer()
+		{
+			return new MockTaskQueueProducer( new UtcNowTimestampProvider() );
+		}
+
 		[Test]
 		[TestCase( 150, 10 )]
 		[TestCase( 1, 1 )]
 		[TestCase( 1, 150 )]
 		[TestCase( 10, 150 )]
+		[TestCase( 10, 1500 )]
 		[TestCase( 150, 150 )]
 		[TestCase( 10, 1 )]
-		[Repeat( 10 )]
+		[Repeat( 5 )]
 		public async Task Test_CanPoll( int bufferCapacity, int numberOfTasks )
 		{
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetDefaultTaskProcessingOptions();
 
-			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( MockTaskQueueConsumer taskQueue = CreateMockTaskQueuConsumer( numberOfTasks ) )
+			MockTaskQueueProducer taskQueueProducer =
+				CreateMockTaskQueueProducer();
+
+			using ( MockTaskBuffer taskBuffer = new MockTaskBuffer( bufferCapacity ) )
+			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueuConsumer( numberOfTasks ) )
+			using ( TestBufferConsumer testTaskBufferConsumer = new TestBufferConsumer( taskBuffer ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
-				taskQueue,
+				taskQueueConsumer,
+				taskQueueProducer,
 				taskBuffer ) )
 			{
-				TestBufferConsumer consumer =
-					new TestBufferConsumer( taskBuffer );
-
 				await poller.StartAsync();
-				
-				consumer.ConsumeBuffer();
-				taskQueue.WaitForQueueToBeDepleted();
-				
+
+				testTaskBufferConsumer.StartConsumingBuffer();
+				taskQueueConsumer.WaitForQueueToBeDepleted();
+
 				await poller.StopAync();
-				consumer.WaitForBufferToBeConsumed();
+				testTaskBufferConsumer.WaitForBufferToBeConsumed();
 
 				Assert.IsFalse( taskBuffer.HasTasks );
 				Assert.IsTrue( taskBuffer.IsCompleted );
+				Assert.AreEqual( taskBuffer.RefusedElementCount,
+					taskQueueProducer.ProducedTasksCount );
 
-				consumer.AssertMatchesProducedTasks( taskQueue
+				testTaskBufferConsumer.AssertMatchesProducedTasks( taskQueueConsumer
 					.DequeuedTasksHistory );
 			}
 		}
@@ -134,24 +148,31 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 1 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
-		[Repeat( 10 )]
+		[Repeat( 5 )]
 		public async Task Test_TryPoll_NoTaskInQueue_ThenShutdown( int bufferCapacity )
 		{
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetDefaultTaskProcessingOptions();
 
-			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( MockTaskQueueConsumer taskQueue = CreateMockTaskQueuConsumer( 0 ) )
+			MockTaskQueueProducer taskQueueProducer =
+				CreateMockTaskQueueProducer();
+
+			using ( MockTaskBuffer taskBuffer = new MockTaskBuffer( bufferCapacity ) )
+			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueuConsumer( 0 ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
-				taskQueue,
+				taskQueueConsumer,
+				taskQueueProducer,
 				taskBuffer ) )
 			{
 				await poller.StartAsync();
 				await Task.Delay( GenerateMilliseconDelayAmount() );
 				await poller.StopAync();
 
-				Assert.AreEqual( 1, taskQueue.DequeueCallCount );
+				Assert.AreEqual( 1, taskQueueConsumer.DequeueCallCount );
 				Assert.IsTrue( taskBuffer.IsEmpty );
+
+				Assert.AreEqual( taskBuffer.RefusedElementCount,
+					taskQueueProducer.ProducedTasksCount );
 			}
 		}
 
@@ -166,32 +187,58 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 1, 1 )]
 		[TestCase( 1, 150 )]
 		[TestCase( 10, 150 )]
+		[TestCase( 10, 1500 )]
 		[TestCase( 150, 150 )]
 		[TestCase( 10, 1 )]
-		[Repeat( 10 )]
+		[Repeat( 5 )]
 		public async Task Test_TryPoll_FullBuffer_ThenShutdown( int bufferCapacity, int numberOfTasks )
 		{
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetDefaultTaskProcessingOptions();
 
-			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
-			using ( MockTaskQueueConsumer taskQueue = CreateMockTaskQueuConsumer( 0 ) )
+			MockTaskQueueProducer taskQueueProducer =
+				CreateMockTaskQueueProducer();
+
+			using ( MockTaskBuffer taskBuffer = new MockTaskBuffer( bufferCapacity ) )
+			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueuConsumer( numberOfTasks ) )
+			using ( TestBufferFiller testTaskBufferFiller = new TestBufferFiller( taskBuffer ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
-				taskQueue,
+				taskQueueConsumer,
+				taskQueueProducer,
 				taskBuffer ) )
 			{
-				TestBufferFiller filler =
-					new TestBufferFiller( taskBuffer );
-
-				filler.FillBuffer();
+				testTaskBufferFiller.FillBuffer();
 
 				await poller.StartAsync();
-				await Task.Delay( GenerateMilliseconDelayAmount() );
+				await GenerateTaskBufferFakeTaskRetrieveEventsAsync( taskBuffer );
 				await poller.StopAync();
 
-				Assert.AreEqual( 0, taskQueue.DequeueCallCount );
+				Assert.AreEqual( taskBuffer.RefusedElementCount,
+					taskQueueConsumer.ActuallyDequeuedElementsCount );
+
+				Assert.AreEqual( taskBuffer.RefusedElementCount,
+					taskQueueProducer.ProducedTasksCount );
+
 				Assert.IsTrue( taskBuffer.IsFull );
 			}
+		}
+
+		private async Task GenerateTaskBufferFakeTaskRetrieveEventsAsync( MockTaskBuffer taskBuffer )
+		{
+			int fakeTaskRetrieveEventsCount =
+				GenerateFakeTaskRetreiveEventsCount();
+
+			for ( int i = 0; i < fakeTaskRetrieveEventsCount; i++ )
+			{
+				taskBuffer.FakeNotifyQueuedTaskRetrieved();
+				await Task.Delay( GenerateMilliseconDelayAmount() );
+			}
+		}
+
+		private int GenerateFakeTaskRetreiveEventsCount()
+		{
+			Faker faker = new Faker();
+			return faker.Random.Int( 1, 10 );
 		}
 	}
 }

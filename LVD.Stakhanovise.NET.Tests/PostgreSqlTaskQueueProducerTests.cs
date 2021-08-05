@@ -215,7 +215,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			foreach ( IQueuedTaskToken token in mDataSource.CanBeRepostedSeededTaskTokens )
 			{
-				QueuedTaskInfo repostTaskInfo = new QueuedTaskInfo()
+				QueuedTaskProduceInfo repostTaskInfo = new QueuedTaskProduceInfo()
 				{
 					Id = token.DequeuedTask.Id,
 					Priority = faker.Random.Int( 1, 100 ),

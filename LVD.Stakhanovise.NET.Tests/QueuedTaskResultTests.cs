@@ -85,7 +85,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: faker.Date.FutureOffset(),
 				faultErrorThresholdCount: faker.Random.Int( 1, 5 ) );
 
-			QueuedTaskInfo repostWithInfo = result.UdpateFromExecutionResult( successful );
+			QueuedTaskProduceInfo repostWithInfo = result.UdpateFromExecutionResult( successful );
 
 			Assert.Null( repostWithInfo );
 			Assert.IsNull( result.LastError );
@@ -117,7 +117,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: faker.Date.FutureOffset(),
 				faultErrorThresholdCount: faker.Random.Int( 1, 5 ) );
 
-			QueuedTaskInfo repostWithInfo = result.UdpateFromExecutionResult( cancelled );
+			QueuedTaskProduceInfo repostWithInfo = result.UdpateFromExecutionResult( cancelled );
 
 			Assert.Null( repostWithInfo );
 			Assert.IsNull( result.LastError );
@@ -136,7 +136,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		public void Test_CanUpdateFromExecutionResult_WithError_Recoverable ( int faultErrorThresholdCount )
 		{
 			Faker faker = new Faker();
-			QueuedTaskInfo repostWithInfo = null;
+			QueuedTaskProduceInfo repostWithInfo = null;
 
 			DateTimeOffset now = DateTimeOffset
 				.UtcNow;

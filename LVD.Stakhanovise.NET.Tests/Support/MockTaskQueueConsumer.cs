@@ -59,13 +59,13 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private Task mGenerationCompletedTask = Task.CompletedTask;
 
-		private int mNumberOfTasksToGenerate;
-
 		private int mRemainingTaskCount;
 
 		private ITimestampProvider mTimeProvider;
 
 		private int mDequeueCallCount = 0;
+
+		private int mActuallyDequeuedElementsCount = 0;
 
 		public MockTaskQueueConsumer( int numberOfTasksToGenerate, ITimestampProvider timeProvider )
 		{
@@ -73,7 +73,6 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mQueueDepletedTaskCompletionSource = new TaskCompletionSource<bool>();
 			mQueueDepletedHandle = mQueueDepletedTaskCompletionSource.Task;
 
-			mNumberOfTasksToGenerate = numberOfTasksToGenerate;
 			mRemainingTaskCount = numberOfTasksToGenerate;
 			mTimeProvider = timeProvider;
 		}
@@ -134,7 +133,10 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			await WaitForTaskGenerationCompletionAsync();
 
 			if ( HasAlreadyProducedTasks() )
+			{
+				IncrementActuallyDequeuedElementsCount();
 				return FetchAndRemoveProducedTask();
+			}
 
 			if ( HasAnyMoreTasksToGenerate() )
 				StartGeneratingNewTasks();
@@ -147,6 +149,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		private void IncrementDequeueCallCount()
 		{
 			mDequeueCallCount++;
+		}
+
+		private void IncrementActuallyDequeuedElementsCount()
+		{
+			mActuallyDequeuedElementsCount++;
 		}
 
 		private async Task WaitForTaskGenerationCompletionAsync()
@@ -219,5 +226,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public int DequeueCallCount
 			=> mDequeueCallCount;
+
+		public int ActuallyDequeuedElementsCount
+			=> mActuallyDequeuedElementsCount;
 	}
 }

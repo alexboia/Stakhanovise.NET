@@ -40,7 +40,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
-	public class TestBufferConsumer
+	public class TestBufferConsumer : IDisposable
 	{
 		private ITaskBuffer mTaskBuffer;
 
@@ -53,7 +53,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mTaskBuffer = taskBuffer;
 		}
 
-		public void ConsumeBuffer ()
+		public void StartConsumingBuffer ()
 		{
 			mConsumeBufferTask = Task.Run( () =>
 			{
@@ -84,6 +84,14 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			foreach ( IQueuedTaskToken pt in producedTasks )
 				Assert.AreEqual( 1, mConsumedTasks.Count( ct => ct.DequeuedTask.Id
 					== pt.DequeuedTask.Id ) );
+		}
+
+		public void Dispose()
+		{
+			mConsumedTasks.Clear();
+			mConsumedTasks = null;
+			mConsumeBufferTask = null;
+			mTaskBuffer = null;
 		}
 	}
 }

@@ -251,7 +251,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 					await diff.CaptureInitialMetricsAsync();
 
-					QueuedTaskInfo repostTaskInfo = new QueuedTaskInfo()
+					QueuedTaskProduceInfo repostTaskInfo = new QueuedTaskProduceInfo()
 					{
 						Id = token.DequeuedTask.Id,
 						Priority = faker.Random.Int( 1, 100 ),

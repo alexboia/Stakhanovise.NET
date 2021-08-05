@@ -4,7 +4,7 @@ using System;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
-	public class TestBufferFiller
+	public class TestBufferFiller : IDisposable
 	{
 		private ITaskBuffer mTaskBuffer;
 
@@ -24,6 +24,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		private IQueuedTaskToken GenerateRandomTaskToken()
 		{
 			return new MockQueuedTaskToken( Guid.NewGuid() );
+		}
+
+		public void Dispose()
+		{
+			mTaskBuffer = null;
 		}
 	}
 }

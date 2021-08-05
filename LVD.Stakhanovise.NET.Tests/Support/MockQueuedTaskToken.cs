@@ -32,10 +32,6 @@
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
@@ -45,21 +41,35 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private QueuedTaskResult mLastQueuedTaskResult;
 
-		public MockQueuedTaskToken ( QueuedTask queuedTask, QueuedTaskResult lastQueuedTaskResult )
+		public MockQueuedTaskToken( QueuedTask queuedTask, QueuedTaskResult lastQueuedTaskResult )
 		{
 			mQueuedTask = queuedTask;
 			mLastQueuedTaskResult = lastQueuedTaskResult;
 		}
 
-		public MockQueuedTaskToken ( Guid queuedTaskId )
+		public MockQueuedTaskToken( Guid queuedTaskId )
 		{
 			mQueuedTask = new QueuedTask( queuedTaskId );
 			mLastQueuedTaskResult = new QueuedTaskResult( mQueuedTask );
 		}
 
-		public QueuedTaskInfo UdpateFromExecutionResult ( TaskExecutionResult result )
+		public QueuedTaskProduceInfo UdpateFromExecutionResult( TaskExecutionResult result )
 		{
 			return mLastQueuedTaskResult.UdpateFromExecutionResult( result );
+		}
+
+		public QueuedTaskProduceInfo GetReturnToQueueInfo()
+		{
+			return new QueuedTaskProduceInfo()
+			{
+				Id = mQueuedTask.Id,
+				LockedUntilTs = mQueuedTask.LockedUntilTs,
+				Payload = mQueuedTask.Payload,
+				Priority = mQueuedTask.Priority,
+				Source = mQueuedTask.Source,
+				Status = QueuedTaskStatus.Unprocessed,
+				Type = mQueuedTask.Type
+			};
 		}
 
 		public IQueuedTask DequeuedTask => mQueuedTask;
