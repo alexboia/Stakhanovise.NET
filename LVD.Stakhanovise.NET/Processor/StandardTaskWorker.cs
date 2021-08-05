@@ -57,7 +57,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private StateController mStateController
 			= new StateController();
 
-		private ManualResetEvent mWaitForClearToFetchTask
+		private ManualResetEvent mWaitForBufferContents
 			= new ManualResetEvent( false );
 
 		private ITaskBuffer mTaskBuffer;
@@ -86,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			AppMetricId.WorkerProcessingCancelledPayloadCount
 		);
 
-		public StandardTaskWorker (
+		public StandardTaskWorker(
 			TaskProcessingOptions options,
 			ITaskBuffer taskBuffer,
 			ITaskExecutorRegistry executorRegistry,
@@ -108,14 +108,14 @@ namespace LVD.Stakhanovise.NET.Processor
 				throw new ArgumentNullException( nameof( taskResultQueue ) );
 		}
 
-		private void CheckNotDisposedOrThrow ()
+		private void CheckNotDisposedOrThrow()
 		{
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( StandardTaskWorker ),
 					"Cannot reuse a disposed task worker" );
 		}
 
-		private void UpdateTaskProcessingStats ( TaskExecutionResult result )
+		private void UpdateTaskProcessingStats( TaskExecutionResult result )
 		{
 			mMetrics.UpdateMetric( AppMetricId.WorkerProcessedPayloadCount,
 				m => m.Increment() );
@@ -136,19 +136,19 @@ namespace LVD.Stakhanovise.NET.Processor
 					m => m.Increment() );
 		}
 
-		private void HandleQueuedTaskAdded ( object sender, EventArgs e )
+		private void HandleQueuedTaskAdded( object sender, EventArgs e )
 		{
-			mWaitForClearToFetchTask.Set();
+			mWaitForBufferContents.Set();
 		}
 
-		private Type DetectTaskPayloadType ( IQueuedTask queuedTask )
+		private Type DetectTaskPayloadType( IQueuedTask queuedTask )
 		{
 			return queuedTask.Payload != null
 				? queuedTask.Payload.GetType()
 				: mExecutorRegistry.ResolvePayloadType( queuedTask.Type );
 		}
 
-		private ITaskExecutor ResolveTaskExecutor ( IQueuedTask queuedTask )
+		private ITaskExecutor ResolveTaskExecutor( IQueuedTask queuedTask )
 		{
 			Type payloadType;
 			ITaskExecutor taskExecutor = null;
@@ -178,7 +178,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			return taskExecutor;
 		}
 
-		private async Task<TaskExecutionResult> ExecuteTaskAsync ( TaskExecutionContext executionContext )
+		private async Task<TaskExecutionResult> ExecuteTaskAsync( TaskExecutionContext executionContext )
 		{
 			ITaskExecutor taskExecutor = null;
 			DateTimeOffset retryAt = DateTimeOffset.UtcNow;
@@ -247,7 +247,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				: null;
 		}
 
-		private async Task ProcessResultAsync ( IQueuedTaskToken queuedTaskToken,
+		private async Task ProcessResultAsync( IQueuedTaskToken queuedTaskToken,
 			TaskExecutionResult result )
 		{
 			try
@@ -274,7 +274,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 				//Update execution result and see whether 
 				//	we need to repost the task to retry its execution
-				QueuedTaskInfo repostWithInfo = queuedTaskToken
+				QueuedTaskProduceInfo repostWithInfo = queuedTaskToken
 					.UdpateFromExecutionResult( result );
 
 				//Post result
@@ -303,7 +303,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		private DateTimeOffset ComputeRetryAt ( IQueuedTaskToken queuedTaskToken )
+		private DateTimeOffset ComputeRetryAt( IQueuedTaskToken queuedTaskToken )
 		{
 			long delayMilliseconds = 0;
 
@@ -322,7 +322,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			return DateTimeOffset.UtcNow.AddMilliseconds( delayMilliseconds );
 		}
 
-		private async Task ExecuteAndProcessResultAsync ( IQueuedTaskToken queuedTaskToken,
+		private async Task ExecuteAndProcessResultAsync( IQueuedTaskToken queuedTaskToken,
 			CancellationToken stopToken )
 		{
 			mLogger.DebugFormat( "New task to execute retrieved from buffer: task id = {0}.",
@@ -341,7 +341,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			//	during result processing:
 			//	if task executed till the end, we must at least 
 			//	attempt to set the result
-			if (executionResult != null)
+			if ( executionResult != null )
 				await ProcessResultAsync( queuedTaskToken,
 					executionResult );
 
@@ -349,7 +349,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				queuedTaskToken.DequeuedTask.Id );
 		}
 
-		private async Task<bool> PerformBufferCheckAsync ()
+		private bool PerformBufferCheck()
 		{
 			//Buffer has tasks, all good
 			if ( mTaskBuffer.HasTasks )
@@ -373,11 +373,11 @@ namespace LVD.Stakhanovise.NET.Processor
 			//TODO: if there are no more buffer items AND the buffer is set as completed, 
 			//	it may take some time until we notice (and via other channels)
 			//Wait for tasks to become available
-			await mWaitForClearToFetchTask.ToTask();
+			mWaitForBufferContents.WaitOne();
 			return true;
 		}
 
-		private async Task RunWorkerAsync ()
+		private async Task RunWorkerAsync()
 		{
 			//Pull the cancellation token
 			CancellationToken stopToken = mStopTokenSource
@@ -398,7 +398,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 					//Check if buffer can deliver new tasks to us.
 					//	If not (and it's permanent), break worker processing loop.
-					if ( !await PerformBufferCheckAsync() )
+					if ( !PerformBufferCheck() )
 						break;
 
 					//It may be that the wait handle was signaled 
@@ -415,7 +415,7 @@ namespace LVD.Stakhanovise.NET.Processor
 						mLogger.Debug( "Nothing to execute: no task was retrieved." );
 
 					//At the end of the loop, reset the handle
-					mWaitForClearToFetchTask.Reset();
+					mWaitForBufferContents.Reset();
 				}
 				catch ( OperationCanceledException )
 				{
@@ -425,7 +425,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		private void DoStartupSequence ( string[] payloadTypes )
+		private void DoStartupSequence( string[] payloadTypes )
 		{
 			mLogger.Debug( "Worker is stopped. Starting..." );
 
@@ -440,7 +440,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			//   and register event handlers
 			mStopTokenSource = new CancellationTokenSource();
 			mTaskBuffer.QueuedTaskAdded += HandleQueuedTaskAdded;
-			mWaitForClearToFetchTask.Reset();
+			mWaitForBufferContents.Reset();
 
 			//Run worker thread
 			mWorkerTask = Task.Run( async () => await RunWorkerAsync() );
@@ -448,7 +448,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Worker successfully started." );
 		}
 
-		public Task StartAsync ( params string[] requiredPayloadTypes )
+		public Task StartAsync( params string[] requiredPayloadTypes )
 		{
 			CheckNotDisposedOrThrow();
 
@@ -461,7 +461,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			return Task.CompletedTask;
 		}
 
-		private async Task DoShutdownSequenceAsync ()
+		private async Task DoShutdownSequenceAsync()
 		{
 			mLogger.Debug( "Worker is started. Stopping..." );
 
@@ -474,14 +474,14 @@ namespace LVD.Stakhanovise.NET.Processor
 			//  just to be able to stop we signal that processing can continue
 			//  and the polling thread is responsible for double-checking that stopping 
 			//  has not been requested in the mean-time
-			mWaitForClearToFetchTask.Set();
+			mWaitForBufferContents.Set();
 
 			//Wait for the processing loop to be stopped
 			await mWorkerTask;
 
 			//Clean-up event handlers and reset state
 			mTaskBuffer.QueuedTaskAdded -= HandleQueuedTaskAdded;
-			mWaitForClearToFetchTask.Reset();
+			mWaitForBufferContents.Reset();
 			mWorkerTask = null;
 
 			mStopTokenSource.Dispose();
@@ -490,7 +490,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Worker successfully stopped." );
 		}
 
-		public async Task StopAync ()
+		public async Task StopAync()
 		{
 			CheckNotDisposedOrThrow();
 
@@ -501,7 +501,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Debug( "Worker is already stopped or in the process of stopping." );
 		}
 
-		protected void Dispose ( bool disposing )
+		protected void Dispose( bool disposing )
 		{
 			if ( !mIsDisposed )
 			{
@@ -511,8 +511,8 @@ namespace LVD.Stakhanovise.NET.Processor
 					StopAync().Wait();
 
 					//Clear wait handles
-					mWaitForClearToFetchTask.Dispose();
-					mWaitForClearToFetchTask = null;
+					mWaitForBufferContents.Dispose();
+					mWaitForBufferContents = null;
 
 					//It is not our responsibility 
 					//	to dispose of these dependencies
@@ -531,18 +531,18 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public void Dispose ()
+		public void Dispose()
 		{
 			Dispose( true );
 			GC.SuppressFinalize( this );
 		}
 
-		public AppMetric QueryMetric ( AppMetricId metricId )
+		public AppMetric QueryMetric( AppMetricId metricId )
 		{
 			return mMetrics.QueryMetric( metricId );
 		}
 
-		public IEnumerable<AppMetric> CollectMetrics ()
+		public IEnumerable<AppMetric> CollectMetrics()
 		{
 			return mMetrics.CollectMetrics();
 		}

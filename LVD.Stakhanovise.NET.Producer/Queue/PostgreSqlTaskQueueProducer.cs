@@ -101,13 +101,14 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( priority < 0 )
 				throw new ArgumentOutOfRangeException( nameof( priority ), "Priority must be greater than or equal to 0" );
 
-			return await EnqueueAsync( new QueuedTaskInfo()
+			return await EnqueueAsync( new QueuedTaskProduceInfo()
 			{
 				Payload = payload,
 				Type = DeterminePayloadTypeFullName<TPayload>(),
 				Priority = priority,
 				Source = source,
-				LockedUntilTs = GenerateImmediatePastLockedTimestamp()
+				LockedUntilTs = GenerateImmediatePastLockedTimestamp(),
+				Status = QueuedTaskStatus.Unprocessed
 			} );
 		}
 
@@ -124,21 +125,21 @@ namespace LVD.Stakhanovise.NET.Queue
 				.AddSeconds( -ImmediatePastSecondsInterval );
 		}
 
-		public async Task<IQueuedTask> EnqueueAsync( QueuedTaskInfo queuedTaskInfo )
+		public async Task<IQueuedTask> EnqueueAsync( QueuedTaskProduceInfo produceInfo )
 		{
-			if ( queuedTaskInfo == null )
-				throw new ArgumentNullException( nameof( queuedTaskInfo ) );
+			if ( produceInfo == null )
+				throw new ArgumentNullException( nameof( produceInfo ) );
 
-			if ( queuedTaskInfo.Priority < 0 )
-				throw new ArgumentOutOfRangeException( nameof( queuedTaskInfo ), "Priority must be greater than or equal to 0" );
+			if ( produceInfo.Priority < 0 )
+				throw new ArgumentOutOfRangeException( nameof( produceInfo ), "Priority must be greater than or equal to 0" );
 
-			QueuedTask queuedTask = CreateNewTaskFromInfo( queuedTaskInfo );
+			QueuedTask queuedTask = CreateNewTaskFromInfo( produceInfo );
 
 			using ( NpgsqlConnection conn = await TryOpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
 			{
-				queuedTask = await TryPostTaskAsync( queuedTask, conn, tx );
-				await TryInitOrUpdateResultAsync( queuedTask, conn, tx );
+				queuedTask = await TryPostTaskAsync( queuedTask, produceInfo, conn, tx );
+				await TryInitOrUpdateResultAsync( queuedTask, produceInfo, conn, tx );
 				await NotifyNewTaskPostedAsync( queuedTask, conn, tx );
 				tx.Commit();
 			}
@@ -153,42 +154,38 @@ namespace LVD.Stakhanovise.NET.Queue
 				.TryOpenConnectionAsync();
 		}
 
-		private QueuedTask CreateNewTaskFromInfo( QueuedTaskInfo queuedTaskInfo )
+		private QueuedTask CreateNewTaskFromInfo( QueuedTaskProduceInfo queuedTaskInfo )
 		{
-			QueuedTask queuedTask =
-				new QueuedTask();
-
-			queuedTask.Id = queuedTaskInfo.HasId
-				? queuedTaskInfo.Id
-				: Guid.NewGuid();
-
-			queuedTask.Payload = queuedTaskInfo.Payload;
-			queuedTask.Type = queuedTaskInfo.Type;
-			queuedTask.Source = queuedTaskInfo.Source;
-			queuedTask.Priority = queuedTaskInfo.Priority;
-			queuedTask.PostedAtTs = mTimestampProvider.GetNow();
-			queuedTask.LockedUntilTs = queuedTaskInfo.LockedUntilTs;
-
-			return queuedTask;
+			return queuedTaskInfo.CreateNewTask( mTimestampProvider );
 		}
 
-		private async Task<QueuedTask> TryPostTaskAsync( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
+		private async Task<QueuedTask> TryPostTaskAsync( QueuedTask queuedTask,
+			QueuedTaskProduceInfo produceInfo,
+			NpgsqlConnection conn,
+			NpgsqlTransaction tx )
 		{
 			using ( NpgsqlCommand insertCmd = new NpgsqlCommand( mInsertSql, conn, tx ) )
 			{
-				insertCmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid,
+				insertCmd.Parameters.AddWithValue( "t_id",
+					NpgsqlDbType.Uuid,
 					queuedTask.Id );
-				insertCmd.Parameters.AddWithValue( "t_payload", NpgsqlDbType.Text,
+				insertCmd.Parameters.AddWithValue( "t_payload",
+					NpgsqlDbType.Text,
 					queuedTask.Payload.ToJson( includeTypeInformation: true ) );
-				insertCmd.Parameters.AddWithValue( "t_type", NpgsqlDbType.Varchar,
+				insertCmd.Parameters.AddWithValue( "t_type",
+					NpgsqlDbType.Varchar,
 					queuedTask.Type );
-				insertCmd.Parameters.AddWithValue( "t_source", NpgsqlDbType.Varchar,
+				insertCmd.Parameters.AddWithValue( "t_source",
+					NpgsqlDbType.Varchar,
 					queuedTask.Source );
-				insertCmd.Parameters.AddWithValue( "t_priority", NpgsqlDbType.Integer,
+				insertCmd.Parameters.AddWithValue( "t_priority",
+					NpgsqlDbType.Integer,
 					queuedTask.Priority );
-				insertCmd.Parameters.AddWithValue( "t_locked_until_ts", NpgsqlDbType.TimestampTz,
+				insertCmd.Parameters.AddWithValue( "t_locked_until_ts",
+					NpgsqlDbType.TimestampTz,
 					queuedTask.LockedUntilTs );
-				insertCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
+				insertCmd.Parameters.AddWithValue( "t_posted_at_ts",
+					NpgsqlDbType.TimestampTz,
 					queuedTask.PostedAtTs );
 
 				queuedTask.LockHandleId = ( long ) await insertCmd
@@ -198,23 +195,33 @@ namespace LVD.Stakhanovise.NET.Queue
 			return queuedTask;
 		}
 
-		private async Task TryInitOrUpdateResultAsync( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
+		private async Task TryInitOrUpdateResultAsync( QueuedTask queuedTask,
+			QueuedTaskProduceInfo produceInfo,
+			NpgsqlConnection conn,
+			NpgsqlTransaction tx )
 		{
 			using ( NpgsqlCommand addOrUpdateResultCmd = new NpgsqlCommand( mAddOrUpdateResultSql, conn, tx ) )
 			{
-				addOrUpdateResultCmd.Parameters.AddWithValue( "t_id", NpgsqlDbType.Uuid,
+				addOrUpdateResultCmd.Parameters.AddWithValue( "t_id",
+					NpgsqlDbType.Uuid,
 					queuedTask.Id );
-				addOrUpdateResultCmd.Parameters.AddWithValue( "t_type", NpgsqlDbType.Varchar,
+				addOrUpdateResultCmd.Parameters.AddWithValue( "t_type",
+					NpgsqlDbType.Varchar,
 					queuedTask.Type );
-				addOrUpdateResultCmd.Parameters.AddWithValue( "t_source", NpgsqlDbType.Varchar,
+				addOrUpdateResultCmd.Parameters.AddWithValue( "t_source",
+					NpgsqlDbType.Varchar,
 					queuedTask.Source );
-				addOrUpdateResultCmd.Parameters.AddWithValue( "t_payload", NpgsqlDbType.Text,
+				addOrUpdateResultCmd.Parameters.AddWithValue( "t_payload",
+					NpgsqlDbType.Text,
 					queuedTask.Payload.ToJson( includeTypeInformation: true ) );
-				addOrUpdateResultCmd.Parameters.AddWithValue( "t_status", NpgsqlDbType.Integer,
-					( int ) QueuedTaskStatus.Unprocessed );
-				addOrUpdateResultCmd.Parameters.AddWithValue( "t_priority", NpgsqlDbType.Integer,
+				addOrUpdateResultCmd.Parameters.AddWithValue( "t_status",
+					NpgsqlDbType.Integer,
+					( int ) produceInfo.Status );
+				addOrUpdateResultCmd.Parameters.AddWithValue( "t_priority",
+					NpgsqlDbType.Integer,
 					queuedTask.Priority );
-				addOrUpdateResultCmd.Parameters.AddWithValue( "t_posted_at_ts", NpgsqlDbType.TimestampTz,
+				addOrUpdateResultCmd.Parameters.AddWithValue( "t_posted_at_ts",
+					NpgsqlDbType.TimestampTz,
 					queuedTask.PostedAtTs );
 
 				await addOrUpdateResultCmd.PrepareAsync();
@@ -224,7 +231,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task NotifyNewTaskPostedAsync( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
 		{
-			await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificationChannelName, 
+			await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificationChannelName,
 				tx );
 		}
 

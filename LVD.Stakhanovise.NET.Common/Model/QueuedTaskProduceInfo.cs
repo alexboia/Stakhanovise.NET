@@ -35,8 +35,37 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public class QueuedTaskInfo
+	public class QueuedTaskProduceInfo
 	{
+		public QueuedTaskProduceInfo()
+		{
+			Status = QueuedTaskStatus.Unprocessed;
+		}
+
+		public QueuedTask CreateNewTask( ITimestampProvider timestampProvider )
+		{
+			if ( timestampProvider == null )
+				throw new ArgumentNullException( nameof( timestampProvider ) );
+
+			QueuedTask queuedTask =
+				new QueuedTask();
+
+			queuedTask.Id = GenerateNewTaskId();
+			queuedTask.Payload = Payload;
+			queuedTask.Type = Type;
+			queuedTask.Source = Source;
+			queuedTask.Priority = Priority;
+			queuedTask.PostedAtTs = timestampProvider.GetNow();
+			queuedTask.LockedUntilTs = LockedUntilTs;
+
+			return queuedTask;
+		}
+
+		private Guid GenerateNewTaskId()
+		{
+			return HasId ? Id : Guid.NewGuid();
+		}
+
 		public Guid Id { get; set; }
 
 		public string Type { get; set; }
@@ -49,6 +78,8 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public DateTimeOffset LockedUntilTs { get; set; }
 
-		public bool HasId => !Id.Equals(Guid.Empty);
+		public QueuedTaskStatus Status { get; set; }
+
+		public bool HasId => !Id.Equals( Guid.Empty );
 	}
 }

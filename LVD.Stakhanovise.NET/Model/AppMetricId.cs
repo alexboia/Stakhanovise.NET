@@ -87,6 +87,13 @@ namespace LVD.Stakhanovise.NET.Model
 				valueCategory: "task-poller" );
 
 		/// <summary>
+		/// How many times has the poller waited for buffer space to become available.
+		/// </summary>
+		public static readonly AppMetricId PollerReturnedTaskCount =
+			new AppMetricId( "poller@returned-task-count",
+				valueCategory: "task-poller" );
+
+		/// <summary>
 		/// How many jobs have been processed by the workers.
 		/// </summary>
 		public static readonly AppMetricId WorkerProcessedPayloadCount =

@@ -130,7 +130,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			try
 			{
-				await RunTaskUpdatesListeningLoopAsync( stopToken );
+				while ( true )
+					await RunTaskUpdatesListeningIterationAsync( stopToken );
 			}
 			catch ( OperationCanceledException )
 			{
@@ -141,12 +142,6 @@ namespace LVD.Stakhanovise.NET.Queue
 				mLogger.Error( "Error occured while listening for new task notifications.", exc );
 				throw;
 			}
-		}
-
-		private async Task RunTaskUpdatesListeningLoopAsync( CancellationToken stopToken )
-		{
-			while ( true )
-				await RunTaskUpdatesListeningIterationAsync( stopToken );
 		}
 
 		private async Task RunTaskUpdatesListeningIterationAsync( CancellationToken stopToken )

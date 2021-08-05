@@ -14,4 +14,10 @@
     <ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Db\docs\" />
+    <Folder Include="Db\json\" />
+    <Folder Include="Db\scripts\" />
+  </ItemGroup>
+
 </Project>

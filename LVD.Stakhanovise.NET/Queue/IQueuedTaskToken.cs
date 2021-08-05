@@ -40,8 +40,9 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public interface IQueuedTaskToken
 	{
-		QueuedTaskInfo UdpateFromExecutionResult ( TaskExecutionResult result );
+		QueuedTaskProduceInfo UdpateFromExecutionResult ( TaskExecutionResult result );
 
+		QueuedTaskProduceInfo GetReturnToQueueInfo();
 
 		IQueuedTask DequeuedTask { get; }
 

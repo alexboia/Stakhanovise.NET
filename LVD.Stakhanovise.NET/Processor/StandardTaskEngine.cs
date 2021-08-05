@@ -115,6 +115,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mTaskBuffer = new StandardTaskBuffer( engineOptions.WorkerCount );
 			mTaskPoller = new StandardTaskPoller( engineOptions.TaskProcessingOptions,
 				mTaskQueueConsumer,
+				mTaskQueueProducer,
 				mTaskBuffer );
 
 			mOptions = engineOptions;

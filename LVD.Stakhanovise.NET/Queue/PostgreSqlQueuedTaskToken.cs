@@ -47,9 +47,23 @@ namespace LVD.Stakhanovise.NET.Queue
 			DequeuedAt = dequeuedAt;
 		}
 
-		public QueuedTaskInfo UdpateFromExecutionResult ( TaskExecutionResult result )
+		public QueuedTaskProduceInfo UdpateFromExecutionResult ( TaskExecutionResult result )
 		{
 			return LastQueuedTaskResult.UdpateFromExecutionResult( result );
+		}
+
+		public QueuedTaskProduceInfo GetReturnToQueueInfo()
+		{
+			return new QueuedTaskProduceInfo()
+			{
+				Id = DequeuedTask.Id,
+				LockedUntilTs = DequeuedTask.LockedUntilTs,
+				Payload = DequeuedTask.Payload,
+				Priority = DequeuedTask.Priority,
+				Source = DequeuedTask.Source,
+				Status = QueuedTaskStatus.Unprocessed,
+				Type = DequeuedTask.Type
+			};
 		}
 
 		public IQueuedTask DequeuedTask { get; private set; }

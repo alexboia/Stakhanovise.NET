@@ -38,12 +38,12 @@ namespace LVD.Stakhanovise.NET.Model
 {
 	public class QueuedTaskResult : IQueuedTaskResult, IEquatable<QueuedTaskResult>
 	{
-		public QueuedTaskResult ()
+		public QueuedTaskResult()
 		{
 			return;
 		}
 
-		public QueuedTaskResult ( IQueuedTask task )
+		public QueuedTaskResult( IQueuedTask task )
 		{
 			if ( task == null )
 				throw new ArgumentNullException( nameof( task ) );
@@ -58,15 +58,15 @@ namespace LVD.Stakhanovise.NET.Model
 			ProcessingTimeMilliseconds = 0;
 		}
 
-		public QueuedTaskInfo UdpateFromExecutionResult ( TaskExecutionResult result )
+		public QueuedTaskProduceInfo UdpateFromExecutionResult( TaskExecutionResult result )
 		{
-			QueuedTaskInfo repostTask = null;
+			QueuedTaskProduceInfo repostTask = null;
 
 			//Task processing lifecycle ends with one of these statuses
 			//	Hence, if the result reaches one of these points, 
 			//	no more updates can be performed
-			if ( Status == QueuedTaskStatus.Fatal 
-				|| Status == QueuedTaskStatus.Cancelled 
+			if ( Status == QueuedTaskStatus.Fatal
+				|| Status == QueuedTaskStatus.Cancelled
 				|| Status == QueuedTaskStatus.Processed )
 				throw new InvalidOperationException( $"A result with {Status} status can no longer be updated" );
 
@@ -80,7 +80,7 @@ namespace LVD.Stakhanovise.NET.Model
 			return repostTask;
 		}
 
-		private void Processed ( TaskExecutionResult result )
+		private void Processed( TaskExecutionResult result )
 		{
 			LastError = null;
 			LastErrorIsRecoverable = false;
@@ -94,7 +94,7 @@ namespace LVD.Stakhanovise.NET.Model
 			Status = QueuedTaskStatus.Processed;
 		}
 
-		private QueuedTaskInfo HadError ( TaskExecutionResult result )
+		private QueuedTaskProduceInfo HadError( TaskExecutionResult result )
 		{
 			LastError = result.Error;
 			LastErrorIsRecoverable = result.IsRecoverable;
@@ -124,21 +124,22 @@ namespace LVD.Stakhanovise.NET.Model
 			//	necessary to retry task execution
 			if ( Status != QueuedTaskStatus.Fatal )
 			{
-				return new QueuedTaskInfo()
+				return new QueuedTaskProduceInfo()
 				{
 					Id = Id,
 					Payload = Payload,
 					Type = Type,
 					Source = Source,
 					Priority = Priority,
-					LockedUntilTs = result.RetryAt
+					LockedUntilTs = result.RetryAt,
+					Status = Status
 				};
 			}
 			else
 				return null;
 		}
 
-		private void Cancelled ( TaskExecutionResult result )
+		private void Cancelled( TaskExecutionResult result )
 		{
 			Status = QueuedTaskStatus.Cancelled;
 
@@ -149,7 +150,7 @@ namespace LVD.Stakhanovise.NET.Model
 			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 		}
 
-		public bool Equals ( QueuedTaskResult other )
+		public bool Equals( QueuedTaskResult other )
 		{
 			if ( other == null )
 				return false;
@@ -160,12 +161,12 @@ namespace LVD.Stakhanovise.NET.Model
 			return Id.Equals( other.Id );
 		}
 
-		public override bool Equals ( object obj )
+		public override bool Equals( object obj )
 		{
 			return Equals( obj as QueuedTask );
 		}
 
-		public override int GetHashCode ()
+		public override int GetHashCode()
 		{
 			return Id.GetHashCode();
 		}

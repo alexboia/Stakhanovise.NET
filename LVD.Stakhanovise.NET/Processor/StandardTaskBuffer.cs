@@ -86,24 +86,6 @@ namespace LVD.Stakhanovise.NET.Processor
 				m => m.Increment() );
 		}
 
-		private void UpdateOnBufferItemAdd ( int newCount, bool wasFull )
-		{
-			bool isFull = newCount == mCapacity;
-
-			UpdateBufferCountStats( newCount );
-			if ( !wasFull && isFull )
-				IncrementTimesFilled();
-		}
-
-		private void UpdateOnBufferItemRemove ( int newCount, bool wasEmpty )
-		{
-			bool isEmpty = newCount == 0;
-
-			UpdateBufferCountStats( newCount );
-			if ( !wasEmpty && isEmpty )
-				IncrementTimesEmptied();
-		}
-
 		private void UpdateBufferCountStats ( int newCount )
 		{
 			mMetrics.UpdateMetric( AppMetricId.BufferMaxCount,
@@ -149,12 +131,22 @@ namespace LVD.Stakhanovise.NET.Processor
 			return isAdded;
 		}
 
+		private void UpdateOnBufferItemAdd( int newCount, bool wasFull )
+		{
+			bool isFull = newCount == mCapacity;
+
+			UpdateBufferCountStats( newCount );
+			if ( !wasFull && isFull )
+				IncrementTimesFilled();
+		}
+
 		public IQueuedTaskToken TryGetNextTask ()
 		{
 			CheckDisposedOrThrow();
 
 			int oldCount = mInnerBuffer.Count;
 			bool wasEmpty = ( oldCount == 0 );
+
 			if ( !mInnerBuffer.TryTake( out IQueuedTaskToken newTaskToken ) )
 				newTaskToken = null;
 
@@ -165,6 +157,15 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 
 			return newTaskToken;
+		}
+
+		private void UpdateOnBufferItemRemove( int newCount, bool wasEmpty )
+		{
+			bool isEmpty = newCount == 0;
+
+			UpdateBufferCountStats( newCount );
+			if ( !wasEmpty && isEmpty )
+				IncrementTimesEmptied();
 		}
 
 		public void CompleteAdding ()
