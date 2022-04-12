@@ -10,5 +10,7 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Statistics
 		Task<GenericCounts> ComputeGenericCountsAsync();
 
 		Task<PayloadCounts> ComputePayloadCountsAsync();
+
+		Task<IEnumerable<OwnerProcessCounts>> ComputeExecutionPerformanceStatsOwnerProcessCountsAsync();
 	}
 }

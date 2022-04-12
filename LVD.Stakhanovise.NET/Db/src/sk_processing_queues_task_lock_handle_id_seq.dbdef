@@ -1,0 +1,2 @@
+﻿SEQ: $queue_table_name$_task_lock_handle_id_seq
+PROP: start=1; increment=1; minvalue=1; maxvalue=9223372036854775807; cache=1

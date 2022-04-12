@@ -82,8 +82,11 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 
 			await CheckUsingTaskQueueInfoAsync( totalFileCount );
 			await CheckUsingGenericCountsAsync( totalFileCount );
-			await CheckUsingPayloadCountsAsync( GetExpectedPayloadCounts( totalFileCount ),
-				GetExpectedRemainingPayloadCounts( totalFileCount ) );
+			
+			await CheckUsingPayloadCountsAsync( 
+				GetExpectedPayloadCounts( totalFileCount ),
+				GetExpectedRemainingPayloadCounts( totalFileCount ) 
+			);
 
 			Console.WriteLine();
 			Console.WriteLine( "Processing result validation completed." );
@@ -271,6 +274,8 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 					WritePassMessage( baseRemainingCompletedResultsTasksInResultsQueueMessage );
 			}
 		}
+
+
 
 		private string FormatPayloadName( string payloadName )
 		{

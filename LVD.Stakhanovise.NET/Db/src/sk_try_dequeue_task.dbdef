@@ -1,0 +1,25 @@
+﻿FN: $dequeue_function_name$
+PROP: language=plpgsql
+ARGS: select_types=character varying[]; exclude_ids=uuid[]; ref_now=timestamp with time zone
+RET: table(task_id=uuid; task_lock_handle_id=bigint; task_type=character varying; task_source=character varying; task_payload=text; task_priority=integer; task_posted_at_ts=timestamp with time zone; task_locked_until_ts=timestamp with time zone)
+BODY:
+	DECLARE
+		n_select_types integer = CARDINALITY(select_types);
+	
+	BEGIN
+		RETURN QUERY 
+		WITH sk_dequeued_task AS
+			(DELETE FROM $queue_table_name$ td WHERE td.task_id = (
+				SELECT t0.task_id
+						FROM $queue_table_name$ t0 
+						WHERE (t0.task_type = ANY(select_types) OR n_select_types = 0)
+							AND t0.task_locked_until_ts < ref_now
+							AND t0.task_id <> ALL(exclude_ids)
+						ORDER BY t0.task_priority ASC,
+							t0.task_locked_until_ts ASC,
+							t0.task_lock_handle_id ASC
+						LIMIT 1
+						FOR UPDATE SKIP LOCKED
+			) RETURNING *) SELECT sdt.* FROM sk_dequeued_task sdt;
+	END;
+BODY;

@@ -171,6 +171,35 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.Statistics
 				return await ReadPayloadCountsFromDbReader( rdr );
 		}
 
+		public async Task<IEnumerable<OwnerProcessCounts>> ComputeExecutionPerformanceStatsOwnerProcessCountsAsync()
+		{
+			using ( NpgsqlConnection conn = await OpenConnectionAsync() )
+			{
+				List<OwnerProcessCounts> countsList =
+					new List<OwnerProcessCounts>();
+
+				string countsSql = @$"SELECT et_owner_process_id, COUNT(et_owner_process_id) as total_cnt
+					FROM {mMapping.ExecutionTimeStatsTableName}
+					GROUP BY et_owner_process_id";
+
+				using ( NpgsqlCommand cmd = new NpgsqlCommand( countsSql, conn ) )
+				using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )
+				{
+					while ( await rdr.ReadAsync() )
+					{
+						OwnerProcessCounts countsItem = new OwnerProcessCounts()
+						{
+							OwnerProcessId = rdr.GetString( 0 ),
+							Count = rdr.GetInt64( 1 )
+						};
+					}
+				}
+
+				await conn.CloseAsync();
+				return countsList;
+			}
+		}
+
 		private int CompletedTaskStatusAsInt
 			=> ( int ) QueuedTaskStatus.Processed;
 	}

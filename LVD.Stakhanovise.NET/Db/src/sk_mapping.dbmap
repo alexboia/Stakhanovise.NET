@@ -1,0 +1,6 @@
+﻿MAP: queue_table_name=sk_tasks_queue_t
+MAP: results_queue_table_name=sk_task_results_t
+MAP: execution_time_stats_table_name=sk_task_execution_time_stats_t
+MAP: metrics_table_name=sk_metrics_t
+MAP: new_task_notification_channel_name=sk_task_queue_item_added
+MAP: dequeue_function_name=sk_try_dequeue_task

@@ -1,0 +1,19 @@
+﻿TBL: $results_queue_table_name$
+PROP: title="The job results table"; description="Stores processing job execution result meta-information, such as execution status."
+COL: task_id; type=uuid; not_null=true
+COL: task_type; type=character varying(250); not_null=true
+COL: task_source; type=character varying(250); not_null=true
+COL: task_payload; type=text
+COL: task_status; type=integer; not_null=true
+COL: task_priority; type=integer; not_null=true
+COL: task_last_error; type=text
+COL: task_error_count; type=integer; not_null=true; default=0
+COL: task_last_error_is_recoverable; type=boolean; not_null=true; default=false
+COL: task_processing_time_milliseconds; type=bigint; not_null=true; default=0
+COL: task_posted_at_ts; type=timestamp with time zone; not_null=true
+COL: task_first_processing_attempted_at_ts; type=timestamp with time zone
+COL: task_last_processing_attempted_at_ts; type=timestamp with time zone
+COL: task_processing_finalized_at_ts; type=timestamp with time zone
+PK: pk_$results_queue_table_name$(task_id)
+IDX: idx_$results_queue_table_name$_task_status(task_status=ASC); type=btree
+IDX: idx_$results_queue_table_name$_task_type(task_type=ASC); type=btree

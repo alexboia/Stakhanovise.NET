@@ -1,0 +1,9 @@
+﻿TBL: $metrics_table_name$
+PROP: title="The application metrics table"; description="Stores the application metrics for the built-in app metrics writer."
+COL: metric_id; type=character varying(250); not_null=true
+COL: metric_owner_process_id; type=character varying(250); not_null=true
+COL: metric_category; type=character varying(150); not_null=true
+COL: metric_value; type=bigint; not_null=true; default=0
+COL: metric_last_updated; type=timestamp with time zone; not_null=true; default=now()
+PK: pk_$metrics_table_name$(metric_id, metric_owner_process_id)
+IDX: idx_$metrics_table_name$_category(metric_category=ASC); type=btree
