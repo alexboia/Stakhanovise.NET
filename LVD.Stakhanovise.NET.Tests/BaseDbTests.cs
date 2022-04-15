@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Tests.Helpers;
 using Npgsql;
 using NUnit.Framework;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,14 +41,24 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	public abstract class BaseDbTests : BaseTestWithConfiguration
 	{
-		protected async Task<NpgsqlConnection> OpenDbConnectionAsync ( string connectionString )
+		public BaseDbTests()
+		{
+			EnableNpgsqlLegacyTimestampBehavior();
+		}
+		
+		protected void EnableNpgsqlLegacyTimestampBehavior()
+		{
+			AppContext.SetSwitch( "Npgsql.EnableLegacyTimestampBehavior", true );
+		}
+
+		protected async Task<NpgsqlConnection> OpenDbConnectionAsync( string connectionString )
 		{
 			NpgsqlConnection db = new NpgsqlConnection( connectionString );
 			await db.OpenAsync();
 			return db;
 		}
 
-		protected Task WaitAndTerminateConnectionAsync ( int pid, ManualResetEvent syncHandle, int timeout )
+		protected Task WaitAndTerminateConnectionAsync( int pid, ManualResetEvent syncHandle, int timeout )
 		{
 			return Task.Run( async () =>
 			{
