@@ -1,4 +1,5 @@
-﻿TBL: $results_queue_table_name$
+﻿TBL
+NAME: $results_queue_table_name$
 PROP: title="The job results table"; description="Stores processing job execution result meta-information, such as execution status."
 COL: task_id; type=uuid; not_null=true
 COL: task_type; type=character varying(250); not_null=true

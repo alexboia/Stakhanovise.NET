@@ -46,7 +46,7 @@ namespace LVD.Stakhanovise.NET.Tests
 	public class NpgsqlNotificationTests : BaseDbTests
 	{
 		[Test]
-		public void Test_ThrowExceptionInNonAwaitedTask ()
+		public void Test_ThrowExceptionInNonAwaitedTask()
 		{
 			ManualResetEvent exceptionTaskReady =
 				new ManualResetEvent( initialState: false );
@@ -67,7 +67,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
-		public void Test_TryBreakConnectionWhileListenAndWait ()
+		public void Test_TryBreakConnectionWhileListenAndWait()
 		{
 			using ( ManualResetEvent syncHandle = new ManualResetEvent( false ) )
 			{
@@ -96,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
-		public async Task Test_TryBreakConnectionWhileListenWithoutWait ()
+		public async Task Test_TryBreakConnectionWhileListenWithoutWait()
 		{
 			Task waitTask;
 			CancellationTokenSource cancellation =
@@ -129,7 +129,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public async Task Test_CollectConnectionStateChanges ()
+		public async Task Test_CollectConnectionStateChanges()
 		{
 			List<ConnectionState> connectionStates =
 				new List<ConnectionState>();
@@ -159,7 +159,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public async Task Test_ThrowsOperationCancelledOnCancelAfterWaitAsync ()
+		public async Task Test_ThrowsOperationCancelledOnCancelAfterWaitAsync()
 		{
 			bool notificationReceived = false;
 			CancellationTokenSource cancellation =
@@ -175,7 +175,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					await listenCmd.ExecuteNonQueryAsync();
 
 				cancellation.CancelAfter( 1000 );
-				Assert.ThrowsAsync<OperationCanceledException>( async ()
+				Assert.ThrowsAsync( Is.InstanceOf<OperationCanceledException>(), async ()
 					 => await conn.WaitAsync( cancellation.Token ) );
 			}
 
@@ -183,7 +183,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public async Task Test_ThrowsOperationCancelledOnCancelWaitAsync ()
+		public async Task Test_ThrowsOperationCancelledOnCancelWaitAsync()
 		{
 			bool notificationReceived = false;
 			CancellationTokenSource cancellation =
@@ -202,7 +202,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					.ContinueWith( prev => cancellation.Cancel() )
 					.WithoutAwait();
 
-				Assert.ThrowsAsync<OperationCanceledException>( async ()
+				Assert.ThrowsAsync( Is.InstanceOf<OperationCanceledException>(), async ()
 					 => await conn.WaitAsync( cancellation.Token ) );
 			}
 
@@ -210,7 +210,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		public async Task Test_CanListenForNotifications ()
+		public async Task Test_CanListenForNotifications()
 		{
 			Task tListen, tNotify;
 			List<NpgsqlNotificationEventArgs> notificationData = new List<NpgsqlNotificationEventArgs>();

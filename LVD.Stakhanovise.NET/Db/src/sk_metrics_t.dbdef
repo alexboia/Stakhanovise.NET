@@ -1,4 +1,5 @@
-﻿TBL: $metrics_table_name$
+﻿TBL
+NAME: $metrics_table_name$
 PROP: title="The application metrics table"; description="Stores the application metrics for the built-in app metrics writer."
 COL: metric_id; type=character varying(250); not_null=true
 COL: metric_owner_process_id; type=character varying(250); not_null=true

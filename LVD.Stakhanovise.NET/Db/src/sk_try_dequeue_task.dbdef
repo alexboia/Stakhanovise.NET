@@ -1,4 +1,5 @@
-﻿FN: $dequeue_function_name$
+﻿FN
+NAME: $dequeue_function_name$
 PROP: language=plpgsql
 ARGS: select_types=character varying[]; exclude_ids=uuid[]; ref_now=timestamp with time zone
 RET: table(task_id=uuid; task_lock_handle_id=bigint; task_type=character varying; task_source=character varying; task_payload=text; task_priority=integer; task_posted_at_ts=timestamp with time zone; task_locked_until_ts=timestamp with time zone)

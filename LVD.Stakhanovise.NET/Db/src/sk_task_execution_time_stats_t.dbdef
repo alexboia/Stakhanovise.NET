@@ -1,4 +1,5 @@
-﻿TBL: $execution_time_stats_table_name$
+﻿TBL
+NAME: $execution_time_stats_table_name$
 PROP: title="The job execution performance data table"; description="Stores the job execution performance data for the built-in job execution performance data writer."
 COL: et_payload_type; type=character varying(255); not_null=true
 COL: et_owner_process_id; type=character varying(255); not_null=true

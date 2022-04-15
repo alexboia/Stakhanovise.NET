@@ -9,3 +9,4 @@ aspnet_client
 *.nupkg
 *.nuspec
 license-ss.txt
+*.pyc
