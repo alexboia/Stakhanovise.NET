@@ -6,7 +6,7 @@ class NamedArgsListParser:
     def __init__(self, separator: str = ';'):
         self._separator = separator
 
-    def parse(self, argsContents: str) -> {}:
+    def parse(self, argsContents: str) -> dict[str, str]:
         args = {}
         rawArgs = self._parseRawArgsList(argsContents)
 

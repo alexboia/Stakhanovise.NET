@@ -8,6 +8,6 @@
         if len(argsContents) > 0:
             args = argsContents.split(self._separator)
             args = map(lambda arg: arg.strip(), args)
-            return filter(lambda arg: len(arg) > 0, args)
+            return list(filter(lambda arg: len(arg) > 0, args))
         else:
             return []

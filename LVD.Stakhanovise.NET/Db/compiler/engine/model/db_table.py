@@ -4,6 +4,9 @@ from .db_column import DbColumn
 from .db_constraint import DbConstraint
 from .db_index import DbIndex
 
+KEY_PROP_TITLE = "title"
+KEY_PROP_DESCRIPTION = "description"
+
 class DbTable(DbObject):
     _columns: list[DbColumn] = []
     _primary: DbConstraint = None
@@ -11,7 +14,7 @@ class DbTable(DbObject):
     _indexes: list[DbIndex] = []
 
     def __init__(self, name, props: list[DbObjectProp] = []):
-        super().__init__(name, "TBL", props)
+        super().__init__(name, __class__.getObjectType(), props)
 
     def addColumn(self, column: DbColumn):
         self._columns.append(column)
@@ -45,3 +48,13 @@ class DbTable(DbObject):
 
     def hasIndexes(self):
         return len(self.getIndexes())
+
+    def getMetaTitle(self) -> str:
+        return self.getPropertyValue(KEY_PROP_TITLE)
+
+    def getMetaDescription(self) -> str:
+        return self.getPropertyValue(KEY_PROP_DESCRIPTION)
+
+    @staticmethod
+    def getObjectType() -> str:
+        return "TBL"

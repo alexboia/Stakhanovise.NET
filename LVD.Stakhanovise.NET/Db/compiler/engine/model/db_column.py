@@ -1,4 +1,5 @@
 ﻿from ..helper.string import str_to_bool
+from ..helper.string import sprintf
 
 class DbColumn:
     _name: str = None
@@ -15,14 +16,17 @@ class DbColumn:
         self._description = description
 
     @staticmethod
-    def createFromInput(input: dict) -> DbColumn:
-        colName = input.get("name")
-        colType = input.get("type", "character varying(255)")
-        colNotNull = str_to_bool(input.get("not_null", "false"))
-        colDefault = input.get("default", None)
-        colDescription = input.get("description", None)
+    def createFromNameAndArgs(name: str, args: dict):
+        colType = args.get("type", "character varying(255)")
+        colNotNull = str_to_bool(args.get("not_null", "false"))
+        colDefault = args.get("default", None)
+        colDescription = args.get("description", None)
 
-        return DbColumn(colName, colType, colNotNull, colDefault, colDescription)
+        return DbColumn(name, 
+            colType, 
+            colNotNull, 
+            colDefault, 
+            colDescription)
 
     def getName(self):
         return self._name
@@ -44,3 +48,6 @@ class DbColumn:
 
     def hasDescription(self):
         return (self.getDescritption() is not None)
+
+    def __str__(self) -> str:
+        return sprintf('{name: %s, type: %s, notNull: %s}' % (self._name, self._type, self._notNull))

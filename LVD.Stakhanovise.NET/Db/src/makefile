@@ -1,7 +1,7 @@
 ﻿MAP=sk_mapping.dbmap
 DEFINITIONS=*.dbdef
-OUTPUT=sql_script(dir=./scripts;file=sk_db.sql)
-OUTPUT=markdown_docs(dir=./docs;file=README-DB.md)
-OUTPUT=json_definitions(proj=LVD.Stakhanovise.NET)
-OUTPUT=create_db(connection_string=;if_exists=drop)
-OUTPUT=mapping_code(proj=LVD.Stakhanovise.NET.Common;ns=LVD.Stakhanovise.NET.Model;dir=Model;cls=QueuedTaskMapping)
+OUTPUT=sql_script(dir=/Db/scripts ;mode=consolidated; file=sk_db.sql; build_action=None)
+OUTPUT=sql_script(dir=/Setup/BuiltInDbAssetsSetup/scripts; mode=single; file={object}.sql; build_action=Content)
+OUTPUT=markdown_docs(dir=/Db/docs; file=README-DB.md)
+OUTPUT=create_db(connection_string=host:localhost,port:5432,user:postgres,password:postgres,db:lvd_stakhanovise_test_db; if_exists=drop)
+OUTPUT=mapping_code(proj=LVD.Stakhanovise.NET.Common; ns=LVD.Stakhanovise.NET.Model; dir=/Model; cls=QueuedTaskMapping)

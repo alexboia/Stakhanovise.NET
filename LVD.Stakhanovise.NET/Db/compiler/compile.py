@@ -3,19 +3,20 @@ from engine.parser.makefile_parser import MakefileParser
 from engine.parser.db_mapping_parser import DbMappingParser
 from engine.parser.db_sequence_parser import DbSequenceParser
 from engine.parser.db_index_parser import DbIndexParser
+from engine.parser.db_column_parser import DbColumnParser
+from engine.parser.db_object_parser_registry import DbObjectParserRegistry
+from engine.parser.db_constraint_parser import DbConstraintParser
 
 chdir('../src')
 
 mappingParser = DbMappingParser()
-mapping = mappingParser.parse('./sk_mapping.dbmap')
+mapping = mappingParser.parse('sk_mapping.dbmap')
+print(mapping)
 
 indexParser = DbIndexParser(mapping)
-index = indexParser.parse('idx_$queue_table_name$_sort_index(task_priority, task_locked_until_ts=ASC, task_lock_handle_id=ASC); type=btree')
+indexResult = indexParser.parse('idx_$results_queue_table_name$_task_status(task_status=ASC); type=btree')
+print(indexResult)
 
-print(index)
-
-parser = DbSequenceParser(mapping)
-result = parser.parseFromFile('./sk_processing_queues_task_lock_handle_id_seq.dbdef')
-
-print(result.getName())
-print(result.getProperties())
+constraintParser = DbConstraintParser(mapping)
+constraintResult = constraintParser.parse('unq_$queue_table_name$_task_lock_handle_id(task_lock_handle_id); type=unq')
+print(constraintResult)

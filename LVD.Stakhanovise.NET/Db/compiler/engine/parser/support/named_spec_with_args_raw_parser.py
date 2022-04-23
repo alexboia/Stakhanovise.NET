@@ -1,7 +1,5 @@
-﻿from .args_list_parser import ArgsListParser
-
-class NamedSpecWithArgsParserBase:
-    def _parseRawParts(self, contents: str) -> dict:
+﻿class NamedSpecWithArgsRawParser:
+    def parse(self, contents: str) -> dict[str, str]:
         rawParts: dict = {}
         parseContents = contents.strip()
         
@@ -12,7 +10,3 @@ class NamedSpecWithArgsParserBase:
         rawParts["args"] = contents[openParanthesisIndex + 1:closeParanthesisIndex]
 
         return rawParts
-
-    def _parseRawArgsList(self, argsContents: str) -> list[str]:
-        parser = ArgsListParser()
-        return parser.parse(argsContents)

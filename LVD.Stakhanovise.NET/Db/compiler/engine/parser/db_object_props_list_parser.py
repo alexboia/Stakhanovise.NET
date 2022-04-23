@@ -1,5 +1,5 @@
 ﻿from ..model.db_object_prop import DbObjectProp
-from .named_args_list_parser import NamedArgsListParser
+from .support.named_args_list_parser import NamedArgsListParser
 
 class DbObjectPropsListParser:
     def parse(self, propsListContents: str) -> list[DbObjectProp]:
@@ -14,7 +14,7 @@ class DbObjectPropsListParser:
 
         return props
 
-    def _readRawPropsValues(self, propsListContents: str) -> dict:
+    def _readRawPropsValues(self, propsListContents: str) -> dict[str, str]:
         parser = NamedArgsListParser()
         propsValues = parser.parse(propsListContents)
         return propsValues

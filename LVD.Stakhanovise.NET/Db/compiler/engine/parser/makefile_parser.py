@@ -2,8 +2,8 @@
 from os.path import exists
 
 from .source_file_reader import SourceFileReader
-from .named_spec_with_named_args import NamedSpecWithNamedArgs
-from .named_spec_with_named_args_parser import NamedSpecWithNamedArgsParser
+from .support.named_spec_with_named_args import NamedSpecWithNamedArgs
+from .support.named_spec_with_named_args_parser import NamedSpecWithNamedArgsParser
 
 from ..model.compiler_output_info import CompilerOutputInfo
 from ..model.makefile_info import MakefileInfo
@@ -22,7 +22,7 @@ class MakefileParser:
     def _determineAbsoluteMakefilePath(self, sourceFile: str) -> str:
         return abspath(sourceFile)
 
-    def _parseMakefile(self, makefileLines: list[str]):
+    def _parseMakefile(self, makefileLines: list[str]) -> str:
         makefileInfo = MakefileInfo()
 
         for makefileLine in makefileLines:
@@ -30,41 +30,59 @@ class MakefileParser:
 
         return makefileInfo
 
-    def _parseMakefileLine(self, makefileLine: str, makefileInfo: MakefileInfo):
+    def _parseMakefileLine(self, makefileLine: str, makefileInfo: MakefileInfo) -> None:
         if (makefileLine.startswith(MARKER_MAP_LINE)):
             mappingFileName = self._readMappingFileName(makefileLine)
             makefileInfo.setMappingFileName(mappingFileName)
+
         elif (makefileLine.startswith(MARKER_DEFINITIONS_LINE)):
             definitionFilesGlob = self._readDefinitionsFilesGlob(makefileLine)
             makefileInfo.setDefinitionFilesGlob(definitionFilesGlob)
+
         elif makefileLine.startswith(MARKER_OUTPUT_LINE):
             compilerOutpuInfo = self._readCompilerOutputInfo(makefileLine)
             if (compilerOutpuInfo is not None):
                 makefileInfo.addOutput(compilerOutpuInfo)
 
     def _readMappingFileName(self, makefileLine: str) -> str:
-        mappingFileName = makefileLine.replace(MARKER_MAP_LINE, '').strip()
+        mappingFileName = self._prepareMappingFileNameLine(makefileLine)
         if (len(mappingFileName) > 0):
             return mappingFileName
         else:
             return "sk_mapping.dbmap"
 
+    def _prepareMappingFileNameLine(self, makefileLine: str) -> str:
+        return makefileLine.replace(MARKER_MAP_LINE, '').strip()
+
     def _readDefinitionsFilesGlob(self, makefileLine: str) -> str:
-        definitionFilesGlob = makefileLine.replace(MARKER_DEFINITIONS_LINE, '').strip()
+        definitionFilesGlob = self._prepareDefinitionFilesGlobLine(makefileLine)
         if (len(definitionFilesGlob) > 0):
             return definitionFilesGlob
         else:
             return "*.dbdef"
 
+    def _prepareDefinitionFilesGlobLine(self, makefileLine: str) -> str:
+        return makefileLine.replace(MARKER_DEFINITIONS_LINE, '').strip()
+
     def _readCompilerOutputInfo(self, makefileLine: str) -> CompilerOutputInfo:
-        compilerOutputInfo: CompilerOutputInfo = None
-        compilerOutputInfoContents: str = makefileLine.replace(MARKER_OUTPUT_LINE, '').strip()
+        compilerOutputInfoContents = self._prepareCompilerOutputInfoLine(makefileLine)
         
         if (len(compilerOutputInfoContents) > 0):
-            compilerOutputParser = NamedSpecWithNamedArgsParser()
-            compilerOutputArgs = compilerOutputParser.parse(compilerOutputInfoContents)
+            compilerOutputInfo = self._parseCompilerOutputInfo(compilerOutputInfoContents)
+        else:
+            compilerOutputInfo = None
 
-            compilerOutputInfo = CompilerOutputInfo(compilerOutputArgs.getName(), 
-                compilerOutputArgs.getArgs())
+        return compilerOutputInfo
 
+    def _prepareCompilerOutputInfoLine(self, makefileLine: str) -> str:
+        return makefileLine.replace(MARKER_OUTPUT_LINE, '').strip()
+
+    def _parseCompilerOutputInfo(self, compilerOutputInfoContents: str) -> CompilerOutputInfo:
+        compilerOutputParser = NamedSpecWithNamedArgsParser()
+        compilerOutputSpec = compilerOutputParser.parse(compilerOutputInfoContents)
+
+        name = compilerOutputSpec.getName()
+        args = compilerOutputSpec.getArgs()
+
+        compilerOutputInfo = CompilerOutputInfo(name, args)
         return compilerOutputInfo

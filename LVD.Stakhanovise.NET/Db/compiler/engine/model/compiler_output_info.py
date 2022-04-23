@@ -15,4 +15,4 @@ class CompilerOutputInfo:
         return self._arguments
 
     def __str__(self) -> str:
-        return sprinf("{name: %s, arguments: %s}" % (self._name, self._arguments))
+        return sprintf("{name: %s, arguments: %s}" % (self._name, self._arguments))

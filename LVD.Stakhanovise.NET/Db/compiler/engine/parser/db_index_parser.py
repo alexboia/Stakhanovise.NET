@@ -1,6 +1,7 @@
-﻿from .named_spec_with_named_args import NamedSpecWithNamedArgs
-from .named_spec_with_named_args_parser import NamedSpecWithNamedArgsParser
-from .named_args_list_parser import NamedArgsListParser
+﻿from .support.named_spec_with_named_args import NamedSpecWithNamedArgs
+from .support.named_args_list_parser import NamedArgsListParser
+from .support.definition_with_properties import DefinitionWithProperties
+from .support.definition_with_properties_parser import DefinitionWithPropertiesParser
 from ..model.db_mapping import DbMapping
 from ..model.db_index import DbIndex
 
@@ -12,54 +13,25 @@ class DbIndexParser:
 
     def parse(self, indexContents: str) -> DbIndex:
         if (len(indexContents) > 0):
-            indexArgs = self._readRawIndexArgsValues(indexContents)
-            if (len(indexArgs.keys()) > 0):
-                indexDefinition: NamedSpecWithNamedArgs = indexArgs.get("definition")
-                indexProperties: dict = indexArgs.get("properties", None)
+            indexDefinition = self._readRawIndexDefinition(indexContents)
+            if (indexDefinition is not None):
+                indexName = indexDefinition.getName()
+                indexColumns = self._readIndexColumns(indexDefinition.getArgsContents())
 
-                name = indexDefinition.getName()
-                columns = indexDefinition.getArgs()
-
-                if (indexProperties is not None):
-                    indexType = indexProperties.get("type", None)
-                else:
-                    indexType = None
-
+                indexType = indexDefinition.getProperty("type", None)
                 if (indexType is None):
                     indexType = "btree"
 
-                return DbIndex(self._expandName(name), columns, indexType)
+                return DbIndex(indexName, indexColumns, indexType)
             else:
                 return None
         else:
             return None
 
-    def _readRawIndexArgsValues(self, indexContents: str) -> dict:
-        indexArgs = {}
-        indexParts = indexContents.split(';', 1)
-        
-        if (len(indexParts) >= 1):
-            indexDefinition = indexParts[0].strip()
-            if (len(indexParts) == 2):
-                indexProperties = indexParts[1].strip()
-            else:
-                indexProperties = ""
+    def _readRawIndexDefinition(self, indexContents: str) -> DefinitionWithProperties:
+       parser = DefinitionWithPropertiesParser(self._mapping)
+       return parser.parse(indexContents)
 
-            if (len(indexDefinition) > 0):
-                indexArgs["definition"] = self._readRawIndexDefinitionValues(indexDefinition)
-
-            if (len(indexProperties) > 0):
-                indexArgs["properties"] = self._readRawIndexPropertiesValues(indexProperties)
-
-        return indexArgs
-
-    def _readRawIndexDefinitionValues(self, indexDefinition: str) -> NamedSpecWithNamedArgs:
-        parser = NamedSpecWithNamedArgsParser(',')
-        return parser.parse(indexDefinition)
-
-    def _expandName(self, name:str) -> str:
-        return self._mapping.expandString(name)
-
-    def _readRawIndexPropertiesValues(self, indexProperties: str) -> dict:
-        parser = NamedArgsListParser(';')
-        return parser.parse(indexProperties)
+    def _readIndexColumns(self, argsContents: str) -> dict[str, str]:
+        parser = NamedArgsListParser(',')
+        return parser.parse(argsContents)

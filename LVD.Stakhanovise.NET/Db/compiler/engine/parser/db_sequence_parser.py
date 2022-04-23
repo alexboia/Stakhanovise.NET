@@ -2,12 +2,13 @@
 from ..model.db_sequence import DbSequence
 from ..model.db_object_prop import DbObjectProp
 from .source_file_reader import SourceFileReader
+from .db_object_parser import DbObjectParser
 from .db_object_props_list_parser import DbObjectPropsListParser
 
 MARKER_NAME_LINE = "NAME:"
 MARKER_PROP_LINE = "PROPS:"
 
-class DbSequenceParser:
+class DbSequenceParser(DbObjectParser[DbSequence]):
     _mapping: DbMapping = None
 
     def __init__(self, mapping: DbMapping):
@@ -17,7 +18,7 @@ class DbSequenceParser:
         sourceFileReader = SourceFileReader()
         dbSequenceFileLines = sourceFileReader.readSourceLines(sourceFile)
         
-        if DbSequenceParser.isValidDbSequenceFileMapping(dbSequenceFileLines):
+        if __class__.isValidDbSequenceFileMapping(dbSequenceFileLines):
             return self.parse(dbSequenceFileLines)
         else:
             return None

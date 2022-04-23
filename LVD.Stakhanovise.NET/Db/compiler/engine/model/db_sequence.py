@@ -10,21 +10,21 @@ KEY_PROP_CACHE = "cache"
 
 class DbSequence(DbObject):
     def __init__(self, name, props: list[DbObjectProp] = []):
-        super().__init__(name, DbSequence.getObjectType(), props)
+        super().__init__(name, __class__.getObjectType(), props)
 
-    def getStartValue(self):
+    def getStartValue(self) -> str:
         return self.getPropertyValue(KEY_PROP_START, "1")
 
-    def getIncrementValue(self):
+    def getIncrementValue(self) -> str:
         return self.getPropertyValue(KEY_PROP_INCREMENT, "1")
 
-    def getMinValue(self):
+    def getMinValue(self) -> str:
         return self.getPropertyValue(KEY_PROP_MIN_VALUE, "1")
 
-    def getMaxValue(self):
+    def getMaxValue(self) -> str:
         return self.getPropertyValue(KEY_PROP_MAX_VALUE, "9223372036854775807")
 
-    def getCacheAmount(self):
+    def getCacheAmount(self) -> str:
         return self.getPropertyValue(KEY_PROP_CACHE, "1")
 
     @staticmethod

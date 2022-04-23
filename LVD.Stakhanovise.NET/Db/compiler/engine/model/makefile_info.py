@@ -18,7 +18,7 @@ class MakefileInfo:
     def getDefinitionFilesGlob(self) -> str:
         return self._definitionFilesGlob
 
-    def addOutput(self, output: CompilerOutputInfo):
+    def addOutput(self, output: CompilerOutputInfo) -> None:
         self._outputs.append(output)
 
     def getOutputs(self) -> list[CompilerOutputInfo]:

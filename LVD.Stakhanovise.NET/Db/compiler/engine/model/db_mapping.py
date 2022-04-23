@@ -14,9 +14,9 @@ class DbMapping:
     _metricTableName: str = None
     _newTaskNotificationChannelNameToken: str = None
     _dequeueFunctionName: str = None
-    _symbols: dict = {}
+    _symbols: dict[str, str] = {}
 
-    def __init__(self, symbols: dict):
+    def __init__(self, symbols: dict[str, str]):
         self._queueTableName = symbols.get(QUEUE_TABLE_NAME_TOKEN, "sk_tasks_queue_t")
         self._resultsQueueTableName = symbols.get(RESULTS_QUEUE_TABLE_NAME_TOKEN, "sk_task_results_t")
         self._executionTimeStatsTableName = symbols.get(EXECUTION_TIME_STATS_TABLE_NAME_TOKEN, "sk_task_execution_time_stats_t")
@@ -26,7 +26,7 @@ class DbMapping:
         self._symbols = symbols
 
     @staticmethod
-    def createFromInput(symbols: dict):
+    def createFromInput(symbols: dict[str, str]):
         return DbMapping(symbols)
 
     @staticmethod
@@ -40,45 +40,45 @@ class DbMapping:
 
     @staticmethod
     def isValidTokenName(tokenName: str) -> bool:
-        validTokenNames = DbMapping.getAllValidTokenNames()
+        validTokenNames = __class__.getAllValidTokenNames()
         return (tokenName in validTokenNames)
 
-    def _replaceTokenByName(self, targetString: str, tokenName: str):
+    def _replaceTokenByName(self, targetString: str, tokenName: str) -> str:
         token = self._createSearchToken(tokenName)
         value = self._resolveSymbol(tokenName)
         return targetString.replace(token, value)
 
-    def _createSearchToken(self, tokenName: str):
+    def _createSearchToken(self, tokenName: str) -> str:
         return sprintf("$%s$" % (tokenName))
 
-    def _resolveSymbol(self, tokenName: str):
+    def _resolveSymbol(self, tokenName: str) -> str:
         return self._symbols.get(tokenName)
 
-    def expandString(self, targetString: str):
+    def expandString(self, targetString: str) -> str:
         finalString = targetString
-        replaceTokenNames = DbMapping.getAllValidTokenNames()
+        replaceTokenNames = __class__.getAllValidTokenNames()
         
         for tokenName in replaceTokenNames:
             finalString = self._replaceTokenByName(finalString, tokenName)
 
         return finalString
 
-    def getQueueTableName(self):
+    def getQueueTableName(self) -> str:
         return self._queueTableName
 
-    def getResultsQueueTableName(self):
+    def getResultsQueueTableName(self) -> str:
         return self._resultsQueueTableName
 
-    def getExecutionTimeStatsTableName(self):
+    def getExecutionTimeStatsTableName(self) -> str:
         return self._executionTimeStatsTableName
 
-    def getMetricsTableName(self):
+    def getMetricsTableName(self) -> str:
         return self._metricTableName
 
-    def getNewTaskNotificationChannelName(self):
+    def getNewTaskNotificationChannelName(self) -> str:
         return self._newTaskNotificationChannelNameToken
 
-    def getDequeueFunctionName(self):
+    def getDequeueFunctionName(self) -> str:
         return self._dequeueFunctionName
 
     def __str__(self) -> str:

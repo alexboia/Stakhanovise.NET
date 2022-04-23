@@ -5,6 +5,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Db\compiler\engine\helper\__pycache__\**" />
+    <Compile Remove="Db\compiler\engine\model\__pycache__\**" />
+    <Compile Remove="Db\compiler\engine\parser\support\__pycache__\**" />
+    <Compile Remove="Db\compiler\engine\parser\__pycache__\**" />
+    <Compile Remove="Db\compiler\engine\__pycache__\**" />
+    <EmbeddedResource Remove="Db\compiler\engine\helper\__pycache__\**" />
+    <EmbeddedResource Remove="Db\compiler\engine\model\__pycache__\**" />
+    <EmbeddedResource Remove="Db\compiler\engine\parser\support\__pycache__\**" />
+    <EmbeddedResource Remove="Db\compiler\engine\parser\__pycache__\**" />
+    <EmbeddedResource Remove="Db\compiler\engine\__pycache__\**" />
+    <None Remove="Db\compiler\engine\helper\__pycache__\**" />
+    <None Remove="Db\compiler\engine\model\__pycache__\**" />
+    <None Remove="Db\compiler\engine\parser\support\__pycache__\**" />
+    <None Remove="Db\compiler\engine\parser\__pycache__\**" />
+    <None Remove="Db\compiler\engine\__pycache__\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Npgsql" Version="6.0.3" />
   </ItemGroup>
@@ -16,7 +34,6 @@
 
   <ItemGroup>
     <Folder Include="Db\docs\" />
-    <Folder Include="Db\json\" />
     <Folder Include="Db\scripts\" />
   </ItemGroup>
 
