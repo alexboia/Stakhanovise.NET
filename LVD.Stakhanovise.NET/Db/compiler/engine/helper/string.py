@@ -11,3 +11,6 @@ def str_to_bool(sourceString: str) -> bool:
         return False
 
     return "TRUE" == sourceString.upper()
+
+def bool_to_yesno(boolVal: bool) -> str:
+    return "Yes" if boolVal else "No"

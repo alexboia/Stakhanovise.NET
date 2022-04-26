@@ -10,6 +10,8 @@ from engine.parser.db_table_parser import DbTableParser
 from engine.parser.db_function_return_parser import DbFunctionReturnParser
 from engine.parser.db_function_parser import DbFunctionParser
 from engine.model.db_function import DbFunction
+from engine.model.compiler_output_info import CompilerOutputInfo
+from engine.output.console_output_provider import ConsoleOutputProvider
 
 chdir('../src')
 
@@ -26,7 +28,5 @@ constraintResult = constraintParser.parse('unq_$queue_table_name$_task_lock_hand
 tableParser = DbTableParser(mapping)
 tableResult = tableParser.parseFromFile('./sk_tasks_queue_t.dbdef')
 
-
-dbFuncParser = DbFunctionParser(mapping)
-dbFuncResult = dbFuncParser.parseFromFile('./sk_try_dequeue_task.dbdef')
-print(dbFuncResult.getBody())
+consoleOutput = ConsoleOutputProvider(CompilerOutputInfo("CONSOLE", []))
+consoleOutput.writeTable(tableResult)

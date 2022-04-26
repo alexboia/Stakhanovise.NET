@@ -5,3 +5,4 @@ OUTPUT=sql_script(dir=/Setup/BuiltInDbAssetsSetup/scripts; mode=single; file={ob
 OUTPUT=markdown_docs(dir=/Db/docs; file=README-DB.md)
 OUTPUT=create_db(connection_string=host:localhost,port:5432,user:postgres,password:postgres,db:lvd_stakhanovise_test_db; if_exists=drop)
 OUTPUT=mapping_code(proj=LVD.Stakhanovise.NET.Common; ns=LVD.Stakhanovise.NET.Model; dir=/Model; cls=QueuedTaskMapping)
+OUTPUT=console()

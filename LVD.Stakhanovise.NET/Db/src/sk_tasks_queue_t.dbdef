@@ -8,7 +8,7 @@ COL: task_payload(type=text)
 COL: task_priority(type=integer)
 COL: task_posted_at_ts(type=timestamp with time zone; not_null=true; default=now())
 COL: task_locked_until_ts(type=timestamp with time zone; not_null=true)
-CONSTRAINT: pk_$queue_table_name$(task_id); type=pk
+CONSTRAINT: pk_$queue_table_name$(task_id); type=unq
 CONSTRAINT: unq_$queue_table_name$_task_lock_handle_id(task_lock_handle_id); type=unq
 IDX: idx_$queue_table_name$_filter_index(task_type=ASC, task_locked_until_ts=ASC); type=btree
 IDX: idx_$queue_table_name$_sort_index(task_priority=ASC, task_locked_until_ts=ASC, task_lock_handle_id=ASC); type=btree
