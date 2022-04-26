@@ -12,6 +12,7 @@ class DbConstraintParser:
         self._mapping = mapping
 
     def parse(self, constraintContents: str) -> DbConstraint:
+        constraintContents = constraintContents or ''
         if (len(constraintContents) > 0):
             constraintDefinition = self._readRawConstraintDefinition(constraintContents)
             if (constraintDefinition is not None):

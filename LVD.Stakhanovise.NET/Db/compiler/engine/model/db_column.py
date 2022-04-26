@@ -16,7 +16,7 @@ class DbColumn:
         self._description = description
 
     @staticmethod
-    def createFromNameAndArgs(name: str, args: dict):
+    def createFromNameAndArgs(name: str, args: dict[str, str]):
         colType = args.get("type", "character varying(255)")
         colNotNull = str_to_bool(args.get("not_null", "false"))
         colDefault = args.get("default", None)

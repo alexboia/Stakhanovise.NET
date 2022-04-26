@@ -10,6 +10,7 @@ class DbColumnParser:
         self._mapping = mapping
 
     def parse(self, columnContents: str) -> DbColumn:
+        columnContents = columnContents or ''
         if (len(columnContents)  > 0):
             columnPropsValues = self._readRawColumnPropsValues(columnContents)
 
@@ -21,7 +22,7 @@ class DbColumnParser:
         else: 
             return None
 
-    def _readRawColumnPropsValues(self, columnContents) -> NamedSpecWithNamedArgs:
+    def _readRawColumnPropsValues(self, columnContents: str) -> NamedSpecWithNamedArgs:
         parser = NamedSpecWithNamedArgsParser()
         columnPropsValues = parser.parse(columnContents)
         return columnPropsValues

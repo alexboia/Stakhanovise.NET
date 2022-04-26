@@ -3,10 +3,14 @@
         rawParts: dict = {}
         parseContents = contents.strip()
         
-        openParanthesisIndex = contents.index('(')
-        closeParanthesisIndex = contents.rindex(')')
+        openParanthesisIndex = contents.find('(')
+        closeParanthesisIndex = contents.rfind(')')
 
-        rawParts["name"] = contents[0:openParanthesisIndex]
-        rawParts["args"] = contents[openParanthesisIndex + 1:closeParanthesisIndex]
+        if (openParanthesisIndex >= 0 and closeParanthesisIndex >= 0):
+            rawParts["name"] = contents[0:openParanthesisIndex]
+            rawParts["args"] = contents[openParanthesisIndex + 1:closeParanthesisIndex]
+        else:
+            rawParts["name"] = contents
+            rawParts["args"] = ''
 
         return rawParts

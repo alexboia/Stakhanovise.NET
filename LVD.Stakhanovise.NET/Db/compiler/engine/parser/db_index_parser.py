@@ -12,6 +12,7 @@ class DbIndexParser:
         self._mapping = mapping
 
     def parse(self, indexContents: str) -> DbIndex:
+        indexContents = indexContents or ''
         if (len(indexContents) > 0):
             indexDefinition = self._readRawIndexDefinition(indexContents)
             if (indexDefinition is not None):
