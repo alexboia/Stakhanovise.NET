@@ -6,6 +6,7 @@ from engine.parser.db_index_parser import DbIndexParser
 from engine.parser.db_column_parser import DbColumnParser
 from engine.parser.db_object_parser_registry import DbObjectParserRegistry
 from engine.parser.db_constraint_parser import DbConstraintParser
+from engine.parser.db_table_parser import DbTableParser
 
 chdir('../src')
 
@@ -15,8 +16,10 @@ print(mapping)
 
 indexParser = DbIndexParser(mapping)
 indexResult = indexParser.parse('idx_$results_queue_table_name$_task_status(task_status=ASC); type=btree')
-print(indexResult)
 
 constraintParser = DbConstraintParser(mapping)
 constraintResult = constraintParser.parse('unq_$queue_table_name$_task_lock_handle_id(task_lock_handle_id); type=unq')
-print(constraintResult)
+
+tableParser = DbTableParser(mapping)
+tableResult = tableParser.parseFromFile('./sk_tasks_queue_t.dbdef')
+print(tableResult)

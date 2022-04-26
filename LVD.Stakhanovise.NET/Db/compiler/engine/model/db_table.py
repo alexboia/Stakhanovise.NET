@@ -1,4 +1,5 @@
-﻿from .db_object_prop import DbObjectProp
+﻿from ..helper.string import sprintf
+from .db_object_prop import DbObjectProp
 from .db_object import DbObject
 from .db_column import DbColumn
 from .db_constraint import DbConstraint
@@ -19,6 +20,9 @@ class DbTable(DbObject):
     def addColumn(self, column: DbColumn):
         self._columns.append(column)
 
+    def setColumns(self, columns: list[DbColumn]):
+        self._columns = columns or []
+
     def getColumns(self):
         return self._columns
 
@@ -34,6 +38,9 @@ class DbTable(DbObject):
     def addUniqueKey(self, uniqueKey: DbConstraint):
         self._uniqueKeys.append(uniqueKey)
 
+    def setUniqueKeys(self, uniqueKeys: list[DbConstraint]):
+        self._uniqueKeys = uniqueKeys or []
+
     def getUniqueKeys(self):
         return self._uniqueKeys
 
@@ -42,6 +49,9 @@ class DbTable(DbObject):
 
     def addIndex(self, index: DbIndex):
         self._indexes.append(index)
+
+    def setIndexes(self, indexes: list[DbIndex]):
+        self._indexes = indexes or []
 
     def getIndexes(self):
         return self._indexes
@@ -58,3 +68,6 @@ class DbTable(DbObject):
     @staticmethod
     def getObjectType() -> str:
         return "TBL"
+
+    def __str__(self) -> str:
+        return sprintf('{name = %s, props = %s, columns = %s, indexes = %s, uniques = %s}' % (self._name, self._properties, self._columns, self._indexes, self._uniqueKeys))

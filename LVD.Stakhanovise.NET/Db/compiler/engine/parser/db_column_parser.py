@@ -7,7 +7,7 @@ class DbColumnParser:
     _mapping: DbMapping
 
     def __init__(self, mapping: DbMapping):
-        self._mapping = DbMapping
+        self._mapping = mapping
 
     def parse(self, columnContents: str) -> DbColumn:
         if (len(columnContents)  > 0):
@@ -29,8 +29,8 @@ class DbColumnParser:
     def _expandArgs(self, args: dict[str, str]) -> dict[str, str]:
         expandedArgs = {};
         
-        for argkey in args.keys():
-            argValue = args[argkey]
+        for argKey in args.keys():
+            argValue = args[argKey]
             expandedArgs[argKey] = self._expandArg(argKey, argValue)
 
         return expandedArgs
