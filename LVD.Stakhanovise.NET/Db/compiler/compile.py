@@ -17,7 +17,6 @@ chdir('../src')
 
 mappingParser = DbMappingParser()
 mapping = mappingParser.parse('sk_mapping.dbmap')
-print(mapping)
 
 indexParser = DbIndexParser(mapping)
 indexResult = indexParser.parse('idx_$results_queue_table_name$_task_status(task_status=ASC); type=btree')
@@ -28,5 +27,13 @@ constraintResult = constraintParser.parse('unq_$queue_table_name$_task_lock_hand
 tableParser = DbTableParser(mapping)
 tableResult = tableParser.parseFromFile('./sk_tasks_queue_t.dbdef')
 
+sequenceParser = DbSequenceParser(mapping)
+sequenceResult = sequenceParser.parseFromFile('./sk_processing_queues_task_lock_handle_id_seq.dbdef')
+
+functionParser = DbFunctionParser(mapping)
+functionResult = functionParser.parseFromFile('./sk_try_dequeue_task.dbdef')
+
 consoleOutput = ConsoleOutputProvider(CompilerOutputInfo("CONSOLE", []))
 consoleOutput.writeTable(tableResult)
+consoleOutput.writeSequence(sequenceResult)
+consoleOutput.writeFunction(functionResult)

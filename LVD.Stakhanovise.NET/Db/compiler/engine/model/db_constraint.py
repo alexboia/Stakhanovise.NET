@@ -5,13 +5,13 @@ TYPE_PRIMARY_KEY = "pk"
 
 class DbConstraint:
     _name: str = None
-    _columnNames: list[str] = []
+    _columnNames: list[str] = None
     _type: str = None
 
     def __init__(self, name: str, columnNames: list[str], type: str):
         self._name = name
         self._type = type
-        self._columnNames = columnNames
+        self._columnNames = columnNames or []
 
     @staticmethod
     def getAllValidConstraintTypes() -> list[str]:

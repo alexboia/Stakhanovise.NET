@@ -5,12 +5,13 @@ from .db_function_param import DbFunctionParam
 from .db_function_return import DbFunctionReturn
 
 class DbFunction(DbObject):
-    _params: list[DbFunctionParam] = []
+    _params: list[DbFunctionParam] = None
     _returnInfo: DbFunctionReturn = None
     _body: str = None
 
     def __init__(self, name, props: list[DbObjectProp] = []):
         super().__init__(name, __class__.getObjectType(), props)
+        self._params = []
     
     def setParams(self, params: list[DbFunctionParam]) -> None:
         self._params = params or []

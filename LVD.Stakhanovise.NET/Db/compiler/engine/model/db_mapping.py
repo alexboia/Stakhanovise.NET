@@ -14,7 +14,7 @@ class DbMapping:
     _metricTableName: str = None
     _newTaskNotificationChannelNameToken: str = None
     _dequeueFunctionName: str = None
-    _symbols: dict[str, str] = {}
+    _symbols: dict[str, str] = None
 
     def __init__(self, symbols: dict[str, str]):
         self._queueTableName = symbols.get(QUEUE_TABLE_NAME_TOKEN, "sk_tasks_queue_t")
@@ -23,7 +23,7 @@ class DbMapping:
         self._metricTableName = symbols.get(METRICS_TABLE_NAME_TOKEN, "sk_metrics_t")
         self._newTaskNotificationChannelNameToken = symbols.get(NEW_TASK_NOTIFICATION_CHANNEL_NAME_TOKEN, "sk_task_queue_item_added")
         self._dequeueFunctionNam = symbols.get(DEQUEUE_FUNCTION_NAME_TOKEN, "sk_try_dequeue_task")
-        self._symbols = symbols
+        self._symbols = symbols or {}
 
     @staticmethod
     def createFromInput(symbols: dict[str, str]):

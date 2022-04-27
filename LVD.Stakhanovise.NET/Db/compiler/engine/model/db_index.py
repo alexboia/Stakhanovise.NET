@@ -6,7 +6,7 @@ SORT_ORDER_ASC = "ASC"
 class DbIndex:
     _name:str = None
     _indexType:str = None
-    _columns:dict[str, str] = {}
+    _columns:dict[str, str] = None
 
     def __init__(self, name: str, columns: dict[str, str], indexType: str = TYPE_BTREE):
         self._name = name

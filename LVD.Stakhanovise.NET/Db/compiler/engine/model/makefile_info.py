@@ -4,10 +4,11 @@ from .compiler_output_info import CompilerOutputInfo
 class MakefileInfo:
     _mappingFileName: str = None
     _definitionFilesGlob: str = None
-    _outputs: list[CompilerOutputInfo] = []
+    _outputs: list[CompilerOutputInfo] = None
 
     def setMappingFileName(self, mappingFileName: str):
         self._mappingFileName = mappingFileName
+        self._outputs = []
 
     def getMappingFileName(self) -> str:
         return self._mappingFileName

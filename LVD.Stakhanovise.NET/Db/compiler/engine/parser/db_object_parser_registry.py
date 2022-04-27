@@ -9,7 +9,7 @@ from .db_table_parser import DbTableParser
 from .db_function_parser import DbFunctionParser
 
 class DbObjectParserRegistry:
-    _parsers: dict[str, Callable[DbMapping, DbObjectParser]] = {}
+    _parsers: dict[str, Callable[[DbMapping], DbObjectParser]] = {}
 
     def __init__(self):
         self._parsers[DbSequence.getObjectType()] = (lambda mapping: DbSequenceParser(mapping))

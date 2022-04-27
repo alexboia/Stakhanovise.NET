@@ -90,7 +90,7 @@ class DbFunctionParser:
 
     def _readParam(self, sourceFileLine: str) -> DbFunctionParam:
         parser = DbFunctionParamParaser()
-        paramContents = self._prepareNameLine(sourceFileLine)
+        paramContents = self._prepareParamLine(sourceFileLine)
         return parser.parse(paramContents)
 
     def _prepareParamLine(self, sourceFileLine: str) -> str:

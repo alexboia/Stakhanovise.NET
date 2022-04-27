@@ -9,13 +9,18 @@ KEY_PROP_TITLE = "title"
 KEY_PROP_DESCRIPTION = "description"
 
 class DbTable(DbObject):
-    _columns: list[DbColumn] = []
+    _columns: list[DbColumn] = None
     _primary: DbConstraint = None
-    _uniqueKeys: list[DbConstraint] = []
-    _indexes: list[DbIndex] = []
+    _uniqueKeys: list[DbConstraint] = None
+    _indexes: list[DbIndex] = None
 
     def __init__(self, name, props: list[DbObjectProp] = []):
         super().__init__(name, __class__.getObjectType(), props)
+
+        self._columns = []
+        self._primary = None
+        self._uniqueKeys = []
+        self._indexes = []
 
     def addColumn(self, column: DbColumn):
         self._columns.append(column)

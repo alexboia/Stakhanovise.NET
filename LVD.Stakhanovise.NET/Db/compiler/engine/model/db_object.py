@@ -3,11 +3,12 @@
 class DbObject:
     _name: str = None
     _type: str = None
-    _properties: dict[str, DbObjectProp] = {}
+    _properties: dict[str, DbObjectProp] = None
 
     def __init__(self, name: str, type: str, props: list[DbObjectProp] = []):
         self._name = name
         self._type = type
+        self._properties = {}
 
         for prop in props:
             self.addProperty(prop)

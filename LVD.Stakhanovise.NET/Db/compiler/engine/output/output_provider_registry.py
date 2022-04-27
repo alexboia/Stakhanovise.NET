@@ -4,12 +4,12 @@ from .output_provider import OutputProvider
 from .console_output_provider import ConsoleOutputProvider
 
 class OutputProviderRegistry:
-    _resolvers: dict[str, Callable[CompilerOutputInfo, OutputProvider]] = []
+    _resolvers: dict[str, Callable[[CompilerOutputInfo], OutputProvider]] = {}
 
     def __init__(self) -> None:
         self._resolvers["console"] = (lambda outputInfo: ConsoleOutputProvider(outputInfo))
 
-    def resolveOutputProvider(self, outputInfo: CompilerOutputInfo) -> OutputProvider:
+    def createOutputProvider(self, outputInfo: CompilerOutputInfo) -> OutputProvider:
         factory = self._resolvers.get(outputInfo.getName(), None)
         if factory is not None:
             return factory(outputInfo)

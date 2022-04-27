@@ -1,6 +1,6 @@
 ﻿class NamedSpecWithNamedArgs:
     _name: str = None
-    _args: dict[str, str] = {}
+    _args: dict[str, str] = None
 
     def __init__(self, name: str, args: dict[str, str]):
         self._name = name

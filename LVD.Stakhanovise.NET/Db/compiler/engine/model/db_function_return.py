@@ -9,7 +9,7 @@ class DbFunctionReturn:
     def __init__(self, returnType: str, columns: dict[str, str] = None):
         self._returnType = returnType
         if __class__.isTableReturnType(returnType):
-            self._columns = columns or []
+            self._columns = columns or {}
 
     @staticmethod
     def isTableReturnType(returnType: str) -> bool:
@@ -23,6 +23,15 @@ class DbFunctionReturn:
 
     def getColumns(self) -> dict[str, str]:
         return self._columns
+
+    def getColumnNames(self) -> list[str]:
+        return list((self._columns or {}).keys())
+
+    def getColumnType(self, columnName: str) -> str:
+        if self._columns is not None:
+            return self._columns.get(columnName, None)
+        else:
+            return None
 
     def __str__(self) -> str:
         return sprintf('{type = %s, columns = %s}' % (self._returnType, self._columns))
