@@ -1,4 +1,4 @@
-﻿from ..helper.string import sprintf
+﻿from ..helper.string import sprintf, str_to_bool
 from .db_object_prop import DbObjectProp
 from .db_object import DbObject
 
@@ -7,6 +7,7 @@ KEY_PROP_INCREMENT = "increment"
 KEY_PROP_MIN_VALUE = "min_value"
 KEY_PROP_MAX_VALUE = "max_value"
 KEY_PROP_CACHE = "cache"
+KEY_PROP_CYCLE = 'cycle'
 
 class DbSequence(DbObject):
     def __init__(self, name, props: list[DbObjectProp] = []):
@@ -19,13 +20,16 @@ class DbSequence(DbObject):
         return self.getPropertyValue(KEY_PROP_INCREMENT, "1")
 
     def getMinValue(self) -> str:
-        return self.getPropertyValue(KEY_PROP_MIN_VALUE, "1")
+        return self.getPropertyValue(KEY_PROP_MIN_VALUE, None)
 
     def getMaxValue(self) -> str:
-        return self.getPropertyValue(KEY_PROP_MAX_VALUE, "9223372036854775807")
+        return self.getPropertyValue(KEY_PROP_MAX_VALUE, None)
 
     def getCacheAmount(self) -> str:
-        return self.getPropertyValue(KEY_PROP_CACHE, "1")
+        return self.getPropertyValue(KEY_PROP_CACHE, None)
+
+    def shouldCycle(self) -> bool:
+        return str_to_bool(self.getPropertyValue(KEY_PROP_CYCLE, 'false'))
 
     @staticmethod
     def getObjectType() -> str:

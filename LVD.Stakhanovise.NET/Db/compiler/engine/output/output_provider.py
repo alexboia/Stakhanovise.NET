@@ -1,9 +1,9 @@
-﻿from abc import abstractmethod
+﻿from abc import ABC, abstractmethod
 from ..model.db_function import DbFunction
 from ..model.db_sequence import DbSequence
 from ..model.db_table import DbTable
 
-class OutputProvider:
+class OutputProvider(ABC):
     @abstractmethod
     def writeTable(self, dbTable: DbTable) -> None:
         pass
@@ -14,4 +14,8 @@ class OutputProvider:
 
     @abstractmethod
     def writeFunction(self, dbFunction: DbFunction) -> None:
+        pass
+
+    @abstractmethod
+    def commit(self) -> None:
         pass

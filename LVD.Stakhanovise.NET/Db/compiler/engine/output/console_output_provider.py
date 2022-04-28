@@ -1,6 +1,5 @@
 ﻿from rich.console import Console
 
-from ..model.compiler_output_info import CompilerOutputInfo
 from ..model.db_function import DbFunction
 from ..model.db_sequence import DbSequence
 from ..model.db_table import DbTable
@@ -33,3 +32,6 @@ class ConsoleOutputProvider(OutputProvider):
         if self._options.showFunctions():
             functionWriter = DbFunctionWriter(self._console)
             functionWriter.write(dbFunction)
+
+    def commit(self) -> None:
+        pass

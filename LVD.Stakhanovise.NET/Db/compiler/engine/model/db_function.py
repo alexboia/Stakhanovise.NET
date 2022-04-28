@@ -34,6 +34,12 @@ class DbFunction(DbObject):
     def getBody(self) -> str:
         return self._body
 
+    def getLanguage(self) -> str:
+        return self.getPropertyValue('language', 'plpgsql')
+
+    def getSeparator(self) -> str:
+        return self.getPropertyValue('separator', '$$')
+
     @staticmethod
     def getObjectType() -> str:
         return "FUNC"

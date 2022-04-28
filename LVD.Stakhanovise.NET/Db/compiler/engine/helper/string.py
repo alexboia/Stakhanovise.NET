@@ -4,7 +4,10 @@ def sprintf(stringFormat: str, *args) -> str:
     sprintfBuffer = StringIO()
     sprintfBuffer.write(stringFormat % args)
 
-    return sprintfBuffer.getvalue()
+    finalValue = sprintfBuffer.getvalue()
+    sprintfBuffer.close()
+    
+    return finalValue
 
 def str_to_bool(sourceString: str) -> bool:
     if (sourceString is None or len(sourceString) == 0):

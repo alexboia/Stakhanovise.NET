@@ -1,4 +1,4 @@
-﻿from abc import abstractmethod
+﻿from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 from prettytable import PrettyTable
 from rich import print
@@ -11,7 +11,7 @@ from ...model.db_object_prop import DbObjectProp
 
 TDbObject = TypeVar('TDbObject')
 
-class DbObjectWriter(Generic[TDbObject]):
+class DbObjectWriter(ABC, Generic[TDbObject]):
     def __init__(self, console: Console) -> None:
         self._console = console
 

@@ -40,10 +40,10 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 -- Name: sk_try_dequeue_task(character varying[], uuid[], timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.sk_try_dequeue_task(select_types character varying[], exclude_ids uuid[], ref_now timestamp with time zone) RETURNS TABLE(task_id uuid, task_lock_handle_id bigint, task_type character varying, task_source character varying, task_payload text, task_priority integer, task_posted_at_ts timestamp with time zone, task_locked_until_ts timestamp with time zone)
+CREATE FUNCTION public.sk_try_dequeue_task(select_types character varying[], exclude_ids uuid[], ref_now timestamp with time zone) 
+	RETURNS TABLE (task_id uuid, task_lock_handle_id bigint, task_type character varying, task_source character varying, task_payload text, task_priority integer, task_posted_at_ts timestamp with time zone, task_locked_until_ts timestamp with time zone)
     LANGUAGE plpgsql
     AS $$
-
 declare
 	n_select_types integer = cardinality(select_types);
 	
@@ -63,7 +63,6 @@ begin
 					for update skip locked
 		) returning *) select sdt.* from sk_dequeued_task sdt;
 end;
-
 $$;
 
 

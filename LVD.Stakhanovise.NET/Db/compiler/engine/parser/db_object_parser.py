@@ -1,9 +1,9 @@
-﻿from abc import abstractmethod
+﻿from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
 TDbObject = TypeVar('TDbObject')
 
-class DbObjectParser(Generic[TDbObject]):
+class DbObjectParser(ABC, Generic[TDbObject]):
     @abstractmethod
     def parseFromFile(self, sourceFile:str) -> TDbObject:
         pass

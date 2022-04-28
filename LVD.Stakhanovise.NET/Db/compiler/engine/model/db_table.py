@@ -28,16 +28,25 @@ class DbTable(DbObject):
     def setColumns(self, columns: list[DbColumn]):
         self._columns = columns or []
 
-    def getColumns(self):
+    def getColumns(self) -> list[DbColumn]:
         return self._columns
+
+    def getColumnCount(self) -> int:
+        return len(self.getColumns())
+
+    def getColumnIndexes(self) -> list[int]:
+        return list(range(0, self.getColumnCount()))
+
+    def getColumnAtIndex(self, index: int) -> DbColumn:
+        return self._columns[index]
 
     def setPrimaryKey(self, primaryKey: DbConstraint):
         self._primary = primaryKey
 
-    def getPrimaryKey(self):
+    def getPrimaryKey(self) -> DbConstraint:
         return self._primary
 
-    def hasPrimaryKey(self):
+    def hasPrimaryKey(self) -> bool:
         return (self.getPrimaryKey() is not None)
 
     def addUniqueKey(self, uniqueKey: DbConstraint):
@@ -46,10 +55,10 @@ class DbTable(DbObject):
     def setUniqueKeys(self, uniqueKeys: list[DbConstraint]):
         self._uniqueKeys = uniqueKeys or []
 
-    def getUniqueKeys(self):
+    def getUniqueKeys(self) -> list[DbConstraint]:
         return self._uniqueKeys
 
-    def hasUniqueKeys(self):
+    def hasUniqueKeys(self) -> bool:
         return len(self.getUniqueKeys()) > 0
 
     def addIndex(self, index: DbIndex):
@@ -58,10 +67,10 @@ class DbTable(DbObject):
     def setIndexes(self, indexes: list[DbIndex]):
         self._indexes = indexes or []
 
-    def getIndexes(self):
+    def getIndexes(self) -> list[DbIndex]:
         return self._indexes
 
-    def hasIndexes(self):
+    def hasIndexes(self) -> bool:
         return len(self.getIndexes())
 
     def getMetaTitle(self) -> str:

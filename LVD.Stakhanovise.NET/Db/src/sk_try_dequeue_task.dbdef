@@ -1,6 +1,6 @@
 ﻿FUNC
 NAME: $dequeue_function_name$
-PROPS: language=plpgsql
+PROPS: language=plpgsql; separator=$$
 PARAM: select_types(type=character varying[]; direction=in)
 PARAM: exclude_ids(type=uuid[]; direction=in)
 PARAM: ref_now(type=timestamp with time zone; direction=in)
