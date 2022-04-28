@@ -11,6 +11,7 @@ from engine.parser.db_function_return_parser import DbFunctionReturnParser
 from engine.parser.db_function_parser import DbFunctionParser
 from engine.model.db_function import DbFunction
 from engine.model.compiler_output_info import CompilerOutputInfo
+from engine.output.console_output_provider_options import ConsoleOutputProviderOptions
 from engine.output.console_output_provider import ConsoleOutputProvider
 
 chdir('../src')
@@ -33,7 +34,7 @@ sequenceResult = sequenceParser.parseFromFile('./sk_processing_queues_task_lock_
 functionParser = DbFunctionParser(mapping)
 functionResult = functionParser.parseFromFile('./sk_try_dequeue_task.dbdef')
 
-consoleOutput = ConsoleOutputProvider(CompilerOutputInfo("CONSOLE", []))
+consoleOutput = ConsoleOutputProvider(ConsoleOutputProviderOptions({ "func": "false", "seq": "false", "tbl_index": "false", "tbl_unq": "false" }))
 consoleOutput.writeTable(tableResult)
 consoleOutput.writeSequence(sequenceResult)
 consoleOutput.writeFunction(functionResult)

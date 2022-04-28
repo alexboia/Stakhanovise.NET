@@ -7,16 +7,22 @@
   <ItemGroup>
     <Compile Remove="Db\compiler\engine\helper\__pycache__\**" />
     <Compile Remove="Db\compiler\engine\model\__pycache__\**" />
+    <Compile Remove="Db\compiler\engine\output\console\__pycache__\**" />
+    <Compile Remove="Db\compiler\engine\output\__pycache__\**" />
     <Compile Remove="Db\compiler\engine\parser\support\__pycache__\**" />
     <Compile Remove="Db\compiler\engine\parser\__pycache__\**" />
     <Compile Remove="Db\compiler\engine\__pycache__\**" />
     <EmbeddedResource Remove="Db\compiler\engine\helper\__pycache__\**" />
     <EmbeddedResource Remove="Db\compiler\engine\model\__pycache__\**" />
+    <EmbeddedResource Remove="Db\compiler\engine\output\console\__pycache__\**" />
+    <EmbeddedResource Remove="Db\compiler\engine\output\__pycache__\**" />
     <EmbeddedResource Remove="Db\compiler\engine\parser\support\__pycache__\**" />
     <EmbeddedResource Remove="Db\compiler\engine\parser\__pycache__\**" />
     <EmbeddedResource Remove="Db\compiler\engine\__pycache__\**" />
     <None Remove="Db\compiler\engine\helper\__pycache__\**" />
     <None Remove="Db\compiler\engine\model\__pycache__\**" />
+    <None Remove="Db\compiler\engine\output\console\__pycache__\**" />
+    <None Remove="Db\compiler\engine\output\__pycache__\**" />
     <None Remove="Db\compiler\engine\parser\support\__pycache__\**" />
     <None Remove="Db\compiler\engine\parser\__pycache__\**" />
     <None Remove="Db\compiler\engine\__pycache__\**" />

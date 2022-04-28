@@ -14,8 +14,13 @@ from ...model.db_constraint import DbConstraint
 from .db_object_writer import DbObjectWriter
 
 class DbTableWriter(DbObjectWriter[DbTable]):
-    def __init__(self, console: Console) -> None:
+    _showIndexes: bool = True
+    _showUniqueKeys: bool = True
+
+    def __init__(self, console: Console, showIndexes: bool = True, showUniqueKeys: bool = True) -> None:
         super().__init__(console)
+        self._showIndexes = showIndexes
+        self._showUniqueKeys = showUniqueKeys
 
     def write(self, dbTable: DbTable) -> None:
         if not isinstance(dbTable, DbTable):
@@ -25,8 +30,12 @@ class DbTableWriter(DbObjectWriter[DbTable]):
         self._writeObjectProperties(dbTable.getProperties())
         self._writeTableColumns(dbTable.getColumns())
         self._writePrimaryKey(dbTable.getPrimaryKey())
-        self._writeUniqueKeys(dbTable.getUniqueKeys())
-        self._writeIndexes(dbTable.getIndexes())
+
+        if self._showUniqueKeys:
+            self._writeUniqueKeys(dbTable.getUniqueKeys())
+
+        if self._showIndexes:
+            self._writeIndexes(dbTable.getIndexes())
 
     def _writeTableColumns(self, columns: list[DbColumn]) -> None:
         self._writeObjectSectionTitle("Columns:")
