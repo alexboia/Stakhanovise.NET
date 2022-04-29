@@ -31,11 +31,13 @@ class VsProject:
     def isOpen(self) -> bool:
         return self._projectRoot is not None
 
-    def includeFilesToItemGroup(self, itemGroup: str, filePaths: list[str], buildAction: str) -> None:
+    def includeFilesToItemGroup(self, itemGroup: str, filePaths: list[str], buildAction: str, options: dict[str, str] = None) -> None:
         if not self.isOpen():
             self.open()
 
+        options = options or {}
         itemGroupElement = self._findItemGroupByLabel(itemGroup)
+
         if itemGroupElement is None:
             itemGroupElement = Element('ItemGroup')
             itemGroupElement.attrib['Label'] = itemGroup
@@ -44,7 +46,7 @@ class VsProject:
         for filePath in filePaths:
             filePath = self._prepareFilePath(filePath)
             self._removeFileItemInGroup(itemGroupElement, filePath)
-            self._addFileItemInGroup(itemGroupElement, filePath, buildAction)
+            self._addFileItemInGroup(itemGroupElement, filePath, buildAction, options)
 
     def _findItemGroupByLabel(self, itemGroup: str) -> Element:
         foundElement = None
@@ -73,9 +75,16 @@ class VsProject:
 
         removeElements = []
 
-    def _addFileItemInGroup(self, itemGroupElement: Element, filePath: str, buildAction: str) -> None:
+    def _addFileItemInGroup(self, itemGroupElement: Element, filePath: str, buildAction: str, options: dict[str, str]) -> None:
         fileItem = Element(buildAction)
         fileItem.attrib['Include'] = filePath
+        
+        copyOutput = options.get('copy_output', None)
+        if copyOutput is not None and len(copyOutput) > 0:
+            copyOutputElement = Element('CopyToOutputDirectory')
+            copyOutputElement.text = copyOutput
+            fileItem.append(copyOutputElement)
+
         itemGroupElement.append(fileItem)
 
     def _prepareFilePath(self, filePath: str) -> str:

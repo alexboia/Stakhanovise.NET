@@ -45,6 +45,14 @@ functionResult = functionParser.parseFromFile('./sk_try_dequeue_task.dbdef')
 #consoleOutput.writeFunction(functionResult)
 
 vsProjectFacade = VsProjectFacade('../../..')
-vsProject = vsProjectFacade.openProject('LVD.Stakhanovise.NET')
-vsProject.includeFilesToItemGroup('SK_Test', [ 'Db/src/makefile' ], 'Content')
-vsProject.close()
+sqlScriptOutputOptions = SqlScriptOutputProviderOptions({ 
+    'dir': 'Db/scripts', 
+    'file': '$db_object$.sql', 
+    'build_action': 'Content', 
+    'item_group': 'SK_DbScripts', 
+    'copy_output': 'Always' 
+})
+sqlScriptOutput = SqlScriptOutputProvider(sqlScriptOutputOptions, vsProjectFacade)
+sqlScriptOutput.writeTable(tableResult)
+sqlScriptOutput.writeSequence(sequenceResult)
+sqlScriptOutput.commit()

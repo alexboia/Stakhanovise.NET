@@ -10,7 +10,7 @@ class VsProjectFacade:
         self._pathResolver = PathResolver(solutionRoot)
 
     def openProject(self, projectName: str) -> VsProject:
-        filePath = self._determineProjectFilePath(projectName)
+        filePath = self._determineAbsoluteProjectManifestFilePath(projectName)
         
         if os.path.exists(filePath):
             project = VsProject(filePath)
@@ -19,7 +19,10 @@ class VsProjectFacade:
         else:
             return None
 
-    def _determineProjectFilePath(self, projectName: str) -> str:
-        projectDir = self._pathResolver.resolveDirectory(projectName)
+    def _determineAbsoluteProjectManifestFilePath(self, projectName: str) -> str:
         projectFileName = sprintf('%s.csproj' % (projectName))
-        return os.path.join(projectDir, projectFileName)
+        return self.determineAbsoluteProjectFilePath(projectName, projectFileName)
+
+    def determineAbsoluteProjectFilePath(self, projectName: str, fileName: str) -> str:
+        projectDir = self._pathResolver.resolvePath(projectName)
+        return os.path.join(projectDir, fileName)

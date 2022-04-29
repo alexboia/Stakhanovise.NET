@@ -23,8 +23,17 @@ class SqlScriptOutputProviderOptions:
     def generateAsConsolidated(self) -> bool:
         return self.getMode() == MODE_CONSOLIDATED
 
+    def getTargetProjectName(self) -> str:
+        return self._arguments.get('proj', 'LVD.Stakhanovise.NET')
+
+    def getCopyOutput(self) -> str:
+        return self._arguments.get('copy_output')
+
     def getBuildAction(self) -> str:
         return self._arguments.get('build_action', BUILD_ACTION_NONE)
+
+    def getItemGroupLabel(self) -> str:
+        return self._arguments.get('item_group')
 
     def getFileName(self) -> str:
         fileName = self._arguments.get('file')
