@@ -1,49 +1,48 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Db\compiler\engine\helper\__pycache__\**" />
-    <Compile Remove="Db\compiler\engine\model\__pycache__\**" />
-    <Compile Remove="Db\compiler\engine\output\console\__pycache__\**" />
-    <Compile Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
-    <Compile Remove="Db\compiler\engine\output\__pycache__\**" />
-    <Compile Remove="Db\compiler\engine\parser\support\__pycache__\**" />
-    <Compile Remove="Db\compiler\engine\parser\__pycache__\**" />
-    <Compile Remove="Db\compiler\engine\__pycache__\**" />
-    <EmbeddedResource Remove="Db\compiler\engine\helper\__pycache__\**" />
-    <EmbeddedResource Remove="Db\compiler\engine\model\__pycache__\**" />
-    <EmbeddedResource Remove="Db\compiler\engine\output\console\__pycache__\**" />
-    <EmbeddedResource Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
-    <EmbeddedResource Remove="Db\compiler\engine\output\__pycache__\**" />
-    <EmbeddedResource Remove="Db\compiler\engine\parser\support\__pycache__\**" />
-    <EmbeddedResource Remove="Db\compiler\engine\parser\__pycache__\**" />
-    <EmbeddedResource Remove="Db\compiler\engine\__pycache__\**" />
-    <None Remove="Db\compiler\engine\helper\__pycache__\**" />
-    <None Remove="Db\compiler\engine\model\__pycache__\**" />
-    <None Remove="Db\compiler\engine\output\console\__pycache__\**" />
-    <None Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
-    <None Remove="Db\compiler\engine\output\__pycache__\**" />
-    <None Remove="Db\compiler\engine\parser\support\__pycache__\**" />
-    <None Remove="Db\compiler\engine\parser\__pycache__\**" />
-    <None Remove="Db\compiler\engine\__pycache__\**" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Db\compiler\engine\helper\__pycache__\**" />
+		<Compile Remove="Db\compiler\engine\model\__pycache__\**" />
+		<Compile Remove="Db\compiler\engine\output\console\__pycache__\**" />
+		<Compile Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
+		<Compile Remove="Db\compiler\engine\output\__pycache__\**" />
+		<Compile Remove="Db\compiler\engine\parser\support\__pycache__\**" />
+		<Compile Remove="Db\compiler\engine\parser\__pycache__\**" />
+		<Compile Remove="Db\compiler\engine\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\helper\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\model\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\output\console\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\output\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\parser\support\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\parser\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\__pycache__\**" />
+		<None Remove="Db\compiler\engine\helper\__pycache__\**" />
+		<None Remove="Db\compiler\engine\model\__pycache__\**" />
+		<None Remove="Db\compiler\engine\output\console\__pycache__\**" />
+		<None Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
+		<None Remove="Db\compiler\engine\output\__pycache__\**" />
+		<None Remove="Db\compiler\engine\parser\support\__pycache__\**" />
+		<None Remove="Db\compiler\engine\parser\__pycache__\**" />
+		<None Remove="Db\compiler\engine\__pycache__\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Npgsql" Version="6.0.3" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="Npgsql" Version="6.0.3" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
-    <ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Db\docs\" />
-    <Folder Include="Db\scripts\" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<Folder Include="Db\docs\" />
+		<Folder Include="Db\scripts\" />
+	</ItemGroup>
 </Project>

@@ -1,4 +1,7 @@
 ﻿from os import chdir
+import os
+from engine.helper.path_resolver import PathResolver
+from engine.helper.vs_project_facade import VsProjectFacade
 from engine.parser.makefile_parser import MakefileParser
 from engine.parser.db_mapping_parser import DbMappingParser
 from engine.parser.db_sequence_parser import DbSequenceParser
@@ -41,8 +44,7 @@ functionResult = functionParser.parseFromFile('./sk_try_dequeue_task.dbdef')
 #consoleOutput.writeSequence(sequenceResult)
 #consoleOutput.writeFunction(functionResult)
 
-sqlScriptOutput = SqlScriptOutputProvider(SqlScriptOutputProviderOptions())
-sqlScriptOutput.writeSequence(sequenceResult)
-sqlScriptOutput.writeTable(tableResult)
-sqlScriptOutput.writeFunction(functionResult)
-sqlScriptOutput.commit()
+vsProjectFacade = VsProjectFacade('../../..')
+vsProject = vsProjectFacade.openProject('LVD.Stakhanovise.NET')
+vsProject.includeFilesToItemGroup('SK_Test', [ 'Db/src/makefile' ], 'Content')
+vsProject.close()

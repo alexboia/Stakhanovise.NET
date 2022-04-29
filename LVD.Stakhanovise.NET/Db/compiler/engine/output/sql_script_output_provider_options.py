@@ -17,11 +17,20 @@ class SqlScriptOutputProviderOptions:
     def getMode(self) -> str:
         return self._arguments.get('mode', MODE_SINGLE)
 
+    def generateAsSingle(self) -> bool:
+        return self.getMode() == MODE_SINGLE
+
+    def generateAsConsolidated(self) -> bool:
+        return self.getMode() == MODE_CONSOLIDATED
+
     def getBuildAction(self) -> str:
         return self._arguments.get('build_action', BUILD_ACTION_NONE)
 
     def getFileName(self) -> str:
-        return self._arguments.get('file')
+        fileName = self._arguments.get('file')
+        if fileName is None:
+            fileName = 'sk_db.sql' if self.generateAsSingle() else '$db_object$.sql'
+        return fileName
 
     def expandFileName(self, dbObjectName: str) -> str:
         fileName = self.getFileName()
