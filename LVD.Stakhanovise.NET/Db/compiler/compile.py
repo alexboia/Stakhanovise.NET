@@ -18,6 +18,8 @@ from engine.output.console_output_provider_options import ConsoleOutputProviderO
 from engine.output.console_output_provider import ConsoleOutputProvider
 from engine.output.sql_script_output_provider import SqlScriptOutputProvider
 from engine.output.sql_script_output_provider_options import SqlScriptOutputProviderOptions
+from engine.output.db_create_output_provider import DbCreateOutputProvider
+from engine.output.db_create_output_provider_options import DbCreateOutputProviderOptions
 
 chdir('../src')
 
@@ -40,8 +42,8 @@ functionParser = DbFunctionParser(mapping)
 functionResult = functionParser.parseFromFile('./sk_try_dequeue_task.dbdef')
 
 #consoleOutput = ConsoleOutputProvider(ConsoleOutputProviderOptions({ "func": "false", "seq": "false", "tbl_index": "false", "tbl_unq": "false" }))
-#consoleOutput.writeTable(tableResult)
 #consoleOutput.writeSequence(sequenceResult)
+#consoleOutput.writeTable(tableResult)
 #consoleOutput.writeFunction(functionResult)
 
 vsProjectFacade = VsProjectFacade('../../..')
@@ -53,6 +55,16 @@ sqlScriptOutputOptions = SqlScriptOutputProviderOptions({
     'copy_output': 'Always' 
 })
 sqlScriptOutput = SqlScriptOutputProvider(sqlScriptOutputOptions, vsProjectFacade)
-sqlScriptOutput.writeTable(tableResult)
-sqlScriptOutput.writeSequence(sequenceResult)
-sqlScriptOutput.commit()
+#sqlScriptOutput.writeSequence(sequenceResult)
+#sqlScriptOutput.writeTable(tableResult)
+#sqlScriptOutput.commit()
+
+dbCreateOutputOptions = DbCreateOutputProviderOptions({
+    'connection_string': 'host:localhost,port:5432,user:postgres,password:postgres,database:lvd_stakhanovise_test_db',
+    'if_exists': 'drop'
+})
+
+dbCreateOutput = DbCreateOutputProvider(dbCreateOutputOptions)
+dbCreateOutput.writeSequence(sequenceResult)
+dbCreateOutput.writeTable(tableResult)
+dbCreateOutput.commit()
