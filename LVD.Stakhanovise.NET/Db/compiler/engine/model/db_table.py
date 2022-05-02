@@ -1,4 +1,5 @@
-﻿from ..helper.string import sprintf
+﻿from types import NoneType
+from ..helper.string import sprintf
 from .db_object_prop import DbObjectProp
 from .db_object import DbObject
 from .db_column import DbColumn
@@ -72,6 +73,26 @@ class DbTable(DbObject):
 
     def hasIndexes(self) -> bool:
         return len(self.getIndexes())
+
+    def isColumnPartOfPrimaryKey(self, columnName: str) -> bool:
+        inPrimaryKey = False
+
+        if self.hasPrimaryKey():
+            primaryKey = self.getPrimaryKey()
+            inPrimaryKey = primaryKey.hasColumn(columnName)
+
+        return inPrimaryKey
+
+    def isColumnPartOfAnyUniqueKey(self, columnName: str) -> bool:
+        inUniqueKey = False
+        
+        if self.hasUniqueKeys():
+            for uniqueKey in self.getUniqueKeys():
+                if uniqueKey.hasColumn(columnName):
+                    inUniqueKey = True
+                    break
+
+        return inUniqueKey
 
     def getMetaTitle(self) -> str:
         return self.getPropertyValue(KEY_PROP_TITLE)

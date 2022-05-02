@@ -1,3 +1,4 @@
 ﻿SEQ
 NAME: $queue_table_name$_task_lock_handle_id_seq
 PROPS: start=1; increment=1; min_value=1; max_value=9223372036854775807; cache=1
+PROPS: description=Used to feed values for the job queue table lock handle column values

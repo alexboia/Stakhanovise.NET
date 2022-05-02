@@ -48,7 +48,8 @@ class DbTableParser:
                 name = self._readName(sourceFileLine)
 
             elif sourceFileLine.startswith(MARKER_PROPS_LINE):
-                props = self._readProps(sourceFileLine)
+                lineProps = self._readProps(sourceFileLine) or []
+                props = props + lineProps
 
             elif sourceFileLine.startswith(MARKER_COLUMN_LINE):
                 column = self._readColumn(sourceFileLine)

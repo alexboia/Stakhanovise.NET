@@ -38,5 +38,9 @@ class DbConstraint:
     def isPrimaryKeyConstraint(self) -> bool:
         return self.getType() == TYPE_PRIMARY_KEY
 
+    def hasColumn(self, columnName: str) -> bool:
+        columNames = self.getColumnNames()
+        return (columNames is not None) and (columnName in columNames)
+
     def __str__(self) -> str:
         return sprintf('{name = %s, columnNames = %s, type = %s}' % (self._name, self._columnNames, self._type))

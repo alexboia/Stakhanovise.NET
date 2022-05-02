@@ -1,0 +1,1 @@
+﻿MAIN_PROJECT_NAME = 'LVD.Stakhanovise.NET'

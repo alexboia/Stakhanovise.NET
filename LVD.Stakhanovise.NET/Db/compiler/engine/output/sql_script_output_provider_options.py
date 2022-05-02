@@ -1,12 +1,12 @@
-﻿from ..helper.string import str_to_bool
+﻿from ..model.project_names import MAIN_PROJECT_NAME
+from ..model.build_actions import BUILD_ACTION_NONE, BUID_ACTION_CONTENT
 
 MODE_SINGLE = 'single'
 MODE_CONSOLIDATED = 'consolidated'
 
-BUILD_ACTION_NONE = 'None'
-BUID_ACTION_CONTENT = 'Content'
-
+CONSOLIDATED_DB_FILE_NAME = 'sk_db.sql'
 PLACEHOLDER_DB_OBJECT_NAME = '$db_object$'
+SINGLE_DB_OBJECT_FILE_NAME = PLACEHOLDER_DB_OBJECT_NAME + '.sql'
 
 class SqlScriptOutputProviderOptions:
     _arguments: dict[str, str] = None
@@ -24,7 +24,7 @@ class SqlScriptOutputProviderOptions:
         return self.getMode() == MODE_CONSOLIDATED
 
     def getTargetProjectName(self) -> str:
-        return self._arguments.get('proj', 'LVD.Stakhanovise.NET')
+        return self._arguments.get('proj', MAIN_PROJECT_NAME)
 
     def getCopyOutput(self) -> str:
         return self._arguments.get('copy_output')
@@ -38,7 +38,9 @@ class SqlScriptOutputProviderOptions:
     def getFileName(self) -> str:
         fileName = self._arguments.get('file')
         if fileName is None:
-            fileName = 'sk_db.sql' if self.generateAsSingle() else '$db_object$.sql'
+            fileName = (CONSOLIDATED_DB_FILE_NAME 
+                if self.generateAsConsolidated() 
+                else SINGLE_DB_OBJECT_FILE_NAME)
         return fileName
 
     def expandFileName(self, dbObjectName: str) -> str:

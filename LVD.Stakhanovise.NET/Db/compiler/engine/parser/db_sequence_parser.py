@@ -35,7 +35,8 @@ class DbSequenceParser(DbObjectParser[DbSequence]):
             if sourceFileLine.startswith(MARKER_NAME_LINE):
                 name = self._readName(sourceFileLine)
             elif sourceFileLine.startswith(MARKER_PROP_LINE):
-                props = self._readProps(sourceFileLine)
+                lineProps = self._readProps(sourceFileLine) or []
+                props = props + lineProps
 
         return DbSequence(name, props)
 
