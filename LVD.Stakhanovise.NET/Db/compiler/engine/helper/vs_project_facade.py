@@ -25,4 +25,4 @@ class VsProjectFacade:
 
     def determineAbsoluteProjectFilePath(self, projectName: str, fileName: str) -> str:
         projectDir = self._pathResolver.resolvePath(projectName)
-        return os.path.join(projectDir, fileName)
+        return os.path.join(projectDir, fileName.replace('/', os.path.sep))

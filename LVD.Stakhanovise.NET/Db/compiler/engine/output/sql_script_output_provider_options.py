@@ -1,4 +1,5 @@
-﻿from ..model.project_names import MAIN_PROJECT_NAME
+﻿from ..helper.output_file_build_options_builder import OutputFileBuildOptionsBuilder
+from ..model.project_names import MAIN_PROJECT_NAME
 from ..model.build_actions import BUILD_ACTION_NONE, BUID_ACTION_CONTENT
 
 MODE_SINGLE = 'single'
@@ -8,7 +9,7 @@ CONSOLIDATED_DB_FILE_NAME = 'sk_db.sql'
 PLACEHOLDER_DB_OBJECT_NAME = '$db_object$'
 SINGLE_DB_OBJECT_FILE_NAME = PLACEHOLDER_DB_OBJECT_NAME + '.sql'
 
-class SqlScriptOutputProviderOptions:
+class SqlScriptOutputProviderOptions(OutputFileBuildOptionsBuilder):
     _arguments: dict[str, str] = None
 
     def __init__(self, arguments: dict[str, str] = None) -> None:

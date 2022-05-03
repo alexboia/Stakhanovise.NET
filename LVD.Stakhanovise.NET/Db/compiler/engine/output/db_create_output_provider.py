@@ -19,6 +19,7 @@ class DbCreateOutputProvider(SqlScriptOutputProviderBase):
         connectionInfo = self._options.getConnectionInfo()
         self._ensureDbExists(connectionInfo)
         self._createDbObjectsFromBuffers(connectionInfo)
+        self._buffers = {}
 
     def _ensureDbExists(self, connectionInfo: DbConnectionInfo):
         conn = None
@@ -84,6 +85,8 @@ class DbCreateOutputProvider(SqlScriptOutputProviderBase):
                 cursor = conn.cursor()
                 cursor.execute(executeSql)
                 cursor.close()
+
+                objectBuffer.close()
         finally:
             if conn is not None:
                 conn.close()

@@ -35,6 +35,9 @@ class DbTable(DbObject):
     def getColumnCount(self) -> int:
         return len(self.getColumns())
 
+    def hasColumns(self) -> bool:
+        return self.getColumnCount() > 0
+
     def getColumnIndexes(self) -> list[int]:
         return list(range(0, self.getColumnCount()))
 
@@ -93,12 +96,6 @@ class DbTable(DbObject):
                     break
 
         return inUniqueKey
-
-    def getMetaTitle(self) -> str:
-        return self.getPropertyValue(KEY_PROP_TITLE)
-
-    def getMetaDescription(self) -> str:
-        return self.getPropertyValue(KEY_PROP_DESCRIPTION)
 
     @staticmethod
     def getObjectType() -> str:

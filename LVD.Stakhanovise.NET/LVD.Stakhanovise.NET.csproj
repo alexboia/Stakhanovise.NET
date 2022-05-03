@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
@@ -8,27 +8,33 @@
 		<Compile Remove="Db\compiler\engine\helper\__pycache__\**" />
 		<Compile Remove="Db\compiler\engine\model\__pycache__\**" />
 		<Compile Remove="Db\compiler\engine\output\console\__pycache__\**" />
+		<Compile Remove="Db\compiler\engine\output\markdown_docs\__pycache__\**" />
 		<Compile Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
 		<Compile Remove="Db\compiler\engine\output\__pycache__\**" />
 		<Compile Remove="Db\compiler\engine\parser\support\__pycache__\**" />
 		<Compile Remove="Db\compiler\engine\parser\__pycache__\**" />
 		<Compile Remove="Db\compiler\engine\__pycache__\**" />
+		<Compile Remove="Db\docs\**" />
 		<EmbeddedResource Remove="Db\compiler\engine\helper\__pycache__\**" />
 		<EmbeddedResource Remove="Db\compiler\engine\model\__pycache__\**" />
 		<EmbeddedResource Remove="Db\compiler\engine\output\console\__pycache__\**" />
+		<EmbeddedResource Remove="Db\compiler\engine\output\markdown_docs\__pycache__\**" />
 		<EmbeddedResource Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
 		<EmbeddedResource Remove="Db\compiler\engine\output\__pycache__\**" />
 		<EmbeddedResource Remove="Db\compiler\engine\parser\support\__pycache__\**" />
 		<EmbeddedResource Remove="Db\compiler\engine\parser\__pycache__\**" />
 		<EmbeddedResource Remove="Db\compiler\engine\__pycache__\**" />
+		<EmbeddedResource Remove="Db\docs\**" />
 		<None Remove="Db\compiler\engine\helper\__pycache__\**" />
 		<None Remove="Db\compiler\engine\model\__pycache__\**" />
 		<None Remove="Db\compiler\engine\output\console\__pycache__\**" />
+		<None Remove="Db\compiler\engine\output\markdown_docs\__pycache__\**" />
 		<None Remove="Db\compiler\engine\output\sql_script\__pycache__\**" />
 		<None Remove="Db\compiler\engine\output\__pycache__\**" />
 		<None Remove="Db\compiler\engine\parser\support\__pycache__\**" />
 		<None Remove="Db\compiler\engine\parser\__pycache__\**" />
 		<None Remove="Db\compiler\engine\__pycache__\**" />
+		<None Remove="Db\docs\**" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -38,11 +44,11 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Info\LVD.Stakhanovise.NET.Info.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Db\docs\" />
 		<Folder Include="Db\scripts\" />
 	</ItemGroup>
-</Project>
+<ItemGroup Label="SK_DbDocs"><None Include="Db\docs\README-DB.md" /></ItemGroup></Project>

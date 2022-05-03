@@ -7,6 +7,5 @@ class MarkdownDbSequenceWriter(MarkdownDbObjectWriter[DbSequence]):
         super().__init__(mdStringBuilder)
 
     def write(self, dbSequence: DbSequence) -> None:
-        self._writeMarkdownTitle('Sequence', dbSequence.getName(), 2)
-        self._writeObjectProperties(dbSequence.getProperties())
-        self._mdStringBuilder.appendEmptyLine()
+        self._writeObjectHeader(dbSequence, defaultTitlePrefix = 'Sequence')
+        self._writeObjectProperties(dbSequence.getNonMetaProperties())

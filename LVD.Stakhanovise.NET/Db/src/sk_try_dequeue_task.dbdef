@@ -1,9 +1,10 @@
 ﻿FUNC
 NAME: $dequeue_function_name$
+PROPS: title=The dequeue function; description=It is used to actually dequeue a job from the queue table
 PROPS: language=plpgsql; separator=$$
-PARAM: select_types(type=character varying[]; direction=in)
-PARAM: exclude_ids(type=uuid[]; direction=in)
-PARAM: ref_now(type=timestamp with time zone; direction=in)
+PARAM: select_types(type=character varying[]; direction=in; description=An array of job types to use when dequeuing. Can be an empty array.)
+PARAM: exclude_ids(type=uuid[]; direction=in; description=An array of job IDs to exclude when dequeuing. Can be an empty array.)
+PARAM: ref_now(type=timestamp with time zone; direction=in; description=The timestamp to use as the current time.)
 RET: table(task_id=uuid; task_lock_handle_id=bigint; task_type=character varying; task_source=character varying; task_payload=text; task_priority=integer; task_posted_at_ts=timestamp with time zone; task_locked_until_ts=timestamp with time zone)
 BODY:
 	DECLARE

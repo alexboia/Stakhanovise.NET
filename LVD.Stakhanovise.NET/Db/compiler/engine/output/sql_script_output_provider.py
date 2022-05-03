@@ -24,12 +24,15 @@ class SqlScriptOutputProvider(SqlScriptOutputProviderBase):
 
         for objectName in self._buffers.keys():
             objectBuffer = self._buffers[objectName]
+
             if self._options.generateAsSingle():
                 fileName = self._expandOutputFileName(objectName)
                 relativeFilePath = self._getRelativeFilePath(fileName)
                 fileSaver.saveFile(relativeFilePath, objectBuffer.toString())
             else:
                 globalBuffer.append(objectBuffer.toString())
+
+            objectBuffer.close()
 
         if self._options.generateAsConsolidated():
             fileName = self._getOutputFileName()
@@ -39,6 +42,9 @@ class SqlScriptOutputProvider(SqlScriptOutputProviderBase):
         fileSaver.commit(self._getOutputFileItemGroupLabel(), 
             self._getOutputFileBuildAction(), 
             self._getOutputFileBuildOptions())
+
+        globalBuffer.close()
+        self._buffers = {}
 
     def _getVsProjectFileSaver(self) -> VsProjectFileSaver:
         projectName = self._options.getTargetProjectName()
@@ -59,9 +65,5 @@ class SqlScriptOutputProvider(SqlScriptOutputProviderBase):
     def _getOutputFileBuildAction(self) -> str:
         return self._options.getBuildAction()
 
-    def _getOutputFileBuildOptions(self) -> str:
-        copyOutput = self._options.getCopyOutput()
-        if copyOutput is not None:
-            return { 'copy_output': copyOutput }
-        else:
-            return {}
+    def _getOutputFileBuildOptions(self) -> dict[str, str]:
+        return self._options.getOutputFileBuildOptions()

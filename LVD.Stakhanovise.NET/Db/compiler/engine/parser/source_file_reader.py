@@ -25,6 +25,7 @@ class SourceFileReader:
 
         sourceFileHandle = open(absoluteSourceFilePath, 'r', encoding='utf_8_sig')
         sourceFileLines = sourceFileHandle.readlines()
+        sourceFileHandle.close()
 
         sourceFileLines = self._preprocessLines(sourceFileLines)
         sourceFileLines = filter(lambda line: _isProcessableFileLine(line), sourceFileLines)

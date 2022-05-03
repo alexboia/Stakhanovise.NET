@@ -1,10 +1,12 @@
-﻿from ..model.project_names import MAIN_PROJECT_NAME
+﻿from ..helper.output_file_build_options_builder import OutputFileBuildOptionsBuilder
+
+from ..model.project_names import MAIN_PROJECT_NAME
 from ..model.build_actions import BUILD_ACTION_NONE, BUID_ACTION_CONTENT
 
 DEFAULT_HEADER_FILE_NAME = 'parts/readme_db_header.md'
 DEFAULT_FOOTER_FILE_NAME = 'parts/readme_db_footer.md'
 
-class MarkdownDocsOutputProviderOptions:
+class MarkdownDocsOutputProviderOptions(OutputFileBuildOptionsBuilder):
     _arguments: dict[str, str] = None
 
     def __init__(self, arguments: dict[str, str] = None) -> None:
@@ -30,3 +32,6 @@ class MarkdownDocsOutputProviderOptions:
 
     def getDestinationDirectory(self) -> str:
         return self._arguments.get('dir')
+
+    def getFileName(self) -> str:
+        return self._arguments.get('file', 'README-DB.md')

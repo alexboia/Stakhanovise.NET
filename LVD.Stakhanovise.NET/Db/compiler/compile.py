@@ -1,5 +1,5 @@
-﻿from os import chdir
-import os
+﻿import os
+from engine.compiler_asset_provider import CompilerAssetProvider
 from engine.helper.path_resolver import PathResolver
 from engine.helper.vs_project_facade import VsProjectFacade
 from engine.parser.makefile_parser import MakefileParser
@@ -20,8 +20,10 @@ from engine.output.sql_script_output_provider import SqlScriptOutputProvider
 from engine.output.sql_script_output_provider_options import SqlScriptOutputProviderOptions
 from engine.output.db_create_output_provider import DbCreateOutputProvider
 from engine.output.db_create_output_provider_options import DbCreateOutputProviderOptions
+from engine.output.markdown_docs_output_provider import MarkdownDocsOutputProvider
+from engine.output.markdown_docs_output_provider_options import MarkdownDocsOutputProviderOptions
 
-chdir('../src')
+os.chdir('../src')
 
 mappingParser = DbMappingParser()
 mapping = mappingParser.parse('sk_mapping.dbmap')
@@ -47,6 +49,8 @@ functionResult = functionParser.parseFromFile('./sk_try_dequeue_task.dbdef')
 #consoleOutput.writeFunction(functionResult)
 
 vsProjectFacade = VsProjectFacade('../../..')
+compilerAssetProvider = CompilerAssetProvider('./')
+
 sqlScriptOutputOptions = SqlScriptOutputProviderOptions({ 
     'dir': 'Db/scripts', 
     'file': '$db_object$.sql', 
@@ -59,12 +63,25 @@ sqlScriptOutput = SqlScriptOutputProvider(sqlScriptOutputOptions, vsProjectFacad
 #sqlScriptOutput.writeTable(tableResult)
 #sqlScriptOutput.commit()
 
-dbCreateOutputOptions = DbCreateOutputProviderOptions({
-    'connection_string': 'host:localhost,port:5432,user:postgres,password:postgres,database:lvd_stakhanovise_test_db',
-    'if_exists': 'drop'
+#dbCreateOutputOptions = DbCreateOutputProviderOptions({
+#    'connection_string': 'host:localhost,port:5432,user:postgres,password:postgres,database:lvd_stakhanovise_test_db',
+#    'if_exists': 'drop'
+#})
+
+#dbCreateOutput = DbCreateOutputProvider(dbCreateOutputOptions)
+#dbCreateOutput.writeSequence(sequenceResult)
+#dbCreateOutput.writeTable(tableResult)
+#dbCreateOutput.commit()
+
+mdOutputProviderOptions = MarkdownDocsOutputProviderOptions({  
+    'dir': 'Db/docs',
+    'file': 'README-DB.md',
+    'item_group': 'SK_DbDocs',
+    'build_action': 'None'
 })
 
-dbCreateOutput = DbCreateOutputProvider(dbCreateOutputOptions)
-dbCreateOutput.writeSequence(sequenceResult)
-dbCreateOutput.writeTable(tableResult)
-dbCreateOutput.commit()
+mdOutputProvider = MarkdownDocsOutputProvider(mdOutputProviderOptions, vsProjectFacade, compilerAssetProvider)
+mdOutputProvider.writeSequence(sequenceResult)
+mdOutputProvider.writeTable(tableResult)
+mdOutputProvider.writeFunction(functionResult)
+mdOutputProvider.commit()
