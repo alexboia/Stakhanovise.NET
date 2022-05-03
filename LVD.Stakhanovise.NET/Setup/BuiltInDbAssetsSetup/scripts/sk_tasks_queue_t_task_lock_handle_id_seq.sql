@@ -4,4 +4,5 @@ CREATE SEQUENCE IF NOT EXISTS public.sk_tasks_queue_t_task_lock_handle_id_seq
 	MINVALUE 1
 	MAXVALUE 9223372036854775807
 	CACHE 1
-	NO CYCLE
+	NO CYCLE;
+

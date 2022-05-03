@@ -7,6 +7,8 @@ class DbMappingParser:
     def parse(self, sourceFile: str)  -> DbMapping:
         sourceFileReader = SourceFileReader()
         mappingFileLines = sourceFileReader.readSourceLines(sourceFile)
+        if not mappingFileLines:
+            return None
 
         symbols = self._parseMappingFile(mappingFileLines)
         return DbMapping.createFromInput(symbols)

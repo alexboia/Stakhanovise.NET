@@ -65,7 +65,8 @@ class DbFunctionParser:
                 isReadingBody = False
 
             elif isReadingBody:
-                bodyParts.append(sourceFileLine)
+                bodySourceFileLine = self._expandFunctionBodyLine(sourceFileLine)
+                bodyParts.append(bodySourceFileLine)
 
         dbFunction = DbFunction(name, props)
         dbFunction.setParams(params)
@@ -104,3 +105,6 @@ class DbFunctionParser:
 
     def _prepareReturnInfoLine(self, sourceFileLine: str) -> str:
         return sourceFileLine.replace(MARKER_RETURN_LINE, '').strip()
+
+    def _expandFunctionBodyLine(self, sourceFileLineStr: str) -> str:
+        return self._mapping.expandString(sourceFileLineStr)

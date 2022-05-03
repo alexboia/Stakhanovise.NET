@@ -22,6 +22,8 @@ class SqlDbTableWriter(SqlDbObjectWriter[DbTable]):
         if dbTable.hasIndexes():
             self._writeIndexesSqlString(dbTable)
 
+        self._sqlStringBuilder.appendEmptyLine()
+
     def _writeTableDefinitionSqlString(self, dbTable: DbTable) -> None:
         self._sqlStringBuilder.appendLine('CREATE TABLE IF NOT EXISTS public.' + dbTable.getName() + '(')
 

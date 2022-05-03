@@ -1,17 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.licenseheader" Link="LVD.Stakhanovise.NET.licenseheader" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.licenseheader" Link="LVD.Stakhanovise.NET.licenseheader" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Npgsql" Version="6.0.3" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="Npgsql" Version="6.0.3" />
+	</ItemGroup>
 </Project>

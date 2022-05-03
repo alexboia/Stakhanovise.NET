@@ -1,4 +1,5 @@
 ﻿import os
+import glob
 from .helper.path_resolver import PathResolver
 
 class CompilerAssetProvider:
@@ -25,3 +26,10 @@ class CompilerAssetProvider:
 
     def getSourceFilePath(self, relativeFilePath: str) -> str:
         return self._pathResolver.resolvePath(relativeFilePath)
+
+    def discoverFilesByPattern(self, pattern: str) -> list[str]:
+        fileNames = []
+        searchPath = self._pathResolver.resolvePath(pattern)
+        foundFiles = glob.glob(searchPath)
+        fileNames = map(lambda foundFile: os.path.basename(foundFile), foundFiles)
+        return list(fileNames)

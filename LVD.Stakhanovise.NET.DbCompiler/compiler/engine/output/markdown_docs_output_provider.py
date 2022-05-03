@@ -25,7 +25,9 @@ class MarkdownDocsOutputProvider(OutputProvider):
     _vsProjectFacade: VsProjectFacade = None
     _compilerAssetProvider: CompilerAssetProvider = None
 
-    def __init__(self, options: MarkdownDocsOutputProviderOptions, vsProjectFacade: VsProjectFacade, compilerAssetProvider: CompilerAssetProvider) -> None:
+    def __init__(self, options: MarkdownDocsOutputProviderOptions, 
+            vsProjectFacade: VsProjectFacade, 
+            compilerAssetProvider: CompilerAssetProvider) -> None:
         super().__init__()
         self._options = options
         self._buffer = StringBuilder()
@@ -85,7 +87,7 @@ class MarkdownDocsOutputProvider(OutputProvider):
         self._buffer = StringBuilder()
 
     def _getVsProjectFileSaver(self) -> VsProjectFileSaver:
-        projectName = self.__getTargetProjectName()
+        projectName = self._getTargetProjectName()
         return VsProjectFileSaver(self._vsProjectFacade, projectName)
 
     def _getTargetProjectName(self) -> str:

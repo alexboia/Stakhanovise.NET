@@ -16,6 +16,8 @@ class MakefileParser:
     def parse(self, sourceFile: str) -> MakefileInfo:
         sourceFileReader = SourceFileReader()
         makefileLines = sourceFileReader.readSourceLines(sourceFile)
+        if not makefileLines:
+            return None
 
         return self._parseMakefile(makefileLines)
 

@@ -2,6 +2,7 @@
 from .path_resolver import PathResolver
 from .vs_project_facade import VsProjectFacade
 from .vs_project import VsProject
+from ..model.build_actions import BUID_ACTION_COMPILE
 
 class VsProjectFileSaver:
     _projectFacade: VsProjectFacade = None
@@ -35,7 +36,7 @@ class VsProjectFileSaver:
         filePointer.close()
 
     def commit(self, itemGroup: str, buildAction: str, options: dict[str, str] = None) -> None:
-        if len(self._savedFiles) > 0:
+        if len(self._savedFiles) > 0 and buildAction != BUID_ACTION_COMPILE:
             options = options or {}
             project = self._openProject()
             project.includeFilesToItemGroup(itemGroup, self._savedFiles, buildAction, options)

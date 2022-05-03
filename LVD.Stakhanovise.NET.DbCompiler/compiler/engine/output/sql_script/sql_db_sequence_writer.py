@@ -37,3 +37,5 @@ class SqlDbSequenceWriter(SqlDbObjectWriter[DbSequence]):
             self._sqlStringBuilder.appendLineIndented('CYCLE;')
         else:
             self._sqlStringBuilder.appendLineIndented('NO CYCLE;')
+
+        self._sqlStringBuilder.appendEmptyLine()

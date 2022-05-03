@@ -22,7 +22,7 @@ class DbMapping:
         self._executionTimeStatsTableName = symbols.get(EXECUTION_TIME_STATS_TABLE_NAME_TOKEN, "sk_task_execution_time_stats_t")
         self._metricTableName = symbols.get(METRICS_TABLE_NAME_TOKEN, "sk_metrics_t")
         self._newTaskNotificationChannelNameToken = symbols.get(NEW_TASK_NOTIFICATION_CHANNEL_NAME_TOKEN, "sk_task_queue_item_added")
-        self._dequeueFunctionNam = symbols.get(DEQUEUE_FUNCTION_NAME_TOKEN, "sk_try_dequeue_task")
+        self._dequeueFunctionName = symbols.get(DEQUEUE_FUNCTION_NAME_TOKEN, "sk_try_dequeue_task")
         self._symbols = symbols or {}
 
     @staticmethod

@@ -1,7 +1,7 @@
-﻿// 
+// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020, Boia Alexandru
+// Copyright (c) 2020-2022, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -89,3 +89,4 @@ namespace LVD.Stakhanovise.NET.Model
 		}
 	}
 }
+

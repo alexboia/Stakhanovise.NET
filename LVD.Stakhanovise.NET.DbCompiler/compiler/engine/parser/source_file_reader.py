@@ -56,10 +56,12 @@ class SourceFileReader:
         return filteredSourceFileLines
 
     def _isVerbatimStart(self, sourceFileLine: str) -> bool:
-        return self._verbatimFromMarker is not None and self._verbatimFromMarker == sourceFileLine.strip() 
+        return (self._verbatimFromMarker is not None 
+                and self._verbatimFromMarker == sourceFileLine.strip())
 
     def _isVerbatimEnd(self, sourceFileLine: str) -> bool:
-        return self._verbatimToMarker is not None and self._verbatimToMarker == sourceFileLine.strip() 
+        return (self._verbatimToMarker is not None 
+                and self._verbatimToMarker == sourceFileLine.strip())
 
     def _determineAbsoluteSourceFilePath(self, sourceFile: str) -> str:
         return abspath(sourceFile)

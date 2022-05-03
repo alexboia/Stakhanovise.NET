@@ -23,3 +23,4 @@ CREATE INDEX idx_sk_tasks_queue_t_filter_index
 CREATE INDEX idx_sk_tasks_queue_t_sort_index
 	ON public.sk_tasks_queue_t USING btree
 	(task_priority ASC, task_locked_until_ts ASC, task_lock_handle_id ASC);
+

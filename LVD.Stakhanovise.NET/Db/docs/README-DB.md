@@ -17,6 +17,18 @@ Used to feed values for the job queue table lock handle column values
 | `max_value` | `9223372036854775807` |
 | `cache` | `1` |
 
+## The application metrics table - `sk_metrics_t`
+
+Stores the application metrics for the built-in app metrics writer.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `metric_id ` | `character varying(250)` | `NOT NULL` |
+| `metric_owner_process_id ` | `character varying(250)` | `NOT NULL` |
+| `metric_category ` | `character varying(150)` | `NOT NULL` |
+| `metric_value ` | `bigint` | `NOT NULL`, `DEFAULT 0` |
+| `metric_last_updated ` | `timestamp with time zone` | `NOT NULL`, `DEFAULT now()` |
+
 ## The job queue table - `sk_tasks_queue_t`
 
 Stores the queued processing jobs
@@ -30,6 +42,42 @@ Stores the queued processing jobs
 | `task_priority` | `integer` | - |
 | `task_posted_at_ts` | `timestamp with time zone` | `NOT NULL`, `DEFAULT now()` |
 | `task_locked_until_ts` | `timestamp with time zone` | `NOT NULL` |
+
+## The job execution performance data table - `sk_task_execution_time_stats_t`
+
+Stores the job execution performance data for the built-in job execution performance data writer.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `et_payload_type` | `character varying(255)` | `NOT NULL`, `Primary Key` |
+| `et_owner_process_id` | `character varying(255)` | `NOT NULL`, `Primary Key` |
+| `et_n_execution_cycles` | `bigint` | `NOT NULL` |
+| `et_last_execution_time` | `bigint` | `NOT NULL` |
+| `et_avg_execution_time` | `bigint` | `NOT NULL` |
+| `et_fastest_execution_time` | `bigint` | `NOT NULL` |
+| `et_longest_execution_time` | `bigint` | `NOT NULL` |
+| `et_total_execution_time` | `bigint` | `NOT NULL` |
+
+## The job results table - `sk_task_results_t`
+
+sStores processing job execution result meta-information, such as execution status.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `task_id` | `uuid` | `NOT NULL`, `Primary Key` |
+| `task_type` | `character varying(250)` | `NOT NULL` |
+| `task_source` | `character varying(250)` | `NOT NULL` |
+| `task_payload` | `text` | - |
+| `task_status` | `integer` | `NOT NULL` |
+| `task_priority` | `integer` | `NOT NULL` |
+| `task_last_error` | `text` | - |
+| `task_error_count` | `integer` | `NOT NULL`, `DEFAULT 0` |
+| `task_last_error_is_recoverable` | `boolean` | `NOT NULL`, `DEFAULT false` |
+| `task_processing_time_milliseconds` | `bigint` | `NOT NULL`, `DEFAULT 0` |
+| `task_posted_at_ts` | `timestamp with time zone` | `NOT NULL` |
+| `task_first_processing_attempted_at_ts` | `timestamp with time zone` | - |
+| `task_last_processing_attempted_at_ts` | `timestamp with time zone` | - |
+| `task_processing_finalized_at_ts` | `timestamp with time zone` | - |
 
 ## The dequeue function - `sk_try_dequeue_task`
 
@@ -45,9 +93,9 @@ CREATE OR REPLACE FUNCTION public.sk_try_dequeue_task (IN select_types character
 	BEGIN
 		RETURN QUERY
 		WITH sk_dequeued_task AS
-			(DELETE FROM $queue_table_name$ td WHERE td.task_id = (
+			(DELETE FROM sk_tasks_queue_t td WHERE td.task_id = (
 				SELECT t0.task_id
-						FROM $queue_table_name$ t0
+						FROM sk_tasks_queue_t t0
 						WHERE (t0.task_type = ANY(select_types) OR n_select_types = 0)
 							AND t0.task_locked_until_ts < ref_now
 							AND t0.task_id <> ALL(exclude_ids)

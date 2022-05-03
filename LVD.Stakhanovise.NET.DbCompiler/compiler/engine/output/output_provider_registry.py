@@ -17,6 +17,9 @@ from .db_create_output_provider_options import DbCreateOutputProviderOptions
 from .markdown_docs_output_provider import MarkdownDocsOutputProvider
 from .markdown_docs_output_provider_options import MarkdownDocsOutputProviderOptions
 
+from .mapping_code_output_provider import MappingCodeOutputProvider
+from .mapping_code_output_provider_options import MappingCodeOutputProviderOptions
+
 class OutputProviderRegistry:
     _providers: dict[str, Callable[[CompilerOutputInfo], OutputProvider]] = None
 
@@ -26,6 +29,7 @@ class OutputProviderRegistry:
         self._providers['sql_script'] = (lambda outputInfo: SqlScriptOutputProvider(SqlScriptOutputProviderOptions(outputInfo.getArguments()), vsProjectFacade))
         self._providers['db_create'] = (lambda outputInfo: DbCreateOutputProvider(DbCreateOutputProviderOptions(outputInfo.getArguments())))
         self._providers['markdown_docs'] = (lambda outputInfo: MarkdownDocsOutputProvider(MarkdownDocsOutputProviderOptions(outputInfo.getArguments()), vsProjectFacade, compilerAssetProvider))
+        self._providers['mapping_code'] = (lambda outputInfo: MappingCodeOutputProvider(MappingCodeOutputProviderOptions(outputInfo.getArguments()), vsProjectFacade, compilerAssetProvider))
 
     def createOutputProvider(self, outputInfo: CompilerOutputInfo) -> OutputProvider:
         factory = self._providers.get(outputInfo.getName(), None)

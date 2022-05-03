@@ -43,7 +43,9 @@ class SqlScriptOutputProvider(SqlScriptOutputProviderBase):
             self._getOutputFileBuildAction(), 
             self._getOutputFileBuildOptions())
 
-        globalBuffer.close()
+        if self._options.generateAsConsolidated():
+            globalBuffer.close()
+
         self._buffers = {}
 
     def _getVsProjectFileSaver(self) -> VsProjectFileSaver:
