@@ -3,6 +3,7 @@
 from ..model.db_function import DbFunction
 from ..model.db_sequence import DbSequence
 from ..model.db_table import DbTable
+from ..model.db_mapping import DbMapping
 
 from .output_provider import OutputProvider
 
@@ -24,6 +25,9 @@ class SqlScriptOutputProviderBase(OutputProvider):
             self._buffers[objectName] = objectBuffer
 
         return objectBuffer
+
+    def writeMapping(self, dbMapping: DbMapping) -> None:
+        pass
 
     def writeTable(self, dbTable: DbTable) -> None:
         objectBuffer = self._getObjectBuffer(dbTable.getName())

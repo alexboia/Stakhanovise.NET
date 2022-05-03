@@ -8,6 +8,7 @@ from ..helper.vs_project_file_saver import VsProjectFileSaver
 from ..model.db_function import DbFunction
 from ..model.db_sequence import DbSequence
 from ..model.db_table import DbTable
+from ..model.db_mapping import DbMapping
 
 from .output_provider import OutputProvider
 from .markdown_docs.markdown_db_sequence_writer import MarkdownDbSequenceWriter
@@ -30,6 +31,9 @@ class MarkdownDocsOutputProvider(OutputProvider):
         self._buffer = StringBuilder()
         self._vsProjectFacade = vsProjectFacade
         self._compilerAssetProvider = compilerAssetProvider
+
+    def writeMapping(self, dbMapping: DbMapping) -> None:
+        pass
 
     def writeTable(self, dbTable: DbTable) -> None:
         writer = MarkdownDbTableWriter(self._buffer)
@@ -81,8 +85,11 @@ class MarkdownDocsOutputProvider(OutputProvider):
         self._buffer = StringBuilder()
 
     def _getVsProjectFileSaver(self) -> VsProjectFileSaver:
-        projectName = self._options.getTargetProjectName()
+        projectName = self.__getTargetProjectName()
         return VsProjectFileSaver(self._vsProjectFacade, projectName)
+
+    def _getTargetProjectName(self) -> str:
+        return self._options.getTargetProjectName()
 
     def _getRelativeHeaderFilePath(self) -> str:
         return self._options.getHeaderFile()

@@ -1,5 +1,6 @@
 ﻿from typing import Callable
 
+from ..compiler_asset_provider import CompilerAssetProvider
 from ..helper.vs_project_facade import VsProjectFacade
 from ..model.compiler_output_info import CompilerOutputInfo
 
@@ -13,16 +14,21 @@ from .sql_script_output_provider_options import SqlScriptOutputProviderOptions
 from .db_create_output_provider import DbCreateOutputProvider
 from .db_create_output_provider_options import DbCreateOutputProviderOptions
 
-class OutputProviderRegistry:
-    _resolvers: dict[str, Callable[[CompilerOutputInfo], OutputProvider]] = {}
+from .markdown_docs_output_provider import MarkdownDocsOutputProvider
+from .markdown_docs_output_provider_options import MarkdownDocsOutputProviderOptions
 
-    def __init__(self, vsProjectFacade: VsProjectFacade) -> None:
-        self._resolvers['console'] = (lambda outputInfo: ConsoleOutputProvider(ConsoleOutputProviderOptions(outputInfo.getArguments())))
-        self._resolvers['sql_script'] = (lambda outputInfo: SqlScriptOutputProvider(SqlScriptOutputProviderOptions(outputInfo.getArguments()), vsProjectFacade))
-        self._resolvers['db_create'] = (lambda outputInfo: DbCreateOutputProvider(DbCreateOutputProviderOptions(outputInfo.getArguments())))
+class OutputProviderRegistry:
+    _providers: dict[str, Callable[[CompilerOutputInfo], OutputProvider]] = None
+
+    def __init__(self, vsProjectFacade: VsProjectFacade, compilerAssetProvider: CompilerAssetProvider) -> None:
+        self._providers = {}
+        self._providers['console'] = (lambda outputInfo: ConsoleOutputProvider(ConsoleOutputProviderOptions(outputInfo.getArguments())))
+        self._providers['sql_script'] = (lambda outputInfo: SqlScriptOutputProvider(SqlScriptOutputProviderOptions(outputInfo.getArguments()), vsProjectFacade))
+        self._providers['db_create'] = (lambda outputInfo: DbCreateOutputProvider(DbCreateOutputProviderOptions(outputInfo.getArguments())))
+        self._providers['markdown_docs'] = (lambda outputInfo: MarkdownDocsOutputProvider(MarkdownDocsOutputProviderOptions(outputInfo.getArguments()), vsProjectFacade, compilerAssetProvider))
 
     def createOutputProvider(self, outputInfo: CompilerOutputInfo) -> OutputProvider:
-        factory = self._resolvers.get(outputInfo.getName(), None)
+        factory = self._providers.get(outputInfo.getName(), None)
         if factory is not None:
             return factory(outputInfo)
         else:

@@ -6,9 +6,6 @@ from .db_column import DbColumn
 from .db_constraint import DbConstraint
 from .db_index import DbIndex
 
-KEY_PROP_TITLE = "title"
-KEY_PROP_DESCRIPTION = "description"
-
 class DbTable(DbObject):
     _columns: list[DbColumn] = None
     _primary: DbConstraint = None

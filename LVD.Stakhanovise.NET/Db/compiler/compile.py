@@ -43,7 +43,7 @@ sequenceResult = sequenceParser.parseFromFile('./sk_processing_queues_task_lock_
 functionParser = DbFunctionParser(mapping)
 functionResult = functionParser.parseFromFile('./sk_try_dequeue_task.dbdef')
 
-#consoleOutput = ConsoleOutputProvider(ConsoleOutputProviderOptions({ "func": "false", "seq": "false", "tbl_index": "false", "tbl_unq": "false" }))
+#consoleOutput = ConsoleOutputProvider(ConsoleOutputProviderOptions({ "func": "true", "seq": "true", "tbl_index": "false", "tbl_unq": "false" }))
 #consoleOutput.writeSequence(sequenceResult)
 #consoleOutput.writeTable(tableResult)
 #consoleOutput.writeFunction(functionResult)

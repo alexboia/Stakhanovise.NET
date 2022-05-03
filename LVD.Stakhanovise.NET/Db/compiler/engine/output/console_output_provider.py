@@ -3,6 +3,7 @@
 from ..model.db_function import DbFunction
 from ..model.db_sequence import DbSequence
 from ..model.db_table import DbTable
+from ..model.db_mapping import DbMapping
 
 from .output_provider import OutputProvider
 from .console_output_provider_options import ConsoleOutputProviderOptions
@@ -17,6 +18,9 @@ class ConsoleOutputProvider(OutputProvider):
     def __init__(self, options: ConsoleOutputProviderOptions) -> None:
         self._options = options or ConsoleOutputProviderOptions()
         self._console = Console()
+
+    def writeMapping(self, dbMapping: DbMapping) -> None:
+        pass
 
     def writeTable(self, dbTable: DbTable) -> None:
         if self._options.showTables():

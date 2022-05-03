@@ -48,7 +48,7 @@ class DbObjectWriter(ABC, Generic[TDbObject]):
 
     def _getObjectSectionTitle(self, titleString: str) -> Text:
         titleText = Text(titleString)
-        titleText.stylize("underline")
+        titleText.stylize("bold")
         return titleText
 
     def _writeSectionSpacer(self) -> None:

@@ -1,32 +1,32 @@
-﻿$license_header$
+﻿$license_header
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace $class_namespace_name$
+namespace $class_namespace_name
 {
-	public class $class_name$
+	public class $class_name
 	{
-		public $class_name$()
+		public $class_name()
 		{
-			QueueTableName = "$queue_table_name$";
-			ResultsQueueTableName = "$results_queue_table_name$";
-			ExecutionTimeStatsTableName = "$execution_time_stats_table_name$";
-			MetricsTableName = "$metrics_table_name$";
-			NewTaskNotificationChannelName = "$new_task_notification_channel_name$";
-			DequeueFunctionName = "$dequeue_function_name$";
+			QueueTableName = "$queue_table_name";
+			ResultsQueueTableName = "$results_queue_table_name";
+			ExecutionTimeStatsTableName = "$execution_time_stats_table_name";
+			MetricsTableName = "$metrics_table_name";
+			NewTaskNotificationChannelName = "$new_task_notification_channel_name";
+			DequeueFunctionName = "$dequeue_function_name";
 		}
 
 		public void AddTablePrefix( string tablePrefix )
 		{
-			QueueTableName = $"{tablePrefix}{QueueTableName}";
-			ResultsQueueTableName = $"{tablePrefix}{ResultsQueueTableName}";
-			ExecutionTimeStatsTableName = $"{tablePrefix}{ExecutionTimeStatsTableName}";
-			MetricsTableName = $"{tablePrefix}{MetricsTableName}";
+			QueueTableName = $$"{tablePrefix}{QueueTableName}";
+			ResultsQueueTableName = $$"{tablePrefix}{ResultsQueueTableName}";
+			ExecutionTimeStatsTableName = $$"{tablePrefix}{ExecutionTimeStatsTableName}";
+			MetricsTableName = $$"{tablePrefix}{MetricsTableName}";
 		}
 
-		public static $class_name$ Default
-			=> new $class_name$();
+		public static $class_name Default
+			=> new $class_name();
 
 		public string QueueTableName
 		{

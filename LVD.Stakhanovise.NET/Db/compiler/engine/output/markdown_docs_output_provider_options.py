@@ -1,7 +1,7 @@
 ﻿from ..helper.output_file_build_options_builder import OutputFileBuildOptionsBuilder
 
 from ..model.project_names import MAIN_PROJECT_NAME
-from ..model.build_actions import BUILD_ACTION_NONE, BUID_ACTION_CONTENT
+from ..model.build_actions import BUILD_ACTION_NONE
 
 DEFAULT_HEADER_FILE_NAME = 'parts/readme_db_header.md'
 DEFAULT_FOOTER_FILE_NAME = 'parts/readme_db_footer.md'
