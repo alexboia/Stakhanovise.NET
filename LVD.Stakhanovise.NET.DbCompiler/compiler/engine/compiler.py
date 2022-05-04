@@ -13,7 +13,6 @@ from .parser.makefile_parser import MakefileParser
 from .parser.db_mapping_parser import DbMappingParser
 from .parser.db_object_parser import DbObjectParser
 from .parser.db_object_parser_registry import DbObjectParserRegistry
-from .parser.source_file_reader import SourceFileReader
 from .parser.source_definition_file_type_sniffer import SourceDefinitionFileTypeSniffer
 
 from .output.output_provider_registry import OutputProviderRegistry

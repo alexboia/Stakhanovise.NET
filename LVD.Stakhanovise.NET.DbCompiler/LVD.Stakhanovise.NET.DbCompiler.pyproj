@@ -128,6 +128,7 @@
     <Compile Include="compiler\engine\parser\support\__init__.py" />
     <Compile Include="compiler\engine\parser\__init__.py" />
     <Compile Include="compiler\engine\__init__.py" />
+    <Compile Include="compiler\setup.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="src\makefile" />
