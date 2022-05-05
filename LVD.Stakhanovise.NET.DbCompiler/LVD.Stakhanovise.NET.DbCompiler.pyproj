@@ -5,8 +5,7 @@
     <ProjectGuid>287f90b4-1f3e-4c7d-b0ee-9fb656da12c8</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>compiler/compile.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <SearchPath>compiler</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>LVD.Stakhanovise.NET.DbCompiler</Name>
@@ -130,6 +129,7 @@
     <Compile Include="compiler\engine\__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="compile.bat" />
     <Content Include="src\makefile" />
     <Content Include="src\parts\readme_db_footer.md" />
     <Content Include="src\parts\readme_db_header.md" />

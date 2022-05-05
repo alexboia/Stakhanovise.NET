@@ -38,6 +38,7 @@ Stores the queued processing jobs
 | `task_id` | `uuid` | `NOT NULL`, `Primary Key` |
 | `task_lock_handle_id` | `bigint` | `NOT NULL`, `Unique Key`, `DEFAULT nextval('public.sk_tasks_queue_t_task_lock_handle_id_seq'::regclass)` |
 | `task_type` | `character varying(250)` | `NOT NULL` |
+| `task_source` | `character varying(250)` | `NOT NULL` |
 | `task_payload` | `text` | - |
 | `task_priority` | `integer` | - |
 | `task_posted_at_ts` | `timestamp with time zone` | `NOT NULL`, `DEFAULT now()` |

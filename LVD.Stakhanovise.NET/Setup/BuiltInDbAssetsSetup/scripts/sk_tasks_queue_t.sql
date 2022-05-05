@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS public.sk_tasks_queue_t(
 	task_id uuid NOT NULL,
 	task_lock_handle_id bigint DEFAULT nextval('public.sk_tasks_queue_t_task_lock_handle_id_seq'::regclass) NOT NULL,
 	task_type character varying(250) NOT NULL,
+	task_source character varying(250) NOT NULL,
 	task_payload text,
 	task_priority integer,
 	task_posted_at_ts timestamp with time zone DEFAULT now() NOT NULL,

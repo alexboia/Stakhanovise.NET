@@ -104,7 +104,7 @@ namespace LVD.Stakhanovise.NET.Setup
 					{TaskIdColumnName} uuid NOT NULL,
 					{TaskLocKHandleIdColumnName} bigint NOT NULL DEFAULT nextval('{lockHandleIdSeqName}'::regclass),
 					{TaskTypeColumnName} character varying(250) NOT NULL,
-					{TaskSourceColumnName} character varying( 250 ) NOT NULL,
+					{TaskSourceColumnName} character varying(250) NOT NULL,
 					{TaskPayloadColumnName} text,
 					{TaskPriorityColumnName} integer NOT NULL,
 					{TaskPostedAtColumnName} timestamp with time zone NOT NULL DEFAULT now (),
