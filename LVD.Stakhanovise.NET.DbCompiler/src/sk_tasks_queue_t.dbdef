@@ -4,6 +4,7 @@ PROPS: title=The job queue table; description=Stores the queued processing jobs
 COL: task_id(type=uuid; not_null=true)
 COL: task_lock_handle_id(type=bigint; not_null=true; default=nextval('public.$queue_table_name$_task_lock_handle_id_seq'::regclass))
 COL: task_type(type=character varying(250); not_null=true)
+COL: task_source(type=character varying(250); not_null=true)
 COL: task_payload(type=text)
 COL: task_priority(type=integer)
 COL: task_posted_at_ts(type=timestamp with time zone; not_null=true; default=now())

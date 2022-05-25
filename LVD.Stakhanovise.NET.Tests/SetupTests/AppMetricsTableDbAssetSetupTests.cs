@@ -88,6 +88,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		{
 			bool tableHasColumns = await TableHasColumnsAsync( mapping.MetricsTableName,
 				AppMetricsTableDbAssetSetup.MetricIdColumnName,
+				AppMetricsTableDbAssetSetup.MetricOwnerProcessIdColumnName,
 				AppMetricsTableDbAssetSetup.MetricCategoryColumnName,
 				AppMetricsTableDbAssetSetup.MetricLastUpdatedColumnName,
 				AppMetricsTableDbAssetSetup.MetricValueColumnName );

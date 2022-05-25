@@ -87,6 +87,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		{
 			bool tableHasColumns = await TableHasColumnsAsync( mapping.ExecutionTimeStatsTableName,
 				ExecutionTimeStatsTableDbAssetSetup.PayloadTypeColumnName,
+				ExecutionTimeStatsTableDbAssetSetup.OwnerProcessIdColumnName,
 				ExecutionTimeStatsTableDbAssetSetup.NExecutionCyclesColumnName,
 				ExecutionTimeStatsTableDbAssetSetup.LastExecutionTimeColumnName,
 				ExecutionTimeStatsTableDbAssetSetup.AverageExecutionTimeColumnName,

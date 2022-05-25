@@ -1,0 +1,1 @@
+python .\compiler\compile.py
