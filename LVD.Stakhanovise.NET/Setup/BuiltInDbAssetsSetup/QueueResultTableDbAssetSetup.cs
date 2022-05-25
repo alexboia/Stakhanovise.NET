@@ -44,14 +44,14 @@ namespace LVD.Stakhanovise.NET.Setup
 			mScriptAssetSetup = new DbScriptAssetSetup(
 				new EmbeddedResourceSqlSetupScriptProvider(
 					GetType().Assembly,
-					$"{GetType().Namespace}.BuiltInDbAssetsSetup.Scripts.sk_task_results_t.sql"
+					"sk_task_results_t.sql".DeriveSetupScriptResourceId()
 				)
 			);
 		}
 
 		public async Task SetupDbAssetAsync( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
 		{
-			await mScriptAssetSetup.SetupDbAssetAsync( queueConnectionOptions, 
+			await mScriptAssetSetup.SetupDbAssetAsync( queueConnectionOptions,
 				mapping );
 		}
 	}

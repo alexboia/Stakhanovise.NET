@@ -46,14 +46,14 @@ namespace LVD.Stakhanovise.NET.Setup
 			mSequenceScriptAssetSetup = new DbScriptAssetSetup(
 				new EmbeddedResourceSqlSetupScriptProvider(
 					GetType().Assembly,
-					$"{GetType().Namespace}.BuiltInDbAssetsSetup.Scripts.sk_tasks_queue_t_task_lock_handle_id_seq.sql"
+					"sk_tasks_queue_t_task_lock_handle_id_seq.sql".DeriveSetupScriptResourceId()
 				)
 			);
 
 			mTableScriptAssetSetup = new DbScriptAssetSetup(
 				new EmbeddedResourceSqlSetupScriptProvider(
 					GetType().Assembly,
-					$"{GetType().Namespace}.BuiltInDbAssetsSetup.Scripts.sk_tasks_queue_t.sql"
+					"sk_tasks_queue_t.sql".DeriveSetupScriptResourceId()
 				)
 			);
 		}
