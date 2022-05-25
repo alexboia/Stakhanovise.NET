@@ -44,7 +44,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			mScriptAssetSetup = new DbScriptAssetSetup(
 				new EmbeddedResourceSqlSetupScriptProvider(
 					GetType().Assembly,
-					"sk_metrics_t.sql"
+					$"{GetType().Namespace}.BuiltInDbAssetsSetup.Scripts.sk_metrics_t.sql"
 				)
 			);
 		}

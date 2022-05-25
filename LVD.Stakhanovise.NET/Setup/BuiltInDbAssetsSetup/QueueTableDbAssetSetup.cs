@@ -37,21 +37,32 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class QueueTableDbAssetSetup : ISetupDbAsset
 	{
-		private ISetupDbAsset mScriptAssetSetup;
+		private ISetupDbAsset mTableScriptAssetSetup;
+
+		private ISetupDbAsset mSequenceScriptAssetSetup;
 
 		public QueueTableDbAssetSetup()
 		{
-			mScriptAssetSetup = new DbScriptAssetSetup(
+			mSequenceScriptAssetSetup = new DbScriptAssetSetup(
 				new EmbeddedResourceSqlSetupScriptProvider(
 					GetType().Assembly,
-					"sk_tasks_queue_t.sql"
+					$"{GetType().Namespace}.BuiltInDbAssetsSetup.Scripts.sk_tasks_queue_t_task_lock_handle_id_seq.sql"
+				)
+			);
+
+			mTableScriptAssetSetup = new DbScriptAssetSetup(
+				new EmbeddedResourceSqlSetupScriptProvider(
+					GetType().Assembly,
+					$"{GetType().Namespace}.BuiltInDbAssetsSetup.Scripts.sk_tasks_queue_t.sql"
 				)
 			);
 		}
 
 		public async Task SetupDbAssetAsync( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
 		{
-			await mScriptAssetSetup.SetupDbAssetAsync( queueConnectionOptions,
+			await mSequenceScriptAssetSetup.SetupDbAssetAsync( queueConnectionOptions,
+				mapping );
+			await mTableScriptAssetSetup.SetupDbAssetAsync( queueConnectionOptions,
 				mapping );
 		}
 	}

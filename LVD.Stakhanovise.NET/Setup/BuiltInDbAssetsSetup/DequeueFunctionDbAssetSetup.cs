@@ -44,7 +44,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			mScriptAssetSetup = new DbScriptAssetSetup(
 				new EmbeddedResourceSqlSetupScriptProvider(
 					GetType().Assembly,
-					"sk_try_dequeue_task.sql"
+					$"{GetType().Namespace}.BuiltInDbAssetsSetup.Scripts.sk_try_dequeue_task.sql"
 				)
 			);
 		}

@@ -230,8 +230,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			{
 				string checkFunctionSql = $@"SELECT proargnames, proargmodes
 					FROM pg_proc 
-					WHERE proname = '{functionName}'
-						AND prokind = 'f'";
+					WHERE proname = '{functionName}'";
 
 				using ( NpgsqlCommand cmd = new NpgsqlCommand( checkFunctionSql, conn ) )
 				using ( NpgsqlDataReader rdr = await cmd.ExecuteReaderAsync() )

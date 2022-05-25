@@ -45,7 +45,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private QueuedTaskMapping mDefaultMapping;
 
-
 		public DbScriptAssetSetup( ISqlSetupScriptProvider scriptProvider )
 		{
 			if ( scriptProvider == null )
