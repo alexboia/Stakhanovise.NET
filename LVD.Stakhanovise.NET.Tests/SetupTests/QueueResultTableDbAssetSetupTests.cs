@@ -29,14 +29,10 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Setup;
 using NUnit.Framework;
-using Bogus;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
@@ -47,51 +43,26 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		[Test]
 		[Repeat( 5 )]
 		[NonParallelizable]
-		public async Task Test_CanSetupDbAsset_WithDefaultMapping_WithIndexes ()
+		public async Task Test_CanSetupDbAsset_WithDefaultMapping()
 		{
 			QueuedTaskMapping mapping = GetDefaultMapping();
-			await RunDbAssetSetupTestsAsync( mapping,
-				withTaskStatusIndex: true,
-				withTaskTypeIndex: true );
+			await RunDbAssetSetupTestsAsync( mapping );
 		}
 
 		[Test]
 		[Repeat( 5 )]
 		[NonParallelizable]
-		public async Task Test_CanSetupDbAsset_WithDefaultMapping_WithoutIndexes ()
-		{
-			QueuedTaskMapping mapping = GetDefaultMapping();
-			await RunDbAssetSetupTestsAsync( mapping,
-				withTaskStatusIndex: false,
-				withTaskTypeIndex: false );
-		}
-
-		[Test]
-		[Repeat( 5 )]
-		[NonParallelizable]
-		public async Task Test_CanSetupDbAsset_WithNonDefaultMapping_WithIndexes ()
+		public async Task Test_CanSetupDbAsset_WithNonDefaultMapping()
 		{
 			QueuedTaskMapping mapping = GenerateNonDefaultMapping();
-			await RunDbAssetSetupTestsAsync( mapping,
-				withTaskStatusIndex: true,
-				withTaskTypeIndex: true );
+			await RunDbAssetSetupTestsAsync( mapping );
 		}
 
-		[Test]
-		[Repeat( 5 )]
-		[NonParallelizable]
-		public async Task Test_CanSetupDbAsset_WithNonDefaultMapping_WithoutIndexes ()
-		{
-			QueuedTaskMapping mapping = GenerateNonDefaultMapping();
-			await RunDbAssetSetupTestsAsync( mapping,
-				withTaskStatusIndex: false,
-				withTaskTypeIndex: false );
-		}
 
-		private async Task RunDbAssetSetupTestsAsync ( QueuedTaskMapping mapping, bool withTaskStatusIndex, bool withTaskTypeIndex )
+		private async Task RunDbAssetSetupTestsAsync( QueuedTaskMapping mapping )
 		{
 			QueueResultTableDbAssetSetup setup =
-				new QueueResultTableDbAssetSetup( withTaskStatusIndex, withTaskTypeIndex );
+				new QueueResultTableDbAssetSetup();
 
 			await setup.SetupDbAssetAsync( GetSetupTestDbConnectionOptions(),
 				mapping );
@@ -99,11 +70,11 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			await AssertTableExistsAsync( mapping );
 			await AssertTableHasExpectedColumnsAsync( mapping );
 			await AssertTableHasExpectedIndexesAsync( mapping,
-				shouldHaveTaskStatusIndex: withTaskStatusIndex,
-				shouldHaveTaskTypeIndex: withTaskTypeIndex );
+				shouldHaveTaskStatusIndex: true,
+				shouldHaveTaskTypeIndex: true );
 		}
 
-		private async Task AssertTableExistsAsync ( QueuedTaskMapping mapping )
+		private async Task AssertTableExistsAsync( QueuedTaskMapping mapping )
 		{
 			bool tableExists = await TableExistsAsync( mapping.ResultsQueueTableName );
 
@@ -112,32 +83,32 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 				mapping.ResultsQueueTableName );
 		}
 
-		private async Task AssertTableHasExpectedColumnsAsync ( QueuedTaskMapping mapping )
+		private async Task AssertTableHasExpectedColumnsAsync( QueuedTaskMapping mapping )
 		{
 			bool tableHasColumns = await TableHasColumnsAsync( mapping.ResultsQueueTableName,
-				QueueResultTableDbAssetSetup.TaskIdColumnName,
-				QueueResultTableDbAssetSetup.TaskTypeColumnName,
-				QueueResultTableDbAssetSetup.TaskStatusColumnName,
-				QueueResultTableDbAssetSetup.TaskSourceColumnName,
-				QueueResultTableDbAssetSetup.TaskPayloadColumnName,
-				QueueResultTableDbAssetSetup.TaskPriorityColumnName,
-				QueueResultTableDbAssetSetup.TaskLastErrorColumnName,
-				QueueResultTableDbAssetSetup.TaskErrorCountColumnName,
-				QueueResultTableDbAssetSetup.TaskLastErrorIsRecoverableColumnName,
-				QueueResultTableDbAssetSetup.TaskProcessingTimeMillisecondsColumnName,
-				QueueResultTableDbAssetSetup.TaskPostedAtColumnName,
-				QueueResultTableDbAssetSetup.TaskFirstProcessingAttemptedAtColumnName,
-				QueueResultTableDbAssetSetup.TaskLastProcessingAttemptedAtColumnName,
-				QueueResultTableDbAssetSetup.TaskProcessingFinalizedAtColumnName );
+				"task_id",
+				"task_type",
+				"task_status",
+				"task_source",
+				"task_payload",
+				"task_priority",
+				"task_last_error",
+				"task_error_count",
+				"task_last_error_is_recoverable",
+				"task_processing_time_milliseconds",
+				"task_posted_at_ts",
+				"task_first_processing_attempted_at_ts",
+				"task_last_processing_attempted_at_ts",
+				"task_processing_finalized_at_ts" );
 
 			Assert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",
 				mapping.ResultsQueueTableName );
 		}
 
-		private async Task AssertTableHasExpectedIndexesAsync ( QueuedTaskMapping mapping, bool shouldHaveTaskStatusIndex, bool shouldHaveTaskTypeIndex )
+		private async Task AssertTableHasExpectedIndexesAsync( QueuedTaskMapping mapping, bool shouldHaveTaskStatusIndex, bool shouldHaveTaskTypeIndex )
 		{
-			string expectedTaskStatusIndexName = string.Format( QueueResultTableDbAssetSetup.TaskStatusIndexNameFormat,
+			string expectedTaskStatusIndexName = string.Format( "idx_{0}_task_status",
 				mapping.ResultsQueueTableName );
 
 			bool taskStatusIndexExists = await TableIndexExistsAsync( mapping.ResultsQueueTableName,
@@ -146,7 +117,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			Assert.AreEqual( shouldHaveTaskStatusIndex,
 				taskStatusIndexExists );
 
-			string expectedTaskTypeIndexName = string.Format( QueueResultTableDbAssetSetup.TaskTypeIndexNameFormat,
+			string expectedTaskTypeIndexName = string.Format( "idx_{0}_task_type",
 				mapping.ResultsQueueTableName );
 
 			bool taskTypeIndexExists = await TableIndexExistsAsync( mapping.ResultsQueueTableName,
@@ -156,12 +127,12 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 				taskTypeIndexExists );
 		}
 
-		private QueuedTaskMapping GetDefaultMapping ()
+		private QueuedTaskMapping GetDefaultMapping()
 		{
 			return new QueuedTaskMapping();
 		}
 
-		private QueuedTaskMapping GenerateNonDefaultMapping ()
+		private QueuedTaskMapping GenerateNonDefaultMapping()
 		{
 			QueuedTaskMapping mapping = new QueuedTaskMapping();
 			mapping.ResultsQueueTableName = RandomizeDbAssetName( mapping.ResultsQueueTableName );

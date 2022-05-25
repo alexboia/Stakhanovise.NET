@@ -87,11 +87,11 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		private async Task AssertTableHasExpectedColumnsAsync ( QueuedTaskMapping mapping )
 		{
 			bool tableHasColumns = await TableHasColumnsAsync( mapping.MetricsTableName,
-				AppMetricsTableDbAssetSetup.MetricIdColumnName,
-				AppMetricsTableDbAssetSetup.MetricOwnerProcessIdColumnName,
-				AppMetricsTableDbAssetSetup.MetricCategoryColumnName,
-				AppMetricsTableDbAssetSetup.MetricLastUpdatedColumnName,
-				AppMetricsTableDbAssetSetup.MetricValueColumnName );
+				"metric_id",
+				"metric_owner_process_id",
+				"metric_category",
+				"metric_value",
+				"metric_last_updated" );
 
 			Assert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",
@@ -100,7 +100,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 
 		private async Task AssertTableHasExpectedIndexesAsync ( QueuedTaskMapping mapping )
 		{
-			string expectedMetricCategoryIndexName = string.Format( AppMetricsTableDbAssetSetup.MetricCategoryIndexFormat,
+			string expectedMetricCategoryIndexName = string.Format( "idx_{0}_category",
 				mapping.MetricsTableName );
 
 			bool metricCategoryIndexExists = await TableIndexExistsAsync( mapping.MetricsTableName,

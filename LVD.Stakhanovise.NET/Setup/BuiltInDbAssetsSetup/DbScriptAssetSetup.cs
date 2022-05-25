@@ -37,7 +37,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Setup.BuiltInDbAssetsSetup
+namespace LVD.Stakhanovise.NET.Setup
 {
 	public class DbScriptAssetSetup : ISetupDbAsset
 	{

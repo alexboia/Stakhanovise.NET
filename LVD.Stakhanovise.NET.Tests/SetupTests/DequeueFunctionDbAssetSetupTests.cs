@@ -29,13 +29,11 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using LVD.Stakhanovise.NET.Setup;
-using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Setup;
+using NUnit.Framework;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
@@ -81,18 +79,18 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		{
 			return new Dictionary<string, char>()
 			{
-				{ DequeueFunctionDbAssetSetup.SelectTypesParamName, 'i' },
-				{ DequeueFunctionDbAssetSetup.ExcludeIdsParamName, 'i' },
-				{ DequeueFunctionDbAssetSetup.RefNowParamName, 'i' },
+				{ "select_types", 'i' },
+				{ "exclude_ids", 'i' },
+				{ "ref_now", 'i' },
 
-				{ DequeueFunctionDbAssetSetup.TaskIdTableParamName, 't' },
-				{ DequeueFunctionDbAssetSetup.TaskLockHandleIdTableParamName, 't' },
-				{ DequeueFunctionDbAssetSetup.TaskTypeTableParamName, 't' },
-				{ DequeueFunctionDbAssetSetup.TaskSourceTableParamName, 't' },
-				{ DequeueFunctionDbAssetSetup.TaskPayloadTableParamName, 't' },
-				{ DequeueFunctionDbAssetSetup.TaskPriorityTableParamName, 't' },
-				{ DequeueFunctionDbAssetSetup.TaskPostedAtTableParamName, 't' },
-				{ DequeueFunctionDbAssetSetup.TaskLockedUntilTableParamName, 't' }
+				{ "task_id", 't' },
+				{ "task_lock_handle_id", 't' },
+				{ "task_type", 't' },
+				{ "task_source", 't' },
+				{ "task_payload", 't' },
+				{ "task_priority", 't' },
+				{ "task_posted_at_ts", 't' },
+				{ "task_locked_until_ts", 't' }
 			};
 		}
 

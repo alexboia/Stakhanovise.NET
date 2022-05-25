@@ -86,14 +86,14 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		private async Task AssertTableHasExpectedColumnsAsync ( QueuedTaskMapping mapping )
 		{
 			bool tableHasColumns = await TableHasColumnsAsync( mapping.ExecutionTimeStatsTableName,
-				ExecutionTimeStatsTableDbAssetSetup.PayloadTypeColumnName,
-				ExecutionTimeStatsTableDbAssetSetup.OwnerProcessIdColumnName,
-				ExecutionTimeStatsTableDbAssetSetup.NExecutionCyclesColumnName,
-				ExecutionTimeStatsTableDbAssetSetup.LastExecutionTimeColumnName,
-				ExecutionTimeStatsTableDbAssetSetup.AverageExecutionTimeColumnName,
-				ExecutionTimeStatsTableDbAssetSetup.FastestExecutionTimeColumnName,
-				ExecutionTimeStatsTableDbAssetSetup.LongestExecutionTimeColumnName,
-				ExecutionTimeStatsTableDbAssetSetup.TotalExecutionTimeColumnName );
+				"et_payload_type",
+				"et_owner_process_id",
+				"et_n_execution_cycles",
+				"et_last_execution_time",
+				"et_avg_execution_time",
+				"et_fastest_execution_time",
+				"et_longest_execution_time",
+				"et_total_execution_time" );
 
 			Assert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",

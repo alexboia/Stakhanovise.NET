@@ -31,67 +31,28 @@
 // 
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using Npgsql;
-using LVD.Stakhanovise.NET.Helpers;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
 	public class AppMetricsTableDbAssetSetup : ISetupDbAsset
 	{
-		public const string MetricIdColumnName = "metric_id";
+		private ISetupDbAsset mScriptAssetSetup;
 
-		public const string MetricOwnerProcessIdColumnName = "metric_owner_process_id";
-
-		public const string MetricCategoryColumnName = "metric_category";
-
-		public const string MetricValueColumnName = "metric_value";
-
-		public const string MetricLastUpdatedColumnName = "metric_last_updated";
-
-		public const string MetricCategoryIndexFormat = "idx_{0}_metric_category";
-
-		private string GetDbTableCreationScript ( QueuedTaskMapping mapping )
+		public AppMetricsTableDbAssetSetup()
 		{
-			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.MetricsTableName}
-				(
-					{MetricIdColumnName} character varying(250) NOT NULL,
-					{MetricOwnerProcessIdColumnName} character varying(250) NOT NULL,
-					{MetricCategoryColumnName} character varying( 150 ) NOT NULL,
-					{MetricValueColumnName} bigint NOT NULL DEFAULT 0,
-					{MetricLastUpdatedColumnName} timestamp with time zone NOT NULL DEFAULT now(),
-					CONSTRAINT pk_{mapping.MetricsTableName} PRIMARY KEY ({MetricIdColumnName},{MetricOwnerProcessIdColumnName})
-				);";
+			mScriptAssetSetup = new DbScriptAssetSetup(
+				new EmbeddedResourceSqlSetupScriptProvider(
+					GetType().Assembly,
+					"sk_metrics_t.sql"
+				)
+			);
 		}
 
-		private string GetMetricCategoryIndexCreationScript ( QueuedTaskMapping mapping )
+		public async Task SetupDbAssetAsync( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
 		{
-			string indexName = string.Format( MetricCategoryIndexFormat, mapping.MetricsTableName );
-			return $@"CREATE INDEX IF NOT EXISTS {indexName} 
-					ON public.{mapping.MetricsTableName} USING btree 
-					(metric_category ASC NULLS LAST);";
-		}
-
-		public async Task SetupDbAssetAsync ( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
-		{
-			if ( queueConnectionOptions == null )
-				throw new ArgumentNullException( nameof( queueConnectionOptions ) );
-			if ( mapping == null )
-				throw new ArgumentNullException( nameof( mapping ) );
-
-			using ( NpgsqlConnection conn = await queueConnectionOptions.TryOpenConnectionAsync() )
-			{
-				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), 
-						conn ) )
-					await cmdTable.ExecuteNonQueryAsync();
-
-				using ( NpgsqlCommand cmdTableIndex = new NpgsqlCommand( GetMetricCategoryIndexCreationScript( mapping ), 
-						conn ) )
-					await cmdTableIndex.ExecuteNonQueryAsync();
-			}
+			await mScriptAssetSetup.SetupDbAssetAsync( queueConnectionOptions, 
+				mapping );
 		}
 	}
 }

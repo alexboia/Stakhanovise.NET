@@ -29,63 +29,30 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
-using Npgsql;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
 	public class ExecutionTimeStatsTableDbAssetSetup : ISetupDbAsset
 	{
-		public const string PayloadTypeColumnName = "et_payload_type";
+		private ISetupDbAsset mScriptAssetSetup;
 
-		public const string OwnerProcessIdColumnName = "et_owner_process_id";
-
-		public const string NExecutionCyclesColumnName = "et_n_execution_cycles";
-
-		public const string LastExecutionTimeColumnName = "et_last_execution_time";
-
-		public const string AverageExecutionTimeColumnName = "et_avg_execution_time";
-
-		public const string FastestExecutionTimeColumnName = "et_fastest_execution_time";
-
-		public const string LongestExecutionTimeColumnName = "et_longest_execution_time";
-
-		public const string TotalExecutionTimeColumnName = "et_total_execution_time";
-
-		private string GetDbTableCreationScript( QueuedTaskMapping mapping )
+		public ExecutionTimeStatsTableDbAssetSetup()
 		{
-			return $@"CREATE TABLE IF NOT EXISTS public.{mapping.ExecutionTimeStatsTableName}
-				(
-					{PayloadTypeColumnName} character varying(255) NOT NULL,
-					{OwnerProcessIdColumnName} character varying(255) NOT NULL,
-					{NExecutionCyclesColumnName} bigint NOT NULL,
-					{LastExecutionTimeColumnName} bigint NOT NULL,
-					{AverageExecutionTimeColumnName} bigint NOT NULL,
-					{FastestExecutionTimeColumnName} bigint NOT NULL,
-					{LongestExecutionTimeColumnName} bigint NOT NULL,
-					{TotalExecutionTimeColumnName} bigint NOT NULL,
-					CONSTRAINT pk_{mapping.ExecutionTimeStatsTableName} PRIMARY KEY ({PayloadTypeColumnName}, {OwnerProcessIdColumnName})
-				);";
+			mScriptAssetSetup = new DbScriptAssetSetup(
+				new EmbeddedResourceSqlSetupScriptProvider(
+					GetType().Assembly,
+					"sk_task_execution_time_stats_t.sql"
+				)
+			);
 		}
 
 		public async Task SetupDbAssetAsync( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
 		{
-			if ( queueConnectionOptions == null )
-				throw new ArgumentNullException( nameof( queueConnectionOptions ) );
-			if ( mapping == null )
-				throw new ArgumentNullException( nameof( mapping ) );
-
-			using ( NpgsqlConnection conn = await queueConnectionOptions.TryOpenConnectionAsync() )
-			{
-				using ( NpgsqlCommand cmdTable = new NpgsqlCommand( GetDbTableCreationScript( mapping ), conn ) )
-					await cmdTable.ExecuteNonQueryAsync();
-			}
+			await mScriptAssetSetup.SetupDbAssetAsync( queueConnectionOptions, 
+				mapping );
 		}
 	}
 }

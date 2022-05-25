@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Setup.BuiltInDbAssetsSetup
+namespace LVD.Stakhanovise.NET.Setup
 {
 	public class EmbeddedResourceSqlSetupScriptProvider : ISqlSetupScriptProvider
 	{

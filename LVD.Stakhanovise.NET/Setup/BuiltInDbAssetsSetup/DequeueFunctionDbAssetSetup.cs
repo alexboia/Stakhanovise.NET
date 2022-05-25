@@ -29,92 +29,30 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
-using Npgsql;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
 	public class DequeueFunctionDbAssetSetup : ISetupDbAsset
 	{
-		public const string SelectTypesParamName = "select_types";
+		private ISetupDbAsset mScriptAssetSetup;
 
-		public const string ExcludeIdsParamName = "exclude_ids";
-
-		public const string RefNowParamName = "ref_now";
-
-		public const string TaskIdTableParamName = "task_id";
-
-		public const string TaskLockHandleIdTableParamName = "task_lock_handle_id";
-
-		public const string TaskTypeTableParamName = "task_type";
-
-		public const string TaskSourceTableParamName = "task_source";
-
-		public const string TaskPayloadTableParamName = "task_payload";
-
-		public const string TaskPriorityTableParamName = "task_priority";
-
-		public const string TaskPostedAtTableParamName = "task_posted_at_ts";
-
-		public const string TaskLockedUntilTableParamName = "task_locked_until_ts";
-
-		private string GetDequeueFunctionCreationScript ( QueuedTaskMapping mapping )
+		public DequeueFunctionDbAssetSetup()
 		{
-			return $@"CREATE OR REPLACE FUNCTION public.{mapping.DequeueFunctionName}(
-					{SelectTypesParamName} character varying[],
-					{ExcludeIdsParamName} uuid[],
-					{RefNowParamName} timestamp with time zone)
-				RETURNS TABLE({TaskIdTableParamName} uuid, 
-					{TaskLockHandleIdTableParamName} bigint, 
-					{TaskTypeTableParamName} character varying, 
-					{TaskSourceTableParamName} character varying, 
-					{TaskPayloadTableParamName} text, 
-					{TaskPriorityTableParamName} integer, 
-					{TaskPostedAtTableParamName} timestamp with time zone, 
-					{TaskLockedUntilTableParamName} timestamp with time zone) 
-				LANGUAGE 'plpgsql'
-
-			AS $BODY$
-				DECLARE
-					n_select_types integer = CARDINALITY({SelectTypesParamName});
-	
-				BEGIN
-					RETURN QUERY 
-					WITH sk_dequeued_task AS
-						(DELETE FROM {mapping.QueueTableName} td WHERE td.task_id = (
-							SELECT t0.task_id
-									FROM {mapping.QueueTableName} t0 
-									WHERE (t0.task_type = ANY({SelectTypesParamName}) OR n_select_types = 0)
-										AND t0.task_locked_until_ts < {RefNowParamName}
-										AND t0.task_id <> ALL({ExcludeIdsParamName})
-									ORDER BY t0.task_priority ASC,
-										t0.task_locked_until_ts ASC,
-										t0.task_lock_handle_id ASC
-									LIMIT 1
-									FOR UPDATE SKIP LOCKED
-						) RETURNING *) SELECT sdt.* FROM sk_dequeued_task sdt;
-				END;
-			$BODY$;";
+			mScriptAssetSetup = new DbScriptAssetSetup(
+				new EmbeddedResourceSqlSetupScriptProvider(
+					GetType().Assembly,
+					"sk_try_dequeue_task.sql"
+				)
+			);
 		}
 
-		public async Task SetupDbAssetAsync ( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
+		public async Task SetupDbAssetAsync( ConnectionOptions queueConnectionOptions, QueuedTaskMapping mapping )
 		{
-			if ( queueConnectionOptions == null )
-				throw new ArgumentNullException( nameof( queueConnectionOptions ) );
-			if ( mapping == null )
-				throw new ArgumentNullException( nameof( mapping ) );
-
-			using ( NpgsqlConnection conn = await queueConnectionOptions.TryOpenConnectionAsync() )
-			{
-				using ( NpgsqlCommand cmdDequeueFunction = new NpgsqlCommand( GetDequeueFunctionCreationScript( mapping ), conn ) )
-					await cmdDequeueFunction.ExecuteNonQueryAsync();
-			}
+			await mScriptAssetSetup.SetupDbAssetAsync( queueConnectionOptions, 
+				mapping );
 		}
 	}
 }
