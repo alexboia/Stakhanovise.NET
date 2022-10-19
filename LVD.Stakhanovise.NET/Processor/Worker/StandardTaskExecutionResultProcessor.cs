@@ -63,8 +63,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			//Update execution result and see whether 
 			//	we need to repost the task to retry its execution
-			QueuedTaskProduceInfo repostWithInfo = queuedTaskToken
-				.UdpateFromExecutionResult( result );
+			QueuedTaskProduceInfo repostWithInfo =
+				queuedTaskToken.UdpateFromExecutionResult( result );
 
 			await PostResultAsync( queuedTaskToken );
 			await RepostIfNeededAsync( repostWithInfo );

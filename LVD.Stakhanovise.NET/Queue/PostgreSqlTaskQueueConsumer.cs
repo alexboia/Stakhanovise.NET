@@ -190,7 +190,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			NpgsqlConnection conn = null;
 			QueuedTask dequeuedTask = null;
 			QueuedTaskResult dequeuedTaskResult = null;
-			PostgreSqlQueuedTaskToken dequeuedTaskToken = null;
+			QueuedTaskToken dequeuedTaskToken = null;
 
 			MonotonicTimestamp startDequeue;
 			DateTimeOffset refNow = mTimestampProvider.GetNow();
@@ -227,7 +227,7 @@ namespace LVD.Stakhanovise.NET.Queue
 						if ( dequeuedTaskResult != null )
 						{
 							await tx.CommitAsync();
-							dequeuedTaskToken = new PostgreSqlQueuedTaskToken( dequeuedTask,
+							dequeuedTaskToken = new QueuedTaskToken( dequeuedTask,
 								dequeuedTaskResult,
 								refNow );
 						}

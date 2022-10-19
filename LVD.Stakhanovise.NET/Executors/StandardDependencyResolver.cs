@@ -93,20 +93,20 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		public T TryResolve<T> () where T : class
 		{
-			if ( !mContainer.TryResolve<T>( out T instance ) )
-				instance = default;
-			else
+			if ( mContainer.TryResolve<T>( out T instance ) )
 				mContainer.BuildUp( instance );
+			else
+				instance = default;
 
 			return instance;
 		}
 
 		public object TryResolve ( Type serviceType )
 		{
-			if ( !mContainer.TryResolve( serviceType, out object instance ) )
-				instance = null;
-			else
+			if ( mContainer.TryResolve( serviceType, out object instance ) )
 				mContainer.BuildUp( instance );
+			else
+				instance = null;
 
 			return instance;
 		}

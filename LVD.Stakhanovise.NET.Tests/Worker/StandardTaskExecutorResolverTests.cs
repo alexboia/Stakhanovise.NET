@@ -20,7 +20,7 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 		public void Test_CanResolveExecutor( bool withPayload )
 		{
 			Mock<ITaskExecutorRegistry> registryMock =
-				CreateMockRegistry();
+				CreateMockRegistryForResolvingKnownType( !withPayload );
 
 			StandardTaskExecutorResolver resolver =
 				CreateResolver( registryMock.Object );
@@ -41,7 +41,7 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 				CreateLogger() );
 		}
 
-		private Mock<ITaskExecutorRegistry> CreateMockRegistry()
+		private Mock<ITaskExecutorRegistry> CreateMockRegistryForResolvingKnownType( bool withPayloadLookup )
 		{
 			Mock<ITaskExecutorRegistry> mock =
 				new Mock<ITaskExecutorRegistry>();
@@ -51,14 +51,16 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 			Type samplePayloadType =
 				typeof( SampleTaskPayload );
 
-			mock.Setup( m => m.ResolvePayloadType( samplePayloadType.FullName ) )
-				.Returns( samplePayloadType );
+			if ( withPayloadLookup )
+			{
+				mock.Setup( m => m.ResolvePayloadType( samplePayloadType.FullName ) )
+					.Returns( samplePayloadType )
+					.Verifiable();
+			}
 
 			mock.Setup( m => m.ResolveExecutor( samplePayloadType ) )
-				.Returns( mockExecuor.Object );
-
-			mock.Setup( m => m.ResolveExecutor( It.Is<Type>( t => !t.Equals( samplePayloadType ) ) ) )
-				.Returns<ITaskExecutor>( null );
+				.Returns( mockExecuor.Object )
+				.Verifiable();
 
 			return mock;
 		}
@@ -84,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 		public void Test_TryResolveExecutor_NoExecutorRegistered( bool withPayload )
 		{
 			Mock<ITaskExecutorRegistry> registryMock =
-				CreateMockRegistry();
+				CreateMockRegistryForResolvingUnknownType( !withPayload );
 
 			StandardTaskExecutorResolver resolver =
 				CreateResolver( registryMock.Object );
@@ -97,6 +99,30 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 
 			Assert.IsNull( executor );
 			registryMock.Verify();
+		}
+
+		private Mock<ITaskExecutorRegistry> CreateMockRegistryForResolvingUnknownType( bool withPayloadLookup )
+		{
+			Mock<ITaskExecutorRegistry> mock =
+				new Mock<ITaskExecutorRegistry>();
+			Mock<ITaskExecutor> mockExecuor =
+				new Mock<ITaskExecutor>( MockBehavior.Loose );
+
+			if ( withPayloadLookup )
+			{
+				Type anotherSamplePayloadType =
+					typeof( AnotherSampleTaskPayload );
+
+				mock.Setup( m => m.ResolvePayloadType( anotherSamplePayloadType.FullName ) )
+					.Returns( anotherSamplePayloadType )
+					.Verifiable();
+			}
+
+			mock.Setup( m => m.ResolveExecutor( It.IsAny<Type>() ) )
+				.Returns<ITaskExecutor>( null )
+				.Verifiable();
+
+			return mock;
 		}
 
 		private IQueuedTask CreateUnknownQueuedTask( bool withPayload )
