@@ -40,15 +40,15 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public class StandardTaskBuffer : ITaskBuffer, IAppMetricsProvider
 	{
-		private int mCapacity;
+		public event EventHandler QueuedTaskRetrieved;
+
+		public event EventHandler QueuedTaskAdded;
+
+		private readonly int mCapacity;
 
 		private BlockingCollection<IQueuedTaskToken> mInnerBuffer;
 
 		private bool mIsDisposed = false;
-
-		public event EventHandler QueuedTaskRetrieved;
-
-		public event EventHandler QueuedTaskAdded;
 
 		private AppMetricsCollection mMetrics = new AppMetricsCollection
 		(

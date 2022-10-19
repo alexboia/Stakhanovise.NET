@@ -37,18 +37,18 @@ namespace LVD.Stakhanovise.NET.Model
 {
 	public class QueuedTask : IQueuedTask, IEquatable<QueuedTask>
 	{
-		public QueuedTask ()
+		public QueuedTask()
 		{
 			return;
 		}
 
-		public QueuedTask ( Guid taskId )
+		public QueuedTask( Guid taskId )
 			: this()
 		{
 			Id = taskId;
 		}
 
-		public bool Equals ( QueuedTask other )
+		public bool Equals( QueuedTask other )
 		{
 			if ( other == null )
 				return false;
@@ -59,30 +59,54 @@ namespace LVD.Stakhanovise.NET.Model
 			return Id.Equals( other.Id );
 		}
 
-		public override bool Equals ( object obj )
+		public override bool Equals( object obj )
 		{
 			return Equals( obj as QueuedTask );
 		}
 
-		public override int GetHashCode ()
+		public override int GetHashCode()
 		{
 			return Id.GetHashCode();
 		}
 
-		public Guid Id { get; set; }
+		public Guid Id
+		{
+			get; set;
+		}
 
-		public long LockHandleId { get; set; }
+		public long LockHandleId
+		{
+			get; set;
+		}
 
-		public string Type { get; set; }
+		public string Type
+		{
+			get; set;
+		}
 
-		public string Source { get; set; }
+		public string Source
+		{
+			get; set;
+		}
 
-		public object Payload { get; set; }
+		public object Payload
+		{
+			get; set;
+		}
 
-		public int Priority { get; set; }
+		public int Priority
+		{
+			get; set;
+		}
 
-		public DateTimeOffset LockedUntilTs { get; set; }
+		public DateTimeOffset LockedUntilTs
+		{
+			get; set;
+		}
 
-		public DateTimeOffset PostedAtTs { get; set; }
+		public DateTimeOffset PostedAtTs
+		{
+			get; set;
+		}
 	}
 }

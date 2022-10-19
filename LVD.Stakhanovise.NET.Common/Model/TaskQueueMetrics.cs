@@ -37,7 +37,7 @@ namespace LVD.Stakhanovise.NET.Model
 {
 	public class TaskQueueMetrics
 	{
-		public TaskQueueMetrics ( long totalUnprocessed,
+		public TaskQueueMetrics( long totalUnprocessed,
 			long totalProcessing,
 			long totalErrored,
 			long totalFaulted,
@@ -52,16 +52,34 @@ namespace LVD.Stakhanovise.NET.Model
 			TotalProcessed = totalProcessed;
 		}
 
-		public long TotalUnprocessed { get; private set; }
+		public long TotalUnprocessed
+		{
+			get; private set;
+		}
 
-		public long TotalProcessing { get; private set; }
+		public long TotalProcessing
+		{
+			get; private set;
+		}
 
-		public long TotalErrored { get; private set; }
+		public long TotalErrored
+		{
+			get; private set;
+		}
 
-		public long TotalFaulted { get; private set; }
+		public long TotalFaulted
+		{
+			get; private set;
+		}
 
-		public long TotalFataled { get; private set; }
+		public long TotalFataled
+		{
+			get; private set;
+		}
 
-		public long TotalProcessed { get; private set; }
+		public long TotalProcessed
+		{
+			get; private set;
+		}
 	}
 }

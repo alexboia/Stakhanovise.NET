@@ -40,11 +40,11 @@ namespace LVD.Stakhanovise.NET
 {
 	public interface ITaskExecutionContext
 	{
-		void NotifyTaskCompleted ();
+		void SetTaskCompleted ();
 
-		void NotifyTaskErrored ( QueuedTaskError error, bool isRecoverable );
+		void SetTaskErrored ( QueuedTaskError error, bool isRecoverable );
 
-		void NotifyCancellationObserved ();
+		void SetCancellationObserved ();
 
 		void ThrowIfCancellationRequested ();
 

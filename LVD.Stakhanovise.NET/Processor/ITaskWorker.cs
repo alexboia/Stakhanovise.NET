@@ -38,7 +38,7 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public interface ITaskWorker : IDisposable
 	{
-		Task StartAsync ( params string[] requiredPayloadTypes );
+		Task StartAsync ();
 
 		Task StopAync ();
 

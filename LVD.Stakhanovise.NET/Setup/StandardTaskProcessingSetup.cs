@@ -89,7 +89,7 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public TaskProcessingOptions BuildOptions ()
 		{
-			return new TaskProcessingOptions( calculateDelayTicksTaskAfterFailure: mCalculateDelayTicksTaskAfterFailure,
+			return new TaskProcessingOptions( calculateRetryMillisecondsDelay: mCalculateDelayTicksTaskAfterFailure,
 				isTaskErrorRecoverable: mIsTaskErrorRecoverable,
 				faultErrorThresholdCount: mFaultErrorThresholdCount );
 		}

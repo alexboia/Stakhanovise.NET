@@ -55,17 +55,17 @@ namespace LVD.Stakhanovise.NET
 			mCancellationToken = stopToken;
 		}
 
-		public void NotifyTaskCompleted ()
+		public void SetTaskCompleted ()
 		{
 			mResult = TaskExecutionResultInfo.Successful();
 		}
 
-		public void NotifyTaskErrored ( QueuedTaskError error, bool isRecoverable )
+		public void SetTaskErrored ( QueuedTaskError error, bool isRecoverable )
 		{
 			mResult = TaskExecutionResultInfo.ExecutedWithError( error, isRecoverable );
 		}
 
-		public void NotifyCancellationObserved ()
+		public void SetCancellationObserved ()
 		{
 			mResult = TaskExecutionResultInfo.Cancelled();
 		}

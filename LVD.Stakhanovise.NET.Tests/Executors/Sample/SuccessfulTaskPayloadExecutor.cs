@@ -42,7 +42,7 @@ namespace LVD.Stakhanovise.NET.Tests.Executors
 	{
 		public Task ExecuteAsync ( SuccessfulTaskPayload payload, ITaskExecutionContext executionContext )
 		{
-			executionContext.NotifyTaskCompleted();
+			executionContext.SetTaskCompleted();
 			return Task.CompletedTask;
 		}
 

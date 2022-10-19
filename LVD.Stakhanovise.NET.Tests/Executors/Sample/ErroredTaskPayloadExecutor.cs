@@ -44,7 +44,7 @@ namespace LVD.Stakhanovise.NET.Tests.Executors
 	{
 		public Task ExecuteAsync ( ErroredTaskPayload payload, ITaskExecutionContext executionContext )
 		{
-			executionContext.NotifyTaskErrored( new QueuedTaskError( new InvalidOperationException( "Sample invalid operation" ) ), isRecoverable: true );
+			executionContext.SetTaskErrored( new QueuedTaskError( new InvalidOperationException( "Sample invalid operation" ) ), isRecoverable: true );
 			return Task.CompletedTask;
 		}
 

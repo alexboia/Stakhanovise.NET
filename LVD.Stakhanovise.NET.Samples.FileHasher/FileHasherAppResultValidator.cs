@@ -275,8 +275,6 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher
 			}
 		}
 
-
-
 		private string FormatPayloadName( string payloadName )
 		{
 			return payloadName.Substring( payloadName.LastIndexOf( '.' ) + 1 );

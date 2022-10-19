@@ -60,7 +60,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public static TaskProcessingOptions GetDefaultTaskProcessingOptions ()
 		{
-			return new TaskProcessingOptions( calculateDelayTicksTaskAfterFailure: token
+			return new TaskProcessingOptions( calculateRetryMillisecondsDelay: token
 					=> ( long )500 * ( token.LastQueuedTaskResult.ErrorCount + 1 ),
 				isTaskErrorRecoverable: ( task, exc )
 					 => !( exc is NullReferenceException )

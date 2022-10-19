@@ -39,12 +39,12 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskProcessingOptions
 	{
-		public TaskProcessingOptions ( Func<IQueuedTaskToken, long> calculateDelayTicksTaskAfterFailure,
+		public TaskProcessingOptions( Func<IQueuedTaskToken, long> calculateRetryMillisecondsDelay,
 			Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable,
 			int faultErrorThresholdCount )
 		{
-			if ( calculateDelayTicksTaskAfterFailure == null )
-				throw new ArgumentNullException( nameof( calculateDelayTicksTaskAfterFailure ) );
+			if ( calculateRetryMillisecondsDelay == null )
+				throw new ArgumentNullException( nameof( calculateRetryMillisecondsDelay ) );
 
 			if ( isTaskErrorRecoverable == null )
 				throw new ArgumentNullException( nameof( isTaskErrorRecoverable ) );
@@ -53,15 +53,24 @@ namespace LVD.Stakhanovise.NET.Options
 				throw new ArgumentOutOfRangeException( nameof( faultErrorThresholdCount ),
 					"Fault error threshold count must be greater than or equal to 1" );
 
-			CalculateRetryMillisecondsDelay = calculateDelayTicksTaskAfterFailure;
+			CalculateRetryMillisecondsDelay = calculateRetryMillisecondsDelay;
 			IsTaskErrorRecoverable = isTaskErrorRecoverable;
 			FaultErrorThresholdCount = faultErrorThresholdCount;
 		}
 
-		public Func<IQueuedTaskToken, long> CalculateRetryMillisecondsDelay { get; private set; }
+		public Func<IQueuedTaskToken, long> CalculateRetryMillisecondsDelay
+		{
+			get; private set;
+		}
 
-		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; private set; }
+		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable
+		{
+			get; private set;
+		}
 
-		public int FaultErrorThresholdCount { get; private set; }
+		public int FaultErrorThresholdCount
+		{
+			get; private set;
+		}
 	}
 }

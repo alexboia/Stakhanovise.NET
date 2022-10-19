@@ -36,18 +36,18 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public sealed class PostgreSqlQueuedTaskToken : IQueuedTaskToken
 	{
-		public PostgreSqlQueuedTaskToken ( QueuedTask dequeuedTask,
+		public PostgreSqlQueuedTaskToken( QueuedTask dequeuedTask,
 			QueuedTaskResult lastQueuedTaskResult,
 			DateTimeOffset dequeuedAt )
 		{
-			DequeuedTask = dequeuedTask 
+			DequeuedTask = dequeuedTask
 				?? throw new ArgumentNullException( nameof( dequeuedTask ) );
-			LastQueuedTaskResult = lastQueuedTaskResult 
+			LastQueuedTaskResult = lastQueuedTaskResult
 				?? throw new ArgumentNullException( nameof( lastQueuedTaskResult ) );
 			DequeuedAt = dequeuedAt;
 		}
 
-		public QueuedTaskProduceInfo UdpateFromExecutionResult ( TaskExecutionResult result )
+		public QueuedTaskProduceInfo UdpateFromExecutionResult( TaskExecutionResult result )
 		{
 			return LastQueuedTaskResult.UdpateFromExecutionResult( result );
 		}
@@ -66,10 +66,19 @@ namespace LVD.Stakhanovise.NET.Queue
 			};
 		}
 
-		public IQueuedTask DequeuedTask { get; private set; }
+		public IQueuedTask DequeuedTask
+		{
+			get; private set;
+		}
 
-		public IQueuedTaskResult LastQueuedTaskResult { get; private set; }
+		public IQueuedTaskResult LastQueuedTaskResult
+		{
+			get; private set;
+		}
 
-		public DateTimeOffset DequeuedAt { get; private set; }
+		public DateTimeOffset DequeuedAt
+		{
+			get; private set;
+		}
 	}
 }

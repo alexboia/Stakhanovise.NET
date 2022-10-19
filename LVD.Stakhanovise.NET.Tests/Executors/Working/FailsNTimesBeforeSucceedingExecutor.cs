@@ -68,7 +68,7 @@ namespace LVD.Stakhanovise.NET.Tests.Executors.Working
 			if ( currentFailCount <= payload.FailuresBeforeSuccess )
 				throw new InvalidOperationException( $"Sample invalid operation during {nameof( FailsNTimesBeforeSucceeding )}" );
 			else
-				executionContext.NotifyTaskCompleted();
+				executionContext.SetTaskCompleted();
 
 			return Task.CompletedTask;
 		}

@@ -62,7 +62,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( CancellationTokenSource cts = new CancellationTokenSource() )
 			{
 				TaskExecutionContext ctx = new TaskExecutionContext( taskMock.Object, cts.Token );
-				ctx.NotifyTaskCompleted();
+				ctx.SetTaskCompleted();
 
 				Assert.IsTrue( ctx.HasResult );
 				Assert.NotNull( ctx.ResultInfo );
@@ -87,7 +87,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				TaskExecutionContext ctx = new TaskExecutionContext( taskMock.Object, cts.Token );
 
-				ctx.NotifyTaskErrored( new QueuedTaskError( exc ), isRecoverable );
+				ctx.SetTaskErrored( new QueuedTaskError( exc ), isRecoverable );
 
 				Assert.IsTrue( ctx.HasResult );
 				Assert.NotNull( ctx.ResultInfo );
@@ -117,7 +117,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			{
 				TaskExecutionContext ctx = new TaskExecutionContext( taskMock.Object, cts.Token );
 
-				ctx.NotifyCancellationObserved();
+				ctx.SetCancellationObserved();
 				Assert.IsTrue( ctx.HasResult );
 				Assert.NotNull( ctx.ResultInfo );
 				Assert.IsFalse( ctx.ResultInfo.ExecutedSuccessfully );

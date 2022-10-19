@@ -58,7 +58,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private TaskProcessingOptions mOptions;
 
-
 		private Task mQueuedTaskPollingWorker;
 
 		private CancellationTokenSource mStopTokenSource;

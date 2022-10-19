@@ -38,7 +38,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
@@ -124,8 +123,12 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CheckDisposedOrThrow()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( StandardTaskEngine ),
-					"Cannot reuse a disposed task result queue" );
+			{
+				throw new ObjectDisposedException(
+					nameof( StandardTaskEngine ),
+					"Cannot reuse a disposed task result queue"
+				);
+			}
 		}
 
 		private async Task DoStartupSequenceAsync()
@@ -133,7 +136,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.DebugFormat( "Attempting to start the task engine with {0} workers",
 				mOptions.WorkerCount );
 
-			string[] requiredPayloadTypes =
+			string [] requiredPayloadTypes =
 				GetRequiredPayloadTypeNames();
 
 			mLogger.DebugFormat( "Found payload types: {0}.",
@@ -143,7 +146,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			await StartResultQueueProcessingAsync();
 			await StartExecutionPerformanceMonitorAsync();
 			await StartPollerAsync( requiredPayloadTypes );
-			await StartWorkersAsync( requiredPayloadTypes );
+			await StartWorkersAsync();
 
 			mLogger.Debug( "The task engine has been successfully started." );
 		}
@@ -186,14 +189,14 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Debug( "The task engine is already stopped." );
 		}
 
-		private string[] GetRequiredPayloadTypeNames()
+		private string [] GetRequiredPayloadTypeNames()
 		{
 			return mExecutorRegistry
 				.DetectedPayloadTypeNames
 				.ToArray();
 		}
 
-		public void ScanAssemblies( params Assembly[] assemblies )
+		public void ScanAssemblies( params Assembly [] assemblies )
 		{
 			mLogger.Debug( "Scanning given assemblies for task executors..." );
 			mExecutorRegistry.ScanAssemblies( assemblies );
@@ -228,7 +231,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Successfully stopped execution performance monitor." );
 		}
 
-		private async Task StartPollerAsync( string[] requiredPayloadTypes )
+		private async Task StartPollerAsync( string [] requiredPayloadTypes )
 		{
 			mLogger.Debug( "Attempting to start the task poller..." );
 			await mTaskPoller.StartAsync( requiredPayloadTypes );
@@ -242,26 +245,57 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "The task poller has been successfully stopped. Attempting to stop workers." );
 		}
 
-		private async Task StartWorkersAsync( string[] requiredPayloadTypes )
+		private async Task StartWorkersAsync()
 		{
 			mLogger.Debug( "Attempting to start workers..." );
 
 			for ( int i = 0; i < mOptions.WorkerCount; i++ )
-				await CreateAndStartWorkerAsync( requiredPayloadTypes );
+				await CreateAndStartWorkerAsync();
 
 			mLogger.Debug( "All the workers have been successfully started." );
 		}
 
-		private async Task CreateAndStartWorkerAsync( string[] requiredPayloadTypes )
+		private async Task CreateAndStartWorkerAsync()
 		{
-			StandardTaskWorker taskWorker = new StandardTaskWorker( mOptions.TaskProcessingOptions,
-				mTaskBuffer,
-				mExecutorRegistry,
-				mExecutionPerfMon,
-				mTaskQueueProducer,
-				mTaskResultQueue );
+			IStakhanoviseLoggingProvider loggingProvider = StakhanoviseLogManager
+				.Provider;
 
-			await taskWorker.StartAsync( requiredPayloadTypes );
+			ITaskExecutionMetricsProvider metricsProvider =
+				new StandardTaskExecutionMetricsProvider();
+
+			ITaskExecutorBufferHandlerFactory bufferHandlerFactory =
+				new StandardTaskExecutorBufferHandlerFactory( metricsProvider,
+					loggingProvider );
+
+			ITaskExecutorResolver taskExecutorResolver =
+				new StandardTaskExecutorResolver( mExecutorRegistry,
+					loggingProvider.CreateLogger<StandardTaskExecutorResolver>() );
+
+			ITaskExecutionRetryCalculator executionRetryCalculator =
+				new StandardTaskExecutionRetryCalculator( mOptions.TaskProcessingOptions,
+					loggingProvider.CreateLogger<StandardTaskExecutionRetryCalculator>() );
+
+			ITaskProcessor taskProcessor =
+				new StandardTaskProcessor( mOptions.TaskProcessingOptions,
+					taskExecutorResolver,
+					executionRetryCalculator,
+					loggingProvider.CreateLogger<StandardTaskProcessor>() );
+
+			ITaskResultProcessor resultProcessor =
+				new StandardTaskExecutionResultProcessor( mTaskResultQueue,
+					mTaskQueueProducer, 
+					mExecutionPerfMon,
+					loggingProvider.CreateLogger<StandardTaskExecutionResultProcessor>() );
+
+			StandardTaskWorker taskWorker =
+				new StandardTaskWorker( mTaskBuffer,
+					bufferHandlerFactory,
+					taskProcessor,
+					resultProcessor,
+					metricsProvider,
+					loggingProvider.CreateLogger<StandardTaskWorker>() );
+
+			await taskWorker.StartAsync();
 			mWorkers.Add( taskWorker );
 		}
 
