@@ -205,8 +205,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			ITaskEngine taskEngine =
 				CreateTaskEngine( workerCount );
 
-			int numberForErrorsBeforeSucceeding = taskEngine.Options
-				.TaskProcessingOptions
+			int numberForErrorsBeforeSucceeding = mTaskProcessingOptions
 				.FaultErrorThresholdCount - 1;
 
 			CountdownEvent doneEvent =
@@ -249,8 +248,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			ITaskEngine taskEngine =
 				CreateTaskEngine( workerCount );
 
-			int expectedNumberOfErrors = taskEngine.Options
-				.TaskProcessingOptions
+			int expectedNumberOfErrors = mTaskProcessingOptions
 				.FaultErrorThresholdCount + 2;
 
 			CountdownEvent doneEvent =
@@ -371,7 +369,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private ITaskEngine CreateTaskEngine( int workerCount )
 		{
-			ITaskEngine engine = new StandardTaskEngine( GetTaskEngineOptions( workerCount ),
+			StandardTaskEngine engine = new StandardTaskEngine( GetTaskEngineOptions( workerCount ),
 				mProducerAndResultOptions,
 				mTaskQueueConsumerOptions,
 				CreateTaskExecutorRegistry(),

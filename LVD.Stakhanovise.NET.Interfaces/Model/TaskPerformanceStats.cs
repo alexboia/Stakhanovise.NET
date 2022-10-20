@@ -29,24 +29,50 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Options;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Processor
+namespace LVD.Stakhanovise.NET.Model
 {
-	public interface IExecutionPerformanceMonitor
+	public class TaskPerformanceStats : IEquatable<TaskPerformanceStats>
 	{
-		Task<int> ReportExecutionTimeAsync ( string payloadType, long durationMilliseconds, int timeoutMilliseconds );
+		public TaskPerformanceStats( string payloadType, long durationMilliseconds )
+		{
+			PayloadType = payloadType;
+			DurationMilliseconds = durationMilliseconds;
+		}
 
-		Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer );
+		public bool Equals( TaskPerformanceStats other )
+		{
+			return other != null &&
+				string.Equals( PayloadType, other.PayloadType )
+				&& DurationMilliseconds == other.DurationMilliseconds;
+		}
 
-		Task StopFlushingAsync ();
+		public override bool Equals( object obj )
+		{
+			return Equals( obj as TaskPerformanceStats );
+		}
 
-		bool IsRunning { get; }
+		public override int GetHashCode()
+		{
+			int result = 1;
+
+			result = result * 13 + PayloadType.GetHashCode();
+			result = result * 13 + DurationMilliseconds.GetHashCode();
+
+			return result;
+		}
+
+		public string PayloadType
+		{
+			get; private set;
+		}
+
+		public long DurationMilliseconds
+		{
+			get; private set;
+		}
 	}
 }

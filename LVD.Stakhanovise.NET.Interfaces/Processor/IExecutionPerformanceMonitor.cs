@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020, Boia Alexandru
+// Copyright (c) 2020-2022, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -29,84 +29,18 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Model
+namespace LVD.Stakhanovise.NET.Processor
 {
-	public class QueuedTask : IQueuedTask, IEquatable<QueuedTask>
+	public interface IExecutionPerformanceMonitor
 	{
-		public QueuedTask()
-		{
-			return;
-		}
+		Task<int> ReportExecutionTimeAsync ( string payloadType, long durationMilliseconds, int timeoutMilliseconds );
 
-		public QueuedTask( Guid taskId )
-			: this()
-		{
-			Id = taskId;
-		}
+		Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer );
 
-		public bool Equals( QueuedTask other )
-		{
-			if ( other == null )
-				return false;
+		Task StopFlushingAsync ();
 
-			if ( Id.Equals( Guid.Empty ) && other.Id.Equals( Guid.Empty ) )
-				return ReferenceEquals( this, other );
-
-			return Id.Equals( other.Id );
-		}
-
-		public override bool Equals( object obj )
-		{
-			return Equals( obj as QueuedTask );
-		}
-
-		public override int GetHashCode()
-		{
-			return Id.GetHashCode();
-		}
-
-		public Guid Id
-		{
-			get; set;
-		}
-
-		public long LockHandleId
-		{
-			get; set;
-		}
-
-		public string Type
-		{
-			get; set;
-		}
-
-		public string Source
-		{
-			get; set;
-		}
-
-		public object Payload
-		{
-			get; set;
-		}
-
-		public int Priority
-		{
-			get; set;
-		}
-
-		public DateTimeOffset LockedUntilTs
-		{
-			get; set;
-		}
-
-		public DateTimeOffset PostedAtTs
-		{
-			get; set;
-		}
+		bool IsRunning { get; }
 	}
 }

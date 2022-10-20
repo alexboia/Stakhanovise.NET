@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
@@ -43,8 +43,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common.Interfaces\LVD.Stakhanovise.NET.Common.Interfaces.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Info\LVD.Stakhanovise.NET.Info.csproj" />
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Interfaces\LVD.Stakhanovise.NET.Interfaces.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
 	</ItemGroup>
 

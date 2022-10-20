@@ -60,9 +60,9 @@ namespace LVD.Stakhanovise.NET.Executors
 			return mContainer.CanResolve( serviceType );
 		}
 
-		public void Load ( IEnumerable<DependencyRegistration> registrations )
+		public void Load ( IEnumerable<IDependencyRegistration> registrations )
 		{
-			foreach ( DependencyRegistration registration in registrations )
+			foreach ( IDependencyRegistration registration in registrations )
 			{
 				if ( mContainer.CanResolve( registration.Target ) )
 					continue;

@@ -59,12 +59,24 @@ namespace LVD.Stakhanovise.NET.Options
 			return;
 		}
 
-		public int ConnectionRetryCount { get; private set; }
+		public int ConnectionRetryCount
+		{
+			get; private set;
+		}
 
-		public int ConnectionRetryDelayMilliseconds { get; private set; }
+		public int ConnectionRetryDelayMilliseconds
+		{
+			get; private set;
+		}
 
-		public int ConnectionKeepAliveSeconds { get; private set; }
+		public int ConnectionKeepAliveSeconds
+		{
+			get; private set;
+		}
 
-		public string ConnectionString { get; private set; }
+		public string ConnectionString
+		{
+			get; private set;
+		}
 	}
 }

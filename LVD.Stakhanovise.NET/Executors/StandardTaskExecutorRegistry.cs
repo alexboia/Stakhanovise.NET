@@ -118,8 +118,8 @@ namespace LVD.Stakhanovise.NET.Executors
 			if ( deps == null )
 				throw new ArgumentNullException( nameof( deps ) );
 
-			List<DependencyRegistration> regs =
-				new List<DependencyRegistration>();
+			List<IDependencyRegistration> regs =
+				new List<IDependencyRegistration>();
 
 			foreach ( KeyValuePair<Type, object> depPair in deps )
 				regs.Add( DependencyRegistration.BindToInstance( depPair.Key, depPair.Value ) );

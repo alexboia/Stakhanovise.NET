@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020-2022, Boia Alexandru
+// Copyright (c) 2020, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -33,18 +33,74 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Executors
+namespace LVD.Stakhanovise.NET.Model
 {
-	public interface IDependencyResolver : IDisposable
+	public class QueuedTaskProduceInfo
 	{
-		T TryResolve<T> () where T: class;
+		public QueuedTaskProduceInfo()
+		{
+			Status = QueuedTaskStatus.Unprocessed;
+		}
 
-		object TryResolve ( Type serviceType );
+		public IQueuedTask CreateNewTask( ITimestampProvider timestampProvider )
+		{
+			if ( timestampProvider == null )
+				throw new ArgumentNullException( nameof( timestampProvider ) );
 
-		bool CanResolve<T> () where T : class;
+			QueuedTask queuedTask =
+				new QueuedTask();
 
-		bool CanResolve ( Type serviceType );
+			queuedTask.Id = GenerateNewTaskId();
+			queuedTask.Payload = Payload;
+			queuedTask.Type = Type;
+			queuedTask.Source = Source;
+			queuedTask.Priority = Priority;
+			queuedTask.PostedAtTs = timestampProvider.GetNow();
+			queuedTask.LockedUntilTs = LockedUntilTs;
 
-		void Load ( IEnumerable<DependencyRegistration> registration );
+			return queuedTask;
+		}
+
+		private Guid GenerateNewTaskId()
+		{
+			return HasId ? Id : Guid.NewGuid();
+		}
+
+		public Guid Id
+		{
+			get; set;
+		}
+
+		public string Type
+		{
+			get; set;
+		}
+
+		public string Source
+		{
+			get; set;
+		}
+
+		public object Payload
+		{
+			get; set;
+		}
+
+		public int Priority
+		{
+			get; set;
+		}
+
+		public DateTimeOffset LockedUntilTs
+		{
+			get; set;
+		}
+
+		public QueuedTaskStatus Status
+		{
+			get; set;
+		}
+
+		public bool HasId => !Id.Equals( Guid.Empty );
 	}
 }

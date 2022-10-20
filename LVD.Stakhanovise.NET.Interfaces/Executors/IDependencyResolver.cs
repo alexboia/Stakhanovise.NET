@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020, Boia Alexandru
+// Copyright (c) 2020-2022, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -33,24 +33,18 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Model
+namespace LVD.Stakhanovise.NET.Executors
 {
-	public interface IQueuedTask
+	public interface IDependencyResolver : IDisposable
 	{
-		Guid Id { get; }
+		T TryResolve<T>() where T : class;
 
-		long LockHandleId { get; }
+		object TryResolve( Type serviceType );
 
-		string Type { get; set; }
+		bool CanResolve<T>() where T : class;
 
-		string Source { get; }
+		bool CanResolve( Type serviceType );
 
-		object Payload { get; }
-
-		int Priority { get; set; }
-
-		DateTimeOffset PostedAtTs { get; }
-
-		DateTimeOffset LockedUntilTs { get; }
+		void Load( IEnumerable<IDependencyRegistration> registration );
 	}
 }

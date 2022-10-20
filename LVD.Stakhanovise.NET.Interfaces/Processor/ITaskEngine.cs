@@ -31,36 +31,32 @@
 // 
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Reflection;
+using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Executors.IoC
+namespace LVD.Stakhanovise.NET.Processor
 {
-	public static class TinyIoCRegisterOptionsExtensions
+	public interface ITaskEngine : IDisposable
 	{
-		public static TinyIoCContainer.RegisterOptions WithScopeFromRegistrationInfo( this TinyIoCContainer.RegisterOptions regOpts,
-			IDependencyRegistration registration )
+		Task StartAsync();
+
+		Task StopAync();
+
+		void ScanAssemblies( params Assembly [] assemblies );
+
+		IEnumerable<ITaskWorker> Workers
 		{
-			if ( regOpts == null )
-				throw new ArgumentNullException( nameof( regOpts ) );
+			get;
+		}
 
-			if ( registration == null )
-				throw new ArgumentNullException( nameof( registration ) );
+		ITaskPoller TaskPoller
+		{
+			get;
+		}
 
-			switch ( registration.Scope )
-			{
-				case DependencyScope.Singleton:
-					regOpts.AsSingleton();
-					break;
-				case DependencyScope.Thread:
-					regOpts.AsPerRequestSingleton();
-					break;
-				case DependencyScope.Transient:
-					if ( !registration.IsProviderRegistration )
-						regOpts.AsMultiInstance();
-					break;
-			}
-
-			return regOpts;
+		bool IsStarted
+		{
+			get;
 		}
 	}
 }

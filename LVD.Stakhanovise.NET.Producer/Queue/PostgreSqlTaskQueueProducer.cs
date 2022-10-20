@@ -133,18 +133,17 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( produceInfo.Priority < 0 )
 				throw new ArgumentOutOfRangeException( nameof( produceInfo ), "Priority must be greater than or equal to 0" );
 
-			QueuedTask queuedTask = CreateNewTaskFromInfo( produceInfo );
-
 			using ( NpgsqlConnection conn = await TryOpenConnectionAsync() )
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
 			{
-				queuedTask = await TryPostTaskAsync( queuedTask, produceInfo, conn, tx );
+				IQueuedTask queuedTask = await TryPostTaskAsync( produceInfo, conn, tx );
+				
 				await TryInitOrUpdateResultAsync( queuedTask, produceInfo, conn, tx );
-				await NotifyNewTaskPostedAsync( queuedTask, conn, tx );
+				await NotifyNewTaskPostedAsync( queuedTask, conn, tx );			
 				tx.Commit();
-			}
 
-			return queuedTask;
+				return queuedTask;
+			}
 		}
 
 		private async Task<NpgsqlConnection> TryOpenConnectionAsync()
@@ -156,43 +155,45 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private QueuedTask CreateNewTaskFromInfo( QueuedTaskProduceInfo queuedTaskInfo )
 		{
-			return queuedTaskInfo.CreateNewTask( mTimestampProvider );
+			return new QueuedTask( queuedTaskInfo.CreateNewTask( mTimestampProvider ) );
 		}
 
-		private async Task<QueuedTask> TryPostTaskAsync( QueuedTask queuedTask,
-			QueuedTaskProduceInfo produceInfo,
+		private async Task<IQueuedTask> TryPostTaskAsync( QueuedTaskProduceInfo produceInfo,
 			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
 		{
+
+			QueuedTask savedTask = CreateNewTaskFromInfo( produceInfo );
+
 			using ( NpgsqlCommand insertCmd = new NpgsqlCommand( mInsertSql, conn, tx ) )
 			{
 				insertCmd.Parameters.AddWithValue( "t_id",
 					NpgsqlDbType.Uuid,
-					queuedTask.Id );
+					savedTask.Id );
 				insertCmd.Parameters.AddWithValue( "t_payload",
 					NpgsqlDbType.Text,
-					ConvertPayloadToJson( queuedTask.Payload ) );
+					ConvertPayloadToJson( savedTask.Payload ) );
 				insertCmd.Parameters.AddWithValue( "t_type",
 					NpgsqlDbType.Varchar,
-					queuedTask.Type );
+					savedTask.Type );
 				insertCmd.Parameters.AddWithValue( "t_source",
 					NpgsqlDbType.Varchar,
-					queuedTask.Source );
+					savedTask.Source );
 				insertCmd.Parameters.AddWithValue( "t_priority",
 					NpgsqlDbType.Integer,
-					queuedTask.Priority );
+					savedTask.Priority );
 				insertCmd.Parameters.AddWithValue( "t_locked_until_ts",
 					NpgsqlDbType.TimestampTz,
-					queuedTask.LockedUntilTs );
+					savedTask.LockedUntilTs );
 				insertCmd.Parameters.AddWithValue( "t_posted_at_ts",
 					NpgsqlDbType.TimestampTz,
-					queuedTask.PostedAtTs );
+					savedTask.PostedAtTs );
 
-				queuedTask.LockHandleId = ( long ) await insertCmd
+				savedTask.LockHandleId = ( long ) await insertCmd
 					.ExecuteScalarAsync();
 			}
 
-			return queuedTask;
+			return savedTask;
 		}
 
 		private string ConvertPayloadToJson( object payload )
@@ -203,7 +204,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				includeTypeInformation: true );
 		}
 
-		private async Task TryInitOrUpdateResultAsync( QueuedTask queuedTask,
+		private async Task TryInitOrUpdateResultAsync( IQueuedTask queuedTask,
 			QueuedTaskProduceInfo produceInfo,
 			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
@@ -237,7 +238,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private async Task NotifyNewTaskPostedAsync( QueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
+		private async Task NotifyNewTaskPostedAsync( IQueuedTask queuedTask, NpgsqlConnection conn, NpgsqlTransaction tx )
 		{
 			await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificationChannelName,
 				tx );

@@ -78,28 +78,23 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 				new Mock<ITaskExecutorResolver>();
 
 			taskExecutorResolverMock
-				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.Payload.GetType()
-					== typeof( SampleTaskPayload ) ) ) )
+				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.IsOfType<SampleTaskPayload>() ) ) )
 				.Returns( new SampleTaskPayloadExecutor() );
 
 			taskExecutorResolverMock
-				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.Payload.GetType()
-					== typeof( SampleTaskPayloadWithResult ) ) ) )
+				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.IsOfType<SampleTaskPayloadWithResult>() ) ) )
 				.Returns( new SampleTaskPayloadWithResultExecutor() );
 
 			taskExecutorResolverMock
-				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.Payload.GetType()
-					== typeof( ErroredTaskPayload ) ) ) )
+				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.IsOfType<ErroredTaskPayload>() ) ) )
 				.Returns( new ErroredTaskPayloadExecutor() );
 
 			taskExecutorResolverMock
-				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.Payload.GetType()
-					== typeof( ThrowsExceptionTaskPayload ) ) ) )
+				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.IsOfType<ThrowsExceptionTaskPayload>() ) ) )
 				.Returns( new ThrowsExceptionTaskPayloadExecutor() );
 
 			taskExecutorResolverMock
-				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.Payload.GetType()
-					== typeof( CancellationObservedPayload ) ) ) )
+				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.IsOfType<CancellationObservedPayload>() ) ) )
 				.Returns( new CancellationObservedPayloadExecutor() );
 
 			return taskExecutorResolverMock;
@@ -119,12 +114,6 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 					.Invoke( qt ) ) );
 
 			return mock;
-		}
-
-		private void AssertCalculatorNotCalled( Mock<ITaskExecutionRetryCalculator> calculatorMock )
-		{
-			calculatorMock.Verify( c => c.ComputeRetryAt( It.IsAny<IQueuedTaskToken>() ), Times.Never() );
-			calculatorMock.VerifyNoOtherCalls();
 		}
 
 		[Test]

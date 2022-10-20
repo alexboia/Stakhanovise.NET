@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020, Boia Alexandru
+// Copyright (c) 2020-2022, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -30,56 +30,54 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace LVD.Stakhanovise.NET.Model
+namespace LVD.Stakhanovise.NET.Executors
 {
-	public class QueuedTaskProduceInfo
+	public interface IDependencyRegistration
 	{
-		public QueuedTaskProduceInfo()
+		Type AsImplementationType
 		{
-			Status = QueuedTaskStatus.Unprocessed;
+			get;
 		}
 
-		public QueuedTask CreateNewTask( ITimestampProvider timestampProvider )
+		object AsInstance
 		{
-			if ( timestampProvider == null )
-				throw new ArgumentNullException( nameof( timestampProvider ) );
-
-			QueuedTask queuedTask =
-				new QueuedTask();
-
-			queuedTask.Id = GenerateNewTaskId();
-			queuedTask.Payload = Payload;
-			queuedTask.Type = Type;
-			queuedTask.Source = Source;
-			queuedTask.Priority = Priority;
-			queuedTask.PostedAtTs = timestampProvider.GetNow();
-			queuedTask.LockedUntilTs = LockedUntilTs;
-
-			return queuedTask;
+			get;
 		}
 
-		private Guid GenerateNewTaskId()
+		Type AsProvider
 		{
-			return HasId ? Id : Guid.NewGuid();
+			get;
 		}
 
-		public Guid Id { get; set; }
+		object AsProviderInstance
+		{
+			get;
+		}
 
-		public string Type { get; set; }
+		bool IsInstanceRegistratin
+		{
+			get;
+		}
 
-		public string Source { get; set; }
+		bool IsProviderRegistration
+		{
+			get;
+		}
 
-		public object Payload { get; set; }
+		bool IsTypeRegistration
+		{
+			get;
+		}
 
-		public int Priority { get; set; }
+		DependencyScope Scope
+		{
+			get;
+		}
 
-		public DateTimeOffset LockedUntilTs { get; set; }
-
-		public QueuedTaskStatus Status { get; set; }
-
-		public bool HasId => !Id.Equals( Guid.Empty );
+		Type Target
+		{
+			get;
+		}
 	}
 }

@@ -36,7 +36,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common.Interfaces\LVD.Stakhanovise.NET.Common.Interfaces.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Interfaces\LVD.Stakhanovise.NET.Interfaces.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
 	</ItemGroup>

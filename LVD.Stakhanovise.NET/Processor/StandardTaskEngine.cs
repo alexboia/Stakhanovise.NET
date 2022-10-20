@@ -404,15 +404,6 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public TaskEngineOptions Options
-		{
-			get
-			{
-				CheckDisposedOrThrow();
-				return mOptions;
-			}
-		}
-
 		public bool IsStarted
 		{
 			get

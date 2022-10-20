@@ -29,12 +29,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Processor;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Xml.Linq;
 
 namespace LVD.Stakhanovise.NET.Model
 {

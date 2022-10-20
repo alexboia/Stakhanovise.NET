@@ -35,28 +35,28 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Executors
 {
-	public class DependencyRegistration
+	public class DependencyRegistration : IDependencyRegistration
 	{
-		private DependencyRegistration ()
+		private DependencyRegistration()
 		{
 			Scope = DependencyScope.Transient;
 		}
 
-		private static void AssertImplementationTypeIsOfTargetType ( Type target, Type asImplementation )
+		private static void AssertImplementationTypeIsOfTargetType( Type target, Type asImplementation )
 		{
 			if ( !target.IsAssignableFrom( asImplementation ) )
 				throw new ArgumentException( $"{asImplementation.Name} is not an implementation or sub-class of {target.Name}",
 					nameof( asImplementation ) );
 		}
 
-		private static void AssertImplementationInstanceIsOfTargetType ( Type target, object asInstance )
+		private static void AssertImplementationInstanceIsOfTargetType( Type target, object asInstance )
 		{
 			if ( !target.IsAssignableFrom( asInstance.GetType() ) )
 				throw new ArgumentException( $"{asInstance.GetType().Name} is not an implementation or sub-class of {target.Name}",
 					nameof( asInstance ) );
 		}
 
-		private static void AssertProviderIsForTargetType ( Type target, Type asProvider )
+		private static void AssertProviderIsForTargetType( Type target, Type asProvider )
 		{
 			Type checkForProviderType = typeof( IDependencyProvider<> )
 				.MakeGenericType( target );
@@ -66,7 +66,7 @@ namespace LVD.Stakhanovise.NET.Executors
 					nameof( asProvider ) );
 		}
 
-		public static DependencyRegistration BindToType ( Type target,
+		public static DependencyRegistration BindToType( Type target,
 			Type asImplementation,
 			DependencyScope scope = DependencyScope.Transient )
 		{
@@ -87,7 +87,7 @@ namespace LVD.Stakhanovise.NET.Executors
 			};
 		}
 
-		public static DependencyRegistration BindToInstance ( Type target,
+		public static DependencyRegistration BindToInstance( Type target,
 			object asInstance )
 		{
 			if ( target == null )
@@ -107,7 +107,7 @@ namespace LVD.Stakhanovise.NET.Executors
 			};
 		}
 
-		public static DependencyRegistration BindToProvider ( Type target,
+		public static DependencyRegistration BindToProvider( Type target,
 			Type asProvider,
 			DependencyScope scope = DependencyScope.Transient )
 		{
@@ -128,7 +128,7 @@ namespace LVD.Stakhanovise.NET.Executors
 			};
 		}
 
-		public static DependencyRegistration BindToProviderInstance ( Type target,
+		public static DependencyRegistration BindToProviderInstance( Type target,
 			object asProviderInstance,
 			DependencyScope scope = DependencyScope.Transient )
 		{
@@ -146,19 +146,37 @@ namespace LVD.Stakhanovise.NET.Executors
 			};
 		}
 
-		public Type Target { get; private set; }
+		public Type Target
+		{
+			get; private set;
+		}
 
-		public Type AsImplementationType { get; private set; }
+		public Type AsImplementationType
+		{
+			get; private set;
+		}
 
-		public Type AsProvider { get; private set; }
+		public Type AsProvider
+		{
+			get; private set;
+		}
 
-		public object AsInstance { get; private set; }
+		public object AsInstance
+		{
+			get; private set;
+		}
 
-		public object AsProviderInstance { get; private set; }
+		public object AsProviderInstance
+		{
+			get; private set;
+		}
 
-		public DependencyScope Scope { get; internal set; }
+		public DependencyScope Scope
+		{
+			get; internal set;
+		}
 
-		public bool IsProviderRegistration 
+		public bool IsProviderRegistration
 			=> AsProvider != null || AsProviderInstance != null;
 
 		public bool IsTypeRegistration

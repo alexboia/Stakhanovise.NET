@@ -47,12 +47,12 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public Task<IQueuedTask> EnqueueAsync( QueuedTaskProduceInfo queuedTaskInfo )
 		{
-			QueuedTask newTask = CreateNewTaskFromInfo( queuedTaskInfo );
+			IQueuedTask newTask = CreateNewTaskFromInfo( queuedTaskInfo );
 			mProducedTasks.Add( newTask );
 			return Task.FromResult<IQueuedTask>( newTask );
 		}
 
-		private QueuedTask CreateNewTaskFromInfo( QueuedTaskProduceInfo queuedTaskInfo )
+		private IQueuedTask CreateNewTaskFromInfo( QueuedTaskProduceInfo queuedTaskInfo )
 		{
 			return queuedTaskInfo.CreateNewTask( mTimestampProvider );
 		}

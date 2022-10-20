@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020-2022, Boia Alexandru
+// Copyright (c) 2020, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -35,38 +35,94 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public class TaskPerformanceStats : IEquatable<TaskPerformanceStats>
+	public class QueuedTask : IQueuedTask, IEquatable<QueuedTask>
 	{
-		public TaskPerformanceStats ( string payloadType, long durationMilliseconds )
+		public QueuedTask()
 		{
-			PayloadType = payloadType;
-			DurationMilliseconds = durationMilliseconds;
+			return;
 		}
 
-		public bool Equals(TaskPerformanceStats other)
+		public QueuedTask( Guid taskId )
+			: this()
 		{
-			return other != null &&
-				string.Equals( PayloadType, other.PayloadType )
-				&& DurationMilliseconds == other.DurationMilliseconds;
+			Id = taskId;
 		}
 
-		public override bool Equals ( object obj )
+		public QueuedTask( IQueuedTask other )
+			: this()
 		{
-			return Equals( obj as TaskPerformanceStats );
+			if ( other == null )
+				throw new ArgumentNullException( nameof( other ) );
+
+			Id = other.Id;
+			LockHandleId = other.LockHandleId;
+			Type = other.Type;
+			Source = other.Source;
+			Payload = other.Payload;
+			Priority = other.Priority;
+			LockedUntilTs = other.LockedUntilTs;
+			PostedAtTs = other.PostedAtTs;
 		}
 
-		public override int GetHashCode ()
+		public bool Equals( QueuedTask other )
 		{
-			int result = 1;
+			if ( other == null )
+				return false;
 
-			result = result * 13 + PayloadType.GetHashCode();
-			result = result * 13 + DurationMilliseconds.GetHashCode();
+			if ( Id.Equals( Guid.Empty ) && other.Id.Equals( Guid.Empty ) )
+				return ReferenceEquals( this, other );
 
-			return result;
+			return Id.Equals( other.Id );
 		}
 
-		public string PayloadType { get; private set; }
+		public override bool Equals( object obj )
+		{
+			return Equals( obj as QueuedTask );
+		}
 
-		public long DurationMilliseconds { get; private set; }
+		public override int GetHashCode()
+		{
+			return Id.GetHashCode();
+		}
+
+		public Guid Id
+		{
+			get; set;
+		}
+
+		public long LockHandleId
+		{
+			get; set;
+		}
+
+		public string Type
+		{
+			get; set;
+		}
+
+		public string Source
+		{
+			get; set;
+		}
+
+		public object Payload
+		{
+			get; set;
+		}
+
+		public int Priority
+		{
+			get; set;
+		}
+
+		public DateTimeOffset LockedUntilTs
+		{
+			get; set;
+		}
+
+		public DateTimeOffset PostedAtTs
+		{
+			get; set;
+		}
 	}
 }

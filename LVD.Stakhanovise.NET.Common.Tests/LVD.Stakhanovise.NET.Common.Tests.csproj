@@ -15,6 +15,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common.Interfaces\LVD.Stakhanovise.NET.Common.Interfaces.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
 	</ItemGroup>
 

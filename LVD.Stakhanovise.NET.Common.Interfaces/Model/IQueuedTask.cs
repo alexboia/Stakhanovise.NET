@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020-2022, Boia Alexandru
+// Copyright (c) 2020, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -32,26 +32,49 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Reflection;
-using System.Threading.Tasks;
-using LVD.Stakhanovise.NET.Options;
 
-namespace LVD.Stakhanovise.NET.Processor
+namespace LVD.Stakhanovise.NET.Model
 {
-	public interface ITaskEngine : IDisposable
+	public interface IQueuedTask
 	{
-		Task StartAsync ();
+		Guid Id
+		{
+			get;
+		}
 
-		Task StopAync ();
+		long LockHandleId
+		{
+			get;
+		}
 
-		void ScanAssemblies ( params Assembly[] assemblies );
+		string Type
+		{
+			get; set;
+		}
 
-		IEnumerable<ITaskWorker> Workers { get; }
+		string Source
+		{
+			get;
+		}
 
-		ITaskPoller TaskPoller { get; }
+		object Payload
+		{
+			get;
+		}
 
-		TaskEngineOptions Options { get; }
+		int Priority
+		{
+			get; set;
+		}
 
-		bool IsStarted { get; }
+		DateTimeOffset PostedAtTs
+		{
+			get;
+		}
+
+		DateTimeOffset LockedUntilTs
+		{
+			get;
+		}
 	}
 }
