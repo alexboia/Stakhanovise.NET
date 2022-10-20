@@ -39,21 +39,24 @@ namespace LVD.Stakhanovise.NET.Helpers
 {
 	public static class WaitHandleExtensions
 	{
-		private static void WaitForWaitHandleDelegate ( object state, bool timedOut )
+		private static void WaitForWaitHandleDelegate( object state, bool timedOut )
 		{
 			TaskCompletionSource<bool> waitHandleSignaledCompletionSource =
-				( TaskCompletionSource<bool> )state;
+				( TaskCompletionSource<bool> ) state;
 
 			waitHandleSignaledCompletionSource.TrySetResult( true );
 		}
 
-		public static Task<bool> ToTask ( this WaitHandle waitHandle, int timeoutMilliseconds )
+		public static Task<bool> ToTask( this WaitHandle waitHandle, int timeoutMilliseconds )
 		{
 			return waitHandle.ToTask( TimeSpan.FromMilliseconds( timeoutMilliseconds ) );
 		}
 
-		public static Task<bool> ToTask ( this WaitHandle waitHandle, TimeSpan timeout )
+		public static Task<bool> ToTask( this WaitHandle waitHandle, TimeSpan timeout )
 		{
+			if ( waitHandle == null )
+				throw new ArgumentNullException( nameof( waitHandle ) );
+
 			TaskCompletionSource<bool> waitHandleSignaledCompletionSource
 				= new TaskCompletionSource<bool>( waitHandle );
 
@@ -72,7 +75,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 			return waitHandleSignaledCompletionTask;
 		}
 
-		public static Task<bool> ToTask ( this WaitHandle waitHandle )
+		public static Task<bool> ToTask( this WaitHandle waitHandle )
 		{
 			return waitHandle.ToTask( TimeSpan.FromMilliseconds( int.MaxValue ) );
 		}
