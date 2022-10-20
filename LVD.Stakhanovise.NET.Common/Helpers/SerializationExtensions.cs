@@ -29,57 +29,105 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Newtonsoft.Json;
+using System;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
 	public static class SerializationExtensions
 	{
-		public static List<T> AsListFromJson<T> ( this string sourceString )
+		public static string ToJson( this object sourceObject,
+			bool includeTypeInformation = false )
 		{
-			return sourceString.AsObjectFromJson<List<T>>();
+			Action<JsonSerializerSettings> noOpConfig = DelegateHelpers
+				.CreateNoOpAction<JsonSerializerSettings>();
+
+			return sourceObject.ToJson( noOpConfig,
+				includeTypeInformation );
 		}
 
-		public static string ToJson ( this object sourceObject, bool includeTypeInformation = false )
+		public static string ToJson( this object sourceObject,
+			Action<JsonSerializerSettings> configureSerializer,
+			bool includeTypeInformation = false )
 		{
 			if ( sourceObject == null )
 				return null;
 
-			JsonSerializerSettings settings = new JsonSerializerSettings();
+			if ( configureSerializer == null )
+				throw new ArgumentNullException( nameof( configureSerializer ) );
 
+			JsonSerializerSettings settings =
+				new JsonSerializerSettings();
+
+			configureSerializer.Invoke( settings );
 			if ( includeTypeInformation )
 				settings.TypeNameHandling = TypeNameHandling.All;
 
 			return JsonConvert.SerializeObject( sourceObject, settings );
 		}
 
-		public static T AsObjectFromJson<T> ( this string sourceString )
+		public static T AsObjectFromJson<T>( this string sourceString,
+			Action<JsonSerializerSettings> configureSerializer )
 		{
 			if ( string.IsNullOrEmpty( sourceString ) )
 				return default( T );
 
-			JsonSerializerSettings settings = new JsonSerializerSettings();
+			if ( configureSerializer == null )
+				throw new ArgumentNullException( nameof( configureSerializer ) );
 
-			settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
-			settings.TypeNameHandling = TypeNameHandling.Auto;
+			JsonSerializerSettings settings =
+				CreateDeserializerSettings( configureSerializer );
 
-			return JsonConvert.DeserializeObject<T>( sourceString, settings );
+			return JsonConvert.DeserializeObject<T>( sourceString,
+				settings );
 		}
 
-		public static object AsObjectFromJson ( this string sourceString )
+		private static JsonSerializerSettings CreateDeserializerSettings( Action<JsonSerializerSettings> configureSerializer )
+		{
+			JsonSerializerSettings settings =
+				new JsonSerializerSettings();
+
+			configureSerializer
+				.Invoke( settings );
+
+			settings.ConstructorHandling = ConstructorHandling
+				.AllowNonPublicDefaultConstructor;
+			settings.TypeNameHandling = TypeNameHandling
+				.Auto;
+
+			return settings;
+		}
+
+		public static T AsObjectFromJson<T>( this string sourceString )
+		{
+			Action<JsonSerializerSettings> noOpConfig = DelegateHelpers
+				.CreateNoOpAction<JsonSerializerSettings>();
+			return sourceString
+				.AsObjectFromJson<T>( noOpConfig );
+		}
+
+		public static object AsObjectFromJson( this string sourceString,
+			Action<JsonSerializerSettings> configureSerializer )
 		{
 			if ( string.IsNullOrEmpty( sourceString ) )
 				return null;
 
-			JsonSerializerSettings settings = new JsonSerializerSettings();
+			if ( configureSerializer == null )
+				throw new ArgumentNullException( nameof( configureSerializer ) );
 
-			settings.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
-			settings.TypeNameHandling = TypeNameHandling.Auto;
+			JsonSerializerSettings settings =
+				CreateDeserializerSettings( configureSerializer );
 
-			return JsonConvert.DeserializeObject( sourceString, settings );
+			return JsonConvert.DeserializeObject( sourceString,
+				settings );
+		}
+
+		public static object AsObjectFromJson( this string sourceString )
+		{
+			Action<JsonSerializerSettings> noOpConfig = DelegateHelpers
+				.CreateNoOpAction<JsonSerializerSettings>();
+			return sourceString
+				.AsObjectFromJson( noOpConfig );
 		}
 	}
 }

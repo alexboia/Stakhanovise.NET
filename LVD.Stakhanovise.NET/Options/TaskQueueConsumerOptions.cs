@@ -37,9 +37,19 @@ namespace LVD.Stakhanovise.NET.Options
 	public class TaskQueueConsumerOptions : TaskQueueOptions
 	{
 		public TaskQueueConsumerOptions( ConnectionOptions connectionOptions,
-			QueuedTaskMapping mapping )
+			QueuedTaskMapping mappingOptions )
 			: base( connectionOptions,
-				  mapping )
+				  mappingOptions )
+		{
+			return;
+		}
+
+		public TaskQueueConsumerOptions( ConnectionOptions connectionOptions,
+			QueuedTaskMapping mappingOptions,
+			SerializerOptions serializerOptions )
+			: base( connectionOptions,
+				  mappingOptions,
+				  serializerOptions )
 		{
 			return;
 		}

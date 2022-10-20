@@ -31,29 +31,51 @@
 // 
 using LVD.Stakhanovise.NET.Model;
 using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Text;
 
 namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskQueueOptions
 	{
-		public TaskQueueOptions ( ConnectionOptions connectionOptions,
-			QueuedTaskMapping mapping )
+		public TaskQueueOptions( ConnectionOptions connectionOptions,
+			QueuedTaskMapping mappingOptions,
+			SerializerOptions serializerOptions )
 		{
 			if ( connectionOptions == null )
 				throw new ArgumentNullException( nameof( connectionOptions ) );
 
-			if ( mapping == null )
-				throw new ArgumentNullException( nameof( mapping ) );
+			if ( mappingOptions == null )
+				throw new ArgumentNullException( nameof( mappingOptions ) );
+
+			if ( serializerOptions == null )
+				throw new ArgumentNullException();
 
 			ConnectionOptions = connectionOptions;
-			Mapping = mapping;
+			SerializerOptions = serializerOptions;
+			Mapping = mappingOptions;
 		}
 
-		public ConnectionOptions ConnectionOptions { get; private set; }
+		public TaskQueueOptions( ConnectionOptions connectionOptions,
+			QueuedTaskMapping mappingOptions )
+			: this( connectionOptions,
+				  mappingOptions,
+				  SerializerOptions.Default )
+		{
+			return;
+		}
 
-		public QueuedTaskMapping Mapping { get; private set; }
+		public ConnectionOptions ConnectionOptions
+		{
+			get; private set;
+		}
+
+		public SerializerOptions SerializerOptions
+		{
+			get; private set;
+		}
+
+		public QueuedTaskMapping Mapping
+		{
+			get; private set;
+		}
 	}
 }

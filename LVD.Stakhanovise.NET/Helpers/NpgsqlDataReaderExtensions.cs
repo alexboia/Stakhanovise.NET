@@ -29,21 +29,32 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Npgsql;
 using LVD.Stakhanovise.NET.Model;
+using Newtonsoft.Json;
+using Npgsql;
+using System;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Helpers
 {
 	public static class NpgsqlDataReaderExtensions
 	{
-		public static async Task<QueuedTaskResult> ReadQueuedTaskResultAsync ( this NpgsqlDataReader reader )
+		public static async Task<QueuedTaskResult> ReadQueuedTaskResultAsync( this NpgsqlDataReader reader )
+		{
+			Action<JsonSerializerSettings> noOpConfig = DelegateHelpers
+				.CreateNoOpAction<JsonSerializerSettings>();
+			return await reader
+				.ReadQueuedTaskResultAsync( noOpConfig );
+		}
+
+		public static async Task<QueuedTaskResult> ReadQueuedTaskResultAsync( this NpgsqlDataReader reader,
+			Action<JsonSerializerSettings> configureSerializer )
 		{
 			if ( reader == null )
 				throw new ArgumentNullException( nameof( reader ) );
+
+			if ( configureSerializer == null )
+				throw new ArgumentNullException( nameof( configureSerializer ) );
 
 			string payloadString,
 				taskErrorString;
@@ -57,7 +68,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 				defaultValue: string.Empty );
 			result.Source = await reader.GetFieldValueAsync<string>( "task_source",
 				  defaultValue: string.Empty );
-			result.Status = ( QueuedTaskStatus )( await reader.GetFieldValueAsync<int>( "task_status",
+			result.Status = ( QueuedTaskStatus ) ( await reader.GetFieldValueAsync<int>( "task_status",
 				defaultValue: 0 ) );
 			result.Priority = await reader.GetFieldValueAsync<int>( "task_priority",
 				  defaultValue: 0 );

@@ -289,9 +289,9 @@ namespace LVD.Stakhanovise.NET.Processor
 					loggingProvider.CreateLogger<StandardTaskExecutionResultProcessor>() );
 
 			StandardTaskWorker taskWorker =
-				new StandardTaskWorker( bufferHandlerFactory,
-					taskProcessor,
+				new StandardTaskWorker( taskProcessor,
 					resultProcessor,
+					bufferHandlerFactory,
 					metricsProvider,
 					loggingProvider.CreateLogger<StandardTaskWorker>() );
 

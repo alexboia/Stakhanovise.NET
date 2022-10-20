@@ -61,10 +61,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private bool mIsDisposed = false;
 
-		public StandardTaskWorker(
-			ITaskExecutorBufferHandlerFactory bufferHandlerFactory,
-			ITaskProcessor taskProcessor,
+		public StandardTaskWorker( ITaskProcessor taskProcessor,
 			ITaskExecutionResultProcessor resultProcessor,
+			ITaskExecutorBufferHandlerFactory bufferHandlerFactory,
 			ITaskExecutionMetricsProvider metricsProvider,
 			IStakhanoviseLogger logger )
 		{

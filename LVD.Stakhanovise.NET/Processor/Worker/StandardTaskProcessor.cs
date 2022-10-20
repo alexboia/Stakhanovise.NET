@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using LVD.Stakhanovise.NET.Exceptions;
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
-using LVD.Stakhanovise.NET.Queue;
+using System;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
@@ -40,8 +38,6 @@ namespace LVD.Stakhanovise.NET.Processor
 			if ( executionContext == null )
 				throw new ArgumentNullException( nameof( executionContext ) );
 
-			ITaskExecutor taskExecutor = null;
-
 			try
 			{
 				//Check for cancellation before we start execution
@@ -49,23 +45,24 @@ namespace LVD.Stakhanovise.NET.Processor
 				executionContext.ThrowIfCancellationRequested();
 
 				//Attempt to resolve and run task executor
-				if ( ( taskExecutor = ResolveTaskExecutor( executionContext ) ) != null )
-				{
-					mLogger.DebugFormat( "Beginning task execution. Task id = {0}.",
-						executionContext.DequeuedTaskId );
+				ITaskExecutor taskExecutor;
+				if ( ( taskExecutor = ResolveTaskExecutor( executionContext ) ) == null )
+					throw new TaskExecutorNotFoundException( executionContext.DequeuedTaskPayloadType );
 
-					//Execute task
-					await taskExecutor.ExecuteAsync( executionContext.DequeuedTaskPayload,
-						executionContext );
+				mLogger.DebugFormat( "Beginning task execution. Task id = {0}.",
+					executionContext.DequeuedTaskId );
 
-					mLogger.DebugFormat( "Task execution completed. Task id = {0}.",
-						executionContext.DequeuedTaskId );
+				//Execute task
+				await taskExecutor.ExecuteAsync( executionContext.DequeuedTaskPayload,
+					executionContext );
 
-					//Ensure we have a result - since no exception was thrown 
-					//	and no result explicitly set, assume success.
-					if ( !executionContext.HasResult )
-						executionContext.SetTaskCompleted();
-				}
+				mLogger.DebugFormat( "Task execution completed. Task id = {0}.",
+					executionContext.DequeuedTaskId );
+
+				//Ensure we have a result - since no exception was thrown 
+				//	and no result explicitly set, assume success.
+				if ( !executionContext.HasResult )
+					executionContext.SetTaskCompleted();
 			}
 			catch ( OperationCanceledException )
 			{
@@ -82,9 +79,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				executionContext.StopTimingExecution();
 			}
 
-			return taskExecutor != null
-				? CreateExecutionResult( executionContext )
-				: null;
+			return CreateExecutionResult( executionContext );
 		}
 
 		private ITaskExecutor ResolveTaskExecutor( TaskExecutionContext executionContext )
@@ -96,18 +91,18 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void HandleTaskProcessingError( TaskExecutionContext executionContext,
 			Exception exc )
 		{
+			bool isRecoverable = mOptions.IsTaskErrorRecoverable(
+				executionContext.DequeuedTask,
+				exc
+			);
+
+			executionContext?.SetTaskErrored(
+				new QueuedTaskError( exc ),
+				isRecoverable
+			);
+
 			mLogger.Error( "Error executing queued task",
 				exc );
-
-			bool isRecoverable = mOptions.IsTaskErrorRecoverable( 
-				executionContext.DequeuedTask, 
-				exc 
-			);
-
-			executionContext?.SetTaskErrored( 
-				new QueuedTaskError( exc ),
-				isRecoverable 
-			);
 		}
 
 		private TaskProcessingResult CreateExecutionResult( TaskExecutionContext executionContext )
@@ -120,15 +115,15 @@ namespace LVD.Stakhanovise.NET.Processor
 				&& executionContext.ExecutionFailed )
 				retryAt = ComputeRetryAt( executionContext );
 
-			TaskExecutionResult executionResult =  
+			TaskExecutionResult executionResult =
 				new TaskExecutionResult( executionContext.ResultInfo,
 					executionContext.Duration,
 					retryAt,
 					mOptions.FaultErrorThresholdCount );
 
-			return new TaskProcessingResult( 
-				executionContext.DequeuedTaskToken, 
-				executionResult 
+			return new TaskProcessingResult(
+				executionContext.DequeuedTaskToken,
+				executionResult
 			);
 		}
 

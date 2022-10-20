@@ -35,5 +35,8 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public bool ExecutionCancelled
 			=> ExecutionResult.ExecutionCancelled;
+
+		public QueuedTaskError Error
+			=> ExecutionResult.Error;
 	}
 }

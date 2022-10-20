@@ -71,7 +71,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public static TaskQueueConsumerOptions GetDefaultTaskQueueConsumerOptions ( string connectionString )
 		{
 			return new TaskQueueConsumerOptions( GetConnectionOptions( connectionString, keepAliveSeconds: 5 ),
-				mapping: DefaultMapping );
+				mappingOptions: DefaultMapping );
 		}
 
 		public static TaskQueueInfoOptions GetDefaultTaskQueueInfoOptions ( string connectionString )

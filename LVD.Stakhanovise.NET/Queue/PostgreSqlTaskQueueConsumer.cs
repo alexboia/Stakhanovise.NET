@@ -185,7 +185,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				m => m.Max( durationMilliseconds ) );
 		}
 
-		public async Task<IQueuedTaskToken> DequeueAsync( params string[] selectTaskTypes )
+		public async Task<IQueuedTaskToken> DequeueAsync( params string [] selectTaskTypes )
 		{
 			NpgsqlConnection conn = null;
 			QueuedTask dequeuedTask = null;
@@ -251,7 +251,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			return dequeuedTaskToken;
 		}
 
-		private async Task<QueuedTask> TryDequeueTaskAsync( string[] selectTaskTypes,
+		private async Task<QueuedTask> TryDequeueTaskAsync( string [] selectTaskTypes,
 			DateTimeOffset refNow,
 			NpgsqlConnection conn,
 			NpgsqlTransaction tx )
@@ -301,7 +301,9 @@ namespace LVD.Stakhanovise.NET.Queue
 				using ( NpgsqlDataReader resultRdr = await addOrUpdateResultCmd.ExecuteReaderAsync() )
 				{
 					if ( await resultRdr.ReadAsync() )
-						dequeuedTaskResult = await resultRdr.ReadQueuedTaskResultAsync();
+						dequeuedTaskResult = await resultRdr.ReadQueuedTaskResultAsync( mOptions
+							.SerializerOptions
+							.OnConfigureSerializerSettings );
 
 					if ( dequeuedTaskResult != null )
 						mLogger.Debug( "Successfully dequeued, acquired and initialized/updated task result." );
@@ -313,7 +315,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			return dequeuedTaskResult;
 		}
 
-		public IQueuedTaskToken Dequeue( params string[] supportedTypes )
+		public IQueuedTaskToken Dequeue( params string [] supportedTypes )
 		{
 			Task<IQueuedTaskToken> asyncTask = DequeueAsync( supportedTypes );
 			return asyncTask.Result;
@@ -403,7 +405,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private Guid[] NoExcludedTaskIds
-			=> new Guid[ 0 ];
+		private Guid [] NoExcludedTaskIds
+			=> new Guid [ 0 ];
 	}
 }

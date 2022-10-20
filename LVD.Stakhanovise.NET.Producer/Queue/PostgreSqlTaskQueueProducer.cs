@@ -171,7 +171,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					queuedTask.Id );
 				insertCmd.Parameters.AddWithValue( "t_payload",
 					NpgsqlDbType.Text,
-					queuedTask.Payload.ToJson( includeTypeInformation: true ) );
+					ConvertPayloadToJson( queuedTask.Payload ) );
 				insertCmd.Parameters.AddWithValue( "t_type",
 					NpgsqlDbType.Varchar,
 					queuedTask.Type );
@@ -195,6 +195,14 @@ namespace LVD.Stakhanovise.NET.Queue
 			return queuedTask;
 		}
 
+		private string ConvertPayloadToJson( object payload )
+		{
+			return payload.ToJson( mOptions
+					.SerializerOptions
+					.OnConfigureSerializerSettings,
+				includeTypeInformation: true );
+		}
+
 		private async Task TryInitOrUpdateResultAsync( QueuedTask queuedTask,
 			QueuedTaskProduceInfo produceInfo,
 			NpgsqlConnection conn,
@@ -213,7 +221,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					queuedTask.Source );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_payload",
 					NpgsqlDbType.Text,
-					queuedTask.Payload.ToJson( includeTypeInformation: true ) );
+					ConvertPayloadToJson( queuedTask.Payload ) );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_status",
 					NpgsqlDbType.Integer,
 					( int ) produceInfo.Status );

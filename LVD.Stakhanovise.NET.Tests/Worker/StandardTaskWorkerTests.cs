@@ -128,12 +128,12 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 					executionPerformanceMonitor,
 					loggingProvider.CreateLogger<StandardTaskExecutionResultProcessor>() );
 
-			return new StandardTaskWorker( 
-				bufferHandlerFactory,
+			return new StandardTaskWorker(
 				taskProcessor,
 				resultProcessor,
+				bufferHandlerFactory,
 				metricsProvider,
-				loggingProvider.CreateLogger<StandardTaskWorker>() 
+				loggingProvider.CreateLogger<StandardTaskWorker>()
 			);
 		}
 

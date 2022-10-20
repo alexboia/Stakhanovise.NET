@@ -9,6 +9,7 @@ using NUnit.Framework;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using Bogus;
 using LVD.Stakhanovise.NET.Processor;
+using LVD.Stakhanovise.NET.Tests.Helpers;
 
 namespace LVD.Stakhanovise.NET.Tests.Worker
 {
@@ -63,32 +64,7 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 
 		private QueuedTaskToken CreateQueuedTaskToken( int errorCount = 0 )
 		{
-			QueuedTask task = CreateQueuedTask();
-			QueuedTaskResult taskResult = new QueuedTaskResult( task );
-
-			taskResult.ErrorCount = errorCount;
-			if ( errorCount > 0 )
-				taskResult.LastError = new QueuedTaskError( "Some error" );
-
-			return new QueuedTaskToken( task,
-				taskResult,
-				DateTimeOffset.UtcNow );
-		}
-
-		private QueuedTask CreateQueuedTask()
-		{
-			SampleTaskPayload payload =
-				new SampleTaskPayload();
-
-			return new QueuedTask()
-			{
-				Id = Guid.NewGuid(),
-				Payload = payload,
-				Source = Guid.NewGuid()
-					.ToString(),
-				Type = payload.GetType()
-					.FullName,
-			};
+			return QueuedTaskHelpers.CreateQueuedTaskToken( errorCount );
 		}
 
 		private TaskExecutionResult GenerateSuccessfulResult()

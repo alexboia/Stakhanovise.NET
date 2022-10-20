@@ -1,9 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Queue;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace LVD.Stakhanovise.NET.Processor.Worker
+namespace LVD.Stakhanovise.NET.Processor
 {
 	public static class TaskExecutionContextExtensions
 	{

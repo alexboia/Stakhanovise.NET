@@ -36,7 +36,6 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -92,7 +91,8 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 							Status = QueuedTaskStatus.Unprocessed
 						};
 
-						newTaskToken = new MockQueuedTaskToken( newTask, newLastTaskResult );
+						newTaskToken = new MockQueuedTaskToken( newTask, 
+							newLastTaskResult );
 
 						mProducedTasks.Add( newTaskToken );
 

@@ -37,16 +37,19 @@ namespace LVD.Stakhanovise.NET.Tests.Payloads
 {
 	public class SampleTaskPayload
 	{
-		public SampleTaskPayload ()
+		public SampleTaskPayload()
 		{
 			return;
 		}
 
-		public SampleTaskPayload ( int counter )
+		public SampleTaskPayload( int counter )
 		{
 			Counter = counter;
 		}
 
-		public int Counter { get; set; }
+		public int Counter
+		{
+			get; set;
+		}
 	}
 }

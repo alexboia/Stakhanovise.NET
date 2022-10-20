@@ -39,11 +39,11 @@ namespace LVD.Stakhanovise.NET
 {
 	public class TaskExecutionContext : ITaskExecutionContext
 	{
-		private IQueuedTaskToken mTaskToken;
+		private readonly IQueuedTaskToken mTaskToken;
+
+		private readonly CancellationToken mCancellationToken;
 
 		private TaskExecutionResultInfo mResult;
-
-		private CancellationToken mCancellationToken;
 
 		private MonotonicTimestamp mStart;
 
@@ -91,6 +91,9 @@ namespace LVD.Stakhanovise.NET
 
 		public object DequeuedTaskPayload
 			=> DequeuedTask.Payload;
+
+		public string DequeuedTaskPayloadType
+			=> DequeuedTask.Payload.GetType().FullName;
 
 		public IQueuedTask DequeuedTask
 			=> DequeuedTaskToken.DequeuedTask;

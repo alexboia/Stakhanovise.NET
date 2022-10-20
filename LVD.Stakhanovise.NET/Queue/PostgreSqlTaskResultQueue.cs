@@ -47,7 +47,7 @@ namespace LVD.Stakhanovise.NET.Queue
 	public class PostgreSqlTaskResultQueue : ITaskResultQueue, IAppMetricsProvider, IDisposable
 	{
 		private const int RESULT_QUEUE_PROCESSING_BATCH_SIZE = 5;
-		
+
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
 				.GetCurrentMethod()
@@ -80,7 +80,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			new AppMetric( AppMetricId.ResultQueueTotalResultWriteDuration, 0 )
 		);
 
-		public PostgreSqlTaskResultQueue ( TaskQueueOptions options )
+		public PostgreSqlTaskResultQueue( TaskQueueOptions options )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
@@ -88,20 +88,20 @@ namespace LVD.Stakhanovise.NET.Queue
 			mUpdateSql = GetUpdateSql( options.Mapping );
 		}
 
-		private void CheckNotDisposedOrThrow ()
+		private void CheckNotDisposedOrThrow()
 		{
 			if ( mIsDisposed )
 				throw new ObjectDisposedException( nameof( PostgreSqlTaskResultQueue ),
 					"Cannot reuse a disposed postgre sql task result queue" );
 		}
 
-		private void CheckRunningOrThrow ()
+		private void CheckRunningOrThrow()
 		{
 			if ( !IsRunning )
 				throw new InvalidOperationException( "The task result queue is not running." );
 		}
 
-		private string GetUpdateSql ( QueuedTaskMapping mapping )
+		private string GetUpdateSql( QueuedTaskMapping mapping )
 		{
 			return $@"UPDATE {mapping.ResultsQueueTableName} SET 
 					task_status = @t_status,
@@ -113,15 +113,15 @@ namespace LVD.Stakhanovise.NET.Queue
 				WHERE task_id = @t_id";
 		}
 
-		private void IncrementPostResultCount ()
+		private void IncrementPostResultCount()
 		{
 			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultPostCount,
 				m => m.Increment() );
 		}
 
-		private void IncrementResultWriteCount ( TimeSpan duration )
+		private void IncrementResultWriteCount( TimeSpan duration )
 		{
-			long durationMilliseconds = ( long )Math.Ceiling( duration
+			long durationMilliseconds = ( long ) Math.Ceiling( duration
 				.TotalMilliseconds );
 
 			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultWriteCount,
@@ -137,26 +137,26 @@ namespace LVD.Stakhanovise.NET.Queue
 				m => m.Max( durationMilliseconds ) );
 		}
 
-		private void IncrementResultWriteRequestTimeoutCount ()
+		private void IncrementResultWriteRequestTimeoutCount()
 		{
 			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultWriteRequestTimeoutCount,
 				m => m.Increment() );
 		}
 
-		private async Task<NpgsqlConnection> OpenConnectionAsync ( CancellationToken cancellationToken )
+		private async Task<NpgsqlConnection> OpenConnectionAsync( CancellationToken cancellationToken )
 		{
 			return await mOptions
 				.ConnectionOptions
 				.TryOpenConnectionAsync( cancellationToken );
 		}
 
-		private async Task PrepConnectionPoolAsync ( CancellationToken cancellationToken )
+		private async Task PrepConnectionPoolAsync( CancellationToken cancellationToken )
 		{
 			using ( NpgsqlConnection conn = await OpenConnectionAsync( cancellationToken ) )
 				await conn.CloseAsync();
 		}
 
-		public Task<int> PostResultAsync ( IQueuedTaskToken token, int timeoutMilliseconds )
+		public Task<int> PostResultAsync( IQueuedTaskToken token, int timeoutMilliseconds )
 		{
 			CheckNotDisposedOrThrow();
 			CheckRunningOrThrow();
@@ -183,13 +183,13 @@ namespace LVD.Stakhanovise.NET.Queue
 			} );
 		}
 
-		public Task<int> PostResultAsync ( IQueuedTaskToken token )
+		public Task<int> PostResultAsync( IQueuedTaskToken token )
 		{
 			return PostResultAsync( token,
 				timeoutMilliseconds: 0 );
 		}
 
-		private async Task ProcessResultBatchAsync ( Queue<PostgreSqlTaskResultQueueProcessRequest> currentBatch )
+		private async Task ProcessResultBatchAsync( Queue<PostgreSqlTaskResultQueueProcessRequest> currentBatch )
 		{
 			MonotonicTimestamp startWrite = MonotonicTimestamp
 				.Now();
@@ -224,24 +224,41 @@ namespace LVD.Stakhanovise.NET.Queue
 
 					try
 					{
-						pStatus.Value = ( int )processRq.ResultToUpdate.Status;
+						pStatus.Value = ( int ) processRq
+							.ResultToUpdate
+							.Status;
 
-						string strLastError = processRq.ResultToUpdate.LastError.ToJson();
+						string strLastError = ConvertErrorInfoToJson( processRq
+							.ResultToUpdate
+							.LastError );
+
 						if ( strLastError != null )
 							pLastError.Value = strLastError;
 						else
 							pLastError.Value = DBNull.Value;
 
-						pErrorCount.Value = processRq.ResultToUpdate.ErrorCount;
-						pLastErrorIsRecoverable.Value = processRq.ResultToUpdate.LastErrorIsRecoverable;
-						pProcessingTime.Value = processRq.ResultToUpdate.ProcessingTimeMilliseconds;
+						pErrorCount.Value = processRq
+							.ResultToUpdate
+							.ErrorCount;
+
+						pLastErrorIsRecoverable.Value = processRq
+							.ResultToUpdate
+							.LastErrorIsRecoverable;
+						pProcessingTime.Value = processRq
+							.ResultToUpdate
+							.ProcessingTimeMilliseconds;
 
 						if ( processRq.ResultToUpdate.ProcessingFinalizedAtTs.HasValue )
-							pFinalizedAt.Value = processRq.ResultToUpdate.ProcessingFinalizedAtTs;
+							pFinalizedAt.Value = processRq
+								.ResultToUpdate
+								.ProcessingFinalizedAtTs;
 						else
-							pFinalizedAt.Value = DBNull.Value;
+							pFinalizedAt.Value = DBNull
+								.Value;
 
-						pId.Value = processRq.ResultToUpdate.Id;
+						pId.Value = processRq
+							.ResultToUpdate
+							.Id;
 
 						int affectedRows = await updateCmd.ExecuteNonQueryAsync();
 						processRq.SetCompleted( affectedRows );
@@ -268,7 +285,14 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private async Task RunProcessingLoopAsync ()
+		private string ConvertErrorInfoToJson( QueuedTaskError error )
+		{
+			return error.ToJson( mOptions
+				.SerializerOptions
+				.OnConfigureSerializerSettings );
+		}
+
+		private async Task RunProcessingLoopAsync()
 		{
 			CancellationToken stopToken = mResultProcessingStopRequest
 				.Token;
@@ -336,7 +360,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private async Task StartProcessingAsync ()
+		private async Task StartProcessingAsync()
 		{
 			await PrepConnectionPoolAsync( CancellationToken.None );
 
@@ -347,7 +371,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				=> await RunProcessingLoopAsync() );
 		}
 
-		public async Task StartAsync ()
+		public async Task StartAsync()
 		{
 			CheckNotDisposedOrThrow();
 
@@ -358,7 +382,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				mLogger.Debug( "Result queue is already started or in the process of starting." );
 		}
 
-		private async Task StopProcessingAsync ()
+		private async Task StopProcessingAsync()
 		{
 			mResultProcessingQueue.CompleteAdding();
 			mResultProcessingStopRequest.Cancel();
@@ -372,7 +396,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			mResultProcessingTask = null;
 		}
 
-		public async Task StopAsync ()
+		public async Task StopAsync()
 		{
 			CheckNotDisposedOrThrow();
 
@@ -383,7 +407,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				mLogger.Debug( "Result queue is already stopped or in the process of stopping." );
 		}
 
-		protected virtual void Dispose ( bool disposing )
+		protected virtual void Dispose( bool disposing )
 		{
 			if ( !mIsDisposed )
 			{
@@ -397,18 +421,18 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		public void Dispose ()
+		public void Dispose()
 		{
 			Dispose( true );
 			GC.SuppressFinalize( this );
 		}
 
-		public AppMetric QueryMetric ( AppMetricId metricId )
+		public AppMetric QueryMetric( AppMetricId metricId )
 		{
 			return mMetrics.QueryMetric( metricId );
 		}
 
-		public IEnumerable<AppMetric> CollectMetrics ()
+		public IEnumerable<AppMetric> CollectMetrics()
 		{
 			return mMetrics.CollectMetrics();
 		}
