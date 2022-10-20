@@ -1,13 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Helpers;
-using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
-using LVD.Stakhanovise.NET.Queue;
-using LVD.Stakhanovise.NET.Tests.Payloads;
-using LVD.Stakhanovise.NET.Tests.Support;
 using Npgsql;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
