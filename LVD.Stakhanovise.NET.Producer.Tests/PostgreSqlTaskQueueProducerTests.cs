@@ -47,6 +47,7 @@ using System.Threading.Tasks;
 namespace LVD.Stakhanovise.NET.Producer.Tests
 {
 	[TestFixture]
+	[NonParallelizable]
 	public class PostgreSqlTaskQueueProducerTests : BaseTestWithConfiguration
 	{
 		private TaskQueueOptions mProducerOptions;
