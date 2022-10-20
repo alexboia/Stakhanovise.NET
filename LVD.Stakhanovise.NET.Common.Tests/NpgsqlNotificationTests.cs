@@ -29,18 +29,17 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Tests.Helpers;
 using Npgsql;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using LVD.Stakhanovise.NET.Tests;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Common.Tests
 {
 	[TestFixture]
 	public class NpgsqlNotificationTests : BaseDbTests

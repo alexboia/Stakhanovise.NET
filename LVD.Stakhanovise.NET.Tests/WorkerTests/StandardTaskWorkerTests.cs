@@ -45,7 +45,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests.Worker
+namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 {
 	[TestFixture]
 	public class StandardTaskWorkerTests

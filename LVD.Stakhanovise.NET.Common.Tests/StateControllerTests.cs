@@ -36,7 +36,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Common.Tests
 {
 	[TestFixture]
 	public class StateControllerTests

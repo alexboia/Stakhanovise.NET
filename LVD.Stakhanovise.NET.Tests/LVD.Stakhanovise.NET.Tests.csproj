@@ -21,10 +21,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Bogus" Version="34.0.2" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
 		<PackageReference Include="Moq" Version="4.17.2" />
 		<PackageReference Include="morelinq" Version="3.3.2" />
@@ -40,6 +36,7 @@
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Interfaces\LVD.Stakhanovise.NET.Interfaces.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Tests.Harness\LVD.Stakhanovise.NET.Tests.Harness.csproj" />
 		<ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
 	</ItemGroup>
 

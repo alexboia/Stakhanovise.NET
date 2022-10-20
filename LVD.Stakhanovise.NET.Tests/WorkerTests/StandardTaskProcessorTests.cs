@@ -14,7 +14,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests.Worker
+namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 {
 	[TestFixture]
 	public class StandardTaskProcessorTests

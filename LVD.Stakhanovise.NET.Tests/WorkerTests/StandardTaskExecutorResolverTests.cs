@@ -9,7 +9,7 @@ using LVD.Stakhanovise.NET.Tests.Payloads;
 using Moq;
 using NUnit.Framework;
 
-namespace LVD.Stakhanovise.NET.Tests.Worker
+namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 {
 	[TestFixture]
 	public class StandardTaskExecutorResolverTests

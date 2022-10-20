@@ -35,8 +35,9 @@ using Npgsql;
 using NUnit.Framework;
 using System.Threading;
 using System.Threading.Tasks;
+using LVD.Stakhanovise.NET.Tests;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Common.Tests
 {
 	[TestFixture]
 	public class NpgsqlQueryExtensionsTests : BaseDbTests

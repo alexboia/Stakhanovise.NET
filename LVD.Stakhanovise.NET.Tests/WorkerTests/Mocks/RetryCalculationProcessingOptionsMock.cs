@@ -2,7 +2,7 @@
 using LVD.Stakhanovise.NET.Queue;
 using System.Collections.Generic;
 
-namespace LVD.Stakhanovise.NET.Tests.Worker.Mocks
+namespace LVD.Stakhanovise.NET.Tests.WorkerTests.Mocks
 {
 	public class RetryCalculationProcessingOptionsMock
 	{

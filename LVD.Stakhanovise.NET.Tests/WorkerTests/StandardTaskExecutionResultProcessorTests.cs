@@ -11,7 +11,7 @@ using Bogus;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Tests.Helpers;
 
-namespace LVD.Stakhanovise.NET.Tests.Worker
+namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 {
 	[TestFixture]
 	public class StandardTaskExecutionResultProcessorTests

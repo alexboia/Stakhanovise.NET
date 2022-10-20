@@ -1,12 +1,12 @@
 ﻿using LVD.Stakhanovise.NET.Processor;
-using LVD.Stakhanovise.NET.Tests.Worker.Mocks;
+using LVD.Stakhanovise.NET.Tests.WorkerTests.Mocks;
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Queue;
 using Moq;
 using NUnit.Framework;
 using System;
 
-namespace LVD.Stakhanovise.NET.Tests.Worker
+namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 {
 	[TestFixture]
 	public class StandardTaskExecutionRetryCalculatorTests
