@@ -365,7 +365,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			GC.SuppressFinalize( this );
 		}
 
-		public AppMetric QueryMetric( AppMetricId metricId )
+		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
 			return AppMetricsCollection.JoinQueryMetric( metricId,
 				mMetrics,
@@ -396,7 +396,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		public IEnumerable<AppMetricId> ExportedMetrics
+		public IEnumerable<IAppMetricId> ExportedMetrics
 		{
 			get
 			{

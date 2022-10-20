@@ -370,7 +370,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			AppMetricsCollection[] collections =
 				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
 
-			IEnumerable<AppMetricId> metricIds = AppMetricsCollection
+			IEnumerable<IAppMetricId> metricIds = AppMetricsCollection
 				.JoinExportedMetrics( collections );
 
 			Assert.NotNull( metricIds );
@@ -395,7 +395,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			AppMetricsCollection[] collections =
 				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
 
-			IEnumerable<AppMetricId> metricIds = AppMetricsCollection
+			IEnumerable<IAppMetricId> metricIds = AppMetricsCollection
 				.JoinExportedMetrics( collections );
 
 			Assert.NotNull( metricIds );
@@ -420,7 +420,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			AppMetricsCollection[] collections =
 				GetCollectionsFromMetricIdsBatchesWithInitialValues( metricIdsBatches );
 
-			IEnumerable<AppMetricId> metricIds = AppMetricsCollection
+			IEnumerable<IAppMetricId> metricIds = AppMetricsCollection
 				.JoinExportedMetrics( collections );
 
 			Assert.NotNull( metricIds );
@@ -500,7 +500,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private void Assert_AppMetricsCollection_CorrectlyInitialized ( IEnumerable<AppMetricId> expectedMetricIds,
 			AppMetricsCollection metrics )
 		{
-			IEnumerable<AppMetricId> actualMetricIds = metrics
+			IEnumerable<IAppMetricId> actualMetricIds = metrics
 				.ExportedMetrics;
 
 			Assert.AreEqual( expectedMetricIds.Count(),
@@ -543,7 +543,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private void Assert_AppMetricsCollection_CorrectlyInitialized ( IEnumerable<AppMetric> expectedMetrics,
 			AppMetricsCollection metrics )
 		{
-			IEnumerable<AppMetricId> actualMetricIds = metrics
+			IEnumerable<IAppMetricId> actualMetricIds = metrics
 				.ExportedMetrics;
 
 			Assert.AreEqual( expectedMetrics.Count(),

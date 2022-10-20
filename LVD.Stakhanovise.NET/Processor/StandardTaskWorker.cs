@@ -277,7 +277,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public AppMetric QueryMetric( AppMetricId metricId )
+		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
 			return mMetricsProvider
 				.QueryMetric( metricId );
@@ -298,7 +298,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
-		public IEnumerable<AppMetricId> ExportedMetrics
+		public IEnumerable<IAppMetricId> ExportedMetrics
 		{
 			get
 			{

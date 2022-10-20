@@ -131,7 +131,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			return mMetrics.CollectMetrics();
 		}
 
-		public AppMetric QueryMetric( AppMetricId metricId )
+		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
 			return mMetrics.QueryMetric( metricId );
 		}
@@ -166,7 +166,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			GC.SuppressFinalize( this );
 		}
 
-		public IEnumerable<AppMetricId> ExportedMetrics
+		public IEnumerable<IAppMetricId> ExportedMetrics
 			=> mMetrics.ExportedMetrics;
 	}
 }

@@ -34,7 +34,7 @@ using System.Collections.Generic;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public class AppMetricId : IEquatable<AppMetricId>
+	public class AppMetricId : IEquatable<AppMetricId>, IAppMetricId
 	{
 		/// <summary>
 		/// How many new job notifications have been 
@@ -65,21 +65,21 @@ namespace LVD.Stakhanovise.NET.Model
 		/// How many jobs have been dequeued by the poller.
 		/// </summary>
 		public static readonly AppMetricId PollerDequeueCount =
-			new AppMetricId( "poller@dequeue-count", 
+			new AppMetricId( "poller@dequeue-count",
 				valueCategory: "task-poller" );
 
 		/// <summary>
 		/// How many times has the poller waited for jobs to become available.
 		/// </summary>
 		public static readonly AppMetricId PollerWaitForDequeueCount =
-			new AppMetricId( "poller@wait-dequeue-count", 
+			new AppMetricId( "poller@wait-dequeue-count",
 				valueCategory: "task-poller" );
 
 		/// <summary>
 		/// How many times has the poller waited for buffer space to become available.
 		/// </summary>
 		public static readonly AppMetricId PollerWaitForBufferSpaceCount =
-			new AppMetricId( "poller@wait-buffer-space-count", 
+			new AppMetricId( "poller@wait-buffer-space-count",
 				valueCategory: "task-poller" );
 
 		/// <summary>
@@ -93,7 +93,7 @@ namespace LVD.Stakhanovise.NET.Model
 		/// How many jobs have been processed by the workers.
 		/// </summary>
 		public static readonly AppMetricId WorkerProcessedPayloadCount =
-			new AppMetricId( "worker@processed-payload-count", 
+			new AppMetricId( "worker@processed-payload-count",
 				valueCategory: "task-worer" );
 
 		/// <summary>
@@ -101,7 +101,7 @@ namespace LVD.Stakhanovise.NET.Model
 		///		for jobs to become available.
 		/// </summary>
 		public static readonly AppMetricId WorkerBufferWaitCount =
-			new AppMetricId( "worker@buffer-wait-count", 
+			new AppMetricId( "worker@buffer-wait-count",
 				valueCategory: "task-worer" );
 
 		/// <summary>
@@ -109,35 +109,35 @@ namespace LVD.Stakhanovise.NET.Model
 		///		spent performing actual job processing.
 		/// </summary>
 		public static readonly AppMetricId WorkerTotalProcessingTime =
-			new AppMetricId( "worker@total-processing-time", 
+			new AppMetricId( "worker@total-processing-time",
 				valueCategory: "task-worer" );
 
 		/// <summary>
 		/// How many jobs have been successfully processed.
 		/// </summary>
 		public static readonly AppMetricId WorkerSuccessfulProcessedPayloadCount =
-			new AppMetricId( "worker@successful-processed-payload-count", 
+			new AppMetricId( "worker@successful-processed-payload-count",
 				valueCategory: "task-worer" );
 
 		/// <summary>
 		/// How many jobs have failed.
 		/// </summary>
 		public static readonly AppMetricId WorkerFailedProcessedPayloadCount =
-			new AppMetricId( "worker@failed-processed-payload-count", 
+			new AppMetricId( "worker@failed-processed-payload-count",
 				valueCategory: "task-worer" );
 
 		/// <summary>
 		/// How many jobs have been cancelled.
 		/// </summary>
 		public static readonly AppMetricId WorkerProcessingCancelledPayloadCount =
-			new AppMetricId( "worker@processing-cancelled-payload-count", 
+			new AppMetricId( "worker@processing-cancelled-payload-count",
 				valueCategory: "task-worer" );
 
 		/// <summary>
 		/// How many jobs has the queue consumer dequeued.
 		/// </summary>
 		public static readonly AppMetricId QueueConsumerDequeueCount =
-			new AppMetricId( "queue-consumer@dequeue-count", 
+			new AppMetricId( "queue-consumer@dequeue-count",
 				valueCategory: "task-queue-consumer" );
 
 		/// <summary>
@@ -145,15 +145,15 @@ namespace LVD.Stakhanovise.NET.Model
 		///		spent fetching jobs from the queue.
 		/// </summary>
 		public static readonly AppMetricId QueueConsumerTotalDequeueDuration =
-			new AppMetricId( "queue-consumer@total-dequeue-duration", 
-				valueCategory:"task-queue-consumer" );
+			new AppMetricId( "queue-consumer@total-dequeue-duration",
+				valueCategory: "task-queue-consumer" );
 
 		/// <summary>
 		/// The minimum time (measured in milliseconds) spent by the queue consumer 
 		///		to fetch jobs from the queue (i.e. the quickest dequeue operation).
 		/// </summary>
 		public static readonly AppMetricId QueueConsumerMinimumDequeueDuration =
-			new AppMetricId( "queue-consumer@minimum-dequeue-duration", 
+			new AppMetricId( "queue-consumer@minimum-dequeue-duration",
 				valueCategory: "task-queue-consumer" );
 
 		/// <summary>
@@ -161,21 +161,21 @@ namespace LVD.Stakhanovise.NET.Model
 		///		to fetch jobs from the queue (i.e. the slowest dequeue operation).
 		/// </summary>
 		public static readonly AppMetricId QueueConsumerMaximumDequeueDuration =
-			new AppMetricId( "queue-consumer@maximum-dequeue-duration", 
+			new AppMetricId( "queue-consumer@maximum-dequeue-duration",
 				valueCategory: "task-queue-consumer" );
 
 		/// <summary>
 		/// How many job results have been posted.
 		/// </summary>
 		public static readonly AppMetricId ResultQueueResultPostCount =
-			new AppMetricId( "result-queue@result-post-count", 
+			new AppMetricId( "result-queue@result-post-count",
 				valueCategory: "task-result-queue" );
 
 		/// <summary>
 		/// How many posted job results have actually been written.
 		/// </summary>
 		public static readonly AppMetricId ResultQueueResultWriteCount =
-			new AppMetricId( "result-queue@result-writes-count", 
+			new AppMetricId( "result-queue@result-writes-count",
 				valueCategory: "task-result-queue" );
 
 		/// <summary>
@@ -183,7 +183,7 @@ namespace LVD.Stakhanovise.NET.Model
 		///		to write a set of results (i.e. the slowest result write operation).
 		/// </summary>
 		public static readonly AppMetricId ResultQueueMaximumResultWriteDuration =
-			new AppMetricId( "result-queue@maximum-result-write-duration", 
+			new AppMetricId( "result-queue@maximum-result-write-duration",
 				valueCategory: "task-result-queue" );
 
 		/// <summary>
@@ -191,7 +191,7 @@ namespace LVD.Stakhanovise.NET.Model
 		///		to write a set of results (i.e. the fastest result write operation).
 		/// </summary>
 		public static readonly AppMetricId ResultQueueMinimumResultWriteDuration =
-			new AppMetricId( "result-queue@minimum-result-write-duration", 
+			new AppMetricId( "result-queue@minimum-result-write-duration",
 				valueCategory: "task-result-queue" );
 
 		/// <summary>
@@ -199,56 +199,56 @@ namespace LVD.Stakhanovise.NET.Model
 		///		to write result sets.
 		/// </summary>
 		public static readonly AppMetricId ResultQueueTotalResultWriteDuration =
-			new AppMetricId( "result-queue@total-result-write-duration", 
+			new AppMetricId( "result-queue@total-result-write-duration",
 				valueCategory: "task-result-queue" );
 
 		/// <summary>
 		/// How many result write operations have timed out.
 		/// </summary>
 		public static readonly AppMetricId ResultQueueResultWriteRequestTimeoutCount =
-			new AppMetricId( "result-queue@result-write-rq-timeout-count", 
+			new AppMetricId( "result-queue@result-write-rq-timeout-count",
 				valueCategory: "task-result-queue" );
 
 		/// <summary>
 		/// The maximum number of job payloads that have ever been held in buffer.
 		/// </summary>
 		public static readonly AppMetricId BufferMaxCount =
-			new AppMetricId( "task-buffer@max-count", 
+			new AppMetricId( "task-buffer@max-count",
 				valueCategory: "task-buffer" );
 
 		/// <summary>
 		/// The minimum number of job payloads that have ever been held in buffer.
 		/// </summary>
 		public static readonly AppMetricId BufferMinCount =
-			new AppMetricId( "task-buffer@min-count", 
+			new AppMetricId( "task-buffer@min-count",
 				valueCategory: "task-buffer" );
 
 		/// <summary>
 		/// How many times has the buffer been filled.
 		/// </summary>
 		public static readonly AppMetricId BufferTimesFilled =
-			new AppMetricId( "task-buffer@times-filled", 
+			new AppMetricId( "task-buffer@times-filled",
 				valueCategory: "task-buffer" );
 
 		/// <summary>
 		/// How many times has the buffer been emptied.
 		/// </summary>
 		public static readonly AppMetricId BufferTimesEmptied =
-			new AppMetricId( "task-buffer@times-emptied", 
+			new AppMetricId( "task-buffer@times-emptied",
 				valueCategory: "task-buffer" );
 
 		/// <summary>
 		/// How many execution performance reports have been posted.
 		/// </summary>
 		public static readonly AppMetricId PerfMonReportPostCount =
-			new AppMetricId( "perf-mon@report-post-count", 
+			new AppMetricId( "perf-mon@report-post-count",
 				valueCategory: "execution-perf-mon" );
 
 		/// <summary>
 		/// How many posted execution performance reports have actually been written.
 		/// </summary>
 		public static readonly AppMetricId PerfMonReportWriteCount =
-			new AppMetricId( "perf-mon@report-write-count", 
+			new AppMetricId( "perf-mon@report-write-count",
 				valueCategory: "execution-perf-mon" );
 
 		/// <summary>
@@ -256,7 +256,7 @@ namespace LVD.Stakhanovise.NET.Model
 		///		a set of execution performance reports (i.e. quickest write operation).
 		/// </summary>
 		public static readonly AppMetricId PerfMonMinimumReportWriteDuration =
-			new AppMetricId( "perf-mon@minimum-report-write-duration", 
+			new AppMetricId( "perf-mon@minimum-report-write-duration",
 				valueCategory: "execution-perf-mon" );
 
 		/// <summary>
@@ -264,20 +264,20 @@ namespace LVD.Stakhanovise.NET.Model
 		///		a set of execution performance reports (i.e. quickest write operation).
 		/// </summary>
 		public static readonly AppMetricId PerfMonMaximumReportWriteDuration =
-			new AppMetricId( "perf-mon@maximum-report-write-duration", 
+			new AppMetricId( "perf-mon@maximum-report-write-duration",
 				valueCategory: "execution-perf-mon" );
 
 		/// <summary>
 		/// How many execution performance report write operations have timed out.
 		/// </summary>
 		public static readonly AppMetricId PerfMonReportWriteRequestsTimeoutCount =
-			new AppMetricId( "perf-mon@report-requests-timeout-count", 
+			new AppMetricId( "perf-mon@report-requests-timeout-count",
 				valueCategory: "execution-perf-mon" );
 
 		private static readonly SupportedValuesContainer<AppMetricId, string> mBuiltInAppMetricIds
 			= new SupportedValuesContainer<AppMetricId, string>( m => m.ValueId );
 
-		public AppMetricId ( string valueId, string valueCategory )
+		public AppMetricId( string valueId, string valueCategory )
 		{
 			if ( string.IsNullOrEmpty( valueId ) )
 				throw new ArgumentNullException( nameof( valueId ) );
@@ -288,29 +288,29 @@ namespace LVD.Stakhanovise.NET.Model
 			ValueCategory = valueCategory;
 		}
 
-		public static bool IsSupported(string valueId)
+		public static bool IsSupported( string valueId )
 		{
 			return mBuiltInAppMetricIds.IsSupported( valueId );
 		}
 
-		public static AppMetricId TryParse(string valueId)
+		public static AppMetricId TryParse( string valueId )
 		{
 			return mBuiltInAppMetricIds.TryParse( valueId );
 		}
 
-		public bool Equals ( AppMetricId other )
+		public bool Equals( AppMetricId other )
 		{
 			return other != null
 				&& string.Equals( ValueId, other.ValueId )
 				&& string.Equals( ValueCategory, other.ValueCategory );
 		}
 
-		public override bool Equals ( object obj )
+		public override bool Equals( object obj )
 		{
 			return Equals( obj as AppMetricId );
 		}
 
-		public override int GetHashCode ()
+		public override int GetHashCode()
 		{
 			int result = 1;
 
@@ -320,16 +320,22 @@ namespace LVD.Stakhanovise.NET.Model
 			return result;
 		}
 
-		public override string ToString ()
+		public override string ToString()
 		{
 			return $"[{ValueId}@{ValueCategory}]";
 		}
 
-		public string ValueId { get; private set; }
+		public string ValueId
+		{
+			get; private set;
+		}
 
-		public string ValueCategory { get; private set; }
+		public string ValueCategory
+		{
+			get; private set;
+		}
 
-		public static IEnumerable<AppMetricId> BuiltInAppMetricIds 
+		public static IEnumerable<AppMetricId> BuiltInAppMetricIds
 			=> mBuiltInAppMetricIds.SupportedValues;
 	}
 }

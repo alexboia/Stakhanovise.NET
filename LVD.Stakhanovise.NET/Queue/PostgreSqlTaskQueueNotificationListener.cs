@@ -413,7 +413,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			mWaitForFirstStartWaitHandle = null;
 		}
 
-		public AppMetric QueryMetric( AppMetricId metricId )
+		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
 			return mMetrics.QueryMetric( metricId );
 		}
@@ -459,7 +459,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		public IEnumerable<AppMetricId> ExportedMetrics
+		public IEnumerable<IAppMetricId> ExportedMetrics
 		{
 			get
 			{

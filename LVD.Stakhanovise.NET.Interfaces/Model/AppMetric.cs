@@ -40,15 +40,15 @@ namespace LVD.Stakhanovise.NET.Model
 	{
 		private long mValue = 0;
 
-		private AppMetricId mId;
+		private IAppMetricId mId;
 
-		public AppMetric ( AppMetricId id )
+		public AppMetric ( IAppMetricId id )
 			: this( id, 0 )
 		{
 			return;
 		}
 
-		public AppMetric ( AppMetricId id, long value )
+		public AppMetric ( IAppMetricId id, long value )
 		{
 			mId = id ?? throw new ArgumentNullException( nameof( id ) );
 			mValue = value;
@@ -149,7 +149,7 @@ namespace LVD.Stakhanovise.NET.Model
 			return result;
 		}
 
-		public AppMetricId Id => mId;
+		public IAppMetricId Id => mId;
 
 		public long Value => mValue;
 	}
