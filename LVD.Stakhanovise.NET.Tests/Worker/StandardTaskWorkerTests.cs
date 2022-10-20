@@ -104,7 +104,8 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 				new StandardTaskExecutionMetricsProvider();
 
 			ITaskExecutorBufferHandlerFactory bufferHandlerFactory =
-				new StandardTaskExecutorBufferHandlerFactory( metricsProvider,
+				new StandardTaskExecutorBufferHandlerFactory( buffer,
+					metricsProvider,
 					loggingProvider );
 
 			ITaskExecutorResolver taskExecutorResolver =
@@ -121,18 +122,19 @@ namespace LVD.Stakhanovise.NET.Tests.Worker
 					executionRetryCalculator,
 					loggingProvider.CreateLogger<StandardTaskProcessor>() );
 
-			ITaskResultProcessor resultProcessor =
+			ITaskExecutionResultProcessor resultProcessor =
 				new StandardTaskExecutionResultProcessor( resultQueue,
 					taskQueueProducer,
 					executionPerformanceMonitor,
 					loggingProvider.CreateLogger<StandardTaskExecutionResultProcessor>() );
 
-			return new StandardTaskWorker( buffer,
+			return new StandardTaskWorker( 
 				bufferHandlerFactory,
 				taskProcessor,
 				resultProcessor,
 				metricsProvider,
-				loggingProvider.CreateLogger<StandardTaskWorker>() );
+				loggingProvider.CreateLogger<StandardTaskWorker>() 
+			);
 		}
 
 		[Test]

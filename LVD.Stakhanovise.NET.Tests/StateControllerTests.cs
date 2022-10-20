@@ -51,7 +51,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			await stateController.TryRequestStartAsync( async () => { await Task.CompletedTask; } );
 			AssertControllerStarted( stateController );
 
-			await stateController.TryRequestStopASync( async () => { await Task.CompletedTask; } );
+			await stateController.TryRequestStopAsync( async () => { await Task.CompletedTask; } );
 			AssertControllerStopped( stateController );
 		}
 
@@ -89,7 +89,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			try
 			{
-				await stateController.TryRequestStopASync( async () =>
+				await stateController.TryRequestStopAsync( async () =>
 				{
 					await Task.FromException( new InvalidOperationException( "Sample invalid operation exception" ) );
 				} );
@@ -131,7 +131,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					} );
 
 					barrier.SignalAndWait();
-					await controller.TryRequestStopASync( async () =>
+					await controller.TryRequestStopAsync( async () =>
 					{
 						Interlocked.Increment( ref tryRequestStopCount );
 						await Task.CompletedTask;

@@ -12,23 +12,26 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private readonly IStakhanoviseLoggingProvider mLoggingProvider;
 
-		public StandardTaskExecutorBufferHandlerFactory( ITaskExecutionMetricsProvider metricsProvider,
+		private readonly ITaskBuffer mTaskBuffer;
+
+		public StandardTaskExecutorBufferHandlerFactory( ITaskBuffer taskBuffer,
+			ITaskExecutionMetricsProvider metricsProvider,
 			IStakhanoviseLoggingProvider loggingProvider )
 		{
+			mTaskBuffer = taskBuffer
+				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mMetricsProvider = metricsProvider
 				?? throw new ArgumentNullException( nameof( metricsProvider ) );
 			mLoggingProvider = loggingProvider
 				?? throw new ArgumentNullException( nameof( loggingProvider ) );
 		}
 
-		public ITaskExecutorBufferHandler Create( ITaskBuffer taskBuffer, CancellationToken cancellationToken )
+		public ITaskExecutorBufferHandler Create( CancellationToken cancellationToken )
 		{
-			if ( taskBuffer == null )
-				throw new ArgumentNullException( nameof( taskBuffer ) );
+			IStakhanoviseLogger logger = 
+				CreateLogger();
 
-			IStakhanoviseLogger logger = CreateLogger();
-
-			return new StandardTaskExecutorBufferHandler( taskBuffer,
+			return new StandardTaskExecutorBufferHandler( mTaskBuffer,
 				mMetricsProvider,
 				cancellationToken,
 				logger );

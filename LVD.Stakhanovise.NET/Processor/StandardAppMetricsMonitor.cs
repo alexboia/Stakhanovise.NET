@@ -149,7 +149,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStopASync( async ()
+				await mStateController.TryRequestStopAsync( async ()
 					=> await DoShutdownSequenceAsync() );
 			else
 				mLogger.Debug( "App metrics monitor is already stopped. Nothing to be done." );

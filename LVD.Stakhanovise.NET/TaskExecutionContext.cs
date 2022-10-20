@@ -89,11 +89,20 @@ namespace LVD.Stakhanovise.NET
 				mEnd = MonotonicTimestamp.Now();
 		}
 
-		public IQueuedTaskToken TaskToken
-			=> mTaskToken;
+		public object DequeuedTaskPayload
+			=> DequeuedTask.Payload;
+
+		public IQueuedTask DequeuedTask
+			=> DequeuedTaskToken.DequeuedTask;
 
 		public TaskExecutionResultInfo ResultInfo
 			=> mResult;
+
+		public IQueuedTaskToken DequeuedTaskToken
+			=> mTaskToken;
+
+		public Guid DequeuedTaskId
+			=> DequeuedTask.Id;
 
 		public TimeSpan Duration
 		{

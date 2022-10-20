@@ -35,13 +35,12 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( logger ) );
 		}
 
-		public async Task<TaskExecutionResult> ProcessTaskAsync( TaskExecutionContext executionContext )
+		public async Task<TaskProcessingResult> ProcessTaskAsync( TaskExecutionContext executionContext )
 		{
 			if ( executionContext == null )
 				throw new ArgumentNullException( nameof( executionContext ) );
-			
+
 			ITaskExecutor taskExecutor = null;
-			IQueuedTask dequeuedTask = ExtractTask( executionContext );
 
 			try
 			{
@@ -50,17 +49,17 @@ namespace LVD.Stakhanovise.NET.Processor
 				executionContext.ThrowIfCancellationRequested();
 
 				//Attempt to resolve and run task executor
-				if ( ( taskExecutor = ResolveTaskExecutor( dequeuedTask ) ) != null )
+				if ( ( taskExecutor = ResolveTaskExecutor( executionContext ) ) != null )
 				{
 					mLogger.DebugFormat( "Beginning task execution. Task id = {0}.",
-						dequeuedTask.Id );
+						executionContext.DequeuedTaskId );
 
 					//Execute task
-					await taskExecutor.ExecuteAsync( dequeuedTask.Payload,
+					await taskExecutor.ExecuteAsync( executionContext.DequeuedTaskPayload,
 						executionContext );
 
 					mLogger.DebugFormat( "Task execution completed. Task id = {0}.",
-						dequeuedTask.Id );
+						executionContext.DequeuedTaskId );
 
 					//Ensure we have a result - since no exception was thrown 
 					//	and no result explicitly set, assume success.
@@ -75,8 +74,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 			catch ( Exception exc )
 			{
-				HandleTaskProcessingError( executionContext, 
-					dequeuedTask, 
+				HandleTaskProcessingError( executionContext,
 					exc );
 			}
 			finally
@@ -89,34 +87,30 @@ namespace LVD.Stakhanovise.NET.Processor
 				: null;
 		}
 
-		private IQueuedTask ExtractTask( TaskExecutionContext executionContext )
+		private ITaskExecutor ResolveTaskExecutor( TaskExecutionContext executionContext )
 		{
-			return executionContext
-				.TaskToken
-				.DequeuedTask;
-		}
-
-		private ITaskExecutor ResolveTaskExecutor( IQueuedTask queuedTask )
-		{
-			return mExecutorResolver
-				.ResolveExecutor( queuedTask );
+			return mExecutorResolver.ResolveExecutor( executionContext
+				.DequeuedTask );
 		}
 
 		private void HandleTaskProcessingError( TaskExecutionContext executionContext,
-			IQueuedTask dequeuedTask,
 			Exception exc )
 		{
 			mLogger.Error( "Error executing queued task",
 				exc );
 
-			bool isRecoverable = mOptions
-				.IsTaskErrorRecoverable( dequeuedTask, exc );
+			bool isRecoverable = mOptions.IsTaskErrorRecoverable( 
+				executionContext.DequeuedTask, 
+				exc 
+			);
 
-			executionContext?.SetTaskErrored( new QueuedTaskError( exc ),
-				isRecoverable );
+			executionContext?.SetTaskErrored( 
+				new QueuedTaskError( exc ),
+				isRecoverable 
+			);
 		}
 
-		private TaskExecutionResult CreateExecutionResult( TaskExecutionContext executionContext )
+		private TaskProcessingResult CreateExecutionResult( TaskExecutionContext executionContext )
 		{
 			DateTimeOffset retryAt = DateTimeOffset.UtcNow;
 
@@ -124,18 +118,24 @@ namespace LVD.Stakhanovise.NET.Processor
 			//	if execution failed
 			if ( executionContext.HasResult
 				&& executionContext.ExecutionFailed )
-				retryAt = ComputeRetryAt( executionContext.TaskToken );
+				retryAt = ComputeRetryAt( executionContext );
 
-			return new TaskExecutionResult( executionContext.ResultInfo,
-				executionContext.Duration,
-				retryAt,
-				mOptions.FaultErrorThresholdCount );
+			TaskExecutionResult executionResult =  
+				new TaskExecutionResult( executionContext.ResultInfo,
+					executionContext.Duration,
+					retryAt,
+					mOptions.FaultErrorThresholdCount );
+
+			return new TaskProcessingResult( 
+				executionContext.DequeuedTaskToken, 
+				executionResult 
+			);
 		}
 
-		private DateTimeOffset ComputeRetryAt( IQueuedTaskToken queuedTaskToken )
+		private DateTimeOffset ComputeRetryAt( TaskExecutionContext executionContext )
 		{
-			return mRetryCalculator
-				.ComputeRetryAt( queuedTaskToken );
+			return mRetryCalculator.ComputeRetryAt( executionContext
+				.DequeuedTaskToken );
 		}
 	}
 }

@@ -6,7 +6,7 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public class StandardTaskExecutionMetricsProvider : ITaskExecutionMetricsProvider
 	{
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		private readonly AppMetricsCollection mMetrics = new AppMetricsCollection
 		(
 			AppMetricId.WorkerProcessedPayloadCount,
 			AppMetricId.WorkerBufferWaitCount,
@@ -22,26 +22,26 @@ namespace LVD.Stakhanovise.NET.Processor
 				m => m.Increment() );
 		}
 
-		public void UpdateTaskProcessingStats( TaskExecutionResult result )
+		public void UpdateTaskProcessingStats( TaskProcessingResult processingResult )
 		{
-			if ( result == null )
-				throw new ArgumentNullException( nameof( result ) );
+			if ( processingResult == null )
+				throw new ArgumentNullException( nameof( processingResult ) );
 			
 			mMetrics.UpdateMetric( AppMetricId.WorkerProcessedPayloadCount,
 				m => m.Increment() );
 
 			mMetrics.UpdateMetric( AppMetricId.WorkerTotalProcessingTime,
-				m => m.Add( result.ProcessingTimeMilliseconds ) );
+				m => m.Add( processingResult.ProcessingTimeMilliseconds ) );
 
-			if ( result.ExecutedSuccessfully )
+			if ( processingResult.ExecutedSuccessfully )
 				mMetrics.UpdateMetric( AppMetricId.WorkerSuccessfulProcessedPayloadCount,
 					m => m.Increment() );
 
-			else if ( result.ExecutionFailed )
+			else if ( processingResult.ExecutionFailed )
 				mMetrics.UpdateMetric( AppMetricId.WorkerFailedProcessedPayloadCount,
 					m => m.Increment() );
 
-			else if ( result.ExecutionCancelled )
+			else if ( processingResult.ExecutionCancelled )
 				mMetrics.UpdateMetric( AppMetricId.WorkerProcessingCancelledPayloadCount,
 					m => m.Increment() );
 		}

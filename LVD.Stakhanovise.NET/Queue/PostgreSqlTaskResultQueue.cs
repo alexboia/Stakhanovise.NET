@@ -377,7 +377,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			CheckNotDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStopASync( async ()
+				await mStateController.TryRequestStopAsync( async ()
 					=> await StopProcessingAsync() );
 			else
 				mLogger.Debug( "Result queue is already stopped or in the process of stopping." );

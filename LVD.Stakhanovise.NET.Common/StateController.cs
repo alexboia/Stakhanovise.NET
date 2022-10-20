@@ -128,7 +128,7 @@ namespace LVD.Stakhanovise.NET
 			}
 		}
 
-		public async Task TryRequestStopASync ( Func<Task> onStopFn )
+		public async Task TryRequestStopAsync ( Func<Task> onStopFn )
 		{
 			if ( onStopFn == null )
 				throw new ArgumentNullException( nameof( onStopFn ) );

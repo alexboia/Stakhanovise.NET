@@ -183,7 +183,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			CheckDisposedOrThrow();
 
 			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStopASync( async ()
+				await mStateController.TryRequestStopAsync( async ()
 					=> await DoShutdownSequenceAsync() );
 			else
 				mLogger.Debug( "The task engine is already stopped." );
@@ -264,7 +264,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				new StandardTaskExecutionMetricsProvider();
 
 			ITaskExecutorBufferHandlerFactory bufferHandlerFactory =
-				new StandardTaskExecutorBufferHandlerFactory( metricsProvider,
+				new StandardTaskExecutorBufferHandlerFactory( mTaskBuffer,
+					metricsProvider,
 					loggingProvider );
 
 			ITaskExecutorResolver taskExecutorResolver =
@@ -281,15 +282,14 @@ namespace LVD.Stakhanovise.NET.Processor
 					executionRetryCalculator,
 					loggingProvider.CreateLogger<StandardTaskProcessor>() );
 
-			ITaskResultProcessor resultProcessor =
+			ITaskExecutionResultProcessor resultProcessor =
 				new StandardTaskExecutionResultProcessor( mTaskResultQueue,
-					mTaskQueueProducer, 
+					mTaskQueueProducer,
 					mExecutionPerfMon,
 					loggingProvider.CreateLogger<StandardTaskExecutionResultProcessor>() );
 
 			StandardTaskWorker taskWorker =
-				new StandardTaskWorker( mTaskBuffer,
-					bufferHandlerFactory,
+				new StandardTaskWorker( bufferHandlerFactory,
 					taskProcessor,
 					resultProcessor,
 					metricsProvider,

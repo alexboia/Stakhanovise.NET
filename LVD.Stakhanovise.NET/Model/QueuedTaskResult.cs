@@ -123,20 +123,23 @@ namespace LVD.Stakhanovise.NET.Model
 			//If status is not fatal, compute the information 
 			//	necessary to retry task execution
 			if ( Status != QueuedTaskStatus.Fatal )
-			{
-				return new QueuedTaskProduceInfo()
-				{
-					Id = Id,
-					Payload = Payload,
-					Type = Type,
-					Source = Source,
-					Priority = Priority,
-					LockedUntilTs = result.RetryAt,
-					Status = Status
-				};
-			}
+				return GetRetryToQueueInfo( result );
 			else
 				return null;
+		}
+
+		private QueuedTaskProduceInfo GetRetryToQueueInfo( TaskExecutionResult result )
+		{
+			return new QueuedTaskProduceInfo()
+			{
+				Id = Id,
+				Payload = Payload,
+				Type = Type,
+				Source = Source,
+				Priority = Priority,
+				LockedUntilTs = result.RetryAt,
+				Status = Status
+			};
 		}
 
 		private void Cancelled( TaskExecutionResult result )
@@ -171,32 +174,74 @@ namespace LVD.Stakhanovise.NET.Model
 			return Id.GetHashCode();
 		}
 
-		public Guid Id { get; set; }
+		public Guid Id
+		{
+			get; set;
+		}
 
-		public string Type { get; set; }
+		public string Type
+		{
+			get; set;
+		}
 
-		public string Source { get; set; }
+		public string Source
+		{
+			get; set;
+		}
 
-		public object Payload { get; set; }
+		public object Payload
+		{
+			get; set;
+		}
 
-		public QueuedTaskStatus Status { get; set; }
+		public QueuedTaskStatus Status
+		{
+			get; set;
+		}
 
-		public int Priority { get; set; }
+		public int Priority
+		{
+			get; set;
+		}
 
-		public long ProcessingTimeMilliseconds { get; set; }
+		public long ProcessingTimeMilliseconds
+		{
+			get; set;
+		}
 
-		public QueuedTaskError LastError { get; set; }
+		public QueuedTaskError LastError
+		{
+			get; set;
+		}
 
-		public bool LastErrorIsRecoverable { get; set; }
+		public bool LastErrorIsRecoverable
+		{
+			get; set;
+		}
 
-		public int ErrorCount { get; set; }
+		public int ErrorCount
+		{
+			get; set;
+		}
 
-		public DateTimeOffset PostedAtTs { get; set; }
+		public DateTimeOffset PostedAtTs
+		{
+			get; set;
+		}
 
-		public DateTimeOffset? FirstProcessingAttemptedAtTs { get; set; }
+		public DateTimeOffset? FirstProcessingAttemptedAtTs
+		{
+			get; set;
+		}
 
-		public DateTimeOffset? LastProcessingAttemptedAtTs { get; set; }
+		public DateTimeOffset? LastProcessingAttemptedAtTs
+		{
+			get; set;
+		}
 
-		public DateTimeOffset? ProcessingFinalizedAtTs { get; set; }
+		public DateTimeOffset? ProcessingFinalizedAtTs
+		{
+			get; set;
+		}
 	}
 }

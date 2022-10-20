@@ -37,24 +37,24 @@ namespace LVD.Stakhanovise.NET.Model
 {
 	public class QueuedTaskError : IEquatable<QueuedTaskError>
 	{
-		private QueuedTaskError ()
+		private QueuedTaskError()
 		{
 			return;
 		}
 
-		public QueuedTaskError ( string message )
+		public QueuedTaskError( string message )
 			: this( null, message, null )
 		{
 			return;
 		}
 
-		public QueuedTaskError ( string type, string message )
+		public QueuedTaskError( string type, string message )
 		   : this( type, message, null )
 		{
 			return;
 		}
 
-		public QueuedTaskError ( string type, string message, string stackTrace )
+		public QueuedTaskError( string type, string message, string stackTrace )
 			: this()
 		{
 			Type = type;
@@ -62,28 +62,28 @@ namespace LVD.Stakhanovise.NET.Model
 			StackTrace = stackTrace;
 		}
 
-		public QueuedTaskError ( Exception exc )
+		public QueuedTaskError( Exception exc )
 			: this( exc.GetType().FullName, exc.Message, exc.StackTrace )
 		{
 			return;
 		}
 
-		public static QueuedTaskError FromException ( Exception exc )
+		public static QueuedTaskError FromException( Exception exc )
 		{
 			return new QueuedTaskError( exc );
 		}
 
-		public static QueuedTaskError FromMessage ( string message )
+		public static QueuedTaskError FromMessage( string message )
 		{
 			return new QueuedTaskError( message );
 		}
 
-		public static QueuedTaskError FromMessage ( string type, string message )
+		public static QueuedTaskError FromMessage( string type, string message )
 		{
 			return new QueuedTaskError( type, message );
 		}
 
-		public bool Equals ( QueuedTaskError other )
+		public bool Equals( QueuedTaskError other )
 		{
 			return other != null
 				&& string.Equals( Type, other.Type )
@@ -91,12 +91,12 @@ namespace LVD.Stakhanovise.NET.Model
 				&& string.Equals( StackTrace, other.StackTrace );
 		}
 
-		public override bool Equals ( object obj )
+		public override bool Equals( object obj )
 		{
 			return Equals( obj as QueuedTaskError );
 		}
 
-		public override int GetHashCode ()
+		public override int GetHashCode()
 		{
 			int result = 1;
 
@@ -107,10 +107,19 @@ namespace LVD.Stakhanovise.NET.Model
 			return result;
 		}
 
-		public string Type { get; set; }
+		public string Type
+		{
+			get; set;
+		}
 
-		public string Message { get; set; }
+		public string Message
+		{
+			get; set;
+		}
 
-		public string StackTrace { get; set; }
+		public string StackTrace
+		{
+			get; set;
+		}
 	}
 }

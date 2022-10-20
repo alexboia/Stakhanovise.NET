@@ -289,7 +289,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task TryRequestStopAsync()
 		{
-			await mStateController.TryRequestStopASync( async ()
+			await mStateController.TryRequestStopAsync( async ()
 				=> await DoShutdownSequenceAsync() );
 		}
 

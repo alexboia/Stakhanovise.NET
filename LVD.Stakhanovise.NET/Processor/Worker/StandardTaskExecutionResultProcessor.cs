@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public class StandardTaskExecutionResultProcessor : ITaskResultProcessor
+	public class StandardTaskExecutionResultProcessor : ITaskExecutionResultProcessor
 	{
 		private readonly ITaskResultQueue mTaskResultQueue;
 
@@ -32,39 +32,38 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( logger ) );
 		}
 
-		public async Task ProcessResultAsync( IQueuedTaskToken queuedTaskToken,
-			TaskExecutionResult result )
+		public async Task<TaskProcessingResult> ProcessResultAsync( TaskProcessingResult processingResult )
 		{
-			if ( queuedTaskToken == null )
-				throw new ArgumentNullException( nameof( queuedTaskToken ) );
-
-			if ( result == null )
-				throw new ArgumentNullException( nameof( result ) );
+			if ( processingResult == null )
+				throw new ArgumentNullException( nameof( processingResult ) );
 
 			try
 			{
-				await DoProcessResultAsync( queuedTaskToken,
-					result );
-				await ReportExecutionTimeAsync( queuedTaskToken,
-					result );
+				await DoProcessResultAsync( processingResult.QueuedTaskToken,
+					processingResult.ExecutionResult );
+				await ReportExecutionTimeAsync( processingResult.QueuedTaskToken,
+					processingResult.ExecutionResult );
 			}
 			catch ( Exception exc )
 			{
 				mLogger.Error( "Failed to set queued task result. Task will be discarded.",
 					exc );
 			}
+
+			return new TaskProcessingResult( processingResult.QueuedTaskToken,
+				processingResult.ExecutionResult );
 		}
 
 		private async Task DoProcessResultAsync( IQueuedTaskToken queuedTaskToken,
-			TaskExecutionResult result )
+			TaskExecutionResult executionResult )
 		{
-			if ( !NeedsProcessing( result ) )
+			if ( !NeedsProcessing( executionResult ) )
 				return;
 
 			//Update execution result and see whether 
 			//	we need to repost the task to retry its execution
-			QueuedTaskProduceInfo repostWithInfo =
-				queuedTaskToken.UdpateFromExecutionResult( result );
+			QueuedTaskProduceInfo repostWithInfo = queuedTaskToken
+				.UdpateFromExecutionResult( executionResult );
 
 			await PostResultAsync( queuedTaskToken );
 			await RepostIfNeededAsync( repostWithInfo );
@@ -72,14 +71,6 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private bool NeedsProcessing( TaskExecutionResult result )
 		{
-			//There is no result - most likely, no executor found;
-			//	nothing to process, just stop and return
-			if ( !result.HasResult )
-			{
-				mLogger.Debug( "No result info returned. Task will be discarded." );
-				return false;
-			}
-
 			//Execution has been cancelled, usually as a response 
 			//	to a cancellation request;
 			//	nothing to process, just stop and return

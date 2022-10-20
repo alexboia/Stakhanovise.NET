@@ -346,7 +346,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private async Task TryRequestStopAsync()
 		{
-			await mStateController.TryRequestStopASync( async ()
+			await mStateController.TryRequestStopAsync( async ()
 				=> await DoShutdownSequenceAsync() );
 		}
 

@@ -39,13 +39,13 @@ namespace LVD.Stakhanovise.NET
 {
 	public class TaskExecutionResult : IEquatable<TaskExecutionResult>
 	{
-		private TaskExecutionResultInfo mResultInfo;
+		private readonly TaskExecutionResultInfo mResultInfo;
 
-		private DateTimeOffset mRetryAt;
+		private readonly DateTimeOffset mRetryAt;
 
-		private long mProcessingTimeMilliseconds;
+		private readonly long mProcessingTimeMilliseconds;
 
-		private int mFaultErrorThresholdCount;
+		private readonly int mFaultErrorThresholdCount;
 
 		public TaskExecutionResult ( TaskExecutionResultInfo resultInfo,
 			TimeSpan duration,

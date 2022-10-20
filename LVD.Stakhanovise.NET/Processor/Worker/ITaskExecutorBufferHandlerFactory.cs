@@ -7,6 +7,6 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public interface ITaskExecutorBufferHandlerFactory
 	{
-		ITaskExecutorBufferHandler Create( ITaskBuffer buffer, CancellationToken cancellationToken );
+		ITaskExecutorBufferHandler Create( CancellationToken cancellationToken );
 	}
 }

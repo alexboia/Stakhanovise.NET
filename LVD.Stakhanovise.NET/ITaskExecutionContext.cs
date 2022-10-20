@@ -40,22 +40,47 @@ namespace LVD.Stakhanovise.NET
 {
 	public interface ITaskExecutionContext
 	{
-		void SetTaskCompleted ();
+		void SetTaskCompleted();
 
-		void SetTaskErrored ( QueuedTaskError error, bool isRecoverable );
+		void SetTaskErrored( QueuedTaskError error, bool isRecoverable );
 
-		void SetCancellationObserved ();
+		void SetCancellationObserved();
 
-		void ThrowIfCancellationRequested ();
+		void ThrowIfCancellationRequested();
 
-		TaskExecutionResultInfo ResultInfo { get; }
+		TaskExecutionResultInfo ResultInfo
+		{
+			get;
+		}
 
-		bool ExecutedSuccessfully { get; }
+		bool ExecutedSuccessfully
+		{
+			get;
+		}
 
-		bool ExecutionCancelled { get; }
+		bool ExecutionCancelled
+		{
+			get;
+		}
 
-		bool IsCancellationRequested { get; }
+		bool IsCancellationRequested
+		{
+			get;
+		}
 
-		bool HasResult { get; }
+		bool ExecutionFailed
+		{
+			get;
+		}
+
+		bool HasResult
+		{
+			get;
+		}
+
+		TimeSpan Duration
+		{
+			get;
+		}
 	}
 }

@@ -41,12 +41,9 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public class StandardTaskWorker : ITaskWorker, IAppMetricsProvider
 	{
-		private StateController mStateController
-			= new StateController();
-
 		private readonly ITaskProcessor mTaskProcessor;
 
-		private readonly ITaskResultProcessor mTaskResultProcessor;
+		private readonly ITaskExecutionResultProcessor mTaskResultProcessor;
 
 		private readonly ITaskExecutionMetricsProvider mMetricsProvider;
 
@@ -54,9 +51,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private readonly IStakhanoviseLogger mLogger;
 
-		private ITaskBuffer mTaskBuffer;
-
 		private CancellationTokenSource mStopCoordinator;
+
+		private StateController mStateController = new StateController();
 
 		private Task mWorkerTask;
 
@@ -64,15 +61,13 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private bool mIsDisposed = false;
 
-		public StandardTaskWorker( ITaskBuffer taskBuffer,
+		public StandardTaskWorker(
 			ITaskExecutorBufferHandlerFactory bufferHandlerFactory,
 			ITaskProcessor taskProcessor,
-			ITaskResultProcessor resultProcessor,
+			ITaskExecutionResultProcessor resultProcessor,
 			ITaskExecutionMetricsProvider metricsProvider,
 			IStakhanoviseLogger logger )
 		{
-			mTaskBuffer = taskBuffer
-				?? throw new ArgumentNullException( nameof( taskBuffer ) );
 			mBufferHandlerFactory = bufferHandlerFactory
 				?? throw new ArgumentNullException( nameof( bufferHandlerFactory ) );
 			mTaskProcessor = taskProcessor
@@ -100,13 +95,17 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			CheckNotDisposedOrThrow();
 
-			if ( mStateController.IsStopped )
-				mStateController.TryRequestStart( ()
-					=> DoStartupSequence() );
+			if ( !IsRunning )
+				TryRequestStart();
 			else
 				mLogger.Debug( "Worker started or in the process of starting." );
 
 			return Task.CompletedTask;
+		}
+
+		private void TryRequestStart()
+		{
+			mStateController.TryRequestStart( DoStartupSequence );
 		}
 
 		private void DoStartupSequence()
@@ -121,26 +120,21 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void SetupEnvironment()
 		{
-			mStopCoordinator = 
+			mStopCoordinator =
 				new CancellationTokenSource();
 			mBufferHandler = mBufferHandlerFactory
-				.Create( mTaskBuffer, mStopCoordinator.Token );
+				.Create( mStopCoordinator.Token );
 		}
 
 		private void BeginWorking()
 		{
-			mWorkerTask = Task.Run( async () 
+			mWorkerTask = Task.Run( async ()
 				=> await RunWorkerAsync( mStopCoordinator.Token ) );
 		}
 
 		private async Task RunWorkerAsync( CancellationToken stopToken )
 		{
-			//Check for cancellation before we start 
-			//	the processing loop
-			if ( stopToken.IsCancellationRequested )
-				return;
-
-			while ( true )
+			while ( !stopToken.IsCancellationRequested )
 			{
 				try
 				{
@@ -158,7 +152,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			stopToken.ThrowIfCancellationRequested();
 			mBufferHandler.WaitForTaskAvailability();
-			
+
 			stopToken.ThrowIfCancellationRequested();
 			IQueuedTaskToken queuedTaskToken = mBufferHandler
 				.TryGetNextTask();
@@ -176,24 +170,21 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.DebugFormat( "New task to execute retrieved from buffer: task id = {0}.",
 				queuedTaskToken.DequeuedTask.Id );
 
-			//Prepare execution context
 			TaskExecutionContext executionContext =
 				CreateExecutionContext( queuedTaskToken,
 					stopToken );
 
-			//Execute task
-			TaskExecutionResult executionResult =
-				await ExecuteTaskAsync( executionContext );
+			TaskProcessingResult processingResult =
+				await ProcessTaskAsync( executionContext );
 
 			//We will not observe cancellation token 
 			//	during result processing:
 			//	if task executed till the end, we must at least 
 			//	attempt to set the result
-			if ( executionResult != null )
+			if ( processingResult != null )
 			{
-				UpdateTaskProcessingStats( executionResult );
-				await ProcessResultAsync( queuedTaskToken,
-					executionResult );
+				UpdateTaskProcessingStats( processingResult );
+				await ProcessResultAsync( processingResult );
 			}
 
 			mLogger.DebugFormat( "Done executing task with id = {0}.",
@@ -203,38 +194,41 @@ namespace LVD.Stakhanovise.NET.Processor
 		private TaskExecutionContext CreateExecutionContext( IQueuedTaskToken queuedTaskToken,
 			CancellationToken stopToken )
 		{
-			return new TaskExecutionContext( queuedTaskToken,
-				stopToken );
+			return new TaskExecutionContext(
+				queuedTaskToken,
+				stopToken
+			);
 		}
 
-		private async Task<TaskExecutionResult> ExecuteTaskAsync( TaskExecutionContext executionContext )
+		private async Task<TaskProcessingResult> ProcessTaskAsync( TaskExecutionContext executionContext )
 		{
-			return await mTaskProcessor
-				.ProcessTaskAsync( executionContext );
+			return await mTaskProcessor.ProcessTaskAsync(
+				executionContext
+			);
 		}
 
-		private async Task ProcessResultAsync( IQueuedTaskToken queuedTaskToken,
-			TaskExecutionResult executionResult )
+		private async Task ProcessResultAsync( TaskProcessingResult processingResult )
 		{
-			await mTaskResultProcessor
-				.ProcessResultAsync( queuedTaskToken,
-					executionResult );
+			await mTaskResultProcessor.ProcessResultAsync( processingResult );
 		}
 
-		private void UpdateTaskProcessingStats( TaskExecutionResult executionResult )
+		private void UpdateTaskProcessingStats( TaskProcessingResult processingResult )
 		{
-			mMetricsProvider.UpdateTaskProcessingStats( executionResult );
+			mMetricsProvider.UpdateTaskProcessingStats( processingResult );
 		}
 
 		public async Task StopAync()
 		{
 			CheckNotDisposedOrThrow();
-
-			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStopASync( async ()
-					=> await DoShutdownSequenceAsync() );
+			if ( IsRunning )
+				await TryRequestStopAsync();
 			else
 				mLogger.Debug( "Worker stopped or in the process of stopping." );
+		}
+
+		private async Task TryRequestStopAsync()
+		{
+			await mStateController.TryRequestStopAsync( DoShutdownSequenceAsync );
 		}
 
 		private async Task DoShutdownSequenceAsync()
@@ -277,7 +271,6 @@ namespace LVD.Stakhanovise.NET.Processor
 			{
 				if ( disposing )
 				{
-					mTaskBuffer = null;
 					mStateController = null;
 				}
 
