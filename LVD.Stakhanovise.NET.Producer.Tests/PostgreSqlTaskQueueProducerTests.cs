@@ -38,12 +38,13 @@ using LVD.Stakhanovise.NET.Producer.Tests.Support;
 using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Support;
+using LVD.Stakhanovise.NET.Tests;
 using Npgsql;
 using NUnit.Framework;
 using System;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Producer.Tests
 {
 	[TestFixture]
 	public class PostgreSqlTaskQueueProducerTests : BaseTestWithConfiguration
@@ -78,6 +79,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
+		[NonParallelizable]
 		public async Task Test_CanEnqueue_NewTask_Serial()
 		{
 			DateTimeOffset lastPostedAt =
@@ -129,6 +131,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 2 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
+		[NonParallelizable]
 		public async Task Test_CanEnqueue_NewTask_ParallelProducers( int nProducers )
 		{
 			DateTimeOffset lastPostedAt =
@@ -167,6 +170,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		[Test]
 		[Repeat( 5 )]
+		[NonParallelizable]
 		public async Task Test_CanEnqueue_RepostExistingTask_Serial()
 		{
 			DateTimeOffset lastPostedAt =
