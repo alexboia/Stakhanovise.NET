@@ -61,7 +61,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			mConsumerOptions = TestOptions
 				.GetDefaultTaskQueueConsumerOptions( ConnectionString );
 			mProducerOptions = TestOptions
-				.GetDefaultTaskQueueProducerAndResultOptions( ConnectionString );
+				.GetDefaultTaskQueueOptions( ConnectionString );
 
 			mDataSource = new PostgreSqlTaskQueueDataSource( mInfoOptions.ConnectionOptions.ConnectionString,
 				TestOptions.DefaultMapping,

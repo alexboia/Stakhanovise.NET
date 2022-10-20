@@ -208,7 +208,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 			TaskProcessingResult processingResult = await processor
 				.ProcessTaskAsync( executionContext );
 
-			AsserTaskProcessingCancelled
+			AssertTaskProcessingCancelled
 				.For( taskToken )
 				.Check( processingResult );
 
@@ -258,7 +258,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 			TaskProcessingResult processingResult = await processor
 				.ProcessTaskAsync( executionContext );
 
-			AsserTaskProcessingCancelled
+			AssertTaskProcessingCancelled
 				.For( taskToken )
 				.Check( processingResult );
 

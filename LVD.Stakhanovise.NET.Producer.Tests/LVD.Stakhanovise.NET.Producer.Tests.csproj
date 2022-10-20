@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="appsettings.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="appsettings.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common.Interfaces\LVD.Stakhanovise.NET.Common.Interfaces.csproj" />
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Producer\LVD.Stakhanovise.NET.Producer.csproj" />
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Tests.Harness\LVD.Stakhanovise.NET.Tests.Harness.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Bogus" Version="34.0.2" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+		<PackageReference Include="Moq" Version="4.17.2" />
+		<PackageReference Include="Npgsql" Version="6.0.3" />
+		<PackageReference Include="NUnit" Version="3.13.3" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
+		<PackageReference Include="SqlKata" Version="2.3.7" />
+		<PackageReference Include="SqlKata.Execution" Version="2.3.7" />
+	</ItemGroup>
+
+</Project>

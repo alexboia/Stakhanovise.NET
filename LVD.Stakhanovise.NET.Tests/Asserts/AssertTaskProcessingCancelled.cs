@@ -5,19 +5,19 @@ using System;
 
 namespace LVD.Stakhanovise.NET.Tests.Asserts
 {
-	public class AsserTaskProcessingCancelled
+	public class AssertTaskProcessingCancelled
 	{
 		private readonly QueuedTaskToken mTaskToken;
 
-		private AsserTaskProcessingCancelled( QueuedTaskToken taskToken )
+		private AssertTaskProcessingCancelled( QueuedTaskToken taskToken )
 		{
 			mTaskToken = taskToken
 				?? throw new ArgumentNullException( nameof( taskToken ) );
 		}
 
-		public static AsserTaskProcessingCancelled For( QueuedTaskToken taskToken )
+		public static AssertTaskProcessingCancelled For( QueuedTaskToken taskToken )
 		{
-			return new AsserTaskProcessingCancelled( taskToken );
+			return new AssertTaskProcessingCancelled( taskToken );
 		}
 
 		public void Check( TaskProcessingResult processingResult )

@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
+		<RootNamespace>LVD.Stakhanovise.NET.Tests</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -13,6 +14,11 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
 		<PackageReference Include="SqlKata" Version="2.3.7" />
 		<PackageReference Include="SqlKata.Execution" Version="2.3.7" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\LVD.Stakhanovise.NET.Common.Interfaces\LVD.Stakhanovise.NET.Common.Interfaces.csproj" />
+	  <ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
 	</ItemGroup>
 
 </Project>

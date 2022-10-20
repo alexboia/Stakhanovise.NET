@@ -80,7 +80,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				.GetDefaultTaskProcessingOptions();
 
 			mProducerAndResultOptions = TestOptions
-				.GetDefaultTaskQueueProducerAndResultOptions( CommonConnectionString );
+				.GetDefaultTaskQueueOptions( CommonConnectionString );
 
 			mTaskQueueConsumerOptions = TestOptions
 				.GetDefaultTaskQueueConsumerOptions( BaseConsumerConnectionString );

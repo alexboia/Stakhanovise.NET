@@ -30,19 +30,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Tests.Payloads;
 using Npgsql;
+using SqlKata.Execution;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using LVD.Stakhanovise.NET.Helpers;
-using System.Threading.Tasks;
-using SqlKata;
-using SqlKata.Execution;
-using SqlKata.Compilers;
-using LVD.Stakhanovise.NET.Tests.Payloads;
-using LVD.Stakhanovise.NET.Tests.Helpers;
-using LVD.Stakhanovise.NET.Queue;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {

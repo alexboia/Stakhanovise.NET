@@ -29,18 +29,16 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Tests.Helpers;
 using Npgsql;
+using SqlKata;
 using SqlKata.Compilers;
 using SqlKata.Execution;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using LVD.Stakhanovise.NET.Helpers;
-using SqlKata;
-using LVD.Stakhanovise.NET.Tests.Helpers;
-using NpgsqlTypes;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {

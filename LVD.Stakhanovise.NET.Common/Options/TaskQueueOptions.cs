@@ -77,5 +77,13 @@ namespace LVD.Stakhanovise.NET.Options
 		{
 			get; private set;
 		}
+
+		public string ConnectionString
+		{
+			get
+			{
+				return ConnectionOptions.ConnectionString;
+			}
+		}
 	}
 }
