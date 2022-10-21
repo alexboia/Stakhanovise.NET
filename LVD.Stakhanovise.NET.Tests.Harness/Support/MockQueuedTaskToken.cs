@@ -77,5 +77,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public IQueuedTaskResult LastQueuedTaskResult => mLastQueuedTaskResult;
 
 		public DateTimeOffset DequeuedAt => DateTimeOffset.UtcNow;
+
+		public bool CanBeUpdated => LastQueuedTaskResult.CanBeUpdated;
 	}
 }

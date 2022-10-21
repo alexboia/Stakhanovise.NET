@@ -31,23 +31,24 @@
 // 
 using LVD.Stakhanovise.NET.Model;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class PostgreSqlTaskResultQueueProcessRequest : AsyncProcessingRequest<int>
+	public class ResultQueueProcessingRequest : AsyncProcessingRequest<int>
 	{
-		public PostgreSqlTaskResultQueueProcessRequest ( long requestId,
-			IQueuedTaskResult resultToUpdate,
-			int timeoutMilliseconds,
-			int maxFailCount )
+		public ResultQueueProcessingRequest( long requestId,
+				IQueuedTaskResult resultToUpdate,
+				int timeoutMilliseconds,
+				int maxFailCount )
 			: base( requestId, timeoutMilliseconds, maxFailCount )
 		{
-			ResultToUpdate = resultToUpdate ?? throw new ArgumentNullException( nameof( resultToUpdate ) );
+			ResultToUpdate = resultToUpdate 
+				?? throw new ArgumentNullException( nameof( resultToUpdate ) );
 		}
 
-		public IQueuedTaskResult ResultToUpdate { get; private set; }
+		public IQueuedTaskResult ResultToUpdate
+		{
+			get; private set;
+		}
 	}
 }

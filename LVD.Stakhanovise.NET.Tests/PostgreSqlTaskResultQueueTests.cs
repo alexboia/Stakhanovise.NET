@@ -29,16 +29,15 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+using Bogus;
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Support;
-using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
-using Bogus;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -49,14 +48,28 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private TaskQueueOptions mResultQueueOptions;
 
-		public PostgreSqlTaskResultQueueTests ()
+		public PostgreSqlTaskResultQueueTests()
 		{
 			mResultQueueOptions = TestOptions
 				.GetDefaultTaskResultQueueOptions( ConnectionString );
 
-			mDataSource = new PostgreSqlTaskQueueDataSource( mResultQueueOptions.ConnectionOptions.ConnectionString,
-				TestOptions.DefaultMapping,
+			mDataSource = new PostgreSqlTaskQueueDataSource( mResultQueueOptions.ConnectionString,
+				mResultQueueOptions.Mapping,
 				queueFaultErrorThrehsoldCount: 5 );
+		}
+
+		[SetUp]
+		public async Task TestSetUp()
+		{
+			await mDataSource.SeedData();
+			await Task.Delay( 100 );
+		}
+
+		[TearDown]
+		public async Task TestTearDown()
+		{
+			await mDataSource.ClearData();
+			await Task.Delay( 100 );
 		}
 
 		[Test]
@@ -77,7 +90,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 10, 0 )]
 		[TestCase( 10, 100 )]
 		[TestCase( 10, 1000 )]
-		public async Task Test_CanStartStop ( int repeatCycles, int timeBetweenStartStopCalls )
+		public async Task Test_CanStartStop( int repeatCycles, int timeBetweenStartStopCalls )
 		{
 			using ( PostgreSqlTaskResultQueue rq = CreateResultQueue() )
 			{
@@ -96,58 +109,83 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[Test]
-		[Repeat( 5 )]
-		public async Task Test_CanPostResult_SuccessfulResults_SerialCalls ()
+		[Repeat( 15 )]
+		public async Task Test_CanPostResult_SuccessfulResults_SerialCalls()
+		{
+			await RunPostResultTests( CreateSuccessfulResult );
+		}
+
+		private TaskExecutionResult CreateSuccessfulResult()
 		{
 			Faker faker = new Faker();
-			Func<TaskExecutionResult> rsFactory = () => new TaskExecutionResult( TaskExecutionResultInfo.Successful(),
+			return new TaskExecutionResult( TaskExecutionResultInfo.Successful(),
 				duration: faker.Date.Timespan(),
 				retryAt: DateTimeOffset.UtcNow,
 				faultErrorThresholdCount: mDataSource.QueueFaultErrorThresholdCount );
-
-			await Run_PostResultTests( rsFactory );
 		}
 
 		[Test]
 		[Repeat( 5 )]
-		public async Task Test_CanPostResult_FailedResults_SerialCalls ()
+		public async Task Test_CanPostResult_FailedResults_SerialCalls()
+		{
+			await RunPostResultTests( CreateFailedResult );
+		}
+
+		private TaskExecutionResult CreateFailedResult()
 		{
 			Faker faker = new Faker();
-			Func<TaskExecutionResult> rsFactory = () => new TaskExecutionResult( TaskExecutionResultInfo
-					.ExecutedWithError( new QueuedTaskError( faker.System.Exception() ),
-						isRecoverable: faker.Random.Bool() ),
+
+			TaskExecutionResultInfo resultInfo = TaskExecutionResultInfo
+				.ExecutedWithError( new QueuedTaskError( faker.System.Exception() ),
+					isRecoverable: faker.Random.Bool() );
+
+			return new TaskExecutionResult( resultInfo,
 				duration: TimeSpan.Zero,
 				retryAt: DateTimeOffset.UtcNow,
 				faultErrorThresholdCount: mDataSource.QueueFaultErrorThresholdCount );
-
-			await Run_PostResultTests( rsFactory );
 		}
 
-		private async Task Run_PostResultTests ( Func<TaskExecutionResult> rsFactory )
+		private async Task RunPostResultTests( Func<TaskExecutionResult> rsFactory )
 		{
+			List<IQueuedTaskResult> expectedResults =
+				new List<IQueuedTaskResult>();
+
 			using ( PostgreSqlTaskResultQueue rq = CreateResultQueue() )
 			{
 				await rq.StartAsync();
 
 				foreach ( IQueuedTaskToken token in mDataSource.SeededTaskTokens )
 				{
-					token.UdpateFromExecutionResult( rsFactory.Invoke() );
-					int affectedRows = await rq.PostResultAsync( token );
+					if ( token.CanBeUpdated )
+						token.UdpateFromExecutionResult( rsFactory.Invoke() );
 
-					Assert.AreEqual( 1, affectedRows );
-
-					QueuedTaskResult dbResult = await mDataSource
-						.GetQueuedTaskResultFromDbByIdAsync( token.DequeuedTask.Id );
-
-					dbResult.AssertMatchesResult( token
-						.LastQueuedTaskResult );
+					await rq.PostResultAsync( token.LastQueuedTaskResult );
+					expectedResults.Add( token.LastQueuedTaskResult );
 				}
 
 				await rq.StopAsync();
 			}
+
+			await CheckExpectedResultsAsync( expectedResults );
 		}
 
-		private PostgreSqlTaskResultQueue CreateResultQueue ()
+		private async Task CheckExpectedResultsAsync( List<IQueuedTaskResult> expectedResults )
+		{
+			foreach ( IQueuedTaskResult expectedResult in expectedResults )
+			{
+				QueuedTaskResult dbResult = await mDataSource.GetQueuedTaskResultFromDbByIdAsync( expectedResult.Id );
+				dbResult.AssertMatchesResult( expectedResult );
+			}
+		}
+
+		[Test]
+		[Repeat( 5 )]
+		public async Task Test_AllResultsAreProcessed_BeforeStopping()
+		{
+
+		}
+
+		private PostgreSqlTaskResultQueue CreateResultQueue()
 		{
 			return new PostgreSqlTaskResultQueue( mResultQueueOptions );
 		}

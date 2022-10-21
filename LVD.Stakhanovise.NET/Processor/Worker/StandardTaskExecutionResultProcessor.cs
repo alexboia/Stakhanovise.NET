@@ -86,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private async Task PostResultAsync( IQueuedTaskToken queuedTaskToken )
 		{
 			mLogger.Debug( "Will post task execution result." );
-			await mTaskResultQueue.PostResultAsync( queuedTaskToken );
+			await mTaskResultQueue.PostResultAsync( queuedTaskToken.LastQueuedTaskResult );
 			mLogger.Debug( "Successfully posted task execution result." );
 		}
 

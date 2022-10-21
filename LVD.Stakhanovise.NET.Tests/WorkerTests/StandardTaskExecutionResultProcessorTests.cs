@@ -38,7 +38,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 			Mock<ITaskQueueProducer> producerMock =
 				new Mock<ITaskQueueProducer>();
 
-			resultQueueMock.Setup( rq => rq.PostResultAsync( queuedTaskToken ) )
+			resultQueueMock.Setup( rq => rq.PostResultAsync( queuedTaskToken.LastQueuedTaskResult ) )
 				.Verifiable();
 
 			StandardTaskExecutionResultProcessor processor =
@@ -81,7 +81,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 			Mock<ITaskResultQueue> resultQueueMock =
 				new Mock<ITaskResultQueue>();
 
-			resultQueueMock.Setup( rq => rq.PostResultAsync( queuedTaskToken ) )
+			resultQueueMock.Setup( rq => rq.PostResultAsync( queuedTaskToken.LastQueuedTaskResult ) )
 				.Verifiable();
 
 			return resultQueueMock;
@@ -116,7 +116,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 		private void AssertResultQueuePostCalled( Mock<ITaskResultQueue> resultQueueMock,
 			QueuedTaskToken queuedTaskToken )
 		{
-			resultQueueMock.Verify( rq => rq.PostResultAsync( queuedTaskToken ), Times.Once() );
+			resultQueueMock.Verify( rq => rq.PostResultAsync( queuedTaskToken.LastQueuedTaskResult ), Times.Once() );
 			resultQueueMock.VerifyNoOtherCalls();
 		}
 
@@ -190,7 +190,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 
 		private void AssertResultQueuePostNotCalled( Mock<ITaskResultQueue> resultQueueMock )
 		{
-			resultQueueMock.Verify( rq => rq.PostResultAsync( It.IsAny<IQueuedTaskToken>() ), Times.Never() );
+			resultQueueMock.Verify( rq => rq.PostResultAsync( It.IsAny<IQueuedTaskResult>() ), Times.Never() );
 			resultQueueMock.VerifyNoOtherCalls();
 		}
 

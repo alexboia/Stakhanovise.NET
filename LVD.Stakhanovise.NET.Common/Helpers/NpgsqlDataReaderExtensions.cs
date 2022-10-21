@@ -94,15 +94,36 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 			result.PostedAtTs = await reader.GetFieldValueAsync<DateTimeOffset>( "task_posted_at_ts",
 				defaultValue: DateTimeOffset.MinValue );
+
+			result.PostedAtTs = new DateTimeOffset( result.PostedAtTs.UtcDateTime,
+				TimeSpan.Zero );
+
 			result.ProcessingTimeMilliseconds = await reader.GetFieldValueAsync<long>( "task_processing_time_milliseconds",
 				defaultValue: 0 );
 
 			result.FirstProcessingAttemptedAtTs = await reader.GetNullableFieldValueAsync<DateTimeOffset>( "task_first_processing_attempted_at_ts",
 				defaultValue: null );
+
+			if ( result.FirstProcessingAttemptedAtTs.HasValue )
+				result.FirstProcessingAttemptedAtTs = 
+					new DateTimeOffset( result.FirstProcessingAttemptedAtTs.Value.UtcDateTime, 
+						TimeSpan.Zero );
+
 			result.LastProcessingAttemptedAtTs = await reader.GetNullableFieldValueAsync<DateTimeOffset>( "task_last_processing_attempted_at_ts",
 				defaultValue: null );
+
+			if ( result.LastProcessingAttemptedAtTs.HasValue )
+				result.LastProcessingAttemptedAtTs =
+					new DateTimeOffset( result.LastProcessingAttemptedAtTs.Value.UtcDateTime,
+						TimeSpan.Zero );
+
 			result.ProcessingFinalizedAtTs = await reader.GetNullableFieldValueAsync<DateTimeOffset>( "task_processing_finalized_at_ts",
 				defaultValue: null );
+
+			if ( result.ProcessingFinalizedAtTs.HasValue )
+				result.ProcessingFinalizedAtTs =
+					new DateTimeOffset( result.ProcessingFinalizedAtTs.Value.UtcDateTime,
+						TimeSpan.Zero );
 
 			return result;
 		}

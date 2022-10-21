@@ -80,5 +80,13 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			get; private set;
 		}
+
+		public bool CanBeUpdated
+		{
+			get
+			{
+				return LastQueuedTaskResult.CanBeUpdated;
+			}
+		}
 	}
 }

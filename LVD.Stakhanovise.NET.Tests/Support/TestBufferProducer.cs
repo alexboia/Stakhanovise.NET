@@ -47,15 +47,15 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		List<IQueuedTaskToken> mProducedTasks = new List<IQueuedTaskToken>();
 
-		private Type[] mPayloadTypes;
+		private Type [] mPayloadTypes;
 
-		public TestBufferProducer ( ITaskBuffer buffer, Type[] payloadTypes )
+		public TestBufferProducer( ITaskBuffer buffer, Type [] payloadTypes )
 		{
 			mTaskBuffer = buffer;
 			mPayloadTypes = payloadTypes;
 		}
 
-		public Task ProduceTasksAsync ( int numberOfTasks )
+		public Task ProduceTasksAsync( int numberOfTasks )
 		{
 			ManualResetEvent bufferSpaceAvailableWaitHandle =
 				new ManualResetEvent( false );
@@ -91,7 +91,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 							Status = QueuedTaskStatus.Unprocessed
 						};
 
-						newTaskToken = new MockQueuedTaskToken( newTask, 
+						newTaskToken = new MockQueuedTaskToken( newTask,
 							newLastTaskResult );
 
 						mProducedTasks.Add( newTaskToken );
@@ -110,14 +110,17 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			} );
 		}
 
-		public void AssertMatchesProcessedTasks ( IEnumerable<IQueuedTaskToken> processedTaskTokens )
+		public void AssertMatchesProcessedTasks( IEnumerable<IQueuedTaskResult> processedTaskTokensResults )
 		{
 			Assert.AreEqual( mProducedTasks.Count,
-				processedTaskTokens.Count() );
+				processedTaskTokensResults.Count() );
 
 			foreach ( IQueuedTaskToken produced in mProducedTasks )
-				Assert.NotNull( processedTaskTokens.FirstOrDefault(
-					t => t.DequeuedTask.Id == produced.DequeuedTask.Id ) );
+			{
+				IQueuedTaskResult matchingResult = processedTaskTokensResults.FirstOrDefault( r => r.Id
+					== produced.DequeuedTask.Id );
+				Assert.NotNull( matchingResult );
+			}
 		}
 	}
 }

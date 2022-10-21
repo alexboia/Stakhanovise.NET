@@ -65,9 +65,7 @@ namespace LVD.Stakhanovise.NET.Model
 			//Task processing lifecycle ends with one of these statuses
 			//	Hence, if the result reaches one of these points, 
 			//	no more updates can be performed
-			if ( Status == QueuedTaskStatus.Fatal
-				|| Status == QueuedTaskStatus.Cancelled
-				|| Status == QueuedTaskStatus.Processed )
+			if ( !CanBeUpdated )
 				throw new InvalidOperationException( $"A result with {Status} status can no longer be updated" );
 
 			if ( result.ExecutedSuccessfully )
@@ -242,6 +240,16 @@ namespace LVD.Stakhanovise.NET.Model
 		public DateTimeOffset? ProcessingFinalizedAtTs
 		{
 			get; set;
+		}
+
+		public bool CanBeUpdated
+		{
+			get
+			{
+				return Status != QueuedTaskStatus.Fatal
+					&& Status != QueuedTaskStatus.Cancelled
+					&& Status != QueuedTaskStatus.Processed;
+			}
 		}
 	}
 }

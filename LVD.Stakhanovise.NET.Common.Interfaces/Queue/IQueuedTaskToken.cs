@@ -36,14 +36,28 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public interface IQueuedTaskToken
 	{
-		QueuedTaskProduceInfo UdpateFromExecutionResult ( TaskExecutionResult result );
+		QueuedTaskProduceInfo UdpateFromExecutionResult( TaskExecutionResult result );
 
 		QueuedTaskProduceInfo GetReturnToQueueInfo();
 
-		IQueuedTask DequeuedTask { get; }
+		IQueuedTask DequeuedTask
+		{
+			get;
+		}
 
-		IQueuedTaskResult LastQueuedTaskResult { get; }
+		IQueuedTaskResult LastQueuedTaskResult
+		{
+			get;
+		}
 
-		DateTimeOffset DequeuedAt { get; }
+		DateTimeOffset DequeuedAt
+		{
+			get;
+		}
+
+		bool CanBeUpdated
+		{
+			get;
+		}
 	}
 }

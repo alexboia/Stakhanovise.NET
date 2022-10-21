@@ -37,35 +37,81 @@ namespace LVD.Stakhanovise.NET.Model
 {
 	public interface IQueuedTaskResult
 	{
-		QueuedTaskProduceInfo UdpateFromExecutionResult ( TaskExecutionResult result );
+		QueuedTaskProduceInfo UdpateFromExecutionResult( TaskExecutionResult result );
 
+		Guid Id
+		{
+			get;
+		}
 
-		Guid Id { get; }
+		string Type
+		{
+			get;
+		}
 
-		string Type { get; }
+		string Source
+		{
+			get;
+		}
 
-		string Source { get; }
+		object Payload
+		{
+			get;
+		}
 
-		object Payload { get; }
+		QueuedTaskStatus Status
+		{
+			get;
+		}
 
-		QueuedTaskStatus Status { get; }
+		int Priority
+		{
+			get;
+		}
 
-		int Priority { get; }
+		long ProcessingTimeMilliseconds
+		{
+			get;
+		}
 
-		long ProcessingTimeMilliseconds { get; }
+		QueuedTaskError LastError
+		{
+			get;
+		}
 
-		QueuedTaskError LastError { get; }
+		bool LastErrorIsRecoverable
+		{
+			get;
+		}
 
-		bool LastErrorIsRecoverable { get; }
+		int ErrorCount
+		{
+			get;
+		}
 
-		int ErrorCount { get; }
+		DateTimeOffset PostedAtTs
+		{
+			get;
+		}
 
-		DateTimeOffset PostedAtTs { get; }
+		DateTimeOffset? FirstProcessingAttemptedAtTs
+		{
+			get;
+		}
 
-		DateTimeOffset? FirstProcessingAttemptedAtTs { get; }
+		DateTimeOffset? LastProcessingAttemptedAtTs
+		{
+			get;
+		}
 
-		DateTimeOffset? LastProcessingAttemptedAtTs { get; }
+		DateTimeOffset? ProcessingFinalizedAtTs
+		{
+			get;
+		}
 
-		DateTimeOffset? ProcessingFinalizedAtTs { get; }
+		bool CanBeUpdated
+		{
+			get;
+		}
 	}
 }

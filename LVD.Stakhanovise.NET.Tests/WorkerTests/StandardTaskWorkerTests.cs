@@ -31,6 +31,7 @@
 // 
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Logging;
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Queue;
@@ -145,8 +146,8 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 		[TestCase( 100, 10, 10 )]
 		public async Task Test_CanWork( int bufferCapacity, int workerCount, int numberOfTasks )
 		{
-			ConcurrentBag<IQueuedTaskToken> processedTaskTokens =
-				new ConcurrentBag<IQueuedTaskToken>();
+			ConcurrentBag<IQueuedTaskResult> processedTaskTokensResults =
+				new ConcurrentBag<IQueuedTaskResult>();
 
 			TaskProcessingOptions processingOpts =
 				TestOptions.GetDefaultTaskProcessingOptions();
@@ -168,8 +169,8 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 				It.IsAny<long>(),
 				It.IsAny<int>() ) );
 
-			resultQueueMock.Setup( rq => rq.PostResultAsync( It.IsAny<IQueuedTaskToken>() ) )
-				.Callback<IQueuedTaskToken>( t => processedTaskTokens.Add( t ) );
+			resultQueueMock.Setup( rq => rq.PostResultAsync( It.IsAny<IQueuedTaskResult>() ) )
+				.Callback<IQueuedTaskResult>( t => processedTaskTokensResults.Add( t ) );
 
 			//TODO: must also test that, for failed tasks that can be re-posted, 
 			//	the tasks is actually reposted
@@ -201,7 +202,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 				foreach ( StandardTaskWorker w in workers )
 					w.Dispose();
 
-				producer.AssertMatchesProcessedTasks( processedTaskTokens );
+				producer.AssertMatchesProcessedTasks( processedTaskTokensResults );
 				executionPerformanceMonitorMock.VerifyAll();
 			}
 		}
