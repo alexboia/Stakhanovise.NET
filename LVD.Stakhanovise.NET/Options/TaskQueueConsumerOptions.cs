@@ -54,6 +54,12 @@ namespace LVD.Stakhanovise.NET.Options
 			return;
 		}
 
+		public TaskQueueListenerOptions DeriveListenerOptions()
+		{
+			return new TaskQueueListenerOptions( DeriveSignalingConnectionString(), 
+				Mapping.NewTaskNotificationChannelName );
+		}
+
 		public string DeriveSignalingConnectionString()
 		{
 			return ConnectionOptions

@@ -32,11 +32,10 @@
 using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -46,11 +45,6 @@ namespace LVD.Stakhanovise.NET.Queue
 		IAppMetricsProvider,
 		IDisposable
 	{
-		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
-			.GetLogger( MethodBase
-				.GetCurrentMethod()
-				.DeclaringType );
-
 		public event EventHandler<NewTaskPostedEventArgs> NewTaskPosted;
 
 		public event EventHandler<ListenerConnectedEventArgs> ListenerConnected;
@@ -59,17 +53,17 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public event EventHandler<ListenerTimedOutEventArgs> ListenerTimedOutWhileWaiting;
 
-		private string mSignalingConnectionString;
+		private readonly TaskQueueListenerOptions mOptions;
 
-		private string mNewTaskNotificationChannelName;
+		private readonly ITaskQueueNotificationListenerMetricsProvider mMetricsProvider;
 
-		private StateController mStateController =
-			new StateController();
+		private readonly IStakhanoviseLogger mLogger;
 
-		private CancellationTokenSource mStopTokenSource;
+		private CancellationTokenSource mStopCoordinator;
 
-		private ManualResetEvent mWaitForFirstStartWaitHandle =
-			new ManualResetEvent( initialState: false );
+		private ManualResetEvent mWaitForFirstStartWaitHandle = new ManualResetEvent( false );
+
+		private StateController mStateController = new StateController();
 
 		private Task mNewTaskUpdatesListenerWorker;
 
@@ -79,32 +73,35 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private int mWaitNotificationTimeout = 250;
 
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
-		(
-			AppMetricId.ListenerTaskNotificationCount,
-			AppMetricId.ListenerReconnectCount,
-			AppMetricId.ListenerNotificationWaitTimeoutCount
-		);
-
 		private bool mIsDisposed = false;
 
-		public PostgreSqlTaskQueueNotificationListener( string signalingConnectionString, string newTaskNotificationChannelName )
+		public PostgreSqlTaskQueueNotificationListener( TaskQueueListenerOptions options,
+			ITaskQueueNotificationListenerMetricsProvider metricsProvider,
+			IStakhanoviseLogger logger )
 		{
-			if ( string.IsNullOrEmpty( signalingConnectionString ) )
-				throw new ArgumentNullException( nameof( signalingConnectionString ) );
+			if ( options == null )
+				throw new ArgumentNullException( nameof( options ) );
 
-			if ( string.IsNullOrEmpty( newTaskNotificationChannelName ) )
-				throw new ArgumentNullException( nameof( newTaskNotificationChannelName ) );
+			if ( metricsProvider == null )
+				throw new ArgumentNullException( nameof( metricsProvider ) );
 
-			mSignalingConnectionString = signalingConnectionString;
-			mNewTaskNotificationChannelName = newTaskNotificationChannelName;
+			if ( logger == null )
+				throw new ArgumentNullException( nameof( logger ) );
+
+			mOptions = options;
+			mMetricsProvider = metricsProvider;
+			mLogger = logger;
 		}
 
 		private void CheckNotDisposedOrThrow()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( PostgreSqlTaskQueueNotificationListener ),
-					"Cannot reuse a disposed task queue notification listener" );
+			{
+				throw new ObjectDisposedException(
+					nameof( PostgreSqlTaskQueueNotificationListener ),
+					"Cannot reuse a disposed task queue notification listener"
+				);
+			}
 		}
 
 		private void HandleTaskUpdateReceived( object sender, NpgsqlNotificationEventArgs e )
@@ -118,19 +115,56 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void IncrementListenerTaskNotificationCount()
 		{
-			mMetrics.UpdateMetric( AppMetricId.ListenerTaskNotificationCount,
-				m => m.Increment() );
+			mMetricsProvider.IncrementTaskNotificationCount();
+		}
+
+		public async Task StartAsync()
+		{
+			CheckNotDisposedOrThrow();
+
+			mLogger.Debug( "Received request to start listening for queue notifications." );
+			if ( IsStopped )
+				await TryRequestStartAsync();
+			else
+				mLogger.Debug( "Listener is started. Nothing to do." );
+		}
+
+		private async Task TryRequestStartAsync()
+		{
+			await mStateController.TryRequestStartAsync( DoStartupSequenceAsync );
+		}
+
+		private async Task DoStartupSequenceAsync()
+		{
+			mLogger.DebugFormat( "Starting notification listener for channel {0}...",
+				mOptions.NewTaskNotificationChannelName );
+
+			ResetSynchronization();
+			await StartListeningForTaskUpdatesAsync();
+
+			mLogger.DebugFormat( "Successfully started notification listener for channel {0}.",
+				mOptions.NewTaskNotificationChannelName );
+		}
+
+		private void ResetSynchronization()
+		{
+			mWaitForFirstStartWaitHandle.Reset();
+			mListenerConnectionBackendProcessId = 0;
+		}
+
+		private async Task StartListeningForTaskUpdatesAsync()
+		{
+			mStopCoordinator = new CancellationTokenSource();
+			mNewTaskUpdatesListenerWorker = Task.Run( ListenForTaskUpdatesAsync );
+			await mWaitForFirstStartWaitHandle.ToTask();
 		}
 
 		private async Task ListenForTaskUpdatesAsync()
 		{
-			CancellationToken stopToken = mStopTokenSource.Token;
-			if ( stopToken.IsCancellationRequested )
-				return;
-
 			try
 			{
-				while ( true )
+				CancellationToken stopToken = mStopCoordinator.Token;
+				while ( !stopToken.IsCancellationRequested )
 					await RunTaskUpdatesListeningIterationAsync( stopToken );
 			}
 			catch ( OperationCanceledException )
@@ -149,16 +183,15 @@ namespace LVD.Stakhanovise.NET.Queue
 			try
 			{
 				stopToken.ThrowIfCancellationRequested();
+
 				//Signaling connection is not open:
 				//  either is the first time we are connecting
 				//  or the connection failed and we must attempt a reconnect
-				if ( mSignalingConn == null )
-					mSignalingConn = await InitiateSignalingConnectionAsync();
-
+				int processId = await InitiateSignalingConnectionIfNeededAsync();
 				if ( IsFirstConnectionAttempt )
-					ProcessListenerConnected( mSignalingConn.ProcessID );
+					ProcessListenerConnected( processId );
 				else
-					ProcessListenerConnectionRestored( mSignalingConn.ProcessID );
+					ProcessListenerConnectionRestored( processId );
 
 				///Start notification wait loop
 				WaitForNotifications( mSignalingConn, stopToken );
@@ -186,17 +219,21 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 		}
 
-		private async Task<NpgsqlConnection> InitiateSignalingConnectionAsync()
+		private async Task<int> InitiateSignalingConnectionIfNeededAsync()
 		{
-			mLogger.Debug( "Attempting to open signaling connection..." );
+			if ( mSignalingConn == null )
+			{
+				mLogger.Debug( "Attempting to open signaling connection..." );
 
-			NpgsqlConnection signalingConn = new NpgsqlConnection( mSignalingConnectionString );
-			await signalingConn.OpenAsync();
-			await signalingConn.ListenAsync( mNewTaskNotificationChannelName, HandleTaskUpdateReceived );
+				NpgsqlConnection signalingConn = new NpgsqlConnection( mOptions.SignalingConnectionString );
+				await signalingConn.OpenAsync();
+				await signalingConn.ListenAsync( mOptions.NewTaskNotificationChannelName, HandleTaskUpdateReceived );
 
-			mLogger.Debug( "Signaling connection successfully open." );
+				mLogger.Debug( "Signaling connection successfully open." );
+				mSignalingConn = signalingConn;
+			}
 
-			return signalingConn;
+			return mSignalingConn.ProcessID;
 		}
 
 		private void ProcessListenerConnected( int connectionProcessId )
@@ -226,8 +263,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void IncrementListenerReconnectCount()
 		{
-			mMetrics.UpdateMetric( AppMetricId.ListenerReconnectCount,
-				m => m.Increment() );
+			mMetricsProvider.IncrementReconnectCount();
 		}
 
 		private async Task CleanupSignalingConnectionAsync( NpgsqlConnection signalingConn )
@@ -241,8 +277,8 @@ namespace LVD.Stakhanovise.NET.Queue
 			mLogger.DebugFormat( "Signaling connection state is {0}.",
 				signalingConn.FullState.ToString() );
 
-			if ( signalingConn.IsListening( mNewTaskNotificationChannelName ) )
-				await signalingConn.UnlistenAsync( mNewTaskNotificationChannelName, HandleTaskUpdateReceived );
+			if ( signalingConn.IsListening( mOptions.NewTaskNotificationChannelName ) )
+				await signalingConn.UnlistenAsync( mOptions.NewTaskNotificationChannelName, HandleTaskUpdateReceived );
 
 			if ( signalingConn.IsConnectionSomewhatOpen() )
 				await signalingConn.CloseAsync();
@@ -258,7 +294,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			while ( true )
 			{
 				mLogger.DebugFormat( "Waiting for notifications on channel {0}...",
-					mNewTaskNotificationChannelName );
+					mOptions.NewTaskNotificationChannelName );
 
 				bool hadNotification = signalingConn.Wait( mWaitNotificationTimeout );
 				if ( !hadNotification )
@@ -287,50 +323,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void IncrementListenerNotificationWaitTimeoutCount()
 		{
-			mMetrics.UpdateMetric( AppMetricId.ListenerNotificationWaitTimeoutCount,
-				m => m.Increment() );
-		}
-
-		public async Task StartAsync()
-		{
-			CheckNotDisposedOrThrow();
-
-			mLogger.Debug( "Received request to start listening for queue notifications." );
-			if ( IsStopped )
-				await TryRequestStartAsync();
-			else
-				mLogger.Debug( "Notification listener is not stopped. Nothing to do." );
-		}
-
-		private async Task TryRequestStartAsync()
-		{
-			await mStateController.TryRequestStartAsync( async ()
-				=> await DoStartupSequenceAsync() );
-		}
-
-		private async Task DoStartupSequenceAsync()
-		{
-			mLogger.DebugFormat( "Starting notification listener for channel {0}...",
-				mNewTaskNotificationChannelName );
-
-			ResetSynchronization();
-			await StartListeningForTaskUpdatesAsync();
-
-			mLogger.DebugFormat( "Successfully started notification listener for channel {0}.",
-				mNewTaskNotificationChannelName );
-		}
-
-		private void ResetSynchronization()
-		{
-			mWaitForFirstStartWaitHandle.Reset();
-			mListenerConnectionBackendProcessId = 0;
-		}
-
-		private async Task StartListeningForTaskUpdatesAsync()
-		{
-			mStopTokenSource = new CancellationTokenSource();
-			mNewTaskUpdatesListenerWorker = Task.Run( async () => await ListenForTaskUpdatesAsync() );
-			await mWaitForFirstStartWaitHandle.ToTask();
+			mMetricsProvider.IncrementNotificationWaitTimeoutCount();
 		}
 
 		public async Task StopAsync()
@@ -341,19 +334,18 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( IsStarted )
 				await TryRequestStopAsync();
 			else
-				mLogger.Debug( "Notification listener is not started. Nothing to do." );
+				mLogger.Debug( "Listener is stopped. Nothing to do." );
 		}
 
 		private async Task TryRequestStopAsync()
 		{
-			await mStateController.TryRequestStopAsync( async ()
-				=> await DoShutdownSequenceAsync() );
+			await mStateController.TryRequestStopAsync( DoShutdownSequenceAsync );
 		}
 
 		private async Task DoShutdownSequenceAsync()
 		{
 			mLogger.DebugFormat( "Stopping notification listener for channel {0}...",
-				mNewTaskNotificationChannelName );
+				mOptions.NewTaskNotificationChannelName );
 
 			try
 			{
@@ -367,12 +359,12 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 
 			mLogger.DebugFormat( "Successfully stopped notification listener for channel {0}.",
-				mNewTaskNotificationChannelName );
+				mOptions.NewTaskNotificationChannelName );
 		}
 
 		private void RequestTaskUpdatesListeningCancellation()
 		{
-			mStopTokenSource.Cancel();
+			mStopCoordinator.Cancel();
 		}
 
 		private async Task WaitForTaskUpdatesListeningShutdownAsync()
@@ -382,8 +374,8 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void CleanupTaskUpdatesListening()
 		{
-			mStopTokenSource?.Dispose();
-			mStopTokenSource = null;
+			mStopCoordinator?.Dispose();
+			mStopCoordinator = null;
 			mNewTaskUpdatesListenerWorker = null;
 		}
 
@@ -415,12 +407,12 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
-			return mMetrics.QueryMetric( metricId );
+			return mMetricsProvider.QueryMetric( metricId );
 		}
 
 		public IEnumerable<AppMetric> CollectMetrics()
 		{
-			return mMetrics.CollectMetrics();
+			return mMetricsProvider.CollectMetrics();
 		}
 
 		private bool IsFirstConnectionAttempt
@@ -463,7 +455,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			get
 			{
-				return mMetrics.ExportedMetrics;
+				return mMetricsProvider.ExportedMetrics;
 			}
 		}
 	}

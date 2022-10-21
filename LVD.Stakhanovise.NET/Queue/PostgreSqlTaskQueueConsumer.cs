@@ -52,19 +52,19 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public event EventHandler<ClearForDequeueEventArgs> ClearForDequeue;
 
-		private bool mIsDisposed;
+		private readonly TaskQueueConsumerOptions mOptions;
 
-		private TaskQueueConsumerOptions mOptions;
+		private readonly string mTaskDequeueSql;
+
+		private readonly string mTaskAcquireSql;
+
+		private readonly string mTaskResultUpdateSql;
+
+		private readonly ITimestampProvider mTimestampProvider;
 
 		private PostgreSqlTaskQueueNotificationListener mNotificationListener;
 
-		private string mTaskDequeueSql;
-
-		private string mTaskAcquireSql;
-
-		private string mTaskResultUpdateSql;
-
-		private ITimestampProvider mTimestampProvider;
+		private bool mIsDisposed;
 
 		private AppMetricsCollection mMetrics = new AppMetricsCollection
 		(
@@ -84,19 +84,22 @@ namespace LVD.Stakhanovise.NET.Queue
 			mOptions = options;
 			mTimestampProvider = timestampProvider;
 
-			mTaskDequeueSql = GetTaskDequeueSql( options.Mapping );
-			mTaskAcquireSql = GetTaskAcquireSql( options.Mapping );
-			mTaskResultUpdateSql = GetTaskResultUpdateSql( options.Mapping );
+			mTaskDequeueSql = BuildTaskDequeueSql( options.Mapping );
+			mTaskAcquireSql = BuildTaskAcquireSql( options.Mapping );
+			mTaskResultUpdateSql = BuildTaskResultUpdateSql( options.Mapping );
 
 			SetupNotificationListener( options );
 		}
 
 		private void SetupNotificationListener( TaskQueueConsumerOptions options )
 		{
-			string signalingConnectionString = options.DeriveSignalingConnectionString();
+			ITaskQueueNotificationListenerMetricsProvider metricsProvider = 
+				new StandardTaskQueueNotificationListenerMetricsProvider();
 
-			mNotificationListener = new PostgreSqlTaskQueueNotificationListener( signalingConnectionString,
-				options.Mapping.NewTaskNotificationChannelName );
+			mNotificationListener = 
+				new PostgreSqlTaskQueueNotificationListener( options.DeriveListenerOptions(), 
+					metricsProvider, 
+					mLogger );
 
 			mNotificationListener.ListenerConnectionRestored +=
 				HandleListenerConnectionRestored;
@@ -145,19 +148,19 @@ namespace LVD.Stakhanovise.NET.Queue
 					"Cannot reuse a disposed postgre sql task queue consumer" );
 		}
 
-		private string GetTaskDequeueSql( QueuedTaskMapping mapping )
+		private string BuildTaskDequeueSql( QueuedTaskMapping mapping )
 		{
 			//See https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
 			return $@"SELECT tq.* FROM { mapping.DequeueFunctionName }(@types, @excluded, @ref_now) tq";
 		}
 
-		private string GetTaskAcquireSql( QueuedTaskMapping mapping )
+		private string BuildTaskAcquireSql( QueuedTaskMapping mapping )
 		{
 			return $@"DELETE FROM {mapping.QueueTableName} 
 				WHERE task_id = @t_id";
 		}
 
-		private string GetTaskResultUpdateSql( QueuedTaskMapping mapping )
+		private string BuildTaskResultUpdateSql( QueuedTaskMapping mapping )
 		{
 			return $@"UPDATE {mapping.ResultsQueueTableName} SET
 					task_status = @t_status,
