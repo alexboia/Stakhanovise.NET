@@ -127,23 +127,20 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void BeginWorking()
 		{
-			mWorkerTask = Task.Run( async ()
-				=> await RunWorkerAsync( mStopCoordinator.Token ) );
+			mWorkerTask = Task.Run( RunWorkerAsync );
 		}
 
-		private async Task RunWorkerAsync( CancellationToken stopToken )
+		private async Task RunWorkerAsync()
 		{
-			while ( !stopToken.IsCancellationRequested )
+			try
 			{
-				try
-				{
+				CancellationToken stopToken = mStopCoordinator.Token;
+				while ( !stopToken.IsCancellationRequested )
 					await DoWorkerLoopAsync( stopToken );
-				}
-				catch ( OperationCanceledException )
-				{
-					mLogger.Debug( "Worker stop requested. Breaking loop..." );
-					break;
-				}
+			}
+			catch ( OperationCanceledException )
+			{
+				mLogger.Debug( "Worker stop requested. Breaking loop..." );
 			}
 		}
 
@@ -252,7 +249,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				( ( IDisposable ) mBufferHandler ).Dispose();
 			mBufferHandler = null;
 
-			mStopCoordinator.Dispose();
+			mStopCoordinator?.Dispose();
 			mStopCoordinator = null;
 
 			mWorkerTask = null;
@@ -270,6 +267,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			{
 				if ( disposing )
 				{
+					StopAync().Wait();
 					mStateController = null;
 				}
 
