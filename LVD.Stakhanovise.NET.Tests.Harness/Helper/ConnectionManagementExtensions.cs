@@ -117,7 +117,7 @@ namespace LVD.Stakhanovise.NET.Tests.Helpers
 		public static async Task WaitAndTerminateConnectionAsync ( this NpgsqlConnection mgmtConn,
 			int pid,
 			ManualResetEvent syncHandle,
-			int timeout )
+			int delayMilliseconds )
 		{
 			if ( mgmtConn == null )
 				throw new ArgumentNullException( nameof( mgmtConn ) );
@@ -127,8 +127,8 @@ namespace LVD.Stakhanovise.NET.Tests.Helpers
 			if ( syncHandle != null )
 				syncHandle.WaitOne();
 
-			if ( timeout > 0 )
-				await Task.Delay( timeout );
+			if ( delayMilliseconds > 0 )
+				await Task.Delay( delayMilliseconds );
 
 			try
 			{
@@ -150,7 +150,7 @@ namespace LVD.Stakhanovise.NET.Tests.Helpers
 		public static async Task WaitAndTerminateConnectionAsync ( this NpgsqlConnection mgmtConn,
 			string appName,
 			ManualResetEvent syncHandle,
-			int timeout )
+			int delayMilliseconds )
 		{
 			if ( mgmtConn == null )
 				throw new ArgumentNullException( nameof( mgmtConn ) );
@@ -163,8 +163,8 @@ namespace LVD.Stakhanovise.NET.Tests.Helpers
 			if ( syncHandle != null )
 				syncHandle.WaitOne();
 
-			if ( timeout > 0 )
-				await Task.Delay( timeout );
+			if ( delayMilliseconds > 0 )
+				await Task.Delay( delayMilliseconds );
 
 			try
 			{

@@ -178,13 +178,6 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
-		[Test]
-		[Repeat( 5 )]
-		public async Task Test_AllResultsAreProcessed_BeforeStopping()
-		{
-
-		}
-
 		private PostgreSqlTaskResultQueue CreateResultQueue()
 		{
 			return new PostgreSqlTaskResultQueue( mResultQueueOptions );

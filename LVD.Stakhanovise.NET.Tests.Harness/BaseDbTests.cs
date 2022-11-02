@@ -29,7 +29,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Tests.Helpers;
+using LVD.Stakhanovise.NET.Tests.Support;
 using Npgsql;
 using NUnit.Framework;
 using System;
@@ -41,14 +41,22 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	public abstract class BaseDbTests : BaseTestWithConfiguration
 	{
+		private ConnectionManagementOperations mConnectionOperations;
+
 		public BaseDbTests()
 		{
 			EnableNpgsqlLegacyTimestampBehavior();
+			InitConnectionOperations();
 		}
-		
+
 		protected void EnableNpgsqlLegacyTimestampBehavior()
 		{
 			AppContext.SetSwitch( "Npgsql.EnableLegacyTimestampBehavior", true );
+		}
+
+		private void InitConnectionOperations()
+		{
+			mConnectionOperations = new ConnectionManagementOperations( ManagementConnectionString );
 		}
 
 		protected async Task<NpgsqlConnection> OpenDbConnectionAsync( string connectionString )
@@ -60,18 +68,12 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		protected Task WaitAndTerminateConnectionAsync( int pid, ManualResetEvent syncHandle, int timeout )
 		{
-			return Task.Run( async () =>
-			{
-				using ( NpgsqlConnection mgmtConn = new NpgsqlConnection( ManagementConnectionString ) )
-				{
-					await mgmtConn.WaitAndTerminateConnectionAsync( pid,
-						syncHandle,
-						timeout );
-				}
-			} );
+			return mConnectionOperations.WaitAndTerminateConnectionAsync( pid, 
+				syncHandle, 
+				timeout );
 		}
 
-		private string ManagementConnectionString
+		protected string ManagementConnectionString
 			=> GetConnectionString( "mgmtDbConnectionString" );
 	}
 }

@@ -29,14 +29,10 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
-using Npgsql;
 using NUnit.Framework;
-using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.QueueTests
@@ -54,152 +50,120 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 		[Test]
 		[NonParallelizable]
 		[Repeat( 5 )]
-		public async Task Test_CanStartAndStopReceivingNotifications_NoConnectionLoss()
+		public async Task Test_CanStartStop()
 		{
-			bool connectedReceived = false;
-			bool notificationReceived = false;
-
-			using ( ManualResetEvent notificationReceivedWaitHandle = new ManualResetEvent( false ) )
 			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
 			{
-				listener.ListenerConnected += ( sender, e ) =>
-				{
-					connectedReceived = true;
-				};
-
-				listener.NewTaskPosted += ( sender, e ) =>
-				{
-					notificationReceived = true;
-					notificationReceivedWaitHandle.Set();
-				};
-
-				//Start and wait for a test notification
 				await listener.StartAsync();
 				Assert.IsTrue( listener.IsStarted );
 
-				await SendChannelNotificationAsync();
-				notificationReceivedWaitHandle.WaitOne();
-
-				Assert.IsTrue( notificationReceived );
-				Assert.IsTrue( connectedReceived );
-
-				notificationReceived = false;
-				notificationReceivedWaitHandle.Reset();
-
 				await listener.StopAsync();
 				Assert.IsFalse( listener.IsStarted );
-
-				//Send the notification again, it should not be received
-				await SendChannelNotificationAsync();
-				bool signalReceived = notificationReceivedWaitHandle.WaitOne( 1000 );
-
-				Assert.IsFalse( notificationReceived );
-				Assert.IsFalse( signalReceived );
 			}
 		}
 
 		[Test]
 		[NonParallelizable]
+		[TestCase( 1 )]
+		[TestCase( 2 )]
+		[TestCase( 5 )]
 		[Repeat( 5 )]
-		public async Task Test_CanRecoverFromConnectionLoss()
+		public async Task Test_CanReceiveNotification_NoConnectionLoss( int notificationSendCount )
 		{
-			int reconnectsRemaining = 10;
-
-			using ( ManualResetEvent maxReconnectsReachedWaitHandle = new ManualResetEvent( false ) )
+			using ( ListenerNotificationWithoutConnectionLossTestRunner runner = CreateListenerNotificationWithoutConnectionLossTestRunner( notificationSendCount ) )
 			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
 			{
-				listener.ListenerConnectionRestored += ( sender, e ) =>
-				{
-					reconnectsRemaining = Math.Max( reconnectsRemaining - 1, 0 );
-					if ( reconnectsRemaining > 0 )
-					{
-						WaitAndTerminateConnectionAsync( listener.ListenerConnectionBackendProcessId,
-							syncHandle: null,
-							timeout: RandomTimeout() );
-					}
-					else
-						maxReconnectsReachedWaitHandle.Set();
-				};
+				await runner.RunTestsAsync( listener );
 
-				await listener.StartAsync();
-
-				WaitAndTerminateConnectionAsync( listener.ListenerConnectionBackendProcessId,
-					syncHandle: null,
-					timeout: 1000 ).WithoutAwait();
-
-				maxReconnectsReachedWaitHandle.WaitOne();
-				Assert.AreEqual( 0, reconnectsRemaining );
-
-				await listener.StopAsync();
+				Assert.AreEqual( notificationSendCount, runner.NotificationReceivedCount );
+				Assert.AreEqual( 1, runner.ConnectedCount );
 			}
+		}
+
+		private ListenerNotificationWithoutConnectionLossTestRunner CreateListenerNotificationWithoutConnectionLossTestRunner( int notificationSendCount )
+		{
+			return new ListenerNotificationWithoutConnectionLossTestRunner( ConnectionString,
+				ManagementConnectionString,
+				NotificationChannelName,
+				notificationSendCount );
+		}
+
+		[Test]
+		[NonParallelizable]
+		[TestCase( 1 )]
+		[TestCase( 2 )]
+		[TestCase( 5 )]
+		[TestCase( 10 )]
+		[Repeat( 5 )]
+		public async Task Test_CanRecoverFromConnectionLoss( int reconnectsCount )
+		{
+			using ( ListenerConnectionRecoveryTestRunner runner = CreateListenerConnectionRecoveryTestRunner( reconnectsCount ) )
+			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
+			{
+				await runner.RunTestsAsync( listener );
+				Assert.AreEqual( 0, runner.ReconnectsRemaining );
+			}
+		}
+
+		private ListenerConnectionRecoveryTestRunner CreateListenerConnectionRecoveryTestRunner( int reconnectsCount )
+		{
+			return new ListenerConnectionRecoveryTestRunner( ManagementConnectionString,
+				reconnectsCount );
 		}
 
 		[Test]
 		[NonParallelizable]
 		[TestCase( 10 )]
 		[Repeat( 5 )]
-		public async Task Test_CanStartAndStopReceivingNotifications_WithConnectionLossRecovery( int reconnectsCount )
+		public async Task Test_CanReceiveNotifications_WithConnectionLossRecovery( int reconnectsCount )
 		{
-			int notificationsReceived = 0;
-			int reconnectsRemaining = reconnectsCount;
-
-			using ( ManualResetEvent maximumReconnectReachedWaitHandle = new ManualResetEvent( false ) )
+			using ( ListenerNotificationWithConnectionLossTestRunner runner = CreateListenerNotificationWithConnectionLossTestRunner( reconnectsCount ) )
 			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
 			{
-				listener.NewTaskPosted += ( sender, e ) =>
-				{
-					notificationsReceived++;
-					if ( reconnectsRemaining > 0 )
-					{
-						WaitAndTerminateConnectionAsync( listener.ListenerConnectionBackendProcessId,
-							syncHandle: null,
-							timeout: RandomTimeout() );
-					}
-					else
-						maximumReconnectReachedWaitHandle.Set();
-				};
+				await runner.RunTestsAsync( listener );
 
-				listener.ListenerConnectionRestored += async ( sender, e ) =>
-				{
-					reconnectsRemaining = Math.Max( reconnectsRemaining - 1, 0 );
-					await SendChannelNotificationAsync();
-				};
-
-				await listener.StartAsync();
-
-				WaitAndTerminateConnectionAsync( listener.ListenerConnectionBackendProcessId,
-					syncHandle: null,
-					timeout: RandomTimeout() ).WithoutAwait();
-
-				maximumReconnectReachedWaitHandle.WaitOne();
-				await listener.StopAsync();
-
-				Assert.AreEqual( 0, reconnectsRemaining );
-				Assert.AreEqual( reconnectsCount, notificationsReceived );
+				Assert.AreEqual( 0, runner.ReconnectsRemaining );
+				Assert.AreEqual( reconnectsCount, runner.NotificationsReceivedCount );
 			}
 		}
 
-		private async Task SendChannelNotificationAsync()
+		private ListenerNotificationWithConnectionLossTestRunner CreateListenerNotificationWithConnectionLossTestRunner( int reconnectsCount )
 		{
-			using ( NpgsqlConnection db = await OpenDbConnectionAsync() )
+			return new ListenerNotificationWithConnectionLossTestRunner( ConnectionString,
+				ManagementConnectionString,
+				NotificationChannelName,
+				reconnectsCount );
+		}
+
+		[Test]
+		[NonParallelizable]
+		[Repeat( 5 )]
+		[TestCase( 1 )]
+		[TestCase( 2 )]
+		[TestCase( 5 )]
+		public async Task Test_DoesNotReceiveNotificationsWhenStopped( int notificationSendCount )
+		{
+			using ( ListenerNotificationsNotReceivedWhenStoppedTestRunner runner = CreateListenerNotificationsNotReceivedWhenStoppedTestRunner( notificationSendCount ) )
+			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
 			{
-				await db.NotifyAsync( NotificationChannelname, null );
-				await db.CloseAsync();
+				await runner.RunTestsAsync(listener );
+				Assert.AreEqual( 0, runner.NotificationReceivedCount );
 			}
-
-			await Task.Delay( 100 );
 		}
 
-		private async Task<NpgsqlConnection> OpenDbConnectionAsync()
+		private ListenerNotificationsNotReceivedWhenStoppedTestRunner CreateListenerNotificationsNotReceivedWhenStoppedTestRunner( int notificationSendCount )
 		{
-			return await OpenDbConnectionAsync( ConnectionString );
+			return new ListenerNotificationsNotReceivedWhenStoppedTestRunner( ConnectionString,
+				ManagementConnectionString,
+				NotificationChannelName,
+				notificationSendCount );
 		}
 
 		private PostgreSqlTaskQueueNotificationListener CreateListener()
 		{
 			TaskQueueListenerOptions options =
 				new TaskQueueListenerOptions( ConnectionString,
-					NotificationChannelname );
+					NotificationChannelName );
 
 			StandardTaskQueueNotificationListenerMetricsProvider metricsProvider =
 				new StandardTaskQueueNotificationListenerMetricsProvider();
@@ -207,12 +171,6 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			return new PostgreSqlTaskQueueNotificationListener( options,
 				metricsProvider,
 				CreateLogger() );
-		}
-
-		private int RandomTimeout()
-		{
-			Random rnd = new Random();
-			return rnd.Next( 100, 2000 );
 		}
 
 		private IStakhanoviseLogger CreateLogger()
@@ -223,7 +181,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 		private string ConnectionString
 			=> GetConnectionString( "listenerTestDbConnectionString" );
 
-		private string NotificationChannelname
+		private string NotificationChannelName
 			=> "sk_test_queue_item_added";
 	}
 }
