@@ -111,13 +111,23 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			mTaskResultQueue = new PostgreSqlTaskResultQueue( producerAndResultOptions );
 
-			mTaskBuffer = new StandardTaskBuffer( engineOptions.WorkerCount );
+			mTaskBuffer = CreateTaskbuffer( engineOptions );
+
 			mTaskPoller = new StandardTaskPoller( engineOptions.TaskProcessingOptions,
 				mTaskQueueConsumer,
 				mTaskQueueProducer,
 				mTaskBuffer );
 
 			mOptions = engineOptions;
+		}
+
+		private StandardTaskBuffer CreateTaskbuffer( TaskEngineOptions engineOptions )
+		{
+			ITaskBufferMetricsProvider bufferMetricsProvider =
+				new StandardTaskBufferMetricsProvider();
+
+			return new StandardTaskBuffer( engineOptions.WorkerCount,
+				bufferMetricsProvider );
 		}
 
 		private void CheckDisposedOrThrow()

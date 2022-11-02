@@ -5,6 +5,7 @@ using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
 using System.Linq;
+using LVD.Stakhanovise.NET.Tests.Asserts;
 
 namespace LVD.Stakhanovise.NET.Tests.QueueTests
 {
@@ -17,12 +18,9 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			StandardTaskQueueNotificationListenerMetricsProvider provider =
 				new StandardTaskQueueNotificationListenerMetricsProvider();
 
-			IEnumerable<AppMetric> metrics = provider
-				.CollectMetrics();
-
-			Assert.AreEqual( 3, metrics.Count() );
-			foreach ( AppMetric metric in metrics )
-				Assert.AreEqual( 0, metric.Value );
+			AssertInitialMetricValues
+				.WithExpectedCount( 3 )
+				.Check( provider );
 		}
 
 		[Test]
@@ -38,32 +36,18 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			for ( int i = 0; i < times; i++ )
 				provider.IncrementNotificationWaitTimeoutCount();
 
-			AssertMetricValue( provider,
+			DoAssertMetricValueAndAllOthersDefault( provider,
 				AppMetricId.ListenerNotificationWaitTimeoutCount,
 				times );
 		}
 
-		private static void AssertMetricValue( StandardTaskQueueNotificationListenerMetricsProvider provider,
+		private void DoAssertMetricValueAndAllOthersDefault( IAppMetricsProvider provider,
 			AppMetricId metricId,
 			object expectedValue )
 		{
-			IEnumerable<AppMetric> metrics = provider
-				.CollectMetrics();
-
-			Assert.AreEqual( 3, metrics.Count() );
-			foreach ( AppMetric metric in metrics )
-			{
-				if ( metric.Id.Equals( metricId ) )
-					Assert.AreEqual( expectedValue, metric.Value );
-				else
-					Assert.AreEqual( 0, metric.Value );
-			}
-
-			AppMetric waitTimeoutCountMetric = provider
-				.QueryMetric( metricId );
-
-			Assert.NotNull( waitTimeoutCountMetric );
-			Assert.AreEqual( expectedValue, waitTimeoutCountMetric.Value );
+			AssertMetricValueAndAllOthersDefault
+				.For( expectedValue )
+				.Check( provider, metricId );
 		}
 
 		[Test]
@@ -71,7 +55,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 		[TestCase( 5 )]
 		[TestCase( 10 )]
 		[Repeat( 10 )]
-		public void Test_IncrementReconnectCount(int times)
+		public void Test_IncrementReconnectCount( int times )
 		{
 			StandardTaskQueueNotificationListenerMetricsProvider provider =
 				new StandardTaskQueueNotificationListenerMetricsProvider();
@@ -79,7 +63,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			for ( int i = 0; i < times; i++ )
 				provider.IncrementReconnectCount();
 
-			AssertMetricValue( provider,
+			DoAssertMetricValueAndAllOthersDefault( provider,
 				AppMetricId.ListenerReconnectCount,
 				times );
 		}
@@ -89,7 +73,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 		[TestCase( 5 )]
 		[TestCase( 10 )]
 		[Repeat( 10 )]
-		public void Test_IncrementTaskNotificationCount(int times)
+		public void Test_IncrementTaskNotificationCount( int times )
 		{
 			StandardTaskQueueNotificationListenerMetricsProvider provider =
 				new StandardTaskQueueNotificationListenerMetricsProvider();
@@ -97,7 +81,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			for ( int i = 0; i < times; i++ )
 				provider.IncrementTaskNotificationCount();
 
-			AssertMetricValue( provider,
+			DoAssertMetricValueAndAllOthersDefault( provider,
 				AppMetricId.ListenerTaskNotificationCount,
 				times );
 		}

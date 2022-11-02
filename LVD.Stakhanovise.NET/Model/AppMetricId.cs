@@ -154,7 +154,8 @@ namespace LVD.Stakhanovise.NET.Model
 		/// </summary>
 		public static readonly AppMetricId QueueConsumerMinimumDequeueDuration =
 			new AppMetricId( "queue-consumer@minimum-dequeue-duration",
-				valueCategory: "task-queue-consumer" );
+				valueCategory: "task-queue-consumer",
+				defaultValue: long.MaxValue );
 
 		/// <summary>
 		/// The maximum time (measured in milliseconds) spent by the queue consumer 
@@ -162,7 +163,8 @@ namespace LVD.Stakhanovise.NET.Model
 		/// </summary>
 		public static readonly AppMetricId QueueConsumerMaximumDequeueDuration =
 			new AppMetricId( "queue-consumer@maximum-dequeue-duration",
-				valueCategory: "task-queue-consumer" );
+				valueCategory: "task-queue-consumer",
+				defaultValue: long.MinValue );
 
 		/// <summary>
 		/// How many job results have been posted.
@@ -214,14 +216,16 @@ namespace LVD.Stakhanovise.NET.Model
 		/// </summary>
 		public static readonly AppMetricId BufferMaxCount =
 			new AppMetricId( "task-buffer@max-count",
-				valueCategory: "task-buffer" );
+				valueCategory: "task-buffer",
+				defaultValue: long.MinValue );
 
 		/// <summary>
 		/// The minimum number of job payloads that have ever been held in buffer.
 		/// </summary>
 		public static readonly AppMetricId BufferMinCount =
 			new AppMetricId( "task-buffer@min-count",
-				valueCategory: "task-buffer" );
+				valueCategory: "task-buffer",
+				defaultValue: long.MaxValue );
 
 		/// <summary>
 		/// How many times has the buffer been filled.
@@ -257,7 +261,8 @@ namespace LVD.Stakhanovise.NET.Model
 		/// </summary>
 		public static readonly AppMetricId PerfMonMinimumReportWriteDuration =
 			new AppMetricId( "perf-mon@minimum-report-write-duration",
-				valueCategory: "execution-perf-mon" );
+				valueCategory: "execution-perf-mon",
+				defaultValue: long.MaxValue );
 
 		/// <summary>
 		/// The minimum time (measured in milliseconds) spent writing 
@@ -265,7 +270,8 @@ namespace LVD.Stakhanovise.NET.Model
 		/// </summary>
 		public static readonly AppMetricId PerfMonMaximumReportWriteDuration =
 			new AppMetricId( "perf-mon@maximum-report-write-duration",
-				valueCategory: "execution-perf-mon" );
+				valueCategory: "execution-perf-mon",
+				defaultValue: long.MinValue );
 
 		/// <summary>
 		/// How many execution performance report write operations have timed out.
@@ -278,6 +284,12 @@ namespace LVD.Stakhanovise.NET.Model
 			= new SupportedValuesContainer<AppMetricId, string>( m => m.ValueId );
 
 		public AppMetricId( string valueId, string valueCategory )
+			: this( valueId, valueCategory, 0 )
+		{
+			return;
+		}
+
+		public AppMetricId( string valueId, string valueCategory, object defaultValue )
 		{
 			if ( string.IsNullOrEmpty( valueId ) )
 				throw new ArgumentNullException( nameof( valueId ) );
@@ -286,6 +298,7 @@ namespace LVD.Stakhanovise.NET.Model
 
 			ValueId = valueId;
 			ValueCategory = valueCategory;
+			DefaultValue = defaultValue;
 		}
 
 		public static bool IsSupported( string valueId )
@@ -331,6 +344,11 @@ namespace LVD.Stakhanovise.NET.Model
 		}
 
 		public string ValueCategory
+		{
+			get; private set;
+		}
+
+		public object DefaultValue
 		{
 			get; private set;
 		}

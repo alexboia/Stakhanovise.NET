@@ -174,7 +174,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 
 			//TODO: must also test that, for failed tasks that can be re-posted, 
 			//	the tasks is actually reposted
-			using ( StandardTaskBuffer taskBuffer = new StandardTaskBuffer( bufferCapacity ) )
+			using ( StandardTaskBuffer taskBuffer = CreateBuffer( bufferCapacity ) )
 			{
 				TestBufferProducer producer =
 					new TestBufferProducer( taskBuffer, mPayloadTypes );
@@ -205,6 +205,12 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 				producer.AssertMatchesProcessedTasks( processedTaskTokensResults );
 				executionPerformanceMonitorMock.VerifyAll();
 			}
+		}
+
+		private StandardTaskBuffer CreateBuffer(int bufferCapacity)
+		{
+			return new StandardTaskBuffer( bufferCapacity, 
+				new StandardTaskBufferMetricsProvider() );
 		}
 
 		private ITaskExecutorRegistry CreateTaskExecutorRegistry()

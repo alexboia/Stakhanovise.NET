@@ -29,12 +29,11 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Text;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
@@ -46,69 +45,66 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private readonly int mCapacity;
 
-		private BlockingCollection<IQueuedTaskToken> mInnerBuffer;
+		private readonly ITaskBufferMetricsProvider mMetricsProvider;
+
+		private readonly BlockingCollection<IQueuedTaskToken> mInnerBuffer;
 
 		private bool mIsDisposed = false;
 
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
-		(
-			new AppMetric( AppMetricId.BufferMinCount, long.MaxValue ),
-			new AppMetric( AppMetricId.BufferMaxCount, long.MinValue ),
-			new AppMetric( AppMetricId.BufferTimesEmptied, 0 ),
-			new AppMetric( AppMetricId.BufferTimesFilled, 0 )
-		);
-
-		public StandardTaskBuffer ( int capacity )
+		public StandardTaskBuffer( int capacity, ITaskBufferMetricsProvider metricsProvider )
 		{
 			if ( capacity <= 0 )
 				throw new ArgumentOutOfRangeException( nameof( capacity ), "The capacity must be greater than 0" );
 
+			if ( metricsProvider == null )
+				throw new ArgumentNullException( nameof( metricsProvider ) );
+
 			mInnerBuffer = new BlockingCollection<IQueuedTaskToken>( new ConcurrentQueue<IQueuedTaskToken>(), capacity );
 			mCapacity = capacity;
+			mMetricsProvider = metricsProvider;
 		}
 
-		private void CheckDisposedOrThrow ()
+		private void CheckDisposedOrThrow()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( StandardTaskBuffer ),
-					"Cannot reuse a disposed task buffer" );
+			{
+				throw new ObjectDisposedException(
+					nameof( StandardTaskBuffer ),
+					"Cannot reuse a disposed task buffer"
+				);
+			}
 		}
 
-		private void IncrementTimesFilled ()
+		private void IncrementTimesFilled()
 		{
-			mMetrics.UpdateMetric( AppMetricId.BufferTimesFilled,
-				m => m.Increment() );
+			mMetricsProvider.IncrementTimesFilled();
 		}
 
-		private void IncrementTimesEmptied ()
+		private void IncrementTimesEmptied()
 		{
-			mMetrics.UpdateMetric( AppMetricId.BufferTimesEmptied,
-				m => m.Increment() );
+			mMetricsProvider.IncrementTimesEmptied();
 		}
 
-		private void UpdateBufferCountStats ( int newCount )
+		private void UpdateBufferCountStats( int newCount )
 		{
-			mMetrics.UpdateMetric( AppMetricId.BufferMaxCount,
-				m => m.Max( newCount ) );
-			mMetrics.UpdateMetric( AppMetricId.BufferMinCount,
-				m => m.Min( newCount ) );
+			mMetricsProvider.UpdateBufferCountStats( newCount );
 		}
 
-		private void NotifyQueuedTaskRetrieved ()
+		private void NotifyQueuedTaskRetrieved()
 		{
 			EventHandler itemRetrievedHandler = QueuedTaskRetrieved;
 			if ( itemRetrievedHandler != null )
 				itemRetrievedHandler.Invoke( this, EventArgs.Empty );
 		}
 
-		private void NotifyQueuedTaskAdded ()
+		private void NotifyQueuedTaskAdded()
 		{
 			EventHandler itemAddedHandler = QueuedTaskAdded;
 			if ( itemAddedHandler != null )
 				itemAddedHandler.Invoke( this, EventArgs.Empty );
 		}
 
-		public bool TryAddNewTask ( IQueuedTaskToken task )
+		public bool TryAddNewTask( IQueuedTaskToken task )
 		{
 			CheckDisposedOrThrow();
 
@@ -133,14 +129,14 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void UpdateOnBufferItemAdd( int newCount, bool wasFull )
 		{
-			bool isFull = newCount == mCapacity;
+			bool isFull = ( newCount == mCapacity );
 
 			UpdateBufferCountStats( newCount );
 			if ( !wasFull && isFull )
 				IncrementTimesFilled();
 		}
 
-		public IQueuedTaskToken TryGetNextTask ()
+		public IQueuedTaskToken TryGetNextTask()
 		{
 			CheckDisposedOrThrow();
 
@@ -168,54 +164,58 @@ namespace LVD.Stakhanovise.NET.Processor
 				IncrementTimesEmptied();
 		}
 
-		public void CompleteAdding ()
+		public void CompleteAdding()
 		{
 			CheckDisposedOrThrow();
 			mInnerBuffer.CompleteAdding();
 		}
 
-		protected virtual void Dispose ( bool disposing )
+		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
-			if ( !mIsDisposed )
-			{
-				if ( disposing )
-				{
-					mInnerBuffer.Dispose();
-					mInnerBuffer = null;
-				}
-
-				mIsDisposed = true;
-			}
+			return mMetricsProvider.QueryMetric( metricId );
 		}
 
-		public void Dispose ()
+		public IEnumerable<AppMetric> CollectMetrics()
+		{
+			return mMetricsProvider.CollectMetrics();
+		}
+
+		public void Dispose()
 		{
 			Dispose( true );
 			GC.SuppressFinalize( this );
 		}
 
-		public AppMetric QueryMetric ( IAppMetricId metricId )
+		protected virtual void Dispose( bool disposing )
 		{
-			return mMetrics.QueryMetric( metricId );
+			if ( !mIsDisposed )
+			{
+				if ( disposing )
+					mInnerBuffer.Dispose();
+
+				mIsDisposed = true;
+			}
 		}
 
-		public IEnumerable<AppMetric> CollectMetrics ()
-		{
-			return mMetrics.CollectMetrics();
-		}
+		public int Count
+			=> mInnerBuffer.Count;
 
-		public int Count => mInnerBuffer.Count;
+		public bool HasTasks
+			=> mInnerBuffer.Count > 0;
 
-		public bool HasTasks => mInnerBuffer.Count > 0;
+		public bool IsEmpty
+			=> !HasTasks;
 
-		public bool IsEmpty => !HasTasks;
+		public bool IsFull
+			=> mInnerBuffer.Count == mCapacity;
 
-		public bool IsFull => mInnerBuffer.Count == mCapacity;
+		public int Capacity
+			=> mCapacity;
 
-		public int Capacity => mCapacity;
+		public bool IsCompleted
+			=> mInnerBuffer.IsCompleted;
 
-		public bool IsCompleted => mInnerBuffer.IsCompleted;
-
-		public IEnumerable<IAppMetricId> ExportedMetrics => mMetrics.ExportedMetrics;
+		public IEnumerable<IAppMetricId> ExportedMetrics
+			=> mMetricsProvider.ExportedMetrics;
 	}
 }

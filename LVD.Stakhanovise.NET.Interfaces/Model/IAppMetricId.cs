@@ -42,5 +42,10 @@ namespace LVD.Stakhanovise.NET.Model
 		{
 			get;
 		}
+
+		object DefaultValue
+		{
+			get;
+		}
 	}
 }

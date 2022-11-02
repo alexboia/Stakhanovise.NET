@@ -15,7 +15,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public MockTaskBuffer( int capacity )
 		{
-			mInnerTaskBuffer = new StandardTaskBuffer( capacity );
+			mInnerTaskBuffer = new StandardTaskBuffer( capacity, new StandardTaskBufferMetricsProvider() );
 			mInnerTaskBuffer.QueuedTaskAdded += HandleInnerBufferTaskAdded;
 			mInnerTaskBuffer.QueuedTaskRetrieved += HandleInnerBufferTaskRetrieved;
 		}
