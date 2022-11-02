@@ -374,6 +374,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				mTaskQueueConsumerOptions,
 				CreateTaskExecutorRegistry(),
 				CreateExecutionPeformanceMonitorWriter(),
+				new InMemoryResultQueueBackup(),
 				mTimestampProvider,
 				mTestProcessId );
 

@@ -37,17 +37,13 @@ using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Reflection;
-using System.Text;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StakhanoviseSetup : IStakhanoviseSetup
 	{
 		private bool mAppMetricsMonitoringEnabled;
-
-		private Assembly[] mExecutorAssemblies = null;
 
 		private StandardTaskExecutorRegistrySetup mTaskExecutorRegistrySetup =
 			new StandardTaskExecutorRegistrySetup();
@@ -71,6 +67,8 @@ namespace LVD.Stakhanovise.NET.Setup
 		private StandardConnectionSetup mSetupDbAssetsConnectionSetup;
 
 		private IStakhanoviseLoggingProvider mLoggingProvider;
+
+		private ITaskResultQueueBackup mResultQueueBackup;
 
 		private bool mRegisterOwnDependencies = true;
 
@@ -141,8 +139,9 @@ namespace LVD.Stakhanovise.NET.Setup
 				defaults );
 		}
 
-		public IStakhanoviseSetup WithProcessIdProvider( IProcessIdProvider provider )
+		public IStakhanoviseSetup WithResultQueueBackup( ITaskResultQueueBackup resultQueueBackup )
 		{
+			mResultQueueBackup = resultQueueBackup;
 			return this;
 		}
 
@@ -195,15 +194,6 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( setupAction ) );
 
 			setupAction.Invoke( mTaskExecutorRegistrySetup );
-			return this;
-		}
-
-		public IStakhanoviseSetup WithExecutorAssemblies( params Assembly[] assemblies )
-		{
-			if ( assemblies == null || assemblies.Length == 0 )
-				throw new ArgumentNullException( nameof( assemblies ) );
-
-			mExecutorAssemblies = assemblies;
 			return this;
 		}
 
@@ -321,6 +311,9 @@ namespace LVD.Stakhanovise.NET.Setup
 			ITimestampProvider timestampProvider =
 				new UtcNowTimestampProvider();
 
+			ITaskResultQueueBackup resultQueueBackup = mResultQueueBackup 
+				?? new InMemoryResultQueueBackup();
+
 			TaskQueueConsumerOptions consumerOptions = mTaskQueueConsumerSetup
 				.BuildOptions();
 
@@ -351,6 +344,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				producerOptions,
 				executorRegistry,
 				executionPerfMonWriter,
+				resultQueueBackup,
 				timestampProvider,
 				processId );
 		}

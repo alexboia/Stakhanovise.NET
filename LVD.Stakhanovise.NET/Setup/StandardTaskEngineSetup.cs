@@ -49,7 +49,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private StandardTaskProcessingSetup mTaskProcessingSetup;
 
-
 		private StandardTaskQueueConsumerSetup mTaskQueueConsumerSetup;
 
 		private Assembly[] mExecutorAssemblies;
@@ -106,6 +105,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			TaskQueueOptions producerAndResultOptions,
 			ITaskExecutorRegistry executorRegistry,
 			IExecutionPerformanceMonitorWriter executionPerfMonWriter,
+			ITaskResultQueueBackup resultQueueBackup,
 			ITimestampProvider timestampProvider,
 			string processId )
 		{
@@ -126,6 +126,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				consumerOptions,
 				executorRegistry,
 				executionPerfMonWriter,
+				resultQueueBackup,
 				timestampProvider,
 				processId );
 

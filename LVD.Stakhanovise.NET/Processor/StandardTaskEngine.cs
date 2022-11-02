@@ -49,24 +49,24 @@ namespace LVD.Stakhanovise.NET.Processor
 				.GetCurrentMethod()
 				.DeclaringType );
 
-		private PostgreSqlTaskQueueConsumer mTaskQueueConsumer;
+		private ITaskQueueConsumer mTaskQueueConsumer;
 
-		private StandardTaskBuffer mTaskBuffer;
+		private ITaskBuffer mTaskBuffer;
 
-		private StandardTaskPoller mTaskPoller;
+		private ITaskPoller mTaskPoller;
 
 		private ITaskExecutorRegistry mExecutorRegistry;
 
-		private StandardExecutionPerformanceMonitor mExecutionPerfMon;
+		private IExecutionPerformanceMonitor mExecutionPerfMon;
 
 		private IExecutionPerformanceMonitorWriter mExecutionPerfMonWriter;
 
-		private PostgreSqlTaskResultQueue mTaskResultQueue;
+		private ITaskResultQueue mTaskResultQueue;
 
-		private PostgreSqlTaskQueueProducer mTaskQueueProducer;
+		private ITaskQueueProducer mTaskQueueProducer;
 
-		private List<StandardTaskWorker> mWorkers =
-			new List<StandardTaskWorker>();
+		private List<ITaskWorker> mWorkers =
+			new List<ITaskWorker>();
 
 		private StateController mStateController
 			= new StateController();
@@ -82,6 +82,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			TaskQueueConsumerOptions consumerOptions,
 			ITaskExecutorRegistry executorRegistry,
 			IExecutionPerformanceMonitorWriter executionPerfMonWriter,
+			ITaskResultQueueBackup resultQueueBackup,
 			ITimestampProvider timestampProvider,
 			string processId )
 		{
@@ -109,7 +110,8 @@ namespace LVD.Stakhanovise.NET.Processor
 			mTaskQueueProducer = new PostgreSqlTaskQueueProducer( producerAndResultOptions,
 				timestampProvider );
 
-			mTaskResultQueue = new PostgreSqlTaskResultQueue( producerAndResultOptions );
+			mTaskResultQueue = CreateResultQueue( producerAndResultOptions, 
+				resultQueueBackup );
 
 			mTaskBuffer = CreateTaskbuffer( engineOptions );
 
@@ -119,6 +121,18 @@ namespace LVD.Stakhanovise.NET.Processor
 				mTaskBuffer );
 
 			mOptions = engineOptions;
+		}
+
+		private ITaskResultQueue CreateResultQueue( TaskQueueOptions producerAndResultOptions,
+			ITaskResultQueueBackup resultQueueBackup )
+		{
+			ITaskResultQueue resultQueue = new PostgreSqlTaskResultQueue( producerAndResultOptions );
+			if ( resultQueueBackup != null )
+				return new RedundantTaskResultQueue( resultQueue,
+					resultQueueBackup,
+					CreateLogger<ITaskResultQueue>() );
+			else
+				return resultQueue;
 		}
 
 		private StandardTaskBuffer CreateTaskbuffer( TaskEngineOptions engineOptions )
@@ -267,46 +281,49 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task CreateAndStartWorkerAsync()
 		{
-			IStakhanoviseLoggingProvider loggingProvider = StakhanoviseLogManager
-				.Provider;
-
 			ITaskExecutionMetricsProvider metricsProvider =
 				new StandardTaskExecutionMetricsProvider();
 
 			ITaskExecutorBufferHandlerFactory bufferHandlerFactory =
 				new StandardTaskExecutorBufferHandlerFactory( mTaskBuffer,
 					metricsProvider,
-					loggingProvider );
+					LoggingProvider );
 
 			ITaskExecutorResolver taskExecutorResolver =
 				new StandardTaskExecutorResolver( mExecutorRegistry,
-					loggingProvider.CreateLogger<StandardTaskExecutorResolver>() );
+					CreateLogger<ITaskExecutorResolver>() );
 
 			ITaskExecutionRetryCalculator executionRetryCalculator =
 				new StandardTaskExecutionRetryCalculator( mOptions.TaskProcessingOptions,
-					loggingProvider.CreateLogger<StandardTaskExecutionRetryCalculator>() );
+					CreateLogger<ITaskExecutionRetryCalculator>() );
 
 			ITaskProcessor taskProcessor =
 				new StandardTaskProcessor( mOptions.TaskProcessingOptions,
 					taskExecutorResolver,
 					executionRetryCalculator,
-					loggingProvider.CreateLogger<StandardTaskProcessor>() );
+					CreateLogger<ITaskProcessor>() );
 
 			ITaskExecutionResultProcessor resultProcessor =
 				new StandardTaskExecutionResultProcessor( mTaskResultQueue,
 					mTaskQueueProducer,
 					mExecutionPerfMon,
-					loggingProvider.CreateLogger<StandardTaskExecutionResultProcessor>() );
+					CreateLogger<ITaskExecutionResultProcessor>() );
 
 			StandardTaskWorker taskWorker =
 				new StandardTaskWorker( taskProcessor,
 					resultProcessor,
 					bufferHandlerFactory,
 					metricsProvider,
-					loggingProvider.CreateLogger<StandardTaskWorker>() );
+					CreateLogger<ITaskWorker>() );
 
 			await taskWorker.StartAsync();
 			mWorkers.Add( taskWorker );
+		}
+
+		private IStakhanoviseLogger CreateLogger<TCategory>()
+		{
+			return LoggingProvider
+				.CreateLogger<TCategory>();
 		}
 
 		private async Task StopWorkersAsync()
@@ -380,13 +397,38 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			if ( ShouldStoreMetricsSnapshot() )
 			{
-				mMetricsSnapshot = AppMetricsCollection.JoinProviders( mTaskBuffer,
-					mTaskPoller,
-					mTaskQueueConsumer,
-					mTaskResultQueue,
-					mExecutionPerfMon,
-					AppMetricsCollection.JoinProviders( mWorkers ) );
+				List<IAppMetricsProvider> metricsProviders =
+					GetMetricsProviders();
+				mMetricsSnapshot = AppMetricsCollection
+					.JoinProviders( metricsProviders );
 			}
+		}
+
+		private List<IAppMetricsProvider> GetMetricsProviders()
+		{
+			List<IAppMetricsProvider> metricsProviders =
+					new List<IAppMetricsProvider>();
+
+			if ( mTaskBuffer is IAppMetricsProvider )
+				metricsProviders.Add( mTaskBuffer as IAppMetricsProvider );
+
+			if ( mTaskPoller is IAppMetricsProvider )
+				metricsProviders.Add( mTaskPoller as IAppMetricsProvider );
+
+			if ( mTaskQueueConsumer is IAppMetricsProvider )
+				metricsProviders.Add( mTaskQueueConsumer as IAppMetricsProvider );
+
+			if ( mTaskResultQueue is IAppMetricsProvider )
+				metricsProviders.Add( mTaskResultQueue as IAppMetricsProvider );
+
+			if ( mExecutionPerfMon is IAppMetricsProvider )
+				metricsProviders.Add( mExecutionPerfMon as IAppMetricsProvider );
+
+			foreach ( ITaskWorker worker in mWorkers )
+				if ( mWorkers is IAppMetricsProvider )
+					metricsProviders.Add( worker as IAppMetricsProvider );
+
+			return metricsProviders;
 		}
 
 		private bool ShouldStoreMetricsSnapshot()
@@ -395,6 +437,9 @@ namespace LVD.Stakhanovise.NET.Processor
 				&& ( mStateController.IsStarted
 					|| mStateController.IsStopRequested );
 		}
+
+		private IStakhanoviseLoggingProvider LoggingProvider
+			=> StakhanoviseLogManager.Provider;
 
 		public IEnumerable<ITaskWorker> Workers
 		{

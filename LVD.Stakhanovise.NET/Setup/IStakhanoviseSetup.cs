@@ -31,6 +31,7 @@
 // 
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Processor;
+using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -40,30 +41,30 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public interface IStakhanoviseSetup
 	{
-		IStakhanoviseSetup SetupPerformanceMonitorWriter ( Action<IExecutionPerformanceMonitorWriterSetup> setupAction );
+		IStakhanoviseSetup SetupPerformanceMonitorWriter( Action<IExecutionPerformanceMonitorWriterSetup> setupAction );
 
-		IStakhanoviseSetup DisableAppMetricsMonitoring ();
+		IStakhanoviseSetup DisableAppMetricsMonitoring();
 
-		IStakhanoviseSetup WithLoggingProvider ( IStakhanoviseLoggingProvider loggingProvider );
+		IStakhanoviseSetup WithLoggingProvider( IStakhanoviseLoggingProvider loggingProvider );
 
-		IStakhanoviseSetup SetupAppMetricsMonitor ( Action<IAppMetricsMonitorSetup> setupAction );
+		IStakhanoviseSetup WithResultQueueBackup( ITaskResultQueueBackup resultQueueBackup );
 
-		IStakhanoviseSetup SetupAppMetricsMonitorWriter ( Action<IAppMetricsMonitorWriterSetup> setupAction );
+		IStakhanoviseSetup SetupAppMetricsMonitor( Action<IAppMetricsMonitorSetup> setupAction );
 
-		IStakhanoviseSetup SetupEngine ( Action<ITaskEngineSetup> setupAction );
+		IStakhanoviseSetup SetupAppMetricsMonitorWriter( Action<IAppMetricsMonitorWriterSetup> setupAction );
 
-		IStakhanoviseSetup SetupTaskExecutorRegistry ( Action<ITaskExecutorRegistrySetup> setupAction );
+		IStakhanoviseSetup SetupEngine( Action<ITaskEngineSetup> setupAction );
 
-		IStakhanoviseSetup WithExecutorAssemblies ( params Assembly[] assemblies );
+		IStakhanoviseSetup SetupTaskExecutorRegistry( Action<ITaskExecutorRegistrySetup> setupAction );
 
-		IStakhanoviseSetup SetupTaskQueueConnection ( Action<IConnectionSetup> setupAction );
+		IStakhanoviseSetup SetupTaskQueueConnection( Action<IConnectionSetup> setupAction );
 
-		IStakhanoviseSetup SetupTaskQueueConsumer ( Action<ITaskQueueConsumerSetup> setupAction );
+		IStakhanoviseSetup SetupTaskQueueConsumer( Action<ITaskQueueConsumerSetup> setupAction );
 
-		IStakhanoviseSetup SetupTaskQueueProducer ( Action<ITaskQueueProducerSetup> setupAction );
+		IStakhanoviseSetup SetupTaskQueueProducer( Action<ITaskQueueProducerSetup> setupAction );
 
-		IStakhanoviseSetup SetupTaskQueueInfo ( Action<ITaskQueueInfoSetup> setupAction );
+		IStakhanoviseSetup SetupTaskQueueInfo( Action<ITaskQueueInfoSetup> setupAction );
 
-		IStakhanoviseSetup DontSetupBuiltInDbAssets ();
+		IStakhanoviseSetup DontSetupBuiltInDbAssets();
 	}
 }
