@@ -31,11 +31,11 @@
 // 
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Tests.Asserts;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
@@ -61,8 +61,6 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			Assert.NotNull( newTaskToken.DequeuedTask );
 			Assert.NotNull( newTaskToken.LastQueuedTaskResult );
 
-			//Assert.AreEqual( now, newTaskToken.DequeuedAt );
-
 			Assert.IsFalse( mDequeuedTokens.Any( t => t.DequeuedTask.Id == newTaskToken.DequeuedTask.Id ) );
 
 			if ( mPreviousTaskToken != null )
@@ -85,8 +83,9 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				.DequeuedTask
 				.Id );
 
-			dbResult.AssertMatchesResult( newTaskToken
-				.LastQueuedTaskResult );
+			AssertQueuedTaskResultMatchesExpectedResult
+				.For( newTaskToken.LastQueuedTaskResult )
+				.Check( dbResult );
 		}
 
 		public void Dispose ()

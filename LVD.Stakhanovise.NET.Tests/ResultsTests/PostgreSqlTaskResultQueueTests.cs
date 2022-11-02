@@ -33,13 +33,14 @@ using Bogus;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Tests.Asserts;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 {
 	[TestFixture]
 	public class PostgreSqlTaskResultQueueTests : BaseDbTests
@@ -145,36 +146,33 @@ namespace LVD.Stakhanovise.NET.Tests
 				faultErrorThresholdCount: mDataSource.QueueFaultErrorThresholdCount );
 		}
 
-		private async Task RunPostResultTests( Func<TaskExecutionResult> rsFactory )
+		private async Task RunPostResultTests( Func<TaskExecutionResult> executionResultFactory )
 		{
-			List<IQueuedTaskResult> expectedResults =
-				new List<IQueuedTaskResult>();
+			PostResultsToQueueTestsRunner runner =
+				CreatePostResultsToQueueTestsRunner( executionResultFactory );
 
-			using ( PostgreSqlTaskResultQueue rq = CreateResultQueue() )
-			{
-				await rq.StartAsync();
+			using ( PostgreSqlTaskResultQueue resultQueue = CreateResultQueue() )
+				await runner.RunTestsAsync( resultQueue );
 
-				foreach ( IQueuedTaskToken token in mDataSource.SeededTaskTokens )
-				{
-					if ( token.CanBeUpdated )
-						token.UdpateFromExecutionResult( rsFactory.Invoke() );
+			await CheckExpectedResultsAsync( runner.Results );
+		}
 
-					await rq.PostResultAsync( token.LastQueuedTaskResult );
-					expectedResults.Add( token.LastQueuedTaskResult );
-				}
-
-				await rq.StopAsync();
-			}
-
-			await CheckExpectedResultsAsync( expectedResults );
+		private PostResultsToQueueTestsRunner CreatePostResultsToQueueTestsRunner( Func<TaskExecutionResult> executionResultFactory )
+		{
+			return new PostResultsToQueueTestsRunner( mDataSource,
+				executionResultFactory );
 		}
 
 		private async Task CheckExpectedResultsAsync( List<IQueuedTaskResult> expectedResults )
 		{
 			foreach ( IQueuedTaskResult expectedResult in expectedResults )
 			{
-				QueuedTaskResult dbResult = await mDataSource.GetQueuedTaskResultFromDbByIdAsync( expectedResult.Id );
-				dbResult.AssertMatchesResult( expectedResult );
+				QueuedTaskResult dbResult = await mDataSource
+					.GetQueuedTaskResultFromDbByIdAsync( expectedResult.Id );
+
+				AssertQueuedTaskResultMatchesExpectedResult
+					.For( expectedResult )
+					.Check( dbResult );
 			}
 		}
 
