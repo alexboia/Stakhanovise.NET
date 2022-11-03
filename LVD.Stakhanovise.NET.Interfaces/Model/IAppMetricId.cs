@@ -29,6 +29,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using System;
+
 namespace LVD.Stakhanovise.NET.Model
 {
 	public interface IAppMetricId
@@ -44,6 +46,11 @@ namespace LVD.Stakhanovise.NET.Model
 		}
 
 		object DefaultValue
+		{
+			get;
+		}
+
+		Type Type
 		{
 			get;
 		}

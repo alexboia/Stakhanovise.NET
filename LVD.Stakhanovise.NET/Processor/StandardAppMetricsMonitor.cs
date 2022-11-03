@@ -56,8 +56,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private Timer mMetricsProcessingTimer;
 
-		private readonly StateController mStateController =
-			new StateController();
+		private readonly StateController mStateController = new StateController();
 
 		private bool mIsDisposed = false;
 
