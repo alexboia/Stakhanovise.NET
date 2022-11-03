@@ -39,7 +39,7 @@ using ServerTimer = System.Timers.Timer;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public class AsyncProcessingRequest<TResult> : IDisposable
+	public class AsyncProcessingRequest<TResult> : IAsyncProcessingRequest<TResult>, IDisposable
 	{
 		private CancellationToken mCancellationToken;
 
@@ -61,7 +61,7 @@ namespace LVD.Stakhanovise.NET.Model
 
 		private long mRequestId;
 
-		public AsyncProcessingRequest ( long requestId,
+		public AsyncProcessingRequest( long requestId,
 			int timeoutMilliseconds,
 			int maxFailCount )
 		{
@@ -88,15 +88,15 @@ namespace LVD.Stakhanovise.NET.Model
 		private void SetupCancellation()
 		{
 			//TODO: simplify cancellation: tokens might not be required after all...
-			mCancellationTokenSource = 
+			mCancellationTokenSource =
 				new CancellationTokenSource();
 			mCancellationToken = mCancellationTokenSource
 				.Token;
-			mCancellationTokenRegistration = mCancellationToken.Register( () 
+			mCancellationTokenRegistration = mCancellationToken.Register( ()
 				=> HandleCancellationRequested() );
 		}
 
-		private void HandleCancellationTimerElapsed ( object sender, ElapsedEventArgs e )
+		private void HandleCancellationTimerElapsed( object sender, ElapsedEventArgs e )
 		{
 			if ( !mIsDisposed && !IsCompleted )
 			{
@@ -108,7 +108,7 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		private void StartCancellationTimer ( int timeoutMilliseconds )
+		private void StartCancellationTimer( int timeoutMilliseconds )
 		{
 			mTimer = new ServerTimer();
 			mTimer.Interval = timeoutMilliseconds;
@@ -117,13 +117,13 @@ namespace LVD.Stakhanovise.NET.Model
 			mTimer.Start();
 		}
 
-		private void HandleCancellationRequested ()
+		private void HandleCancellationRequested()
 		{
 			if ( !mIsDisposed )
 				mCompletionToken.TrySetCanceled();
 		}
 
-		public void SetCancelled ()
+		public void SetCancelled()
 		{
 			if ( !IsCompleted )
 			{
@@ -132,7 +132,12 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		public void SetCompleted ( TResult result )
+		void IAsyncProcessingRequest.SetCompleted( object result )
+		{
+			SetCompleted( result is TResult ? ( TResult ) result : default( TResult ) );
+		}
+
+		public void SetCompleted( TResult result )
 		{
 			if ( !IsCompleted )
 			{
@@ -141,7 +146,7 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		public void SetFailed ( Exception exc )
+		public void SetFailed( Exception exc )
 		{
 			if ( !IsCompleted )
 			{
@@ -152,7 +157,7 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		private void ShutdownCancellationTimer ()
+		private void ShutdownCancellationTimer()
 		{
 			if ( mTimer != null )
 			{
@@ -163,7 +168,7 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		protected virtual void Dispose ( bool disposing )
+		protected virtual void Dispose( bool disposing )
 		{
 			if ( !mIsDisposed )
 			{
@@ -179,12 +184,12 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		private void IncrementFailCount ()
+		private void IncrementFailCount()
 		{
 			Interlocked.Increment( ref mCurrentFailCount );
 		}
 
-		public void Dispose ()
+		public void Dispose()
 		{
 			Dispose( true );
 			GC.SuppressFinalize( this );

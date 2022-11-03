@@ -42,13 +42,13 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
-	public class PostgreSqlTaskQueueDbOperations
+	public class TaskQueueDbOperations
 	{
-		private string mConnectionString;
+		private readonly string mConnectionString;
 
-		private QueuedTaskMapping mMapping;
+		private readonly QueuedTaskMapping mMapping;
 
-		public PostgreSqlTaskQueueDbOperations ( string connectionString,
+		public TaskQueueDbOperations ( string connectionString,
 			QueuedTaskMapping mapping )
 		{
 			mConnectionString = connectionString;

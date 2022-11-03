@@ -50,14 +50,14 @@ namespace LVD.Stakhanovise.NET.Tests
 	{
 		private TaskQueueConsumerOptions mConsumerOptions;
 
-		private PostgreSqlTaskQueueDataSource mDataSource;
+		private TaskQueueDataSource mDataSource;
 
 		public PostgreSqlTaskQueueConsumerTests ()
 		{
 			mConsumerOptions = TestOptions
 				.GetDefaultTaskQueueConsumerOptions( ConnectionString );
 
-			mDataSource = new PostgreSqlTaskQueueDataSource( mConsumerOptions.ConnectionOptions.ConnectionString,
+			mDataSource = new TaskQueueDataSource( mConsumerOptions.ConnectionOptions.ConnectionString,
 				TestOptions.DefaultMapping,
 				queueFaultErrorThrehsoldCount: 5 );
 		}
@@ -292,7 +292,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private PostgreSqlTaskQueueConsumer CreateTaskQueue ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
-				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
+				new TaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private async Task<NpgsqlConnection> OpenDbConnectionAsync ()

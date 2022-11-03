@@ -29,18 +29,38 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.NET.Model;
+using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public interface IExecutionPerformanceMonitor
+	public class ExecutionPerformanceMonitorWriteRequest : AsyncProcessingRequest<int>
 	{
-		Task ReportExecutionTimeAsync ( string payloadType, long durationMilliseconds, int timeoutMilliseconds );
+		public ExecutionPerformanceMonitorWriteRequest( long requestId,
+			string payloadType,
+			long durationMilliseconds,
+			int timeoutMilliseconds,
+			int maxFailCount )
+			: base( requestId, timeoutMilliseconds, maxFailCount )
+		{
+			if ( string.IsNullOrEmpty( payloadType ) )
+				throw new ArgumentNullException( nameof( payloadType ) );
 
-		Task StartFlushingAsync ( IExecutionPerformanceMonitorWriter writer );
+			PayloadType = payloadType;
+			DurationMilliseconds = durationMilliseconds;
+		}
 
-		Task StopFlushingAsync ();
+		public string PayloadType
+		{
+			get; private set;
+		}
 
-		bool IsRunning { get; }
+		public long DurationMilliseconds
+		{
+			get; private set;
+		}
 	}
 }

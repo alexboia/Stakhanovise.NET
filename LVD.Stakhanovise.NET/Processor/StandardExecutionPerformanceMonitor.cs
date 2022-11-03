@@ -29,11 +29,9 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Helpers;
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
@@ -45,26 +43,20 @@ namespace LVD.Stakhanovise.NET.Processor
 		IAppMetricsProvider,
 		IDisposable
 	{
+		private const int ProcessingBatchSize = 5;
+
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
 				.GetCurrentMethod()
 				.DeclaringType );
 
-		private bool mIsDisposed = false;
-
 		private long mLastRequestId;
 
-		private Task mStatsProcessingTask = null;
-
-		private CancellationTokenSource mStatsProcessingStopTokenSource = null;
-
-		private StateController mStateController =
-			new StateController();
-
-		private BlockingCollection<StandardExecutionPerformanceMonitorWriteRequest> mStatsProcessingQueue =
-			new BlockingCollection<StandardExecutionPerformanceMonitorWriteRequest>();
+		private AsyncProcessingRequestBatchProcessor<ExecutionPerformanceMonitorWriteRequest> mBatchProcessor;
 
 		private IExecutionPerformanceMonitorWriter mStatsWriter;
+
+		private bool mIsDisposed = false;
 
 		private AppMetricsCollection mMetrics = new AppMetricsCollection
 		(
@@ -83,13 +75,18 @@ namespace LVD.Stakhanovise.NET.Processor
 				throw new ArgumentNullException( nameof( processId ) );
 
 			mProcessId = processId;
+			mBatchProcessor = new AsyncProcessingRequestBatchProcessor<ExecutionPerformanceMonitorWriteRequest>( ProcessRequestBatchAsync, mLogger );
 		}
 
 		private void CheckNotDisposedOrThrow()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( StandardExecutionPerformanceMonitor ),
-					"Cannot reuse a disposed execution performance monitor" );
+			{
+				throw new ObjectDisposedException(
+					nameof( StandardExecutionPerformanceMonitor ),
+					"Cannot reuse a disposed execution performance monitor"
+				);
+			}
 		}
 
 		private void CheckRunningOrThrow()
@@ -125,7 +122,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				m => m.Increment() );
 		}
 
-		public Task<int> ReportExecutionTimeAsync( string payloadType, long durationMilliseconds, int timeoutMilliseconds )
+		public async Task ReportExecutionTimeAsync( string payloadType, long durationMilliseconds, int timeoutMilliseconds )
 		{
 			CheckNotDisposedOrThrow();
 			CheckRunningOrThrow();
@@ -137,42 +134,54 @@ namespace LVD.Stakhanovise.NET.Processor
 				durationMilliseconds,
 				payloadType );
 
-			long requestId = Interlocked.Increment( ref mLastRequestId );
-
-			StandardExecutionPerformanceMonitorWriteRequest processRequest =
-				new StandardExecutionPerformanceMonitorWriteRequest( requestId,
+			ExecutionPerformanceMonitorWriteRequest processRequest =
+				new ExecutionPerformanceMonitorWriteRequest( GenerateRequestId(),
 					payloadType,
 					durationMilliseconds,
 					timeoutMilliseconds: timeoutMilliseconds,
 					maxFailCount: 3 );
 
-			mStatsProcessingQueue.Add( processRequest );
+			await mBatchProcessor.PostRequestAsync( processRequest );
 			IncrementPerfMonPostCount();
-
-			return processRequest.Task.WithCleanup( ( prev ) =>
-			{
-				if ( processRequest.IsTimedOut )
-					IncrementPerfMonWriteRequestTimeoutCount();
-				processRequest.Dispose();
-			} );
 		}
 
-		private async Task ProcessStatsBatchAsync( IEnumerable<StandardExecutionPerformanceMonitorWriteRequest> currentBatch )
+		private long GenerateRequestId()
+		{
+			return Interlocked.Increment( ref mLastRequestId );
+		}
+
+		public async Task StartFlushingAsync( IExecutionPerformanceMonitorWriter writer )
+		{
+			CheckNotDisposedOrThrow();
+
+			if ( !mBatchProcessor.IsRunning )
+				await DoStartFlushingAsync( writer );
+			else
+				mLogger.Debug( "Flushing is already started. Nothing to be done." );
+		}
+
+		private async Task DoStartFlushingAsync( IExecutionPerformanceMonitorWriter writer )
+		{
+			mStatsWriter = writer;
+			await mBatchProcessor.StartAsync();
+		}
+
+		private async Task ProcessRequestBatchAsync( AsyncProcessingRequestBatch<ExecutionPerformanceMonitorWriteRequest> currentBatch )
 		{
 			MonotonicTimestamp startWrite = MonotonicTimestamp
 				.Now();
 
-			List<TaskPerformanceStats> executionTimeInfoBatch =
-				new List<TaskPerformanceStats>();
-
 			try
 			{
-				foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
+				List<TaskPerformanceStats> executionTimeInfoBatch =
+					new List<TaskPerformanceStats>();
+
+				foreach ( ExecutionPerformanceMonitorWriteRequest rq in currentBatch )
 					executionTimeInfoBatch.Add( new TaskPerformanceStats( rq.PayloadType, rq.DurationMilliseconds ) );
 
 				await mStatsWriter.WriteAsync( mProcessId, executionTimeInfoBatch );
 
-				foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
+				foreach ( ExecutionPerformanceMonitorWriteRequest rq in currentBatch )
 					rq.SetCompleted( 1 );
 
 				IncrementPerfMonWriteCount( MonotonicTimestamp
@@ -180,126 +189,37 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 			catch ( Exception exc )
 			{
-				foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
+				foreach ( ExecutionPerformanceMonitorWriteRequest rq in currentBatch )
 				{
 					rq.SetFailed( exc );
 					if ( rq.CanBeRetried )
-						mStatsProcessingQueue.Add( rq );
+						await mBatchProcessor.PostRequestAsync( rq );
 				}
 
 				mLogger.Error( "Error processing performance stats batch", exc );
 			}
 		}
 
-		private async Task RunFlushLoopAsync()
-		{
-			CancellationToken stopToken = mStatsProcessingStopTokenSource
-				.Token;
-
-			if ( stopToken.IsCancellationRequested )
-				return;
-
-			while ( true )
-			{
-				List<StandardExecutionPerformanceMonitorWriteRequest> currentBatch =
-					new List<StandardExecutionPerformanceMonitorWriteRequest>();
-
-				try
-				{
-					stopToken.ThrowIfCancellationRequested();
-
-					//Try to dequeue and block if no item is available
-					StandardExecutionPerformanceMonitorWriteRequest processItem =
-						 mStatsProcessingQueue.Take( stopToken );
-
-					currentBatch.Add( processItem );
-
-					//See if there are other items available 
-					//	and add them to current batch
-					while ( currentBatch.Count < 5 && mStatsProcessingQueue.TryTake( out processItem ) )
-						currentBatch.Add( processItem );
-
-					//Process the entire batch - don't observe 
-					//	cancellation token
-					await ProcessStatsBatchAsync( currentBatch );
-				}
-				catch ( OperationCanceledException )
-				{
-					//Best effort to cancel all tasks
-					foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in mStatsProcessingQueue.ToArray() )
-						rq.SetCancelled();
-
-					mLogger.Debug( "Cancellation requested. Breaking stats processing loop..." );
-					break;
-				}
-				catch ( Exception exc )
-				{
-					//Add them back to processing queue to be retried
-					foreach ( StandardExecutionPerformanceMonitorWriteRequest rq in currentBatch )
-					{
-						rq.SetFailed( exc );
-						if ( rq.CanBeRetried )
-							mStatsProcessingQueue.Add( rq );
-					}
-
-					mLogger.Error( "Error processing results", exc );
-				}
-				finally
-				{
-					//Clear batch and start over
-					currentBatch.Clear();
-				}
-			}
-		}
-
-		private void DoFlushingStartupSequence( IExecutionPerformanceMonitorWriter writer )
-		{
-			mStatsWriter = writer;
-			mStatsProcessingStopTokenSource =
-				new CancellationTokenSource();
-
-			mStatsProcessingTask = Task.Run( async ()
-				=> await RunFlushLoopAsync() );
-		}
-
-		public Task StartFlushingAsync( IExecutionPerformanceMonitorWriter writer )
-		{
-			CheckNotDisposedOrThrow();
-
-			if ( mStateController.IsStopped )
-				mStateController.TryRequestStart( ()
-					=> DoFlushingStartupSequence( writer ) );
-			else
-				mLogger.Debug( "Flushing is already started. Nothing to be done." );
-
-			return Task.CompletedTask;
-		}
-
-		private async Task DoFlushingShutdownSequenceAsync()
-		{
-			mStatsProcessingQueue.CompleteAdding();
-			mStatsProcessingStopTokenSource.Cancel();
-			await mStatsProcessingTask;
-
-			mStatsProcessingTask.Dispose();
-			mStatsProcessingStopTokenSource.Dispose();
-			mStatsProcessingQueue.Dispose();
-
-			mStatsProcessingTask = null;
-			mStatsProcessingQueue = null;
-			mStatsProcessingStopTokenSource = null;
-			mStatsWriter = null;
-		}
-
 		public async Task StopFlushingAsync()
 		{
 			CheckNotDisposedOrThrow();
 
-			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStartAsync( async ()
-					=> await DoFlushingShutdownSequenceAsync() );
+			if ( mBatchProcessor.IsRunning )
+				await DoStopFlushingAsync();
 			else
 				mLogger.Debug( "Flushing is already stopped. Nothing to be done." );
+		}
+
+		private async Task DoStopFlushingAsync()
+		{
+			await mBatchProcessor.StopAsync();
+			mStatsWriter = null;
+		}
+
+		public void Dispose()
+		{
+			Dispose( true );
+			GC.SuppressFinalize( this );
 		}
 
 		protected void Dispose( bool disposing )
@@ -309,17 +229,11 @@ namespace LVD.Stakhanovise.NET.Processor
 				if ( disposing )
 				{
 					StopFlushingAsync().Wait();
-					mStateController = null;
+					mBatchProcessor.Dispose();
 				}
 
 				mIsDisposed = true;
 			}
-		}
-
-		public void Dispose()
-		{
-			Dispose( true );
-			GC.SuppressFinalize( this );
 		}
 
 		public AppMetric QueryMetric( IAppMetricId metricId )
@@ -337,7 +251,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			get
 			{
 				CheckNotDisposedOrThrow();
-				return mStateController.IsStarted;
+				return mBatchProcessor.IsRunning;
 			}
 		}
 

@@ -9,13 +9,13 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 {
 	public class PostResultsToQueueTestsRunner
 	{
-		private readonly PostgreSqlTaskQueueDataSource mDataSource;
+		private readonly TaskQueueDataSource mDataSource;
 
 		private readonly Func<TaskExecutionResult> mExecutionResultFactory;
 
 		private List<IQueuedTaskResult> mResults = new List<IQueuedTaskResult>();
 
-		public PostResultsToQueueTestsRunner( PostgreSqlTaskQueueDataSource dataSource, 
+		public PostResultsToQueueTestsRunner( TaskQueueDataSource dataSource, 
 			Func<TaskExecutionResult> executionResultFactory )
 		{
 			mDataSource = dataSource;

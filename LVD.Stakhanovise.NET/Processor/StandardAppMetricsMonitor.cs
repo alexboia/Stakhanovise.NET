@@ -48,44 +48,55 @@ namespace LVD.Stakhanovise.NET.Processor
 				.GetCurrentMethod()
 				.DeclaringType );
 
-		private bool mIsDisposed = false;
+		private readonly AppMetricsMonitorOptions mOptions;
 
-		private IAppMetricsMonitorWriter mWriter;
-
-		private string mProcessId;
+		private readonly IAppMetricsMonitorWriter mWriter;
 
 		private IEnumerable<IAppMetricsProvider> mProviders;
 
-		private AppMetricsMonitorOptions mOptions;
-
 		private Timer mMetricsProcessingTimer;
 
-		private StateController mStateController =
+		private readonly StateController mStateController =
 			new StateController();
 
+		private bool mIsDisposed = false;
+
 		public StandardAppMetricsMonitor( AppMetricsMonitorOptions options,
-			IAppMetricsMonitorWriter writer,
-			string processId )
+			IAppMetricsMonitorWriter writer )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
 			mWriter = writer
 				?? throw new ArgumentNullException( nameof( writer ) );
-
-			if ( string.IsNullOrWhiteSpace( processId ) )
-				throw new ArgumentNullException( nameof( processId ) );
-
-			mProcessId = processId;
 		}
 
 		private void CheckNotDisposedOrThrow()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( StandardExecutionPerformanceMonitor ),
-					"Cannot reuse a disposed app metrics monitor" );
+			{
+				throw new ObjectDisposedException(
+					nameof( StandardExecutionPerformanceMonitor ),
+					"Cannot reuse a disposed app metrics monitor"
+				);
+			}
 		}
 
-		private void DoStartupSequence( IEnumerable<IAppMetricsProvider> providers )
+		public Task StartAsync( params IAppMetricsProvider [] providers )
+		{
+			CheckNotDisposedOrThrow();
+
+			mProviders = providers
+				?? throw new ArgumentNullException( nameof( providers ) );
+
+			if ( mStateController.IsStopped )
+				mStateController.TryRequestStart( DoStartupSequence );
+			else
+				mLogger.Debug( "App metrics monitor is already stopped. Nothing to be done." );
+
+			return Task.CompletedTask;
+		}
+
+		private void DoStartupSequence()
 		{
 			mMetricsProcessingTimer = new Timer();
 			mMetricsProcessingTimer.Interval = mOptions.CollectionIntervalMilliseconds;
@@ -111,22 +122,17 @@ namespace LVD.Stakhanovise.NET.Processor
 				.JoinCollectMetrics( mProviders.ToArray() );
 
 			if ( metrics.Count() > 0 )
-				await mWriter.WriteAsync( mProcessId, metrics );
+				await mWriter.WriteAsync( mOptions.ProcessId, metrics );
 		}
 
-		public Task StartAsync( params IAppMetricsProvider[] providers )
+		public async Task StopAsync()
 		{
 			CheckNotDisposedOrThrow();
 
-			mProviders = providers
-				?? throw new ArgumentNullException( nameof( providers ) );
-
-			if ( mStateController.IsStopped )
-				mStateController.TryRequestStart( () => DoStartupSequence( providers ) );
+			if ( mStateController.IsStarted )
+				await mStateController.TryRequestStopAsync( DoShutdownSequenceAsync );
 			else
 				mLogger.Debug( "App metrics monitor is already stopped. Nothing to be done." );
-
-			return Task.CompletedTask;
 		}
 
 		private async Task DoShutdownSequenceAsync()
@@ -144,27 +150,12 @@ namespace LVD.Stakhanovise.NET.Processor
 			mMetricsProcessingTimer = null;
 		}
 
-		public async Task StopAsync()
-		{
-			CheckNotDisposedOrThrow();
-
-			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStopAsync( async ()
-					=> await DoShutdownSequenceAsync() );
-			else
-				mLogger.Debug( "App metrics monitor is already stopped. Nothing to be done." );
-		}
-
 		protected void Dispose( bool disposing )
 		{
 			if ( !mIsDisposed )
 			{
 				if ( disposing )
-				{
 					StopAsync().Wait();
-					mStateController = null;
-					mWriter = null;
-				}
 
 				mIsDisposed = true;
 			}

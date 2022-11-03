@@ -52,7 +52,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private TaskQueueOptions mProducerOptions;
 
-		private PostgreSqlTaskQueueDataSource mDataSource;
+		private TaskQueueDataSource mDataSource;
 
 		public PostgreSqlTaskQueueOperationsConsistencyTests ()
 		{
@@ -63,7 +63,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			mProducerOptions = TestOptions
 				.GetDefaultTaskQueueOptions( ConnectionString );
 
-			mDataSource = new PostgreSqlTaskQueueDataSource( mInfoOptions.ConnectionOptions.ConnectionString,
+			mDataSource = new TaskQueueDataSource( mInfoOptions.ConnectionOptions.ConnectionString,
 				TestOptions.DefaultMapping,
 				queueFaultErrorThrehsoldCount: 5 );
 		}
@@ -314,19 +314,19 @@ namespace LVD.Stakhanovise.NET.Tests
 		private PostgreSqlTaskQueueProducer CreateTaskQueueProducer ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueProducer( mProducerOptions,
-				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
+				new TaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
-				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
+				new TaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private PostgreSqlTaskQueueInfo CreateTaskQueueInfo ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueInfo( mInfoOptions,
-				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
+				new TaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private string ConnectionString

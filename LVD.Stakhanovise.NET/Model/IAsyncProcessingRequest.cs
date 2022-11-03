@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020, Boia Alexandru
+// Copyright (c) 2020-2022, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -29,28 +29,33 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Model;
-using LVD.Stakhanovise.NET.Queue;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests.Support
+namespace LVD.Stakhanovise.NET.Model
 {
-	public class TestTaskQueueTimestampProvider : ITimestampProvider
+	public interface IAsyncProcessingRequest
 	{
-		private Func<DateTimeOffset> mCurrentTimeProvider;
+		void SetCancelled();
 
-		public TestTaskQueueTimestampProvider ( Func<DateTimeOffset> currentTimeProvider )
+		void SetCompleted( object result );
+
+		void SetFailed( Exception exc );
+
+		bool CanBeRetried
 		{
-			mCurrentTimeProvider = currentTimeProvider
-				?? throw new ArgumentNullException( nameof( currentTimeProvider ) );
+			get;
 		}
-
-		public DateTimeOffset GetNow ()
+		long Id
 		{
-			return mCurrentTimeProvider.Invoke();
+			get;
+		}
+		bool IsCompleted
+		{
+			get;
+		}
+		bool IsTimedOut
+		{
+			get;
 		}
 	}
 }

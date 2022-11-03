@@ -8,14 +8,14 @@ namespace LVD.Stakhanovise.NET.Producer.Tests.Asserts
 {
 	public class AssertResultAddedOrUpdatedCorrectly
 	{
-		private PostgreSqlTaskQueueDataSource mDataSource;
+		private TaskQueueDataSource mDataSource;
 
-		private AssertResultAddedOrUpdatedCorrectly( PostgreSqlTaskQueueDataSource dataSource )
+		private AssertResultAddedOrUpdatedCorrectly( TaskQueueDataSource dataSource )
 		{
 			mDataSource = dataSource;
 		}
 
-		public static AssertResultAddedOrUpdatedCorrectly LookIn( PostgreSqlTaskQueueDataSource dataSource )
+		public static AssertResultAddedOrUpdatedCorrectly LookIn( TaskQueueDataSource dataSource )
 		{
 			return new AssertResultAddedOrUpdatedCorrectly( dataSource );
 		}

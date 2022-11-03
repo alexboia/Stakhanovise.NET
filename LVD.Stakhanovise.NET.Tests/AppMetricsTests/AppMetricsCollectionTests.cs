@@ -39,7 +39,7 @@ using Bogus;
 using MoreLinq;
 using LVD.Stakhanovise.NET.Tests.Helpers;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 {
 	[TestFixture]
 	public class AppMetricsCollectionTests

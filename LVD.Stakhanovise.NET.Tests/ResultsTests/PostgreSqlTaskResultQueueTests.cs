@@ -45,7 +45,7 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 	[TestFixture]
 	public class PostgreSqlTaskResultQueueTests : BaseDbTests
 	{
-		private PostgreSqlTaskQueueDataSource mDataSource;
+		private TaskQueueDataSource mDataSource;
 
 		private TaskQueueOptions mResultQueueOptions;
 
@@ -54,7 +54,7 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 			mResultQueueOptions = TestOptions
 				.GetDefaultTaskResultQueueOptions( ConnectionString );
 
-			mDataSource = new PostgreSqlTaskQueueDataSource( mResultQueueOptions.ConnectionString,
+			mDataSource = new TaskQueueDataSource( mResultQueueOptions.ConnectionString,
 				mResultQueueOptions.Mapping,
 				queueFaultErrorThrehsoldCount: 5 );
 		}

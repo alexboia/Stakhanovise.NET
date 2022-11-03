@@ -48,13 +48,13 @@ namespace LVD.Stakhanovise.NET.Tests
 	{
 		private TaskQueueInfoOptions mInfoOptions;
 
-		private PostgreSqlTaskQueueDataSource mDataSource;
+		private TaskQueueDataSource mDataSource;
 
 		public PostgreSqlTaskQueueInfoTests ()
 		{
 			mInfoOptions = TestOptions
 				.GetDefaultTaskQueueInfoOptions( ConnectionString );
-			mDataSource = new PostgreSqlTaskQueueDataSource( mInfoOptions.ConnectionOptions.ConnectionString,
+			mDataSource = new TaskQueueDataSource( mInfoOptions.ConnectionOptions.ConnectionString,
 				TestOptions.DefaultMapping,
 				queueFaultErrorThrehsoldCount: 5 );
 		}
@@ -123,7 +123,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private PostgreSqlTaskQueueInfo CreateTaskQueue ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueInfo( mInfoOptions,
-				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
+				new TaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private IQueuedTask ExpectedTopOfQueueTask

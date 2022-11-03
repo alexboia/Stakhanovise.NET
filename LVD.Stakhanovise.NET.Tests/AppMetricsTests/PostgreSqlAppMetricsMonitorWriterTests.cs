@@ -44,7 +44,7 @@ using Npgsql;
 using NpgsqlTypes;
 using NUnit.Framework;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 {
 	[TestFixture]
 	public class PostgreSqlAppMetricsMonitorWriterTests : BaseDbTests

@@ -36,7 +36,6 @@ using LVD.Stakhanovise.NET.Options;
 using Npgsql;
 using NpgsqlTypes;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
@@ -46,8 +45,6 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public class PostgreSqlTaskResultQueue : ITaskResultQueue, IAppMetricsProvider, IDisposable
 	{
-		private const int ProcessingBatchSize = 5;
-
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
 				.GetCurrentMethod()
@@ -55,21 +52,15 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public event EventHandler<TaskResultProcessedEventArgs> TaskResultProcessed;
 
-		private bool mIsDisposed = false;
-
 		private TaskQueueOptions mOptions;
 
-		private Task mResultProcessingTask;
-
-		private CancellationTokenSource mStopCoordinator;
-
-		private BlockingCollection<ResultQueueProcessingRequest> mResultProcessingQueue;
-
-		private StateController mStateController = new StateController();
+		private AsyncProcessingRequestBatchProcessor<ResultQueueProcessingRequest> mBatchProcessor;
 
 		private long mLastRequestId = 0;
 
 		private string mUpdateSql;
+
+		private bool mIsDisposed = false;
 
 		private AppMetricsCollection mMetrics = new AppMetricsCollection
 		(
@@ -87,6 +78,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				?? throw new ArgumentNullException( nameof( options ) );
 
 			mUpdateSql = BuildUpdateSql( options.Mapping );
+			mBatchProcessor = new AsyncProcessingRequestBatchProcessor<ResultQueueProcessingRequest>( ProcessRequestBatchAsync, mLogger );
 		}
 
 		private void CheckNotDisposedOrThrow()
@@ -163,7 +155,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				await conn.CloseAsync();
 		}
 
-		public Task PostResultAsync( IQueuedTaskResult result )
+		public async Task PostResultAsync( IQueuedTaskResult result )
 		{
 			CheckNotDisposedOrThrow();
 			CheckRunningOrThrow();
@@ -171,94 +163,34 @@ namespace LVD.Stakhanovise.NET.Queue
 			if ( result == null )
 				throw new ArgumentNullException( nameof( result ) );
 
-			long requestId = Interlocked.Increment( ref mLastRequestId );
-
 			ResultQueueProcessingRequest processRequest =
-				new ResultQueueProcessingRequest( requestId,
+				new ResultQueueProcessingRequest( GenerateRequestId(),
 					result,
 					timeoutMilliseconds: 0,
 					maxFailCount: 3 );
 
-			mResultProcessingQueue.Add( processRequest );
-			IncrementPostResultCount();
-
-			return Task.CompletedTask;
+			await mBatchProcessor.PostRequestAsync( processRequest );
 		}
 
-		private void OnTaskResultProcessed( IQueuedTaskResult result )
+		private long GenerateRequestId()
 		{
-			EventHandler<TaskResultProcessedEventArgs> eventHandler = TaskResultProcessed;
-			if ( eventHandler != null )
-				eventHandler( this, new TaskResultProcessedEventArgs( result ) );
+			return Interlocked.Increment( ref mLastRequestId );
 		}
 
-		private async Task RunProcessingLoopAsync()
+		public async Task StartAsync()
 		{
-			CancellationToken stopToken = mStopCoordinator
-				.Token;
+			CheckNotDisposedOrThrow();
 
-			while ( !stopToken.IsCancellationRequested )
-			{
-				try
-				{
-					await ProcessNextBatchOfRequestsAsync( stopToken );
-					stopToken.ThrowIfCancellationRequested();
-				}
-				catch ( OperationCanceledException )
-				{
-					mLogger.Debug( "Cancellation requested. Breaking result processing loop..." );
-					break;
-				}
-			}
-
-			await ProcessNextBatchOfRequestsAsync( stopToken );
+			if ( !mBatchProcessor.IsRunning )
+				await StartProcessingAsync();
+			else
+				mLogger.Debug( "Result queue is already started or in the process of starting." );
 		}
 
-		private async Task ProcessNextBatchOfRequestsAsync( CancellationToken stopToken )
+		private async Task StartProcessingAsync()
 		{
-			//We need to use a queue here - as we process the batch, 
-			//	we consume each element and, in case of an error 
-			//	that affects all of them, 
-			//	we would fail only the remaining ones, not the ones 
-			//	that have been successfully processed
-			AsyncProcessingRequestBatch<ResultQueueProcessingRequest> nextBatch = null;
-
-			try
-			{
-				nextBatch = ExtractNextBatchOfRequests( stopToken );
-				await ProcessRequestBatchAsync( nextBatch );
-			}
-			catch ( Exception exc )
-			{
-				//Add them back to processing queue to be retried
-				if ( nextBatch != null )
-				{
-					foreach ( ResultQueueProcessingRequest rq in nextBatch )
-					{
-						rq.SetFailed( exc );
-						if ( rq.CanBeRetried )
-							mResultProcessingQueue.Add( rq );
-					}
-				}
-
-				mLogger.Error( "Error processing results",
-					exc );
-			}
-			finally
-			{
-				nextBatch?.Clear();
-			}
-		}
-
-		private AsyncProcessingRequestBatch<ResultQueueProcessingRequest> ExtractNextBatchOfRequests( CancellationToken stopToken )
-		{
-			AsyncProcessingRequestBatch<ResultQueueProcessingRequest> nextBatch =
-				new AsyncProcessingRequestBatch<ResultQueueProcessingRequest>( ProcessingBatchSize );
-
-			nextBatch.FillFrom( mResultProcessingQueue,
-				stopToken );
-
-			return nextBatch;
+			await PrepConnectionPoolAsync( CancellationToken.None );
+			await mBatchProcessor.StartAsync();
 		}
 
 		private async Task ProcessRequestBatchAsync( AsyncProcessingRequestBatch<ResultQueueProcessingRequest> currentBatch )
@@ -348,6 +280,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 						IncrementResultWriteCount( MonotonicTimestamp
 							.Since( startWrite ) );
+
+						OnTaskResultProcessed( processRq
+							.ResultToUpdate );
 					}
 					catch ( OperationCanceledException )
 					{
@@ -358,7 +293,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					{
 						processRq.SetFailed( exc );
 						if ( processRq.CanBeRetried )
-							mResultProcessingQueue.Add( processRq );
+							await mBatchProcessor.PostRequestAsync( processRq );
 
 						mLogger.Error( "Error processing result", exc );
 					}
@@ -370,53 +305,37 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private string ConvertErrorInfoToJson( QueuedTaskError error )
 		{
-			return error.ToJson( mOptions.SerializerOptions.OnConfigureSerializerSettings );
+			return error.ToJson( mOptions
+				.SerializerOptions
+				.OnConfigureSerializerSettings );
 		}
 
-		private async Task StartProcessingAsync()
+		private void OnTaskResultProcessed( IQueuedTaskResult result )
 		{
-			await PrepConnectionPoolAsync( CancellationToken.None );
-
-			mStopCoordinator =
-				new CancellationTokenSource();
-			mResultProcessingQueue =
-				new BlockingCollection<ResultQueueProcessingRequest>();
-			mResultProcessingTask =
-				Task.Run( RunProcessingLoopAsync );
-		}
-
-		public async Task StartAsync()
-		{
-			CheckNotDisposedOrThrow();
-
-			if ( mStateController.IsStopped )
-				await mStateController.TryRequestStartAsync( StartProcessingAsync );
-			else
-				mLogger.Debug( "Result queue is already started or in the process of starting." );
-		}
-
-		private async Task StopProcessingAsync()
-		{
-			mResultProcessingQueue.CompleteAdding();
-			mStopCoordinator.Cancel();
-			await mResultProcessingTask;
-
-			mResultProcessingQueue.Dispose();
-			mStopCoordinator.Dispose();
-
-			mResultProcessingQueue = null;
-			mStopCoordinator = null;
-			mResultProcessingTask = null;
+			EventHandler<TaskResultProcessedEventArgs> eventHandler = TaskResultProcessed;
+			if ( eventHandler != null )
+				eventHandler( this, new TaskResultProcessedEventArgs( result ) );
 		}
 
 		public async Task StopAsync()
 		{
 			CheckNotDisposedOrThrow();
 
-			if ( mStateController.IsStarted )
-				await mStateController.TryRequestStopAsync( StopProcessingAsync );
+			if ( mBatchProcessor.IsRunning )
+				await StopProcessingAsync();
 			else
 				mLogger.Debug( "Result queue is already stopped or in the process of stopping." );
+		}
+
+		private async Task StopProcessingAsync()
+		{
+			await mBatchProcessor.StopAsync();
+		}
+
+		public void Dispose()
+		{
+			Dispose( true );
+			GC.SuppressFinalize( this );
 		}
 
 		protected virtual void Dispose( bool disposing )
@@ -426,17 +345,11 @@ namespace LVD.Stakhanovise.NET.Queue
 				if ( disposing )
 				{
 					StopAsync().Wait();
-					mStateController = null;
+					mBatchProcessor.Dispose();
 				}
 
 				mIsDisposed = true;
 			}
-		}
-
-		public void Dispose()
-		{
-			Dispose( true );
-			GC.SuppressFinalize( this );
 		}
 
 		public AppMetric QueryMetric( IAppMetricId metricId )
@@ -454,7 +367,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			get
 			{
 				CheckNotDisposedOrThrow();
-				return mStateController.IsStarted;
+				return mBatchProcessor.IsRunning;
 			}
 		}
 

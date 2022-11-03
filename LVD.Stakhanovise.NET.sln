@@ -65,7 +65,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Interf
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Tests.Harness", "LVD.Stakhanovise.NET.Tests.Harness\LVD.Stakhanovise.NET.Tests.Harness.csproj", "{1C613768-A338-445E-87AD-EB2C20E86470}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.Producer.Tests", "LVD.Stakhanovise.NET.Producer.Tests\LVD.Stakhanovise.NET.Producer.Tests.csproj", "{B12BE921-E185-4F3B-ACE6-D9DA67EB2773}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Producer.Tests", "LVD.Stakhanovise.NET.Producer.Tests\LVD.Stakhanovise.NET.Producer.Tests.csproj", "{B12BE921-E185-4F3B-ACE6-D9DA67EB2773}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.RedisResultQueueBackup", "LVD.Stakhanovise.NET.RedisResultQueueBackup\LVD.Stakhanovise.NET.RedisResultQueueBackup.csproj", "{52A5AFA8-E401-41C9-B2C4-39C0AB29DA31}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -159,6 +161,10 @@ Global
 		{B12BE921-E185-4F3B-ACE6-D9DA67EB2773}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B12BE921-E185-4F3B-ACE6-D9DA67EB2773}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B12BE921-E185-4F3B-ACE6-D9DA67EB2773}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52A5AFA8-E401-41C9-B2C4-39C0AB29DA31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52A5AFA8-E401-41C9-B2C4-39C0AB29DA31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52A5AFA8-E401-41C9-B2C4-39C0AB29DA31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52A5AFA8-E401-41C9-B2C4-39C0AB29DA31}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -184,6 +190,7 @@ Global
 		{A4383A49-3641-41C2-B57D-0408613D561A} = {D421F158-C698-4855-A89E-4821F2B2B41E}
 		{1C613768-A338-445E-87AD-EB2C20E86470} = {1F5D8110-B27C-44B4-9EB5-C6BA53B9E7C8}
 		{B12BE921-E185-4F3B-ACE6-D9DA67EB2773} = {1F5D8110-B27C-44B4-9EB5-C6BA53B9E7C8}
+		{52A5AFA8-E401-41C9-B2C4-39C0AB29DA31} = {EFF1F3C8-6AB0-4D5F-9D1C-92A4911250FC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7257DD3E-0CDA-4722-A635-469CB9494445}

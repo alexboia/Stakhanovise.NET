@@ -67,7 +67,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private PostgreSqlExecutionPerformanceMonitorWriterOptions mPostgreSqlExecutionPerformanceMonitorWriterOptions;
 
-		private PostgreSqlTaskQueueDbOperations mOperations;
+		private TaskQueueDbOperations mOperations;
 
 		public WorkingTests()
 		{
@@ -88,7 +88,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			mPostgreSqlExecutionPerformanceMonitorWriterOptions = TestOptions
 				.GetDefaultPostgreSqlExecutionPerformanceMonitorWriterOptions( CommonConnectionString );
 
-			mOperations = new PostgreSqlTaskQueueDbOperations( CommonConnectionString,
+			mOperations = new TaskQueueDbOperations( CommonConnectionString,
 				TestOptions.DefaultMapping );
 		}
 
@@ -374,7 +374,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				mTaskQueueConsumerOptions,
 				CreateTaskExecutorRegistry(),
 				CreateExecutionPeformanceMonitorWriter(),
-				new InMemoryResultQueueBackup(),
+				new InMemoryTaskResultQueueBackup(),
 				mTimestampProvider,
 				mTestProcessId );
 

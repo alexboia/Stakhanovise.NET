@@ -39,7 +39,7 @@ using Bogus;
 using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 {
 	[TestFixture]
 	public class AppMetricTests

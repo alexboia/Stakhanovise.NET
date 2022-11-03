@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020-2022, Boia Alexandru
+// Copyright (c) 2020, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -30,31 +30,27 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Queue;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Processor
+namespace LVD.Stakhanovise.NET.Tests.Support
 {
-	public class StandardExecutionPerformanceMonitorWriteRequest : AsyncProcessingRequest<int>
+	public class TaskQueueTimestampProvider : ITimestampProvider
 	{
-		public StandardExecutionPerformanceMonitorWriteRequest ( long requestId,
-			string payloadType,
-			long durationMilliseconds,
-			int timeoutMilliseconds,
-			int maxFailCount )
-			: base( requestId, timeoutMilliseconds, maxFailCount )
-		{
-			if ( string.IsNullOrEmpty( payloadType ) )
-				throw new ArgumentNullException( nameof( payloadType ) );
+		private Func<DateTimeOffset> mCurrentTimeProvider;
 
-			PayloadType = payloadType;
-			DurationMilliseconds = durationMilliseconds;
+		public TaskQueueTimestampProvider ( Func<DateTimeOffset> currentTimeProvider )
+		{
+			mCurrentTimeProvider = currentTimeProvider
+				?? throw new ArgumentNullException( nameof( currentTimeProvider ) );
 		}
 
-		public string PayloadType { get; private set; }
-
-		public long DurationMilliseconds { get; private set; }
+		public DateTimeOffset GetNow ()
+		{
+			return mCurrentTimeProvider.Invoke();
+		}
 	}
 }

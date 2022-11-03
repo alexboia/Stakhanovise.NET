@@ -58,9 +58,11 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		public IAppMetricsMonitor BuildMonitor( IAppMetricsMonitorWriter writer, string processId )
 		{
-			return new StandardAppMetricsMonitor( new AppMetricsMonitorOptions( mCollectionIntervalMilliseconds ),
-				writer: writer,
-				processId: processId );
+			AppMetricsMonitorOptions options = new AppMetricsMonitorOptions( processId,
+				mCollectionIntervalMilliseconds );
+
+			return new StandardAppMetricsMonitor( options, 
+				writer );
 		}
 	}
 }

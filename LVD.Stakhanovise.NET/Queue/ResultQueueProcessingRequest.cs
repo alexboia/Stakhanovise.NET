@@ -42,7 +42,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				int maxFailCount )
 			: base( requestId, timeoutMilliseconds, maxFailCount )
 		{
-			ResultToUpdate = resultToUpdate 
+			ResultToUpdate = resultToUpdate
 				?? throw new ArgumentNullException( nameof( resultToUpdate ) );
 		}
 

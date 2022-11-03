@@ -312,7 +312,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				new UtcNowTimestampProvider();
 
 			ITaskResultQueueBackup resultQueueBackup = mResultQueueBackup 
-				?? new InMemoryResultQueueBackup();
+				?? new InMemoryTaskResultQueueBackup();
 
 			TaskQueueConsumerOptions consumerOptions = mTaskQueueConsumerSetup
 				.BuildOptions();

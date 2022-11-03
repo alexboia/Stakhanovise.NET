@@ -52,14 +52,14 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 	{
 		private TaskQueueOptions mProducerOptions;
 
-		private PostgreSqlTaskQueueDataSource mDataSource;
+		private TaskQueueDataSource mDataSource;
 
 		public PostgreSqlTaskQueueProducerTests()
 		{
 			mProducerOptions = CommonTestOptions
 				.GetDefaultTaskQueueOptions( ConnectionString );
 
-			mDataSource = new PostgreSqlTaskQueueDataSource( mProducerOptions.ConnectionString,
+			mDataSource = new TaskQueueDataSource( mProducerOptions.ConnectionString,
 				mProducerOptions.Mapping,
 				queueFaultErrorThrehsoldCount: 5 );
 		}
@@ -225,7 +225,7 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 		private PostgreSqlTaskQueueProducer CreateTaskQueueProducer( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueProducer( mProducerOptions,
-				new TestTaskQueueTimestampProvider( currentTimeProvider ) );
+				new TaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 
 		private string NewTaskNotificationChannelName

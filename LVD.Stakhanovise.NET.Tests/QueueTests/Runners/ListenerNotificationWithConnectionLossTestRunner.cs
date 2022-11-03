@@ -8,7 +8,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 {
 	internal class ListenerNotificationWithConnectionLossTestRunner : BaseListenerTestRunner, IDisposable
 	{
-		private readonly PostgreSqlNotificationOperations mNotificationOperations;
+		private readonly DbNotificationOperations mNotificationOperations;
 
 		private readonly ManualResetEvent mMaximumReconnectReachedWaitHandle;
 
@@ -26,7 +26,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			int reconnectsCount )
 			: base( managementDbConnectionString )
 		{
-			mNotificationOperations = new PostgreSqlNotificationOperations( listenerDbConnectionString );
+			mNotificationOperations = new DbNotificationOperations( listenerDbConnectionString );
 			mMaximumReconnectReachedWaitHandle = new ManualResetEvent( false );
 			mNotificationChannelName = notificationChannelName;
 			mReconnectsCount = reconnectsCount;

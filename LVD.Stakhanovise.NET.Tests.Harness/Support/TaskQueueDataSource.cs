@@ -41,7 +41,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
-	public class PostgreSqlTaskQueueDataSource
+	public class TaskQueueDataSource
 	{
 		private string mConnectionString;
 
@@ -72,16 +72,16 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private DateTimeOffset mLastPostedAt;
 
-		private PostgreSqlTaskQueueDbOperations mOperations;
+		private TaskQueueDbOperations mOperations;
 
-		public PostgreSqlTaskQueueDataSource ( string connectionString,
+		public TaskQueueDataSource ( string connectionString,
 			QueuedTaskMapping mapping,
 			int queueFaultErrorThrehsoldCount )
 		{
 			mConnectionString = connectionString;
 			mMapping = mapping;
 			mQueueFaultErrorThrehsoldCount = queueFaultErrorThrehsoldCount;
-			mOperations = new PostgreSqlTaskQueueDbOperations( connectionString, mapping );
+			mOperations = new TaskQueueDbOperations( connectionString, mapping );
 		}
 
 		public int CountTasksOfTypeInQueue ( Type testType )

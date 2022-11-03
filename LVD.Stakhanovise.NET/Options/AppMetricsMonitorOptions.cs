@@ -37,15 +37,27 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class AppMetricsMonitorOptions
 	{
-		public AppMetricsMonitorOptions ( int collectionIntervalMilliseconds )
+		public AppMetricsMonitorOptions( string processId, int collectionIntervalMilliseconds )
 		{
+			if ( string.IsNullOrEmpty( processId ) )
+				throw new ArgumentNullException( nameof( processId ) );
+
 			if ( collectionIntervalMilliseconds < 1 )
 				throw new ArgumentOutOfRangeException( nameof( collectionIntervalMilliseconds ),
 					"The collection interval must be greater than 0" );
 
+			ProcessId = processId;
 			CollectionIntervalMilliseconds = collectionIntervalMilliseconds;
 		}
 
-		public int CollectionIntervalMilliseconds { get; private set; }
+		public string ProcessId
+		{
+			get; private set;
+		}
+
+		public int CollectionIntervalMilliseconds
+		{
+			get; private set;
+		}
 	}
 }

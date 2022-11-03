@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class InMemoryResultQueueBackup : ITaskResultQueueBackup
+	public class InMemoryTaskResultQueueBackup : ITaskResultQueueBackup
 	{
 		private readonly ConcurrentDictionary<Guid, IQueuedTaskResult> mStorage
 			= new ConcurrentDictionary<Guid, IQueuedTaskResult>();

@@ -44,12 +44,12 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 	{
 		private IQueuedTaskToken mPreviousTaskToken = null;
 
-		private PostgreSqlTaskQueueDataSource mDataSource = null;
+		private TaskQueueDataSource mDataSource = null;
 
 		private List<IQueuedTaskToken> mDequeuedTokens =
 			new List<IQueuedTaskToken>();
 
-		public ConsumedQueuedTaskTokenChecker( PostgreSqlTaskQueueDataSource dataSource)
+		public ConsumedQueuedTaskTokenChecker( TaskQueueDataSource dataSource)
 		{
 			mDataSource = dataSource;
 		}

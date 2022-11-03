@@ -40,7 +40,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 {
 	[TestFixture]
 	public class StandardExecutionPerformanceMonitorTests

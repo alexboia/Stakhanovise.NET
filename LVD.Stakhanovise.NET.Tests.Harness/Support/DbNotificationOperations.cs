@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
-	public class PostgreSqlNotificationOperations
+	public class DbNotificationOperations
 	{
 		private readonly string mConnectionString;
 
-		public PostgreSqlNotificationOperations( string connectionString )
+		public DbNotificationOperations( string connectionString )
 		{
 			mConnectionString = connectionString;
 		}

@@ -8,7 +8,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 {
 	public class ListenerNotificationWithoutConnectionLossTestRunner : BaseListenerTestRunner, IDisposable
 	{
-		private readonly PostgreSqlNotificationOperations mNotificationOperations;
+		private readonly DbNotificationOperations mNotificationOperations;
 
 		private readonly ManualResetEvent mNotificationReceivedWaitHandle;
 
@@ -26,7 +26,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			int notificationSendCount )
 			: base( managementDbConnectionString )
 		{
-			mNotificationOperations = new PostgreSqlNotificationOperations( listenerDbConnectionString );
+			mNotificationOperations = new DbNotificationOperations( listenerDbConnectionString );
 			mNotificationReceivedWaitHandle = new ManualResetEvent( false );
 			mNotificationChannelName = notificationChannelName;
 			mNotificationSendCount = notificationSendCount;
