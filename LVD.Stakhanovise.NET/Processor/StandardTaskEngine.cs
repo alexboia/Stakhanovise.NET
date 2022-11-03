@@ -110,7 +110,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mTaskQueueProducer = new PostgreSqlTaskQueueProducer( producerAndResultOptions,
 				timestampProvider );
 
-			mTaskResultQueue = CreateResultQueue( producerAndResultOptions, 
+			mTaskResultQueue = CreateResultQueue( producerAndResultOptions,
 				resultQueueBackup );
 
 			mTaskBuffer = CreateTaskbuffer( engineOptions );
@@ -126,7 +126,12 @@ namespace LVD.Stakhanovise.NET.Processor
 		private ITaskResultQueue CreateResultQueue( TaskQueueOptions producerAndResultOptions,
 			ITaskResultQueueBackup resultQueueBackup )
 		{
-			ITaskResultQueue resultQueue = new PostgreSqlTaskResultQueue( producerAndResultOptions );
+			ITaskResultQueueMetricsProvider metricsProvider =
+				new StandardTaskResultQueueMetricsProvider();
+
+			ITaskResultQueue resultQueue = new PostgreSqlTaskResultQueue( producerAndResultOptions,
+				metricsProvider );
+
 			if ( resultQueueBackup != null )
 				return new RedundantTaskResultQueue( resultQueue,
 					resultQueueBackup,

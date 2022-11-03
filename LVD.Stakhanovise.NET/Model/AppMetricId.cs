@@ -186,7 +186,8 @@ namespace LVD.Stakhanovise.NET.Model
 		/// </summary>
 		public static readonly AppMetricId ResultQueueMaximumResultWriteDuration =
 			new AppMetricId( "result-queue@maximum-result-write-duration",
-				valueCategory: "task-result-queue" );
+				valueCategory: "task-result-queue",
+				defaultValue: long.MinValue );
 
 		/// <summary>
 		/// The minimum time (measured in milliseconds) spent by the result queue 
@@ -194,7 +195,8 @@ namespace LVD.Stakhanovise.NET.Model
 		/// </summary>
 		public static readonly AppMetricId ResultQueueMinimumResultWriteDuration =
 			new AppMetricId( "result-queue@minimum-result-write-duration",
-				valueCategory: "task-result-queue" );
+				valueCategory: "task-result-queue",
+				defaultValue: long.MaxValue );
 
 		/// <summary>
 		/// The time time (measured in milliseconds) spent by the result queue 

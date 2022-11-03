@@ -52,30 +52,25 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public event EventHandler<TaskResultProcessedEventArgs> TaskResultProcessed;
 
-		private TaskQueueOptions mOptions;
+		private readonly TaskQueueOptions mOptions;
 
-		private AsyncProcessingRequestBatchProcessor<ResultQueueProcessingRequest> mBatchProcessor;
+		private readonly ITaskResultQueueMetricsProvider mMetricsProvider;
+
+		private readonly AsyncProcessingRequestBatchProcessor<ResultQueueProcessingRequest> mBatchProcessor;
+
+		private readonly string mUpdateSql;
 
 		private long mLastRequestId = 0;
 
-		private string mUpdateSql;
-
 		private bool mIsDisposed = false;
 
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
-		(
-			new AppMetric( AppMetricId.ResultQueueMinimumResultWriteDuration, long.MaxValue ),
-			new AppMetric( AppMetricId.ResultQueueMaximumResultWriteDuration, long.MinValue ),
-			new AppMetric( AppMetricId.ResultQueueResultPostCount, 0 ),
-			new AppMetric( AppMetricId.ResultQueueResultWriteCount, 0 ),
-			new AppMetric( AppMetricId.ResultQueueResultWriteRequestTimeoutCount, 0 ),
-			new AppMetric( AppMetricId.ResultQueueTotalResultWriteDuration, 0 )
-		);
-
-		public PostgreSqlTaskResultQueue( TaskQueueOptions options )
+		public PostgreSqlTaskResultQueue( TaskQueueOptions options,
+			ITaskResultQueueMetricsProvider metricsProvider )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
+			mMetricsProvider = metricsProvider
+				?? throw new ArgumentNullException( nameof( metricsProvider ) );
 
 			mUpdateSql = BuildUpdateSql( options.Mapping );
 			mBatchProcessor = new AsyncProcessingRequestBatchProcessor<ResultQueueProcessingRequest>( ProcessRequestBatchAsync, mLogger );
@@ -114,32 +109,12 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void IncrementPostResultCount()
 		{
-			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultPostCount,
-				m => m.Increment() );
+			mMetricsProvider.IncrementPostResultCount();
 		}
 
 		private void IncrementResultWriteCount( TimeSpan duration )
 		{
-			long durationMilliseconds = ( long ) Math.Ceiling( duration
-				.TotalMilliseconds );
-
-			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultWriteCount,
-				m => m.Increment() );
-
-			mMetrics.UpdateMetric( AppMetricId.ResultQueueTotalResultWriteDuration,
-				m => m.Add( durationMilliseconds ) );
-
-			mMetrics.UpdateMetric( AppMetricId.ResultQueueMinimumResultWriteDuration,
-				m => m.Min( durationMilliseconds ) );
-
-			mMetrics.UpdateMetric( AppMetricId.ResultQueueMaximumResultWriteDuration,
-				m => m.Max( durationMilliseconds ) );
-		}
-
-		private void IncrementResultWriteRequestTimeoutCount()
-		{
-			mMetrics.UpdateMetric( AppMetricId.ResultQueueResultWriteRequestTimeoutCount,
-				m => m.Increment() );
+			mMetricsProvider.IncrementResultWriteCount( duration );
 		}
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync( CancellationToken cancellationToken )
@@ -354,12 +329,12 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
-			return mMetrics.QueryMetric( metricId );
+			return mMetricsProvider.QueryMetric( metricId );
 		}
 
 		public IEnumerable<AppMetric> CollectMetrics()
 		{
-			return mMetrics.CollectMetrics();
+			return mMetricsProvider.CollectMetrics();
 		}
 
 		public bool IsRunning
@@ -375,7 +350,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			get
 			{
-				return mMetrics.ExportedMetrics;
+				return mMetricsProvider.ExportedMetrics;
 			}
 		}
 	}

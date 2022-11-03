@@ -178,7 +178,8 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 
 		private PostgreSqlTaskResultQueue CreateResultQueue()
 		{
-			return new PostgreSqlTaskResultQueue( mResultQueueOptions );
+			return new PostgreSqlTaskResultQueue( mResultQueueOptions,
+				new StandardTaskResultQueueMetricsProvider() );
 		}
 
 		private string ConnectionString

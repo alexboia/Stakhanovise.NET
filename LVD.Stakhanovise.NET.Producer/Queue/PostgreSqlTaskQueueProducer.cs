@@ -44,13 +44,13 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		private const int ImmediatePastSecondsInterval = 1;
 
-		private TaskQueueOptions mOptions;
+		private readonly TaskQueueOptions mOptions;
 
-		private string mInsertSql;
+		private readonly string mInsertSql;
 
-		private string mAddOrUpdateResultSql;
+		private readonly string mAddOrUpdateResultSql;
 
-		private ITimestampProvider mTimestampProvider;
+		private readonly ITimestampProvider mTimestampProvider;
 
 		public PostgreSqlTaskQueueProducer( TaskQueueOptions options, ITimestampProvider timestampProvider )
 		{

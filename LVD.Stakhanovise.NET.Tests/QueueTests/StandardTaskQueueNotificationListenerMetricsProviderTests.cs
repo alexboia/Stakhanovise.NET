@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
-using LVD.Stakhanovise.NET.Model;
-using NUnit.Framework;
-using System.Linq;
 using LVD.Stakhanovise.NET.Tests.Asserts;
+using NUnit.Framework;
 
 namespace LVD.Stakhanovise.NET.Tests.QueueTests
 {
