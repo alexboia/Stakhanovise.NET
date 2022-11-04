@@ -31,7 +31,9 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			}
 
 			batches.Add( appMetrics );
-			mWriteCountLock.Signal();
+
+			if ( !mWriteCountLock.IsSet )
+				mWriteCountLock.Signal();
 
 			return Task.FromResult( 1 );
 		}

@@ -14,10 +14,10 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 	public class StandardAppMetricsMonitorTests
 	{
 		[Test]
-		[TestCase( 1 )]
-		[TestCase( 10 )]
 		[TestCase( 100 )]
-		[TestCase( 1000 )]
+		[TestCase( 150 )]
+		[TestCase( 250 )]
+		[TestCase( 500 )]
 		[Repeat( 25 )]
 		public async Task Test_CanStartStop( int collectionIntervalMilliseconds )
 		{
@@ -40,9 +40,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			await monitor.StopAsync();
 			Assert.IsFalse( monitor.IsRunning );
 
-			bool writeCountEventOccurred = writer
-				.WaitForWriteCount( 1, collectionIntervalMilliseconds );
-
+			bool writeCountEventOccurred = writer.WaitForWriteCount( 1, collectionIntervalMilliseconds );
 			Assert.IsTrue( writeCountEventOccurred );
 
 			Assert.AreEqual( 1,
@@ -52,14 +50,14 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 		}
 
 		[Test]
-		[TestCase( 1, 1 )]
-		[TestCase( 1, 10 )]
 		[TestCase( 1, 100 )]
 		[TestCase( 1, 500 )]
-		[TestCase( 3, 1 )]
-		[TestCase( 3, 10 )]
+		[TestCase( 1, 1000 )]
+		[TestCase( 1, 1500 )]
 		[TestCase( 3, 100 )]
 		[TestCase( 3, 500 )]
+		[TestCase( 3, 1000 )]
+		[TestCase( 3, 1500 )]
 		[Repeat( 10 )]
 		public async Task Test_CanCollect( int stopAfterCycles, int collectionIntervalMilliseconds )
 		{
@@ -77,14 +75,17 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 					writer );
 
 			await monitor.StartAsync( metricsProvider );
-			writer.WaitForWriteCount();
+
+			bool writeCountEventOccurred = writer.WaitForWriteCount( stopAfterCycles, collectionIntervalMilliseconds );
+			Assert.IsTrue( writeCountEventOccurred );
+
 			writer.ResetWriteCountLock( 1 );
 			await monitor.StopAsync();
 
-			bool writeCountEventOccurred = writer.WaitForWriteCount( stopAfterCycles, 
+			bool lastWriteCountEventOccurred = writer.WaitForWriteCount( 1,
 				collectionIntervalMilliseconds );
-			
-			Assert.IsTrue( writeCountEventOccurred );
+
+			Assert.IsTrue( lastWriteCountEventOccurred );
 
 			Assert.AreEqual( stopAfterCycles + 1,
 				metricsProvider.CollectMetricsCallCount );
