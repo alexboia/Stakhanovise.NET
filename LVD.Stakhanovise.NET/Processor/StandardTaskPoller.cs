@@ -48,24 +48,23 @@ namespace LVD.Stakhanovise.NET.Processor
 				.GetCurrentMethod()
 				.DeclaringType );
 
-		private ITaskBuffer mQueuedTaskBuffer;
+		private readonly ITaskBuffer mQueuedTaskBuffer;
 
-		private ITaskQueueConsumer mTaskQueueConsumer;
+		private readonly ITaskQueueConsumer mTaskQueueConsumer;
 
-		private ITaskQueueProducer mTaskQueueProducer;
+		private readonly ITaskQueueProducer mTaskQueueProducer;
 
-		private string[] mRequiredPayloadTypes;
+		private readonly TaskProcessingOptions mOptions;
 
-		private TaskProcessingOptions mOptions;
+		private readonly ITaskPollerSynchronizationPolicy mSyncPolicy;
+
+		private string [] mRequiredPayloadTypes;
 
 		private Task mQueuedTaskPollingWorker;
 
-		private CancellationTokenSource mStopTokenSource;
+		private CancellationTokenSource mStopCoordinator;
 
-		private ITaskPollerSynchronizationPolicy mSyncPolicy;
-
-		private StateController mStateController
-			= new StateController();
+		private readonly StateController mStateController = new StateController();
 
 		private AppMetricsCollection mMetrics = new AppMetricsCollection
 		(
@@ -93,18 +92,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				mQueuedTaskBuffer );
 		}
 
-		private void CheckNotDisposedOrThrow()
-		{
-			if ( mIsDisposed )
-			{
-				throw new ObjectDisposedException(
-					nameof( StandardTaskPoller ),
-					"Cannot reuse a disposed task poller"
-				);
-			}
-		}
-
-		public async Task StartAsync( params string[] requiredPayloadTypes )
+		public async Task StartAsync( params string [] requiredPayloadTypes )
 		{
 			CheckNotDisposedOrThrow();
 
@@ -114,13 +102,13 @@ namespace LVD.Stakhanovise.NET.Processor
 				mLogger.Debug( "Task poller is already started. Nothing to be done." );
 		}
 
-		private async Task TryRequestStartAsync( string[] requiredPayloadTypes )
+		private async Task TryRequestStartAsync( string [] requiredPayloadTypes )
 		{
 			await mStateController.TryRequestStartAsync( async ()
 				=> await DoStartupSequenceAsync( requiredPayloadTypes ) );
 		}
 
-		private async Task DoStartupSequenceAsync( string[] requiredPayloadTypes )
+		private async Task DoStartupSequenceAsync( string [] requiredPayloadTypes )
 		{
 			mLogger.Debug( "Task poller is stopped. Starting..." );
 
@@ -132,10 +120,10 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Successfully started task poller." );
 		}
 
-		private void UsePayloadTypes( string[] requiredPayloadTypes )
+		private void UsePayloadTypes( string [] requiredPayloadTypes )
 		{
 			mRequiredPayloadTypes = requiredPayloadTypes
-				?? new string[ 0 ];
+				?? new string [ 0 ];
 		}
 
 		private void SetupTaskPollingSynchronization()
@@ -151,20 +139,18 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void StartTaskPolling()
 		{
-			mStopTokenSource = new CancellationTokenSource();
-			mQueuedTaskPollingWorker = Task.Run( async ()
-				=> await PollForQueuedTasksAsync() );
+			mStopCoordinator = new CancellationTokenSource();
+			mQueuedTaskPollingWorker = Task.Run( PollForQueuedTasksAsync );
 		}
 
 		private async Task PollForQueuedTasksAsync()
 		{
-			CancellationToken stopToken = mStopTokenSource.Token;
-			if ( stopToken.IsCancellationRequested )
-				return;
+			CancellationToken stopToken = mStopCoordinator
+				.Token;
 
 			try
 			{
-				while ( true )
+				while ( !stopToken.IsCancellationRequested )
 					await RunQueuedTaskPollingIterationAsync( stopToken );
 			}
 			catch ( OperationCanceledException )
@@ -289,8 +275,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task TryRequestStopAsync()
 		{
-			await mStateController.TryRequestStopAsync( async ()
-				=> await DoShutdownSequenceAsync() );
+			await mStateController.TryRequestStopAsync( DoShutdownSequenceAsync );
 		}
 
 		private async Task DoShutdownSequenceAsync()
@@ -311,7 +296,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void RequestTaskPollingCancellation()
 		{
-			mStopTokenSource.Cancel();
+			mStopCoordinator.Cancel();
 			mSyncPolicy.NotifyPollerStopRequested();
 		}
 
@@ -334,13 +319,19 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void CleanupTaskPolling()
 		{
 			mQueuedTaskPollingWorker = null;
-			mStopTokenSource.Dispose();
-			mStopTokenSource = null;
+			mStopCoordinator.Dispose();
+			mStopCoordinator = null;
 		}
 
 		private void ResetPayloadTypes()
 		{
 			mRequiredPayloadTypes = null;
+		}
+
+		public void Dispose()
+		{
+			Dispose( true );
+			GC.SuppressFinalize( this );
 		}
 
 		protected virtual void Dispose( bool disposing )
@@ -351,7 +342,6 @@ namespace LVD.Stakhanovise.NET.Processor
 				{
 					StopAync().Wait();
 					CleanupTaskPollingSynchronization();
-					ReleaseDependencies();
 				}
 
 				mIsDisposed = true;
@@ -365,17 +355,15 @@ namespace LVD.Stakhanovise.NET.Processor
 				syncPolicyAsDisposable.Dispose();
 		}
 
-		private void ReleaseDependencies()
+		private void CheckNotDisposedOrThrow()
 		{
-			mQueuedTaskBuffer = null;
-			mTaskQueueConsumer = null;
-			mStateController = null;
-		}
-
-		public void Dispose()
-		{
-			Dispose( true );
-			GC.SuppressFinalize( this );
+			if ( mIsDisposed )
+			{
+				throw new ObjectDisposedException(
+					nameof( StandardTaskPoller ),
+					"Cannot reuse a disposed task poller"
+				);
+			}
 		}
 
 		public AppMetric QueryMetric( IAppMetricId metricId )
