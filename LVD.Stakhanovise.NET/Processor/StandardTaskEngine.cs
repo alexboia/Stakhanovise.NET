@@ -113,12 +113,8 @@ namespace LVD.Stakhanovise.NET.Processor
 			mTaskResultQueue = CreateResultQueue( producerAndResultOptions,
 				resultQueueBackup );
 
-			mTaskBuffer = CreateTaskbuffer( engineOptions );
-
-			mTaskPoller = new StandardTaskPoller( engineOptions.TaskProcessingOptions,
-				mTaskQueueConsumer,
-				mTaskQueueProducer,
-				mTaskBuffer );
+			mTaskBuffer = CreateTaskBuffer( engineOptions );
+			mTaskPoller = CreateTaskPoller( engineOptions );
 
 			mOptions = engineOptions;
 		}
@@ -140,13 +136,25 @@ namespace LVD.Stakhanovise.NET.Processor
 				return resultQueue;
 		}
 
-		private StandardTaskBuffer CreateTaskbuffer( TaskEngineOptions engineOptions )
+		private ITaskBuffer CreateTaskBuffer( TaskEngineOptions engineOptions )
 		{
 			ITaskBufferMetricsProvider bufferMetricsProvider =
 				new StandardTaskBufferMetricsProvider();
 
 			return new StandardTaskBuffer( engineOptions.WorkerCount,
 				bufferMetricsProvider );
+		}
+
+		private ITaskPoller CreateTaskPoller( TaskEngineOptions engineOptions )
+		{
+			ITaskPollerMetricsProvider pollerMetricsProvider =
+				new StandardTaskPollerMetricsProvider();
+
+			return new StandardTaskPoller( engineOptions.TaskProcessingOptions,
+				mTaskQueueConsumer,
+				mTaskQueueProducer,
+				mTaskBuffer,
+				pollerMetricsProvider );
 		}
 
 		private void CheckDisposedOrThrow()

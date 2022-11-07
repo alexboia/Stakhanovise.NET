@@ -36,7 +36,7 @@ using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.Tests.PollerTests
 {
 	//TODO: make test scenarios with and without new task notification updates
 	[TestFixture]
@@ -65,7 +65,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueueConsumer,
 				taskQueueProducer,
-				taskBuffer ) )
+				taskBuffer,
+				new StandardTaskPollerMetricsProvider() ) )
 			{
 				await poller.StartAsync();
 
@@ -124,7 +125,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueueConsumer,
 				taskQueueProducer,
-				taskBuffer ) )
+				taskBuffer,
+				new StandardTaskPollerMetricsProvider() ) )
 			{
 				await poller.StartAsync();
 
@@ -162,7 +164,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueueConsumer,
 				taskQueueProducer,
-				taskBuffer ) )
+				taskBuffer,
+				new StandardTaskPollerMetricsProvider() ) )
 			{
 				await poller.StartAsync();
 				await Task.Delay( GenerateMilliseconDelayAmount() );
@@ -205,7 +208,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueueConsumer,
 				taskQueueProducer,
-				taskBuffer ) )
+				taskBuffer,
+				new StandardTaskPollerMetricsProvider() ) )
 			{
 				testTaskBufferFiller.FillBuffer();
 

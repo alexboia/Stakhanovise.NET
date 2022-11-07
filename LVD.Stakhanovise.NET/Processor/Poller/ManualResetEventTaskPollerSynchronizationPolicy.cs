@@ -20,26 +20,26 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private readonly ITaskBuffer mTaskBuffer;
 
+		private readonly ITaskPollerMetricsProvider mMetricsProvider;
+
 		private ManualResetEvent mWaitForClearToDequeue
 			= new ManualResetEvent( initialState: false );
 
 		private ManualResetEvent mWaitForClearToAddToBuffer
 			= new ManualResetEvent( initialState: false );
 
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
-		(
-			AppMetricId.PollerWaitForBufferSpaceCount,
-			AppMetricId.PollerWaitForDequeueCount
-		);
-
 		private bool mIsDisposed = false;
 
-		public ManualResetEventTaskPollerSynchronizationPolicy( ITaskQueueConsumer taskQueueConsumer, ITaskBuffer taskBuffer )
+		public ManualResetEventTaskPollerSynchronizationPolicy( ITaskQueueConsumer taskQueueConsumer,
+			ITaskBuffer taskBuffer,
+			ITaskPollerMetricsProvider metricsProvider )
 		{
 			mTaskQueueConsumer = taskQueueConsumer
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
 			mTaskBuffer = taskBuffer
 				?? throw new ArgumentNullException( nameof( taskBuffer ) );
+			mMetricsProvider = metricsProvider
+				?? throw new ArgumentNullException( nameof( metricsProvider ) );
 		}
 
 		public void NotifyPollerStarted()
@@ -94,8 +94,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mWaitForClearToAddToBuffer.Reset();
 			cancellationToken.ThrowIfCancellationRequested();
 
-			mMetrics.UpdateMetric( AppMetricId.PollerWaitForBufferSpaceCount,
-				m => m.Increment() );
+			mMetricsProvider.IncrementPollerWaitForBufferSpaceCount();
 
 			mWaitForClearToAddToBuffer
 				.WaitOne();
@@ -108,21 +107,10 @@ namespace LVD.Stakhanovise.NET.Processor
 			mWaitForClearToDequeue.Reset();
 			cancellationToken.ThrowIfCancellationRequested();
 
-			mMetrics.UpdateMetric( AppMetricId.PollerWaitForDequeueCount,
-				m => m.Increment() );
+			mMetricsProvider.IncrementPollerWaitForDequeueCount();
 
 			mWaitForClearToDequeue
 				.WaitOne();
-		}
-
-		public IEnumerable<AppMetric> CollectMetrics()
-		{
-			return mMetrics.CollectMetrics();
-		}
-
-		public AppMetric QueryMetric( IAppMetricId metricId )
-		{
-			return mMetrics.QueryMetric( metricId );
 		}
 
 		public void Reset()
@@ -165,8 +153,5 @@ namespace LVD.Stakhanovise.NET.Processor
 				);
 			}
 		}
-
-		public IEnumerable<IAppMetricId> ExportedMetrics
-			=> mMetrics.ExportedMetrics;
 	}
 }

@@ -58,6 +58,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private readonly ITaskPollerSynchronizationPolicy mSyncPolicy;
 
+		private readonly ITaskPollerMetricsProvider mMetricsProvider;
+
 		private string [] mRequiredPayloadTypes;
 
 		private Task mQueuedTaskPollingWorker;
@@ -66,18 +68,13 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private readonly StateController mStateController = new StateController();
 
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
-		(
-			AppMetricId.PollerDequeueCount,
-			AppMetricId.PollerReturnedTaskCount
-		);
-
 		private bool mIsDisposed = false;
 
 		public StandardTaskPoller( TaskProcessingOptions options,
 			ITaskQueueConsumer taskQueueConsumer,
 			ITaskQueueProducer taskQueueProducer,
-			ITaskBuffer taskBuffer )
+			ITaskBuffer taskBuffer,
+			ITaskPollerMetricsProvider metricsProvider )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
@@ -87,9 +84,12 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( taskQueueConsumer ) );
 			mTaskQueueProducer = taskQueueProducer
 				?? throw new ArgumentNullException( nameof( taskQueueProducer ) );
+			mMetricsProvider = metricsProvider
+				?? throw new ArgumentNullException( nameof( metricsProvider ) );
 
 			mSyncPolicy = new ManualResetEventTaskPollerSynchronizationPolicy( mTaskQueueConsumer,
-				mQueuedTaskBuffer );
+				mQueuedTaskBuffer,
+				mMetricsProvider );
 		}
 
 		public async Task StartAsync( params string [] requiredPayloadTypes )
@@ -207,8 +207,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void IncrementPollerDequeueCount()
 		{
-			mMetrics.UpdateMetric( AppMetricId.PollerDequeueCount,
-				m => m.Increment() );
+			mMetricsProvider.IncrementPollerDequeueCount();
 		}
 
 		private async Task ProcessDequeuedTaskAsync( IQueuedTaskToken dequeuedTaskToken, CancellationToken stopToken )
@@ -253,8 +252,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void IncrementPollerReturnedTaskCount()
 		{
-			mMetrics.UpdateMetric( AppMetricId.PollerReturnedTaskCount,
-				m => m.Increment() );
+			mMetricsProvider.IncrementPollerReturnedTaskCount();
 		}
 
 		private void WaitForClearToDequeue( CancellationToken stopToken )
@@ -368,15 +366,12 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
-			return AppMetricsCollection.JoinQueryMetric( metricId,
-				mMetrics,
-				mSyncPolicy );
+			return mMetricsProvider.QueryMetric( metricId );
 		}
 
 		public IEnumerable<AppMetric> CollectMetrics()
 		{
-			return AppMetricsCollection.JoinCollectMetrics( mMetrics,
-				mSyncPolicy );
+			return mMetricsProvider.CollectMetrics();
 		}
 
 		public bool IsStarted
@@ -401,8 +396,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			get
 			{
-				return AppMetricsCollection.JoinExportedMetrics( mMetrics,
-					mSyncPolicy );
+				return mMetricsProvider.ExportedMetrics;
 			}
 		}
 	}

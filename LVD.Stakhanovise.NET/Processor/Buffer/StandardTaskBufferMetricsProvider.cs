@@ -5,7 +5,7 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public class StandardTaskBufferMetricsProvider : ITaskBufferMetricsProvider
 	{
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
+		private readonly AppMetricsCollection mMetrics = new AppMetricsCollection
 		(
 			new AppMetric( AppMetricId.BufferMinCount, long.MaxValue ),
 			new AppMetric( AppMetricId.BufferMaxCount, long.MinValue ),

@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public interface ITaskPollerSynchronizationPolicy : IAppMetricsProvider
+	public interface ITaskPollerSynchronizationPolicy
 	{
 		void WaitForClearToDequeue( CancellationToken cancellationToken );
 
