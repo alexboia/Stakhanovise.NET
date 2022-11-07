@@ -8,9 +8,9 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		void WaitForClearToAddToBuffer( CancellationToken cancellationToken );
 
-		void NotifyPollerStarted();
+		void SignalPollerStarted();
 
-		void NotifyPollerStopRequested();
+		void SignalPollerStopRequested();
 
 		void Reset();
 	}

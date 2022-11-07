@@ -42,7 +42,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( metricsProvider ) );
 		}
 
-		public void NotifyPollerStarted()
+		public void SignalPollerStarted()
 		{
 			CheckNotDisposedOrThrow();
 
@@ -66,7 +66,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			mWaitForClearToDequeue.Set();
 		}
 
-		public void NotifyPollerStopRequested()
+		public void SignalPollerStopRequested()
 		{
 			CheckNotDisposedOrThrow();
 

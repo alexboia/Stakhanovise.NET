@@ -128,7 +128,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private void SetupTaskPollingSynchronization()
 		{
-			mSyncPolicy.NotifyPollerStarted();
+			mSyncPolicy.SignalPollerStarted();
 		}
 
 		private async Task SetupTaskQueueConsumerAsync()
@@ -295,7 +295,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		private void RequestTaskPollingCancellation()
 		{
 			mStopCoordinator.Cancel();
-			mSyncPolicy.NotifyPollerStopRequested();
+			mSyncPolicy.SignalPollerStopRequested();
 		}
 
 		private void ResetTaskPollingSynchronization()
