@@ -41,16 +41,17 @@ namespace LVD.Stakhanovise.NET.Queue
 	{
 		event EventHandler<ClearForDequeueEventArgs> ClearForDequeue;
 
-		Task StartReceivingNewTaskUpdatesAsync ();
+		Task StartReceivingNewTaskUpdatesAsync();
 
-		Task StopReceivingNewTaskUpdatesAsync ();
+		Task StopReceivingNewTaskUpdatesAsync();
 
-		Task<IQueuedTaskToken> DequeueAsync ( params string[] supportedTypes );
+		Task<IQueuedTaskToken> DequeueAsync( params string [] supportedTypes );
 
-		IQueuedTaskToken Dequeue ( params string[] supportedTypes );
+		IQueuedTaskToken Dequeue( params string [] supportedTypes );
 
-		bool IsReceivingNewTaskUpdates { get; }
-
-		ITimestampProvider TimestampProvider { get; }
+		bool IsReceivingNewTaskUpdates
+		{
+			get;
+		}
 	}
 }

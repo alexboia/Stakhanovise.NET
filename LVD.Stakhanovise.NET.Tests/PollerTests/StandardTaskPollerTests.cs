@@ -93,8 +93,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 
 		private MockTaskQueueConsumer CreateMockTaskQueuConsumer( int numberOfTasksToGenerate )
 		{
-			return new MockTaskQueueConsumer( numberOfTasksToGenerate,
-				new UtcNowTimestampProvider() );
+			return new MockTaskQueueConsumer( numberOfTasksToGenerate );
 		}
 
 		private MockTaskQueueProducer CreateMockTaskQueueProducer()

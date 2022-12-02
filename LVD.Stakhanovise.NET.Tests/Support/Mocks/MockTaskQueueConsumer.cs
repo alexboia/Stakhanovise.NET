@@ -47,10 +47,10 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private bool mIsReceivingNewTaskUpdates;
 
-		private Queue<IQueuedTaskToken> mProducedTasksBuffer =
+		private readonly Queue<IQueuedTaskToken> mProducedTasksBuffer =
 			new Queue<IQueuedTaskToken>();
 
-		private List<IQueuedTaskToken> mDequeuedTasksHistory =
+		private readonly List<IQueuedTaskToken> mDequeuedTasksHistory =
 			new List<IQueuedTaskToken>();
 
 		private Task<bool> mQueueDepletedHandle;
@@ -61,20 +61,16 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		private int mRemainingTaskCount;
 
-		private ITimestampProvider mTimeProvider;
-
 		private int mDequeueCallCount = 0;
 
 		private int mActuallyDequeuedElementsCount = 0;
 
-		public MockTaskQueueConsumer( int numberOfTasksToGenerate, ITimestampProvider timeProvider )
+		public MockTaskQueueConsumer( int numberOfTasksToGenerate )
 		{
 			//TODO: also add task type
 			mQueueDepletedTaskCompletionSource = new TaskCompletionSource<bool>();
 			mQueueDepletedHandle = mQueueDepletedTaskCompletionSource.Task;
-
 			mRemainingTaskCount = numberOfTasksToGenerate;
-			mTimeProvider = timeProvider;
 		}
 
 		private void NotifyClearToDequeue()
@@ -214,9 +210,6 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mProducedTasksBuffer.Clear();
 			mDequeuedTasksHistory.Clear();
 		}
-
-		public ITimestampProvider TimestampProvider
-			=> mTimeProvider;
 
 		public List<IQueuedTaskToken> DequeuedTasksHistory
 			=> mDequeuedTasksHistory;

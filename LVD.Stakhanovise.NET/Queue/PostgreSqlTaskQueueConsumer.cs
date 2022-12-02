@@ -141,13 +141,6 @@ namespace LVD.Stakhanovise.NET.Queue
 				.ListenerTimedOut );
 		}
 
-		private void CheckNotDisposedOrThrow()
-		{
-			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( PostgreSqlTaskQueueConsumer ),
-					"Cannot reuse a disposed postgre sql task queue consumer" );
-		}
-
 		private string BuildTaskDequeueSql( QueuedTaskMapping mapping )
 		{
 			//See https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
@@ -368,6 +361,17 @@ namespace LVD.Stakhanovise.NET.Queue
 			GC.SuppressFinalize( this );
 		}
 
+		private void CheckNotDisposedOrThrow()
+		{
+			if ( mIsDisposed )
+			{
+				throw new ObjectDisposedException(
+					nameof( PostgreSqlTaskQueueConsumer ),
+					"Cannot reuse a disposed postgre sql task queue consumer"
+				);
+			}
+		}
+
 		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
 			return AppMetricsCollection.JoinQueryMetric( metricId,
@@ -387,15 +391,6 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				CheckNotDisposedOrThrow();
 				return mNotificationListener.IsStarted;
-			}
-		}
-
-		public ITimestampProvider TimestampProvider
-		{
-			get
-			{
-				CheckNotDisposedOrThrow();
-				return mTimestampProvider;
 			}
 		}
 

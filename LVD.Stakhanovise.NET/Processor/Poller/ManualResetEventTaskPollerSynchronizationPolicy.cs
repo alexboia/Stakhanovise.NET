@@ -1,10 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Logging;
-using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
 using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 
 namespace LVD.Stakhanovise.NET.Processor
