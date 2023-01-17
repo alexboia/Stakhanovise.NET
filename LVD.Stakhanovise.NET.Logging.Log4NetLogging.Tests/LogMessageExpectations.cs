@@ -7,26 +7,26 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 {
 	public class LogMessageExpectations
 	{
-		public static LogMessageExpectations GenerateWithMessageOnly ( bool formattedMessage )
+		public static LogMessageExpectations GenerateWithMessageOnly( bool formattedMessage )
 		{
 			return formattedMessage
 				? GenerateLogMessageExpectationsWithFormattedMessage()
 				: GenerateLogMessageExpectationsWithRegularMessage();
 		}
 
-		public static LogMessageExpectations GenerateWithException ( bool formattedMessage )
+		public static LogMessageExpectations GenerateWithException( bool formattedMessage )
 		{
 			Faker faker = new Faker();
-			LogMessageExpectations props = 
+			LogMessageExpectations props =
 				GenerateWithMessageOnly( formattedMessage );
 
 			props.ExpectedException = faker.System
 				.Exception();
-			
+
 			return props;
 		}
 
-		private static LogMessageExpectations GenerateLogMessageExpectationsWithFormattedMessage ()
+		private static LogMessageExpectations GenerateLogMessageExpectationsWithFormattedMessage()
 		{
 			Faker faker = new Faker();
 			LogMessageExpectations props = new LogMessageExpectations();
@@ -34,7 +34,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			int placeholderCount = faker.Random.Int( 0, 10 );
 			if ( placeholderCount > 0 )
 			{
-				string[] words = faker.Lorem.Random
+				string [] words = faker.Lorem.Random
 					.WordsArray( placeholderCount + 1 );
 
 				props.ExpectedMessage =
@@ -52,7 +52,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			return props;
 		}
 
-		private static LogMessageExpectations GenerateLogMessageExpectationsWithRegularMessage ()
+		private static LogMessageExpectations GenerateLogMessageExpectationsWithRegularMessage()
 		{
 			Faker faker = new Faker();
 			return new LogMessageExpectations()
@@ -62,12 +62,12 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		private static string GenerateLogMessageFormat ( string[] words )
+		private static string GenerateLogMessageFormat( string [] words )
 		{
 			string messageFormat = string.Empty;
 			for ( int i = 0; i < words.Length; i++ )
 			{
-				messageFormat += words[ i ];
+				messageFormat += words [ i ];
 				if ( i < words.Length - 1 )
 					messageFormat += $" {i + 1} ";
 			}
@@ -75,12 +75,21 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			return messageFormat;
 		}
 
-		public string ExpectedMessage { get; set; }
+		public string ExpectedMessage
+		{
+			get; set;
+		}
 
-		public string[] ExpectedMessageArgs { get; set; }
+		public string [] ExpectedMessageArgs
+		{
+			get; set;
+		}
 
-		public Exception ExpectedException { get; set; }
+		public Exception ExpectedException
+		{
+			get; set;
+		}
 
-		public static string[] NoMessageArgs => new string[ 0 ];
+		public static string [] NoMessageArgs => new string [ 0 ];
 	}
 }
