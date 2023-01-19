@@ -20,6 +20,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mInnerTaskBuffer.QueuedTaskRetrieved += HandleInnerBufferTaskRetrieved;
 		}
 
+		public void BeginAdding()
+		{
+			mInnerTaskBuffer.BeginAdding();
+		}
+
 		private void HandleInnerBufferTaskRetrieved( object sender, EventArgs e )
 		{
 			NotifyTaskRetrieved();

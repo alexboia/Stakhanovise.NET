@@ -30,11 +30,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using Bogus;
+using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
-using System;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.PollerTests
@@ -52,7 +52,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 		private const int MaxTaskBufferCapacity = 100;
 
 		[Test]
-		[Repeat( 5 )]
+		[Repeat( 10 )]
 		public async Task Test_CanStartStop()
 		{
 			TaskProcessingOptions processingOpts =
@@ -67,7 +67,8 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				taskQueueConsumer,
 				taskQueueProducer,
 				taskBuffer,
-				new StandardTaskPollerMetricsProvider() ) )
+				new StandardTaskPollerMetricsProvider(),
+				CreateLogger() ) )
 			{
 				await poller.StartAsync();
 
@@ -78,6 +79,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 
 				Assert.IsFalse( poller.IsStarted );
 				Assert.IsFalse( taskQueueConsumer.IsReceivingNewTaskUpdates );
+				Assert.IsFalse( taskBuffer.IsCompleted );
 			}
 		}
 
@@ -110,7 +112,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 		[TestCase( 10, 1500 )]
 		[TestCase( 150, 150 )]
 		[TestCase( 10, 1 )]
-		[Repeat( 5 )]
+		[Repeat( 10 )]
 		public async Task Test_CanPoll( int bufferCapacity, int numberOfTasks )
 		{
 			TaskProcessingOptions processingOpts =
@@ -126,7 +128,8 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				taskQueueConsumer,
 				taskQueueProducer,
 				taskBuffer,
-				new StandardTaskPollerMetricsProvider() ) )
+				new StandardTaskPollerMetricsProvider(),
+				CreateLogger() ) )
 			{
 				await poller.StartAsync();
 
@@ -134,6 +137,8 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				taskQueueConsumer.WaitForQueueToBeDepleted();
 
 				await poller.StopAync();
+				taskBuffer.CompleteAdding();
+
 				testTaskBufferConsumer.WaitForBufferToBeConsumed();
 
 				Assert.IsFalse( taskBuffer.HasTasks );
@@ -150,7 +155,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 		[TestCase( 1 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
-		[Repeat( 5 )]
+		[Repeat( 10 )]
 		public async Task Test_TryPoll_NoTaskInQueue_ThenShutdown( int bufferCapacity )
 		{
 			TaskProcessingOptions processingOpts =
@@ -165,7 +170,8 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				taskQueueConsumer,
 				taskQueueProducer,
 				taskBuffer,
-				new StandardTaskPollerMetricsProvider() ) )
+				new StandardTaskPollerMetricsProvider(),
+				CreateLogger() ) )
 			{
 				await poller.StartAsync();
 				await Task.Delay( GenerateMilliseconDelayAmount() );
@@ -193,7 +199,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 		[TestCase( 10, 1500 )]
 		[TestCase( 150, 150 )]
 		[TestCase( 10, 1 )]
-		[Repeat( 5 )]
+		[Repeat( 10 )]
 		public async Task Test_TryPoll_FullBuffer_ThenShutdown( int bufferCapacity, int numberOfTasks )
 		{
 			TaskProcessingOptions processingOpts =
@@ -209,7 +215,8 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				taskQueueConsumer,
 				taskQueueProducer,
 				taskBuffer,
-				new StandardTaskPollerMetricsProvider() ) )
+				new StandardTaskPollerMetricsProvider(),
+				CreateLogger() ) )
 			{
 				testTaskBufferFiller.FillBuffer();
 
@@ -243,6 +250,11 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 		{
 			Faker faker = new Faker();
 			return faker.Random.Int( 1, 10 );
+		}
+
+		private IStakhanoviseLogger CreateLogger()
+		{
+			return NoOpLogger.Instance;
 		}
 	}
 }

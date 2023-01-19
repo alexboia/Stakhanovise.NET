@@ -43,11 +43,6 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public class StandardTaskPoller : ITaskPoller, IAppMetricsProvider
 	{
-		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
-			.GetLogger( MethodBase
-				.GetCurrentMethod()
-				.DeclaringType );
-
 		private readonly ITaskBuffer mQueuedTaskBuffer;
 
 		private readonly ITaskQueueConsumer mTaskQueueConsumer;
@@ -59,6 +54,8 @@ namespace LVD.Stakhanovise.NET.Processor
 		private readonly ITaskPollerSynchronizationPolicy mSyncPolicy;
 
 		private readonly ITaskPollerMetricsProvider mMetricsProvider;
+
+		private readonly IStakhanoviseLogger mLogger;
 
 		private string [] mRequiredPayloadTypes;
 
@@ -74,7 +71,8 @@ namespace LVD.Stakhanovise.NET.Processor
 			ITaskQueueConsumer taskQueueConsumer,
 			ITaskQueueProducer taskQueueProducer,
 			ITaskBuffer taskBuffer,
-			ITaskPollerMetricsProvider metricsProvider )
+			ITaskPollerMetricsProvider metricsProvider,
+			IStakhanoviseLogger logger )
 		{
 			mOptions = options
 				?? throw new ArgumentNullException( nameof( options ) );
@@ -86,6 +84,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( taskQueueProducer ) );
 			mMetricsProvider = metricsProvider
 				?? throw new ArgumentNullException( nameof( metricsProvider ) );
+			mLogger = logger
+				?? throw new ArgumentNullException( nameof( logger ) );
 
 			mSyncPolicy = new ManualResetEventTaskPollerSynchronizationPolicy( mTaskQueueConsumer,
 				mQueuedTaskBuffer,
@@ -157,10 +157,17 @@ namespace LVD.Stakhanovise.NET.Processor
 			{
 				mLogger.Debug( "Stop requested. Polling loop has ended." );
 			}
-			finally
+			catch ( Exception exc )
 			{
-				mQueuedTaskBuffer.CompleteAdding();
+				mLogger.Error( "Error running task poller loop. Attempting to restart loop.", exc );
+				await RestartTaskPollingAsync();
 			}
+		}
+
+		private async Task RestartTaskPollingAsync()
+		{
+			await StopAync();
+			await StartAsync();
 		}
 
 		private async Task RunQueuedTaskPollingIterationAsync( CancellationToken stopToken )

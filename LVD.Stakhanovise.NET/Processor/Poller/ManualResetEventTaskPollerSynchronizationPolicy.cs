@@ -8,6 +8,8 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public class ManualResetEventTaskPollerSynchronizationPolicy : ITaskPollerSynchronizationPolicy, IDisposable
 	{
+		private const int MillisecondWaitInterval = 25;
+
 		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
 			.GetLogger( MethodBase
 				.GetCurrentMethod()
@@ -91,8 +93,18 @@ namespace LVD.Stakhanovise.NET.Processor
 			mWaitForClearToAddToBuffer.Reset();
 			cancellationToken.ThrowIfCancellationRequested();
 
-			mMetricsProvider.IncrementPollerWaitForBufferSpaceCount();
-			mWaitForClearToAddToBuffer.WaitOne();
+			if ( mTaskBuffer.IsFull )
+			{
+				mMetricsProvider.IncrementPollerWaitForBufferSpaceCount();
+				while ( true )
+				{
+					bool signaled = mWaitForClearToAddToBuffer.WaitOne( MillisecondWaitInterval );
+					cancellationToken.ThrowIfCancellationRequested();
+
+					if ( signaled || !mTaskBuffer.IsFull )
+						break;
+				}
+			}
 		}
 
 		public void WaitForClearToDequeue( CancellationToken cancellationToken )
@@ -103,7 +115,14 @@ namespace LVD.Stakhanovise.NET.Processor
 			cancellationToken.ThrowIfCancellationRequested();
 
 			mMetricsProvider.IncrementPollerWaitForDequeueCount();
-			mWaitForClearToDequeue.WaitOne();
+			while ( true )
+			{
+				bool signaled = mWaitForClearToDequeue.WaitOne( MillisecondWaitInterval );
+				cancellationToken.ThrowIfCancellationRequested();
+
+				if ( signaled )
+					break;
+			}
 		}
 
 		public void Reset()

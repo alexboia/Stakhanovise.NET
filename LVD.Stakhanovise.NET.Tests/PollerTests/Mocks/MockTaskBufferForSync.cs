@@ -17,6 +17,22 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests.Mocks
 
 		private Queue<IQueuedTaskToken> mQueuedTasks = new Queue<IQueuedTaskToken>();
 
+		public MockTaskBufferForSync()
+			: this( 1 )
+		{
+			return;
+		}
+
+		public MockTaskBufferForSync( int capacity )
+		{
+			mCapacity = capacity;
+		}
+
+		public void BeginAdding()
+		{
+			mCompleted = false;
+		}
+
 		public void CompleteAdding()
 		{
 			mCompleted = true;
@@ -64,16 +80,16 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests.Mocks
 			return;
 		}
 
-		private int GetInvocationList( EventHandler handler )
+		private int GetInvocationListCount( EventHandler handler )
 		{
 			return handler != null
 				? handler.GetInvocationList().Length
 				: 0;
 		}
 
-		public int QueuedTaskAddedCount => GetInvocationList( QueuedTaskAdded );
+		public int QueuedTaskAddedHandlerCount => GetInvocationListCount( QueuedTaskAdded );
 
-		public int QueuedTaskRetrievedCount => GetInvocationList( QueuedTaskRetrieved );
+		public int QueuedTaskRetrievedHandlerCount => GetInvocationListCount( QueuedTaskRetrieved );
 
 		public bool HasTasks => Count > 0;
 

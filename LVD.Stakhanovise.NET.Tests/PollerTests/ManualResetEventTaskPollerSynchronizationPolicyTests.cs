@@ -30,8 +30,8 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				metricsProviderMock.Object ) )
 			{
 				policy.SignalPollerStarted();
-				Assert.AreEqual( 1, bufferMock.QueuedTaskRetrievedCount );
-				Assert.AreEqual( 0, bufferMock.QueuedTaskAddedCount );
+				Assert.AreEqual( 1, bufferMock.QueuedTaskRetrievedHandlerCount );
+				Assert.AreEqual( 0, bufferMock.QueuedTaskAddedHandlerCount );
 
 				Assert.AreEqual( 1, consumerMock.ClearForDequeueCount );
 			}
@@ -210,7 +210,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 		[Repeat( 10 )]
 		public void Test_WaitForClearToDequeue_WhenStopSignaled_WithoutCancellation( int millisecondsDelay )
 		{
-			RunWaitForClearToDequeueTests( millisecondsDelay, 
+			RunWaitForClearToDequeueTests( millisecondsDelay,
 				( buffer, consumer, policy ) => policy.SignalPollerStopRequested() );
 		}
 
@@ -236,8 +236,8 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				policy.SignalPollerStarted();
 
 				Task.Delay( millisecondsDelay )
-					.ContinueWith( ( prev ) => trigger.Invoke( bufferMock, 
-						consumerMock, 
+					.ContinueWith( ( prev ) => trigger.Invoke( bufferMock,
+						consumerMock,
 						policy ) );
 
 				stopWaitingTokenSource
@@ -307,8 +307,8 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				policy.SignalPollerStarted();
 				policy.SignalPollerStopRequested();
 
-				Assert.AreEqual( 0, bufferMock.QueuedTaskRetrievedCount );
-				Assert.AreEqual( 0, bufferMock.QueuedTaskAddedCount );
+				Assert.AreEqual( 0, bufferMock.QueuedTaskRetrievedHandlerCount );
+				Assert.AreEqual( 0, bufferMock.QueuedTaskAddedHandlerCount );
 				Assert.AreEqual( 0, consumerMock.ClearForDequeueCount );
 			}
 

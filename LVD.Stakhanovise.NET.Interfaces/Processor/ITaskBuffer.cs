@@ -45,6 +45,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		IQueuedTaskToken TryGetNextTask ();
 
+		void BeginAdding();
+
 		bool TryAddNewTask ( IQueuedTaskToken task );
 
 		void CompleteAdding ();

@@ -47,7 +47,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private readonly ITaskBufferMetricsProvider mMetricsProvider;
 
-		private readonly BlockingCollection<IQueuedTaskToken> mInnerBuffer;
+		private BlockingCollection<IQueuedTaskToken> mInnerBuffer;
 
 		private bool mIsDisposed = false;
 
@@ -64,6 +64,13 @@ namespace LVD.Stakhanovise.NET.Processor
 			mMetricsProvider = metricsProvider;
 		}
 
+		public void BeginAdding()
+		{
+			CheckDisposedOrThrow();
+			if ( mInnerBuffer.IsAddingCompleted )
+				mInnerBuffer = new BlockingCollection<IQueuedTaskToken>();
+		}
+
 		private void CheckDisposedOrThrow()
 		{
 			if ( mIsDisposed )
@@ -73,35 +80,6 @@ namespace LVD.Stakhanovise.NET.Processor
 					"Cannot reuse a disposed task buffer"
 				);
 			}
-		}
-
-		private void IncrementTimesFilled()
-		{
-			mMetricsProvider.IncrementTimesFilled();
-		}
-
-		private void IncrementTimesEmptied()
-		{
-			mMetricsProvider.IncrementTimesEmptied();
-		}
-
-		private void UpdateBufferCountStats( int newCount )
-		{
-			mMetricsProvider.UpdateBufferCountStats( newCount );
-		}
-
-		private void NotifyQueuedTaskRetrieved()
-		{
-			EventHandler itemRetrievedHandler = QueuedTaskRetrieved;
-			if ( itemRetrievedHandler != null )
-				itemRetrievedHandler.Invoke( this, EventArgs.Empty );
-		}
-
-		private void NotifyQueuedTaskAdded()
-		{
-			EventHandler itemAddedHandler = QueuedTaskAdded;
-			if ( itemAddedHandler != null )
-				itemAddedHandler.Invoke( this, EventArgs.Empty );
 		}
 
 		public bool TryAddNewTask( IQueuedTaskToken task )
@@ -127,6 +105,13 @@ namespace LVD.Stakhanovise.NET.Processor
 			return isAdded;
 		}
 
+		private void NotifyQueuedTaskAdded()
+		{
+			EventHandler itemAddedHandler = QueuedTaskAdded;
+			if ( itemAddedHandler != null )
+				itemAddedHandler.Invoke( this, EventArgs.Empty );
+		}
+
 		private void UpdateOnBufferItemAdd( int newCount, bool wasFull )
 		{
 			bool isFull = ( newCount == mCapacity );
@@ -134,6 +119,21 @@ namespace LVD.Stakhanovise.NET.Processor
 			UpdateBufferCountStats( newCount );
 			if ( !wasFull && isFull )
 				IncrementTimesFilled();
+		}
+
+		private void UpdateBufferCountStats( int newCount )
+		{
+			mMetricsProvider.UpdateBufferCountStats( newCount );
+		}
+
+		private void IncrementTimesFilled()
+		{
+			mMetricsProvider.IncrementTimesFilled();
+		}
+
+		private void IncrementTimesEmptied()
+		{
+			mMetricsProvider.IncrementTimesEmptied();
 		}
 
 		public IQueuedTaskToken TryGetNextTask()
@@ -153,6 +153,13 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 
 			return newTaskToken;
+		}
+
+		private void NotifyQueuedTaskRetrieved()
+		{
+			EventHandler itemRetrievedHandler = QueuedTaskRetrieved;
+			if ( itemRetrievedHandler != null )
+				itemRetrievedHandler.Invoke( this, EventArgs.Empty );
 		}
 
 		private void UpdateOnBufferItemRemove( int newCount, bool wasEmpty )

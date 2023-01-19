@@ -154,7 +154,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				mTaskQueueConsumer,
 				mTaskQueueProducer,
 				mTaskBuffer,
-				pollerMetricsProvider );
+				pollerMetricsProvider,
+				CreateLogger<ITaskPoller>() );
 		}
 
 		private void CheckDisposedOrThrow()
@@ -270,6 +271,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task StartPollerAsync( string [] requiredPayloadTypes )
 		{
+			mTaskBuffer.BeginAdding();
 			mLogger.Debug( "Attempting to start the task poller..." );
 			await mTaskPoller.StartAsync( requiredPayloadTypes );
 			mLogger.Debug( "The task poller has been successfully started. Attempting to start workers." );
@@ -277,9 +279,16 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task StopPollerAsync()
 		{
-			mLogger.Debug( "Attempting to stop the task poller." );
-			await mTaskPoller.StopAync();
-			mLogger.Debug( "The task poller has been successfully stopped. Attempting to stop workers." );
+			try
+			{
+				mLogger.Debug( "Attempting to stop the task poller." );
+				await mTaskPoller.StopAync();
+				mLogger.Debug( "The task poller has been successfully stopped. Attempting to stop workers." );
+			}
+			finally
+			{
+				mTaskBuffer.CompleteAdding();
+			}
 		}
 
 		private async Task StartWorkersAsync()
