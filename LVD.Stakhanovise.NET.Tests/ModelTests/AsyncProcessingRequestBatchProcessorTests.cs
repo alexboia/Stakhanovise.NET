@@ -226,6 +226,8 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 			return Task.CompletedTask;
 		}
 
+		//Test 3 - Stop without waiting for all the requests to be processed
+
 		private IStakhanoviseLogger CreateLogger()
 		{
 			return NoOpLogger.Instance;
