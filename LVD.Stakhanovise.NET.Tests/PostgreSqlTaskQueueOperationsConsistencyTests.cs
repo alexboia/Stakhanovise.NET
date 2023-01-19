@@ -320,6 +320,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private PostgreSqlTaskQueueConsumer CreateTaskQueueConsumer ( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueConsumer( mConsumerOptions,
+				new StandardTaskQueueConsumerMetricsProvider(),
 				new TaskQueueTimestampProvider( currentTimeProvider ) );
 		}
 

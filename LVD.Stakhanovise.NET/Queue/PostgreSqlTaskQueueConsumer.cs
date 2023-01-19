@@ -60,28 +60,29 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private readonly string mTaskResultUpdateSql;
 
+		private readonly ITaskQueueConsumerMetricsProvider mMetricsProvider;
+
 		private readonly ITimestampProvider mTimestampProvider;
 
 		private PostgreSqlTaskQueueNotificationListener mNotificationListener;
 
 		private bool mIsDisposed;
 
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
-		(
-			new AppMetric( AppMetricId.QueueConsumerDequeueCount, 0 ),
-			new AppMetric( AppMetricId.QueueConsumerMaximumDequeueDuration, long.MinValue ),
-			new AppMetric( AppMetricId.QueueConsumerMinimumDequeueDuration, long.MaxValue ),
-			new AppMetric( AppMetricId.QueueConsumerTotalDequeueDuration, 0 )
-		);
-
-		public PostgreSqlTaskQueueConsumer( TaskQueueConsumerOptions options, ITimestampProvider timestampProvider )
+		public PostgreSqlTaskQueueConsumer( TaskQueueConsumerOptions options,
+			ITaskQueueConsumerMetricsProvider metricsProvider,
+			ITimestampProvider timestampProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
+
 			if ( timestampProvider == null )
 				throw new ArgumentNullException( nameof( timestampProvider ) );
 
+			if ( metricsProvider == null )
+				throw new ArgumentNullException( nameof( metricsProvider ) );
+
 			mOptions = options;
+			mMetricsProvider = metricsProvider;
 			mTimestampProvider = timestampProvider;
 
 			mTaskDequeueSql = BuildTaskDequeueSql( options.Mapping );
@@ -93,12 +94,12 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void SetupNotificationListener( TaskQueueConsumerOptions options )
 		{
-			ITaskQueueNotificationListenerMetricsProvider metricsProvider = 
+			ITaskQueueNotificationListenerMetricsProvider metricsProvider =
 				new StandardTaskQueueNotificationListenerMetricsProvider();
 
-			mNotificationListener = 
-				new PostgreSqlTaskQueueNotificationListener( options.DeriveListenerOptions(), 
-					metricsProvider, 
+			mNotificationListener =
+				new PostgreSqlTaskQueueNotificationListener( options.DeriveListenerOptions(),
+					metricsProvider,
 					mLogger );
 
 			mNotificationListener.ListenerConnectionRestored +=
@@ -165,20 +166,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void IncrementDequeueCount( TimeSpan duration )
 		{
-			long durationMilliseconds = ( long ) Math.Ceiling( duration
-				.TotalMilliseconds );
-
-			mMetrics.UpdateMetric( AppMetricId.QueueConsumerDequeueCount,
-				m => m.Increment() );
-
-			mMetrics.UpdateMetric( AppMetricId.QueueConsumerTotalDequeueDuration,
-				m => m.Add( durationMilliseconds ) );
-
-			mMetrics.UpdateMetric( AppMetricId.QueueConsumerMinimumDequeueDuration,
-				m => m.Min( durationMilliseconds ) );
-
-			mMetrics.UpdateMetric( AppMetricId.QueueConsumerMaximumDequeueDuration,
-				m => m.Max( durationMilliseconds ) );
+			mMetricsProvider.IncrementDequeueCount( duration );
 		}
 
 		public async Task<IQueuedTaskToken> DequeueAsync( params string [] selectTaskTypes )
@@ -374,14 +362,12 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
-			return AppMetricsCollection.JoinQueryMetric( metricId,
-				mMetrics,
-				mNotificationListener );
+			return mMetricsProvider.QueryMetric( metricId );
 		}
 
 		public IEnumerable<AppMetric> CollectMetrics()
 		{
-			return AppMetricsCollection.JoinCollectMetrics( mMetrics,
+			return AppMetricsCollection.JoinCollectMetrics( mMetricsProvider,
 				mNotificationListener );
 		}
 
@@ -398,7 +384,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		{
 			get
 			{
-				return AppMetricsCollection.JoinExportedMetrics( mMetrics,
+				return AppMetricsCollection.JoinExportedMetrics( mMetricsProvider,
 					mNotificationListener );
 			}
 		}

@@ -105,7 +105,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				?? throw new ArgumentNullException( nameof( executionPerfMonWriter ) );
 
 			mExecutionPerfMon = new StandardExecutionPerformanceMonitor( processId );
-			mTaskQueueConsumer = new PostgreSqlTaskQueueConsumer( consumerOptions,
+			mTaskQueueConsumer = CreateTaskQueueConsumer( consumerOptions,
 				timestampProvider );
 			mTaskQueueProducer = new PostgreSqlTaskQueueProducer( producerAndResultOptions,
 				timestampProvider );
@@ -117,6 +117,17 @@ namespace LVD.Stakhanovise.NET.Processor
 			mTaskPoller = CreateTaskPoller( engineOptions );
 
 			mOptions = engineOptions;
+		}
+
+		private ITaskQueueConsumer CreateTaskQueueConsumer( TaskQueueConsumerOptions consumerOptions,
+				ITimestampProvider timestampProvider )
+		{
+			ITaskQueueConsumerMetricsProvider metricsProvider =
+				new StandardTaskQueueConsumerMetricsProvider();
+
+			return new PostgreSqlTaskQueueConsumer( consumerOptions,
+				metricsProvider,
+				timestampProvider );
 		}
 
 		private ITaskResultQueue CreateResultQueue( TaskQueueOptions producerAndResultOptions,
