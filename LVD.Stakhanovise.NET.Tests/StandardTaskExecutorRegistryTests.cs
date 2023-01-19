@@ -43,6 +43,8 @@ namespace LVD.Stakhanovise.NET.Tests
 	[TestFixture]
 	public class StandardTaskExecutorRegistryTests
 	{
+		private const int ExpectedTestPayloadCount = 12;
+		
 		[Test]
 		public void Test_CanScanAssemblies ()
 		{
@@ -55,7 +57,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.NotNull( taskExecutorRegistry
 				.DetectedPayloadTypes );
 
-			Assert.AreEqual( 9, taskExecutorRegistry
+			Assert.AreEqual( ExpectedTestPayloadCount, taskExecutorRegistry
 				.DetectedPayloadTypes
 				.Count() );
 

@@ -132,6 +132,7 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 		[TestCase( 2 )]
 		[TestCase( 5 )]
 		[TestCase( 10 )]
+		[Repeat( 10 )]
 		[NonParallelizable]
 		public async Task Test_CanEnqueue_NewTask_ParallelProducers( int nProducers )
 		{
@@ -167,6 +168,8 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 				monitor.WaitForNotificationsToBeReceived();
 				await monitor.EndWatchNotificationsAsync();
 			}
+
+			Task.WaitAll( producerThreads );
 		}
 
 		[Test]

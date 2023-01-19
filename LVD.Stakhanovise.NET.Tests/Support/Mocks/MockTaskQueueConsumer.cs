@@ -32,30 +32,31 @@
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {
 	public class MockTaskQueueConsumer : ITaskQueueConsumer, IDisposable
 	{
-		private const int TaskGenerationTimeoutMilliseconds = 150;
+		private const int TaskGenerationTimeoutMilliseconds = 75;
 
 		private const int MaxSizeOfGeneratedTasksBatch = 2;
 
 		public event EventHandler<ClearForDequeueEventArgs> ClearForDequeue;
 
-		private bool mIsReceivingNewTaskUpdates;
+		private bool mIsReceivingNewTaskUpdates = false;
 
-		private readonly Queue<IQueuedTaskToken> mProducedTasksBuffer =
-			new Queue<IQueuedTaskToken>();
+		private readonly ConcurrentQueue<IQueuedTaskToken> mProducedTasksBuffer =
+			new ConcurrentQueue<IQueuedTaskToken>();
 
-		private readonly List<IQueuedTaskToken> mDequeuedTasksHistory =
-			new List<IQueuedTaskToken>();
+		private readonly ConcurrentBag<IQueuedTaskToken> mDequeuedTasksHistory =
+			new ConcurrentBag<IQueuedTaskToken>();
 
-		private Task<bool> mQueueDepletedHandle;
-
-		private TaskCompletionSource<bool> mQueueDepletedTaskCompletionSource;
+		private ManualResetEvent mQueueDepletedHandle;
 
 		private Task mGenerationCompletedTask = Task.CompletedTask;
 
@@ -67,9 +68,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public MockTaskQueueConsumer( int numberOfTasksToGenerate )
 		{
-			//TODO: also add task type
-			mQueueDepletedTaskCompletionSource = new TaskCompletionSource<bool>();
-			mQueueDepletedHandle = mQueueDepletedTaskCompletionSource.Task;
+			mQueueDepletedHandle = new ManualResetEvent( false );
 			mRemainingTaskCount = numberOfTasksToGenerate;
 		}
 
@@ -80,10 +79,80 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 				handler( this, new ClearForDequeueEventArgs( ClearForDequeReason.NewTaskPostedNotificationReceived ) );
 		}
 
+		public async Task<IQueuedTaskToken> DequeueAsync( params string [] supportedTypes )
+		{
+			IncrementDequeueCallCount();
+			await WaitForTaskGenerationCompletionAsync();
+
+			if ( HasAlreadyProducedTasks() )
+			{
+				IncrementActuallyDequeuedElementsCount();
+				return FetchAndRemoveProducedTask();
+			}
+
+			if ( HasAnyMoreTasksToGenerate() )
+				StartGeneratingNewTasks();
+			else
+				SetTaskQueueDepleted();
+
+			return null;
+		}
+
+		private void IncrementDequeueCallCount()
+		{
+			Interlocked.Increment( ref mDequeueCallCount );
+		}
+
+		private void IncrementActuallyDequeuedElementsCount()
+		{
+			Interlocked.Increment( ref mActuallyDequeuedElementsCount );
+		}
+
+		private async Task WaitForTaskGenerationCompletionAsync()
+		{
+			await mGenerationCompletedTask;
+		}
+
+		private bool HasAlreadyProducedTasks()
+		{
+			return mProducedTasksBuffer.Count > 0;
+		}
+
+		private IQueuedTaskToken FetchAndRemoveProducedTask()
+		{
+			if ( !mProducedTasksBuffer.TryDequeue( out IQueuedTaskToken queuedTaskToken ) )
+				queuedTaskToken = null;
+			return queuedTaskToken;
+		}
+
+		private bool HasAnyMoreTasksToGenerate()
+		{
+			return mRemainingTaskCount > 0;
+		}
+
+		private void StartGeneratingNewTasks()
+		{
+			if ( IsCurrentlyGeneratingQueuedTasks() )
+				throw new InvalidOperationException( "Attempted to start generation while another task generation operation is running" );
+
+			mGenerationCompletedTask = 
+				GenerateNewTasksAsync();
+		}
+
+		private bool IsCurrentlyGeneratingQueuedTasks()
+		{
+			return mGenerationCompletedTask.Status != TaskStatus.RanToCompletion
+				&& mGenerationCompletedTask.Status != TaskStatus.Canceled
+				&& mGenerationCompletedTask.Status != TaskStatus.Faulted;
+		}
+
 		private Task GenerateNewTasksAsync()
 		{
-			return Task.Delay( TaskGenerationTimeoutMilliseconds ).ContinueWith( ante =>
+			return Task.Run( () =>
 			{
+				Task.Delay( TaskGenerationTimeoutMilliseconds )
+					.Wait();
+
 				int generateCount = ComputeGenerateTasksCount();
 				GenerateTasks( generateCount );
 				UpdateRemainingTasksCount( generateCount );
@@ -123,66 +192,12 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 			mRemainingTaskCount = Math.Max( mRemainingTaskCount - generateCount, 0 );
 		}
 
-		public async Task<IQueuedTaskToken> DequeueAsync( params string[] supportedTypes )
-		{
-			IncrementDequeueCallCount();
-			await WaitForTaskGenerationCompletionAsync();
-
-			if ( HasAlreadyProducedTasks() )
-			{
-				IncrementActuallyDequeuedElementsCount();
-				return FetchAndRemoveProducedTask();
-			}
-
-			if ( HasAnyMoreTasksToGenerate() )
-				StartGeneratingNewTasks();
-			else
-				SetTaskQueueDepleted();
-
-			return null;
-		}
-
-		private void IncrementDequeueCallCount()
-		{
-			mDequeueCallCount++;
-		}
-
-		private void IncrementActuallyDequeuedElementsCount()
-		{
-			mActuallyDequeuedElementsCount++;
-		}
-
-		private async Task WaitForTaskGenerationCompletionAsync()
-		{
-			await mGenerationCompletedTask;
-		}
-
-		private bool HasAlreadyProducedTasks()
-		{
-			return mProducedTasksBuffer.Count > 0;
-		}
-
-		private IQueuedTaskToken FetchAndRemoveProducedTask()
-		{
-			return mProducedTasksBuffer.Dequeue();
-		}
-
-		private bool HasAnyMoreTasksToGenerate()
-		{
-			return mRemainingTaskCount > 0;
-		}
-
-		private void StartGeneratingNewTasks()
-		{
-			mGenerationCompletedTask = GenerateNewTasksAsync();
-		}
-
 		private void SetTaskQueueDepleted()
 		{
-			mQueueDepletedTaskCompletionSource.TrySetResult( true );
+			mQueueDepletedHandle.Set();
 		}
 
-		public IQueuedTaskToken Dequeue( params string[] supportedTypes )
+		public IQueuedTaskToken Dequeue( params string [] supportedTypes )
 		{
 			return DequeueAsync( supportedTypes )
 				.Result;
@@ -191,28 +206,33 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		public Task StartReceivingNewTaskUpdatesAsync()
 		{
 			mIsReceivingNewTaskUpdates = true;
-			return Task.Delay( 150 );
+			return Task.CompletedTask;
 		}
 
 		public Task StopReceivingNewTaskUpdatesAsync()
 		{
 			mIsReceivingNewTaskUpdates = false;
-			return Task.Delay( 150 );
+			return Task.CompletedTask;
 		}
 
 		public void WaitForQueueToBeDepleted()
 		{
-			mQueueDepletedHandle.Wait();
+			mQueueDepletedHandle.WaitOne();
 		}
 
 		public void Dispose()
 		{
 			mProducedTasksBuffer.Clear();
 			mDequeuedTasksHistory.Clear();
+
+			mQueueDepletedHandle.Dispose();
+			mQueueDepletedHandle = null;
+
+			mGenerationCompletedTask = null;
 		}
 
 		public List<IQueuedTaskToken> DequeuedTasksHistory
-			=> mDequeuedTasksHistory;
+			=> mDequeuedTasksHistory.ToList();
 
 		public bool IsReceivingNewTaskUpdates
 			=> mIsReceivingNewTaskUpdates;

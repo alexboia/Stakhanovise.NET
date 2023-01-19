@@ -92,9 +92,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			cancellationToken.ThrowIfCancellationRequested();
 
 			mMetricsProvider.IncrementPollerWaitForBufferSpaceCount();
-
-			mWaitForClearToAddToBuffer
-				.WaitOne();
+			mWaitForClearToAddToBuffer.WaitOne();
 		}
 
 		public void WaitForClearToDequeue( CancellationToken cancellationToken )
@@ -105,9 +103,7 @@ namespace LVD.Stakhanovise.NET.Processor
 			cancellationToken.ThrowIfCancellationRequested();
 
 			mMetricsProvider.IncrementPollerWaitForDequeueCount();
-
-			mWaitForClearToDequeue
-				.WaitOne();
+			mWaitForClearToDequeue.WaitOne();
 		}
 
 		public void Reset()

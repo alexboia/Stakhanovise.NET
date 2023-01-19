@@ -14,6 +14,7 @@ namespace LVD.Stakhanovise.NET.Options
 
 			SignalingConnectionString = signalingConnectionString;
 			NewTaskNotificationChannelName = newTaskNotificationChannelName;
+			WaitNotificationTimeout = 250;
 		}
 
 		public string SignalingConnectionString
@@ -22,6 +23,11 @@ namespace LVD.Stakhanovise.NET.Options
 		}
 
 		public string NewTaskNotificationChannelName
+		{
+			get; private set;
+		}
+
+		public int WaitNotificationTimeout
 		{
 			get; private set;
 		}

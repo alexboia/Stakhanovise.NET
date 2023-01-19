@@ -71,8 +71,6 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private int mListenerConnectionBackendProcessId;
 
-		private int mWaitNotificationTimeout = 250;
-
 		private bool mIsDisposed = false;
 
 		public PostgreSqlTaskQueueNotificationListener( TaskQueueListenerOptions options,
@@ -296,7 +294,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				mLogger.DebugFormat( "Waiting for notifications on channel {0}...",
 					mOptions.NewTaskNotificationChannelName );
 
-				bool hadNotification = signalingConn.Wait( mWaitNotificationTimeout );
+				bool hadNotification = signalingConn.Wait( mOptions.WaitNotificationTimeout );
 				if ( !hadNotification )
 				{
 					ProcessListenerTimedOutWhileWaiting();

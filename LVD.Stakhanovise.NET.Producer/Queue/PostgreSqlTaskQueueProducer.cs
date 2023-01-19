@@ -137,10 +137,12 @@ namespace LVD.Stakhanovise.NET.Queue
 			using ( NpgsqlTransaction tx = conn.BeginTransaction() )
 			{
 				IQueuedTask queuedTask = await TryPostTaskAsync( produceInfo, conn, tx );
-				
+
 				await TryInitOrUpdateResultAsync( queuedTask, produceInfo, conn, tx );
-				await NotifyNewTaskPostedAsync( queuedTask, conn, tx );			
+				await NotifyNewTaskPostedAsync( queuedTask, conn, tx );
+				
 				tx.Commit();
+				conn.Close();
 
 				return queuedTask;
 			}

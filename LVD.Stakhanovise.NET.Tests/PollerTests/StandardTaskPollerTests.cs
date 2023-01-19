@@ -34,6 +34,7 @@ using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using System;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.PollerTests
@@ -61,7 +62,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				CreateMockTaskQueueProducer();
 
 			using ( MockTaskBuffer taskBuffer = CreateMockTaskBufferWithRandomCapacity() )
-			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueuConsumer( 0 ) )
+			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueueConsumer( 0 ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueueConsumer,
 				taskQueueProducer,
@@ -91,7 +92,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 			return faker.Random.Int( MinTaskBufferCapacity, MaxTaskBufferCapacity );
 		}
 
-		private MockTaskQueueConsumer CreateMockTaskQueuConsumer( int numberOfTasksToGenerate )
+		private MockTaskQueueConsumer CreateMockTaskQueueConsumer( int numberOfTasksToGenerate )
 		{
 			return new MockTaskQueueConsumer( numberOfTasksToGenerate );
 		}
@@ -119,7 +120,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				CreateMockTaskQueueProducer();
 
 			using ( MockTaskBuffer taskBuffer = new MockTaskBuffer( bufferCapacity ) )
-			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueuConsumer( numberOfTasks ) )
+			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueueConsumer( numberOfTasks ) )
 			using ( TestBufferConsumer testTaskBufferConsumer = new TestBufferConsumer( taskBuffer ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueueConsumer,
@@ -159,7 +160,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				CreateMockTaskQueueProducer();
 
 			using ( MockTaskBuffer taskBuffer = new MockTaskBuffer( bufferCapacity ) )
-			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueuConsumer( 0 ) )
+			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueueConsumer( 0 ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueueConsumer,
 				taskQueueProducer,
@@ -202,7 +203,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				CreateMockTaskQueueProducer();
 
 			using ( MockTaskBuffer taskBuffer = new MockTaskBuffer( bufferCapacity ) )
-			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueuConsumer( numberOfTasks ) )
+			using ( MockTaskQueueConsumer taskQueueConsumer = CreateMockTaskQueueConsumer( numberOfTasks ) )
 			using ( TestBufferFiller testTaskBufferFiller = new TestBufferFiller( taskBuffer ) )
 			using ( StandardTaskPoller poller = new StandardTaskPoller( processingOpts,
 				taskQueueConsumer,
