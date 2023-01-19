@@ -57,5 +57,15 @@ namespace LVD.Stakhanovise.NET.Model
 		{
 			get;
 		}
+
+		bool IsFaulted
+		{
+			get;
+		}
+
+		int CurrentFailCount
+		{
+			get;
+		}
 	}
 }

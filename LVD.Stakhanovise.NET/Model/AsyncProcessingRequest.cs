@@ -102,8 +102,13 @@ namespace LVD.Stakhanovise.NET.Model
 			{
 				mIsTimedOut = true;
 				mCompletionToken.TrySetException( new TimeoutException( "Request processing timed out" ) );
-				mTimer.Elapsed -= HandleCancellationTimerElapsed;
-				mTimer.Dispose();
+				
+				if ( mTimer != null )
+				{
+					mTimer.Elapsed -= HandleCancellationTimerElapsed;
+					mTimer.Dispose();
+				}
+
 				mTimer = null;
 			}
 		}
@@ -198,16 +203,25 @@ namespace LVD.Stakhanovise.NET.Model
 		public Task<TResult> Task
 			=> mCompletionToken.Task;
 
+		public TResult Result
+			=> Task.Result;
+
 		public bool IsCompleted
 			=> mCompletionToken.Task.IsCanceled
 				|| mCompletionToken.Task.IsCompleted
 				|| mCompletionToken.Task.IsFaulted;
+
+		public bool IsFaulted
+			=> mCompletionToken.Task.IsFaulted;
 
 		public bool CanBeRetried
 			=> mCurrentFailCount < mMaxFailCount;
 
 		public bool IsTimedOut
 			=> mIsTimedOut;
+
+		public int CurrentFailCount
+			=> mCurrentFailCount;
 
 		public long Id
 			=> mRequestId;

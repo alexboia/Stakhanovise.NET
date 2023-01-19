@@ -4,8 +4,13 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Model
 {
-	public interface IAsyncProcessingRequest<TRequest> : IAsyncProcessingRequest
+	public interface IAsyncProcessingRequest<TResult> : IAsyncProcessingRequest
 	{
-		void SetCompleted( TRequest result );
+		void SetCompleted( TResult result );
+
+		TResult Result
+		{
+			get;
+		}
 	}
 }

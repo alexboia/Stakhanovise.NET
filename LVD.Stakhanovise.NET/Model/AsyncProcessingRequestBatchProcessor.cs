@@ -85,7 +85,7 @@ namespace LVD.Stakhanovise.NET.Model
 			{
 				try
 				{
-					await ProcessNextBatchOfRequestsAsync( stopToken );
+					await ProcessNextBatchOfRequestsAsync( stopToken, readToEnd: false );
 					stopToken.ThrowIfCancellationRequested();
 				}
 				catch ( OperationCanceledException )
@@ -94,10 +94,10 @@ namespace LVD.Stakhanovise.NET.Model
 				}
 			}
 
-			await ProcessNextBatchOfRequestsAsync( stopToken );
+			await ProcessNextBatchOfRequestsAsync( stopToken, readToEnd: true );
 		}
 
-		private async Task ProcessNextBatchOfRequestsAsync( CancellationToken stopToken )
+		private async Task ProcessNextBatchOfRequestsAsync( CancellationToken stopToken, bool readToEnd )
 		{
 			//We need to use a queue here - as we process the batch, 
 			//	we consume each element and, in case of an error 
@@ -108,7 +108,7 @@ namespace LVD.Stakhanovise.NET.Model
 
 			try
 			{
-				nextBatch = ExtractNextBatchOfRequests( stopToken );
+				nextBatch = ExtractNextBatchOfRequests( stopToken, readToEnd );
 				await ProcessRequestBatchAsync( nextBatch );
 			}
 			catch ( Exception exc )
@@ -119,7 +119,7 @@ namespace LVD.Stakhanovise.NET.Model
 					foreach ( TRequest rq in nextBatch )
 					{
 						rq.SetFailed( exc );
-						if ( rq.CanBeRetried )
+						if ( rq.CanBeRetried && !mProcessingQueue.IsAddingCompleted )
 							mProcessingQueue.Add( rq );
 					}
 				}
@@ -133,10 +133,14 @@ namespace LVD.Stakhanovise.NET.Model
 			}
 		}
 
-		private AsyncProcessingRequestBatch<TRequest> ExtractNextBatchOfRequests( CancellationToken stopToken )
+		private AsyncProcessingRequestBatch<TRequest> ExtractNextBatchOfRequests( CancellationToken stopToken, bool readToEnd )
 		{
+			int batchSize = readToEnd
+				? mProcessingQueue.Count
+				: ProcessingBatchSize;
+
 			AsyncProcessingRequestBatch<TRequest> nextBatch =
-				new AsyncProcessingRequestBatch<TRequest>( ProcessingBatchSize );
+				new AsyncProcessingRequestBatch<TRequest>( batchSize );
 
 			nextBatch.FillFrom( mProcessingQueue,
 				stopToken );
@@ -147,6 +151,14 @@ namespace LVD.Stakhanovise.NET.Model
 		private async Task ProcessRequestBatchAsync( AsyncProcessingRequestBatch<TRequest> currentBatch )
 		{
 			await mRequestBatchProcessingDelegate.Invoke( currentBatch );
+			foreach ( TRequest rq in currentBatch )
+			{
+				if ( !rq.IsCompleted 
+					&& rq.CurrentFailCount > 0 
+					&& rq.CanBeRetried 
+					&& !mProcessingQueue.IsAddingCompleted )
+					mProcessingQueue.Add( rq );
+			}
 		}
 
 		public async Task StopAsync()
