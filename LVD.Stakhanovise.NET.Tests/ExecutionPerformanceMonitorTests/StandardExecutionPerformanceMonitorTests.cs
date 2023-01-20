@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using Bogus;
+using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Tests.Helpers;
@@ -61,7 +62,9 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 		public async Task Test_CanReportExecutionStats_SerialCalls( int nReports )
 		{
 			StandardExecutionPerformanceMonitor perfMon =
-				new StandardExecutionPerformanceMonitor( mTestProcessId );
+				new StandardExecutionPerformanceMonitor( mTestProcessId,
+					new StandardExecutionPerformanceMonitorMetricsProvider(),
+					CreateLogger() );
 
 			IEnumerable<Tuple<string, long>> perfStatsToReport = GenerateSamplePerformanceStats( nReports,
 				out List<TaskPerformanceStats> expectedWrittenStats );
@@ -93,7 +96,9 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 		{
 
 			StandardExecutionPerformanceMonitor perfMon =
-				new StandardExecutionPerformanceMonitor( mTestProcessId );
+				new StandardExecutionPerformanceMonitor( mTestProcessId,
+					new StandardExecutionPerformanceMonitorMetricsProvider(),
+					CreateLogger() );
 
 			IEnumerable<Tuple<string, long>> perfStatsToReport = GenerateSamplePerformanceStats( nReports,
 				out List<TaskPerformanceStats> expectedWrittenStats );
@@ -113,15 +118,15 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 
 		private async Task ConcurrentlyReportStatsAsync( ExecutionPerformanceStatsReporter perfStatsReporter, int nWorkers )
 		{
-			Task[] workers = CreateAndStartPerfStatsConcurrentWorkers( perfStatsReporter, nWorkers );
+			Task [] workers = CreateAndStartPerfStatsConcurrentWorkers( perfStatsReporter, nWorkers );
 			await Task.WhenAll( workers );
 		}
 
-		private Task[] CreateAndStartPerfStatsConcurrentWorkers( ExecutionPerformanceStatsReporter perfStatsReporter, int nWorkers )
+		private Task [] CreateAndStartPerfStatsConcurrentWorkers( ExecutionPerformanceStatsReporter perfStatsReporter, int nWorkers )
 		{
-			Task[] workers = new Task[ nWorkers ];
+			Task [] workers = new Task [ nWorkers ];
 			for ( int i = 0; i < nWorkers; i++ )
-				workers[ i ] = Task.Run( async () => await perfStatsReporter.ReportExecutionPerformancesStatsAsync() );
+				workers [ i ] = Task.Run( async () => await perfStatsReporter.ReportExecutionPerformancesStatsAsync() );
 			return workers;
 		}
 
@@ -143,6 +148,11 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 			}
 
 			return execTimes;
+		}
+
+		private IStakhanoviseLogger CreateLogger()
+		{
+			return NoOpLogger.Instance;
 		}
 	}
 }

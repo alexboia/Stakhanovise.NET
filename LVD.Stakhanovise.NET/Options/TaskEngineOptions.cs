@@ -37,7 +37,7 @@ namespace LVD.Stakhanovise.NET.Options
 {
 	public class TaskEngineOptions
 	{
-		public TaskEngineOptions ( int workerCount,
+		public TaskEngineOptions( int workerCount,
 			TaskProcessingOptions taskProcessingOptions )
 		{
 			WorkerCount = workerCount;
@@ -45,8 +45,14 @@ namespace LVD.Stakhanovise.NET.Options
 				?? throw new ArgumentNullException( nameof( taskProcessingOptions ) );
 		}
 
-		public int WorkerCount { get; private set; }
+		public int WorkerCount
+		{
+			get; private set;
+		}
 
-		public TaskProcessingOptions TaskProcessingOptions { get; private set; }
+		public TaskProcessingOptions TaskProcessingOptions
+		{
+			get; private set;
+		}
 	}
 }

@@ -33,7 +33,6 @@ using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,81 +44,35 @@ namespace LVD.Stakhanovise.NET.Processor
 	{
 		private const int ProcessingBatchSize = 5;
 
-		private static readonly IStakhanoviseLogger mLogger = StakhanoviseLogManager
-			.GetLogger( MethodBase
-				.GetCurrentMethod()
-				.DeclaringType );
+		private readonly string mProcessId;
 
-		private long mLastRequestId;
+		private readonly AsyncProcessingRequestBatchProcessor<ExecutionPerformanceMonitorWriteRequest> mBatchProcessor;
 
-		private AsyncProcessingRequestBatchProcessor<ExecutionPerformanceMonitorWriteRequest> mBatchProcessor;
+		private readonly IExecutionPerformanceMonitorMetricsProvider mMetricsProvider;
+
+		private readonly IStakhanoviseLogger mLogger;
 
 		private IExecutionPerformanceMonitorWriter mStatsWriter;
 
+		private long mLastRequestId;
+
 		private bool mIsDisposed = false;
 
-		private AppMetricsCollection mMetrics = new AppMetricsCollection
-		(
-			new AppMetric( AppMetricId.PerfMonReportPostCount, 0 ),
-			new AppMetric( AppMetricId.PerfMonReportWriteCount, 0 ),
-			new AppMetric( AppMetricId.PerfMonMinimumReportWriteDuration, long.MaxValue ),
-			new AppMetric( AppMetricId.PerfMonMaximumReportWriteDuration, long.MinValue ),
-			new AppMetric( AppMetricId.PerfMonReportWriteRequestsTimeoutCount, 0 )
-		);
-
-		private string mProcessId;
-
-		public StandardExecutionPerformanceMonitor( string processId )
+		public StandardExecutionPerformanceMonitor( string processId,
+			IExecutionPerformanceMonitorMetricsProvider metricsProvider,
+			IStakhanoviseLogger logger )
 		{
 			if ( string.IsNullOrWhiteSpace( processId ) )
 				throw new ArgumentNullException( nameof( processId ) );
 
+			mMetricsProvider = metricsProvider
+				?? throw new ArgumentNullException( nameof( metricsProvider ) );
+			mLogger = logger
+				?? throw new ArgumentNullException( nameof( logger ) );
+
 			mProcessId = processId;
-			mBatchProcessor = new AsyncProcessingRequestBatchProcessor<ExecutionPerformanceMonitorWriteRequest>( ProcessRequestBatchAsync, mLogger );
-		}
-
-		private void CheckNotDisposedOrThrow()
-		{
-			if ( mIsDisposed )
-			{
-				throw new ObjectDisposedException(
-					nameof( StandardExecutionPerformanceMonitor ),
-					"Cannot reuse a disposed execution performance monitor"
-				);
-			}
-		}
-
-		private void CheckRunningOrThrow()
-		{
-			if ( !IsRunning )
-				throw new InvalidOperationException( "The execution performance monitor is not running." );
-		}
-
-		private void IncrementPerfMonPostCount()
-		{
-			mMetrics.UpdateMetric( AppMetricId.PerfMonReportPostCount,
-				m => m.Increment() );
-		}
-
-		private void IncrementPerfMonWriteCount( TimeSpan duration )
-		{
-			long durationMilliseconds = ( long ) Math.Ceiling( duration
-				.TotalMilliseconds );
-
-			mMetrics.UpdateMetric( AppMetricId.PerfMonReportWriteCount,
-				m => m.Increment() );
-
-			mMetrics.UpdateMetric( AppMetricId.PerfMonMinimumReportWriteDuration,
-				m => m.Min( durationMilliseconds ) );
-
-			mMetrics.UpdateMetric( AppMetricId.PerfMonMaximumReportWriteDuration,
-				m => m.Max( durationMilliseconds ) );
-		}
-
-		private void IncrementPerfMonWriteRequestTimeoutCount()
-		{
-			mMetrics.UpdateMetric( AppMetricId.PerfMonReportWriteRequestsTimeoutCount,
-				m => m.Increment() );
+			mBatchProcessor = new AsyncProcessingRequestBatchProcessor<ExecutionPerformanceMonitorWriteRequest>( ProcessRequestBatchAsync, 
+				mLogger );
 		}
 
 		public async Task ReportExecutionTimeAsync( string payloadType, long durationMilliseconds, int timeoutMilliseconds )
@@ -145,14 +98,39 @@ namespace LVD.Stakhanovise.NET.Processor
 			IncrementPerfMonPostCount();
 		}
 
+		private void CheckNotDisposedOrThrow()
+		{
+			if ( mIsDisposed )
+			{
+				throw new ObjectDisposedException(
+					nameof( StandardExecutionPerformanceMonitor ),
+					"Cannot reuse a disposed execution performance monitor"
+				);
+			}
+		}
+
+		private void CheckRunningOrThrow()
+		{
+			if ( !IsRunning )
+				throw new InvalidOperationException( "The execution performance monitor is not running." );
+		}
+
 		private long GenerateRequestId()
 		{
 			return Interlocked.Increment( ref mLastRequestId );
 		}
 
+		private void IncrementPerfMonPostCount()
+		{
+			mMetricsProvider.IncrementPerfMonPostCount();
+		}
+
 		public async Task StartFlushingAsync( IExecutionPerformanceMonitorWriter writer )
 		{
 			CheckNotDisposedOrThrow();
+
+			if ( writer == null )
+				throw new ArgumentNullException( nameof( writer ) );
 
 			if ( !mBatchProcessor.IsRunning )
 				await DoStartFlushingAsync( writer );
@@ -200,6 +178,16 @@ namespace LVD.Stakhanovise.NET.Processor
 			}
 		}
 
+		private void IncrementPerfMonWriteCount( TimeSpan duration )
+		{
+			mMetricsProvider.IncrementPerfMonWriteCount( duration );
+		}
+
+		private void IncrementPerfMonWriteRequestTimeoutCount()
+		{
+			mMetricsProvider.IncrementPerfMonWriteRequestTimeoutCount();
+		}
+
 		public async Task StopFlushingAsync()
 		{
 			CheckNotDisposedOrThrow();
@@ -238,12 +226,12 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public AppMetric QueryMetric( IAppMetricId metricId )
 		{
-			return mMetrics.QueryMetric( metricId );
+			return mMetricsProvider.QueryMetric( metricId );
 		}
 
 		public IEnumerable<AppMetric> CollectMetrics()
 		{
-			return mMetrics.CollectMetrics();
+			return mMetricsProvider.CollectMetrics();
 		}
 
 		public bool IsRunning
@@ -259,7 +247,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			get
 			{
-				return mMetrics.ExportedMetrics;
+				return mMetricsProvider.ExportedMetrics;
 			}
 		}
 	}

@@ -44,10 +44,9 @@ namespace LVD.Stakhanovise.NET.Processor
 {
 	public class PostgreSqlAppMetricsMonitorWriter : IAppMetricsMonitorWriter
 	{
-		private PostgreSqlAppMetricsMonitorWriterOptions mOptions;
+		private readonly PostgreSqlAppMetricsMonitorWriterOptions mOptions;
 
-		private string mMetricsUpsertSql;
-
+		private readonly string mMetricsUpsertSql;
 
 		public PostgreSqlAppMetricsMonitorWriter( PostgreSqlAppMetricsMonitorWriterOptions options )
 		{
@@ -58,7 +57,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task<NpgsqlConnection> OpenConnectionAsync()
 		{
-			return await mOptions.ConnectionOptions.TryOpenConnectionAsync();
+			return await mOptions.ConnectionOptions
+				.TryOpenConnectionAsync();
 		}
 
 		private string GetMetricsUpsertSql( QueuedTaskMapping mapping )

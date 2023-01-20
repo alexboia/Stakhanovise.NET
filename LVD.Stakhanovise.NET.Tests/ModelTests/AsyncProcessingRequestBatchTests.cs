@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+﻿using Bogus;
 using LVD.Stakhanovise.NET.Model;
+using LVD.Stakhanovise.NET.Tests.Asserts;
+using NUnit.Framework;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Bogus;
 
 namespace LVD.Stakhanovise.NET.Tests.ModelTests
 {
@@ -39,12 +38,16 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 			batch.FillFrom( source,
 				CancellationToken.None );
 
-			Assert.AreEqual( nElements,
-				batch.Count );
+			AssertBatchContainsGeneratedElements( generatedElements,
+				batch );
+		}
 
-			foreach ( int bElement in batch )
-				CollectionAssert.Contains( generatedElements,
-					bElement );
+		private void AssertBatchContainsGeneratedElements( List<int> generatedElements, 
+			AsyncProcessingRequestBatch<int> batch )
+		{
+			AssertBatchContainsGeneratedElements<int>
+				.For( generatedElements )
+				.Check( batch );
 		}
 
 		[Test]
@@ -76,15 +79,9 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 			batch.FillFrom( source, CancellationToken.None );
 			generationTask.Wait();
 
-			Assert.AreEqual( 1,
-				batch.Count );
-
-			foreach ( int bElement in batch )
-				CollectionAssert.Contains( generatedElements,
-					bElement );
+			AssertBatchContainsGeneratedElements( generatedElements,
+				batch );
 		}
-
-		//Test 1 - Can be filled from request source - with cancellation
 
 		[Test]
 		[TestCase( 1 )]
@@ -92,7 +89,7 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 		[TestCase( 10 )]
 		[TestCase( 100 )]
 		[Repeat( 20 )]
-		public void Test_CanBeFilled_WhenCancellationOccurs( int nElements )
+		public void Test_CanBeFilled_WhenCancellationOccurs_ElementsArePresentInSourceBeforeCancellation( int nElements )
 		{
 			BlockingCollection<int> source =
 				new BlockingCollection<int>();
@@ -104,28 +101,17 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 			AsyncProcessingRequestBatch<int> batch =
 				new AsyncProcessingRequestBatch<int>( nElements );
 
-			CancellationToken cancellationToken = cancellationTokenSource
-				.Token;
-
-			//TODO: requires further work
-			cancellationToken.Register( () =>
+			for ( int i = 0; i < nElements; i++ )
 			{
-				for ( int i = 0; i < nElements; i++ )
-				{
-					generatedElements.Add( i );
-					source.Add( i );
-				}
-			} );
+				generatedElements.Add( i );
+				source.Add( i );
+			}
 
-			cancellationTokenSource.CancelAfter( 150 );
-			batch.FillFrom( source, cancellationToken );
+			cancellationTokenSource.Cancel();
+			batch.FillFrom( source, cancellationTokenSource.Token );
 
-			Assert.AreEqual( nElements,
-				batch.Count );
-
-			foreach ( int bElement in batch )
-				CollectionAssert.Contains( generatedElements,
-					bElement );
+			AssertBatchContainsGeneratedElements( generatedElements,
+				batch );
 		}
 	}
 }
