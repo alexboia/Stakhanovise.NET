@@ -97,6 +97,7 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				bufferMock,
 				metricsProviderMock.Object ) )
 			{
+				bufferMock.FillWithMocksToMaxCapacity();
 				policy.SignalPollerStarted();
 
 				Task.Delay( millisecondsDelay )
@@ -104,17 +105,20 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 						consumerMock,
 						policy ) );
 
+				//Purpose of cancellation is to prevent
+				//	indefinite waiting for the trigger
+				//	and, therefore, to detect erroneous sync policies
+				//	and cause tests to fail
 				stopWaitingTokenSource
-					.CancelAfter( millisecondsDelay * 2 );
+					.CancelAfter( millisecondsDelay * 3 );
 
 				try
 				{
-					policy.WaitForClearToAddToBuffer( stopWaitingTokenSource
-						.Token );
+					policy.WaitForClearToAddToBuffer( stopWaitingTokenSource.Token );
 				}
 				catch ( OperationCanceledException )
 				{
-					Assert.Fail( $"Clear to add to buffer not signaled after {millisecondsDelay * 2} ms." );
+					Assert.Fail( $"Clear to add to buffer not signaled after {millisecondsDelay * 3} ms." );
 				}
 			}
 

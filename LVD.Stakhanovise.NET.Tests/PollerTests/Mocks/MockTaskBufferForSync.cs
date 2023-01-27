@@ -1,5 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Tests.Support;
+using MoreLinq;
 using System;
 using System.Collections.Generic;
 
@@ -36,6 +38,12 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests.Mocks
 		public void CompleteAdding()
 		{
 			mCompleted = true;
+		}
+
+		public void FillWithMocksToMaxCapacity()
+		{
+			while ( !IsFull )
+				mQueuedTasks.Enqueue( new MockQueuedTaskToken( Guid.NewGuid() ) );
 		}
 
 		public bool TryAddNewTask( IQueuedTaskToken taskToken )
