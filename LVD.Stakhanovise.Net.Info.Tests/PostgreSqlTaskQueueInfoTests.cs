@@ -29,20 +29,20 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+using LVD.Stakhanovise.Net.Info.Tests.Asserts;
+using LVD.Stakhanovise.Net.Info.Tests.Support;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
+using LVD.Stakhanovise.NET.Tests;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Tests
+namespace LVD.Stakhanovise.NET.info.Tests
 {
-	//TODO: also test dequeue with tasks still being locked
 	[TestFixture]
 	public class PostgreSqlTaskQueueInfoTests : BaseTestWithConfiguration
 	{
@@ -50,7 +50,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 		private TaskQueueDataSource mDataSource;
 
-		public PostgreSqlTaskQueueInfoTests ()
+		public PostgreSqlTaskQueueInfoTests()
 		{
 			mInfoOptions = TestOptions
 				.GetDefaultTaskQueueInfoOptions( ConnectionString );
@@ -60,13 +60,23 @@ namespace LVD.Stakhanovise.NET.Tests
 		}
 
 		[SetUp]
-		public async Task TestSetUp ()
+		public async Task TestSetUp()
+		{
+			await SeedDataAsync();
+		}
+
+		private async Task SeedDataAsync()
 		{
 			await mDataSource.SeedData();
 		}
 
 		[TearDown]
-		public async Task TestTearDown ()
+		public async Task TestTearDown()
+		{
+			await ClearDataAsync();
+		}
+
+		private async Task ClearDataAsync()
 		{
 			await mDataSource.ClearData();
 		}
@@ -75,8 +85,17 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 0 )]
 		[TestCase( 1 )]
 		[TestCase( 10 )]
+		[TestCase( 100 )]
+		[TestCase( 1000 )]
+		[TestCase( 10000 )]
+		[TestCase( 100000 )]
 		[Repeat( 10 )]
-		public async Task Test_CanPeek ( int futureTicks )
+		public async Task Test_CanPeek_WhenNotEmpty( int futureTicks )
+		{
+			await Run_PeekTests( futureTicks );
+		}
+
+		private async Task Run_PeekTests( int futureTicks )
 		{
 			IQueuedTask actualTopOfQueue;
 			IQueuedTask expectedTopOfQueue = ExpectedTopOfQueueTask;
@@ -89,9 +108,9 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				actualTopOfQueue = await taskQueue.PeekAsync();
 
-				Assert.NotNull( actualTopOfQueue );
-				Assert.AreEqual( expectedTopOfQueue.Id,
-					actualTopOfQueue.Id );
+				AssertCorrectTopOfQueue
+					.WithExpected( expectedTopOfQueue )
+					.Check( actualTopOfQueue );
 			}
 		}
 
@@ -99,8 +118,26 @@ namespace LVD.Stakhanovise.NET.Tests
 		[TestCase( 0 )]
 		[TestCase( 1 )]
 		[TestCase( 10 )]
-		[Repeat( 5 )]
-		public async Task Test_CanComputeQueueMetrics ( int futureTicks )
+		[TestCase( 100 )]
+		[TestCase( 1000 )]
+		[TestCase( 10000 )]
+		[TestCase( 100000 )]
+		[Repeat( 10 )]
+		public async Task Test_CanPeek_WhenEmpty( int futureTicks )
+		{
+			await ClearDataAsync();
+			await Run_PeekTests( futureTicks );
+		}
+
+		[Test]
+		[TestCase( 0 )]
+		[TestCase( 1 )]
+		[TestCase( 10 )]
+		[TestCase( 1000 )]
+		[TestCase( 10000 )]
+		[TestCase( 100000 )]
+		[Repeat( 10 )]
+		public async Task Test_CanComputeQueueMetrics( int futureTicks )
 		{
 			for ( int i = 0; i <= futureTicks; i++ )
 			{
@@ -120,7 +157,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			}
 		}
 
-		private PostgreSqlTaskQueueInfo CreateTaskQueue ( Func<DateTimeOffset> currentTimeProvider )
+		private PostgreSqlTaskQueueInfo CreateTaskQueue( Func<DateTimeOffset> currentTimeProvider )
 		{
 			return new PostgreSqlTaskQueueInfo( mInfoOptions,
 				new TaskQueueTimestampProvider( currentTimeProvider ) );

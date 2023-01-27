@@ -48,7 +48,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private ITimestampProvider mTimestampProvider;
 
-		public PostgreSqlTaskQueueInfo ( TaskQueueInfoOptions options, ITimestampProvider timestampProvider )
+		public PostgreSqlTaskQueueInfo( TaskQueueInfoOptions options, ITimestampProvider timestampProvider )
 		{
 			if ( options == null )
 				throw new ArgumentNullException( nameof( options ) );
@@ -59,21 +59,25 @@ namespace LVD.Stakhanovise.NET.Queue
 			mTimestampProvider = timestampProvider;
 		}
 
-		private void CheckNotDisposedOrThrow ()
+		private void CheckNotDisposedOrThrow()
 		{
 			if ( mIsDisposed )
-				throw new ObjectDisposedException( nameof( PostgreSqlTaskQueueInfo ),
-					"Cannot reuse a disposed task queue info" );
+			{
+				throw new ObjectDisposedException(
+					nameof( PostgreSqlTaskQueueInfo ),
+					"Cannot reuse a disposed task queue info"
+				);
+			}
 		}
 
-		private async Task<NpgsqlConnection> OpenConnectionAsync ()
+		private async Task<NpgsqlConnection> OpenConnectionAsync()
 		{
 			return await mOptions
 				.ConnectionOptions
 				.TryOpenConnectionAsync();
 		}
 
-		public async Task<TaskQueueMetrics> ComputeMetricsAsync ()
+		public async Task<TaskQueueMetrics> ComputeMetricsAsync()
 		{
 			long totalUnprocessed = 0,
 				totalProcessing = 0,
@@ -98,7 +102,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					long count = await statsResultsRdr.GetFieldValueAsync( "task_status_count",
 						defaultValue: 0 );
 
-					QueuedTaskStatus status = ( QueuedTaskStatus )( await statsResultsRdr.GetFieldValueAsync( "task_status",
+					QueuedTaskStatus status = ( QueuedTaskStatus ) ( await statsResultsRdr.GetFieldValueAsync( "task_status",
 						defaultValue: 0 ) );
 
 					switch ( status )
@@ -136,7 +140,7 @@ namespace LVD.Stakhanovise.NET.Queue
 				totalProcessed );
 		}
 
-		public async Task<IQueuedTask> PeekAsync ()
+		public async Task<IQueuedTask> PeekAsync()
 		{
 			IQueuedTask peekedTask = null;
 			DateTimeOffset refNow = mTimestampProvider.GetNow();
