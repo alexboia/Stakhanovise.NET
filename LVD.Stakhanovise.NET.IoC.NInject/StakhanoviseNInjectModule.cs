@@ -41,10 +41,17 @@ namespace LVD.Stakhanovise.NET.IoC.NInject
 	{
 		private IDependencyResolver mDependencyResolver;
 
-		private IEnumerable<DependencyRegistration> mRegistrations;
+		private IEnumerable<IDependencyRegistration> mRegistrations;
 
-		public StakhanoviseNInjectModule ( IDependencyResolver dependencyResolver,
+		public StakhanoviseNInjectModule( IDependencyResolver dependencyResolver,
 			IEnumerable<DependencyRegistration> registrations )
+			: this( dependencyResolver, ( IEnumerable<IDependencyRegistration> ) registrations )
+		{
+			return;
+		}
+
+		public StakhanoviseNInjectModule( IDependencyResolver dependencyResolver,
+			IEnumerable<IDependencyRegistration> registrations )
 		{
 			mDependencyResolver = dependencyResolver
 				?? throw new ArgumentNullException( nameof( dependencyResolver ) );
@@ -52,7 +59,7 @@ namespace LVD.Stakhanovise.NET.IoC.NInject
 				?? throw new ArgumentNullException( nameof( registrations ) );
 		}
 
-		public override void Load ()
+		public override void Load()
 		{
 			Bind<IDependencyResolver>()
 				.ToConstant( mDependencyResolver );
@@ -96,13 +103,13 @@ namespace LVD.Stakhanovise.NET.IoC.NInject
 			}
 		}
 
-		private Type CreateNinjectProviderWrapperType ( Type targetType )
+		private Type CreateNinjectProviderWrapperType( Type targetType )
 		{
 			return typeof( GenericNInjectProvider<> )
 				.MakeGenericType( targetType );
 		}
 
-		private Type CreateInternalProviderTargetType ( Type targetType )
+		private Type CreateInternalProviderTargetType( Type targetType )
 		{
 			return typeof( IDependencyProvider<> )
 				.MakeGenericType( targetType );

@@ -83,7 +83,7 @@ namespace LVD.Stakhanovise.NET.IoC.NInject
 			return mKernel.CanResolve( serviceType );
 		}
 
-		public void Load ( IEnumerable<DependencyRegistration> registrations )
+		public void Load( IEnumerable<IDependencyRegistration> registrations )
 		{
 			if ( registrations == null )
 				throw new ArgumentNullException( nameof( registrations ) );
