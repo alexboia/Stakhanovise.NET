@@ -15,6 +15,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\LVD.Stakhanovise.NET.Logging.NLogLogging\LVD.Stakhanovise.NET.Logging.NLogLogging.csproj" />
+	  <ProjectReference Include="..\LVD.Stakhanovise.NET.Logging.Tests.Harness\LVD.Stakhanovise.NET.Logging.Tests.Harness.csproj" />
 	  <ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
 	</ItemGroup>
 

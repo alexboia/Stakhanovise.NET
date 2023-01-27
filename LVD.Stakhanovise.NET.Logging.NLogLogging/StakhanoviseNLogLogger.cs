@@ -7,9 +7,9 @@ namespace LVD.Stakhanovise.NET.Logging.NLogLogging
 {
 	public class StakhanoviseNLogLogger : IStakhanoviseLogger
 	{
-		private Logger mNlogLog;
+		private ILogger mNlogLog;
 
-		public StakhanoviseNLogLogger ( Logger nlogLog )
+		public StakhanoviseNLogLogger ( ILogger nlogLog )
 		{
 			mNlogLog = nlogLog ?? throw new ArgumentNullException( nameof( nlogLog ) );
 		}

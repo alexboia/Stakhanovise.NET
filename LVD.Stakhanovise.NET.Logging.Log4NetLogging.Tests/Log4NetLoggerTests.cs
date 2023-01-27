@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using Castle.DynamicProxy.Contributors;
+using log4net;
 using LVD.Stakhanovise.NET.Logging.Tests.Harness;
 using Moq;
 using NUnit.Framework;
@@ -11,19 +12,19 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 	{
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogDebugMessage_WithoutFormat ()
+		public void Test_CanLogDebugMessage_WithoutFormat()
 		{
 			RunDebugLogMessageTests( withFormattedMessage: false );
 		}
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogDebugMessage_WithFormat ()
+		public void Test_CanLogDebugMessage_WithFormat()
 		{
 			RunDebugLogMessageTests( withFormattedMessage: true );
 		}
 
-		private void RunDebugLogMessageTests ( bool withFormattedMessage )
+		private void RunDebugLogMessageTests( bool withFormattedMessage )
 		{
 			LogMessageExpectations logMessageExpectations =
 				GenerateLogMessageExpectations( withFormattedMessage );
@@ -37,32 +38,30 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			Log4NetLogger stakhanoviseLogger =
 				new Log4NetLogger( targetLoggerMock.Object );
 
-			if ( withFormattedMessage )
-				stakhanoviseLogger.DebugFormat( logMessageExpectations.ExpectedMessage, logMessageExpectations.ExpectedMessageArgs );
-			else
-				stakhanoviseLogger.Debug( logMessageExpectations.ExpectedMessage );
+			stakhanoviseLogger.CallDebug( logMessageExpectations,
+				withFormattedMessage );
 
 			targetLoggerMock.Verify();
 		}
 
-		private LogMessageExpectations GenerateLogMessageExpectations ( bool formattedMessage )
+		private LogMessageExpectations GenerateLogMessageExpectations( bool formattedMessage )
 		{
 			return LogMessageExpectations.GenerateWithMessageOnly( formattedMessage );
 		}
 
 		[Test]
-		public void Test_CanCheckIfDebugLogEnabled_WhenEnabled ()
+		public void Test_CanCheckIfDebugLogEnabled_WhenEnabled()
 		{
 			RunDebugLogEnabledCheckTests( withDebugLogEnabled: true );
 		}
 
 		[Test]
-		public void Test_CanCheckIfDebugLogEnabled_WhenDisabled ()
+		public void Test_CanCheckIfDebugLogEnabled_WhenDisabled()
 		{
 			RunDebugLogEnabledCheckTests( withDebugLogEnabled: false );
 		}
 
-		private void RunDebugLogEnabledCheckTests ( bool withDebugLogEnabled )
+		private void RunDebugLogEnabledCheckTests( bool withDebugLogEnabled )
 		{
 			TargetLoggerMockLoggerSetupProperties loggerSetupProps = withDebugLogEnabled
 				? TargetLoggerMockLoggerSetupProperties.DebugEnabledWithoutExpectations()
@@ -75,19 +74,19 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogError_WithoutException ()
+		public void Test_CanLogError_WithoutException()
 		{
 			RunErrorLogMessageTests( withException: false );
 		}
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogError_WithException ()
+		public void Test_CanLogError_WithException()
 		{
 			RunErrorLogMessageTests( withException: true );
 		}
 
-		private void RunErrorLogMessageTests ( bool withException )
+		private void RunErrorLogMessageTests( bool withException )
 		{
 			LogMessageExpectations logExceptionExpectations = GenerateLogExceptionExpectations( withException,
 				withFormattedMessage: false );
@@ -101,15 +100,13 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			Log4NetLogger stakhanoviseLogger =
 				new Log4NetLogger( targetLoggerMock.Object );
 
-			if ( withException )
-				stakhanoviseLogger.Error( logExceptionExpectations.ExpectedMessage, logExceptionExpectations.ExpectedException );
-			else
-				stakhanoviseLogger.Error( logExceptionExpectations.ExpectedMessage );
+			stakhanoviseLogger.CallError( logExceptionExpectations,
+				withException );
 
 			targetLoggerMock.Verify();
 		}
 
-		private LogMessageExpectations GenerateLogExceptionExpectations ( bool withException, bool withFormattedMessage )
+		private LogMessageExpectations GenerateLogExceptionExpectations( bool withException, bool withFormattedMessage )
 		{
 			return withException
 				? LogMessageExpectations.GenerateWithException( withFormattedMessage )
@@ -117,18 +114,18 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 		}
 
 		[Test]
-		public void Test_CanCheckIfErrorLogEnabled_WhenDisabled ()
+		public void Test_CanCheckIfErrorLogEnabled_WhenDisabled()
 		{
 			RunErrorLogEnabledCheckTests( withErrorLogEnabled: false );
 		}
 
 		[Test]
-		public void Test_CanCheckIfErrorLogEnabled_WhenEnabled ()
+		public void Test_CanCheckIfErrorLogEnabled_WhenEnabled()
 		{
 			RunErrorLogEnabledCheckTests( withErrorLogEnabled: true );
 		}
 
-		private void RunErrorLogEnabledCheckTests ( bool withErrorLogEnabled )
+		private void RunErrorLogEnabledCheckTests( bool withErrorLogEnabled )
 		{
 			TargetLoggerMockLoggerSetupProperties loggerSetupProps = withErrorLogEnabled
 				? TargetLoggerMockLoggerSetupProperties.ErrorEnabledWithoutExpectations()
@@ -141,19 +138,19 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogFatal_WithoutException ()
+		public void Test_CanLogFatal_WithoutException()
 		{
 			RunFatalLogMessageTests( withException: false );
 		}
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogFatal_WithException ()
+		public void Test_CanLogFatal_WithException()
 		{
 			RunFatalLogMessageTests( withException: true );
 		}
 
-		private void RunFatalLogMessageTests ( bool withException )
+		private void RunFatalLogMessageTests( bool withException )
 		{
 			LogMessageExpectations logFatalExpectations = GenerateLogExceptionExpectations( withException,
 				withFormattedMessage: false );
@@ -167,27 +164,25 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			Log4NetLogger stakhanoviseLogger =
 				new Log4NetLogger( targetLoggerMock.Object );
 
-			if ( withException )
-				stakhanoviseLogger.Fatal( logFatalExpectations.ExpectedMessage, logFatalExpectations.ExpectedException );
-			else
-				stakhanoviseLogger.Fatal( logFatalExpectations.ExpectedMessage );
+			stakhanoviseLogger.CallFatal( logFatalExpectations,
+				withException );
 
 			targetLoggerMock.Verify();
 		}
 
 		[Test]
-		public void Test_CanCheckIfFatalLogEnabled_WhenDisabled ()
+		public void Test_CanCheckIfFatalLogEnabled_WhenDisabled()
 		{
 			RunFatalLogEnabledCheckTests( withFatalLogEnabled: false );
 		}
 
 		[Test]
-		public void Test_CanCheckIfFatalLogEnabled_WhenEnabled ()
+		public void Test_CanCheckIfFatalLogEnabled_WhenEnabled()
 		{
 			RunFatalLogEnabledCheckTests( withFatalLogEnabled: true );
 		}
 
-		private void RunFatalLogEnabledCheckTests ( bool withFatalLogEnabled )
+		private void RunFatalLogEnabledCheckTests( bool withFatalLogEnabled )
 		{
 			TargetLoggerMockLoggerSetupProperties loggerSetupProps = withFatalLogEnabled
 				? TargetLoggerMockLoggerSetupProperties.FatalEnabledWithoutExpectations()
@@ -200,19 +195,19 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogInfoMessage_WithoutFormat ()
+		public void Test_CanLogInfoMessage_WithoutFormat()
 		{
 			RunInfoLogMessageTests( withFormattedMessage: false );
 		}
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogInfoMessage_WithFormat ()
+		public void Test_CanLogInfoMessage_WithFormat()
 		{
 			RunInfoLogMessageTests( withFormattedMessage: true );
 		}
 
-		private void RunInfoLogMessageTests ( bool withFormattedMessage )
+		private void RunInfoLogMessageTests( bool withFormattedMessage )
 		{
 			LogMessageExpectations logMessageExpectations =
 				GenerateLogMessageExpectations( withFormattedMessage );
@@ -226,27 +221,25 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			Log4NetLogger stakhanoviseLogger =
 				new Log4NetLogger( targetLoggerMock.Object );
 
-			if ( withFormattedMessage )
-				stakhanoviseLogger.InfoFormat( logMessageExpectations.ExpectedMessage, logMessageExpectations.ExpectedMessageArgs );
-			else
-				stakhanoviseLogger.Info( logMessageExpectations.ExpectedMessage );
+			stakhanoviseLogger.CallInfo( logMessageExpectations,
+				withFormattedMessage );
 
 			targetLoggerMock.Verify();
 		}
 
 		[Test]
-		public void Test_CanCheckIfInfoLogEnabled_WhenDisabled ()
+		public void Test_CanCheckIfInfoLogEnabled_WhenDisabled()
 		{
 			RunInfoLogEnabledCheckTests( withInfoLogEnabled: false );
 		}
 
 		[Test]
-		public void Test_CanCheckIfInfoLogEnabled_WhenEnabled ()
+		public void Test_CanCheckIfInfoLogEnabled_WhenEnabled()
 		{
 			RunInfoLogEnabledCheckTests( withInfoLogEnabled: true );
 		}
 
-		private void RunInfoLogEnabledCheckTests ( bool withInfoLogEnabled )
+		private void RunInfoLogEnabledCheckTests( bool withInfoLogEnabled )
 		{
 			TargetLoggerMockLoggerSetupProperties loggerSetupProps = withInfoLogEnabled
 				? TargetLoggerMockLoggerSetupProperties.InfoEnabledWithoutExpectations()
@@ -259,19 +252,19 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogTraceMessage_WithoutFormat ()
+		public void Test_CanLogTraceMessage_WithoutFormat()
 		{
 			RunTraceLogMessageTests( withFormattedMessage: false );
 		}
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogTraceMessage_WithFormat ()
+		public void Test_CanLogTraceMessage_WithFormat()
 		{
 			RunTraceLogMessageTests( withFormattedMessage: true );
 		}
 
-		private void RunTraceLogMessageTests ( bool withFormattedMessage )
+		private void RunTraceLogMessageTests( bool withFormattedMessage )
 		{
 			LogMessageExpectations logMessageExpectations =
 				GenerateLogMessageExpectations( withFormattedMessage );
@@ -285,27 +278,25 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			Log4NetLogger stakhanoviseLogger =
 				new Log4NetLogger( targetLoggerMock.Object );
 
-			if ( withFormattedMessage )
-				stakhanoviseLogger.TraceFormat( logMessageExpectations.ExpectedMessage, logMessageExpectations.ExpectedMessageArgs );
-			else
-				stakhanoviseLogger.Trace( logMessageExpectations.ExpectedMessage );
+			stakhanoviseLogger.CallTrace( logMessageExpectations,
+				withFormattedMessage );
 
 			targetLoggerMock.Verify();
 		}
 
 		[Test]
-		public void Test_CanCheckIfTraceLogEnabled_WhenDisabled ()
+		public void Test_CanCheckIfTraceLogEnabled_WhenDisabled()
 		{
 			RunTraceLogEnabledCheckTests( withTraceLogEnabled: false );
 		}
 
 		[Test]
-		public void Test_CanCheckIfTraceLogEnabled_WhenEnabled ()
+		public void Test_CanCheckIfTraceLogEnabled_WhenEnabled()
 		{
 			RunTraceLogEnabledCheckTests( withTraceLogEnabled: true );
 		}
 
-		private void RunTraceLogEnabledCheckTests ( bool withTraceLogEnabled )
+		private void RunTraceLogEnabledCheckTests( bool withTraceLogEnabled )
 		{
 			TargetLoggerMockLoggerSetupProperties loggerSetupProps = withTraceLogEnabled
 				? TargetLoggerMockLoggerSetupProperties.TraceEnabledWithoutExpectations()
@@ -318,26 +309,26 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogWarn_WithoutFormat_WithoutException ()
+		public void Test_CanLogWarn_WithoutFormat_WithoutException()
 		{
 			RunWarnLogMessageTestsWithoutException( withFormattedMessage: false );
 		}
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogWarn_WithoutFormat_WithException ()
+		public void Test_CanLogWarn_WithoutFormat_WithException()
 		{
 			RunWarnLogMessageTestsWithException();
 		}
 
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanLogWarn_WithFormat ()
+		public void Test_CanLogWarn_WithFormat()
 		{
 			RunWarnLogMessageTestsWithoutException( withFormattedMessage: true );
 		}
 
-		private void RunWarnLogMessageTestsWithoutException ( bool withFormattedMessage )
+		private void RunWarnLogMessageTestsWithoutException( bool withFormattedMessage )
 		{
 			LogMessageExpectations logWarnExpectations = GenerateLogExceptionExpectations( withException: false,
 				withFormattedMessage: withFormattedMessage );
@@ -351,15 +342,13 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			Log4NetLogger stakhanoviseLogger =
 				new Log4NetLogger( targetLoggerMock.Object );
 
-			if ( withFormattedMessage )
-				stakhanoviseLogger.WarnFormat( logWarnExpectations.ExpectedMessage, logWarnExpectations.ExpectedMessageArgs );
-			else
-				stakhanoviseLogger.Warn( logWarnExpectations.ExpectedMessage );
+			stakhanoviseLogger.CallWarnWithoutException( logWarnExpectations,
+				withFormattedMessage );
 
 			targetLoggerMock.Verify();
 		}
 
-		private void RunWarnLogMessageTestsWithException ()
+		private void RunWarnLogMessageTestsWithException()
 		{
 			LogMessageExpectations logWarnExpectations = GenerateLogExceptionExpectations( withException: true,
 				withFormattedMessage: false );
@@ -373,7 +362,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			Log4NetLogger stakhanoviseLogger =
 				new Log4NetLogger( targetLoggerMock.Object );
 
-			stakhanoviseLogger.Warn( logWarnExpectations.ExpectedMessage, logWarnExpectations.ExpectedException );
+			stakhanoviseLogger.CallWarnWitException( logWarnExpectations );
 			targetLoggerMock.Verify();
 		}
 
@@ -384,12 +373,12 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 		}
 
 		[Test]
-		public void Test_CanCheckIfWarnEnabled_WhenDisabled ()
+		public void Test_CanCheckIfWarnEnabled_WhenDisabled()
 		{
 			RunWarnLogEnabledCheckTests( withWarnLogEnabled: false );
 		}
 
-		private void RunWarnLogEnabledCheckTests ( bool withWarnLogEnabled )
+		private void RunWarnLogEnabledCheckTests( bool withWarnLogEnabled )
 		{
 			TargetLoggerMockLoggerSetupProperties loggerSetupProps = withWarnLogEnabled
 				? TargetLoggerMockLoggerSetupProperties.WarnEnabledWithoutExpectations()
@@ -400,7 +389,9 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 				withWarnLogEnabled );
 		}
 
-		private void RunLogLevelEnabledCheckTests ( TargetLoggerMockLoggerSetupProperties loggerSetupProps, StakhanoviseLogLevel logLevel, bool isLevelEnabled )
+		private void RunLogLevelEnabledCheckTests( TargetLoggerMockLoggerSetupProperties loggerSetupProps,
+			StakhanoviseLogLevel logLevel,
+			bool isLevelEnabled )
 		{
 			Mock<ILog> targetLoggerMock =
 				CreateLog4NetLoggerMock( loggerSetupProps );
@@ -414,7 +405,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 				Assert.IsFalse( stakhanoviseLogger.IsEnabled( logLevel ) );
 		}
 
-		private Mock<ILog> CreateLog4NetLoggerMock ( TargetLoggerMockLoggerSetupProperties props )
+		private Mock<ILog> CreateLog4NetLoggerMock( TargetLoggerMockLoggerSetupProperties props )
 		{
 			Mock<ILog> mock = new Mock<ILog>( MockBehavior.Strict );
 
@@ -428,7 +419,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			return mock;
 		}
 
-		private Mock<ILog> SetupDebugForLoggerMock ( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
+		private Mock<ILog> SetupDebugForLoggerMock( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
 		{
 			if ( props.IsDebugEnabled )
 			{
@@ -446,7 +437,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 				{
 					mock.Setup( m => m.Debug( It.IsAny<string>() ) )
 						.Verifiable();
-					mock.Setup( m => m.DebugFormat( It.IsAny<string>(), It.IsAny<string[]>() ) )
+					mock.Setup( m => m.DebugFormat( It.IsAny<string>(), It.IsAny<string []>() ) )
 						.Verifiable();
 				};
 			}
@@ -457,7 +448,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			return mock;
 		}
 
-		private Mock<ILog> SetupErrorForLoggerMock ( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
+		private Mock<ILog> SetupErrorForLoggerMock( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
 		{
 			if ( props.IsErrorEnabled )
 			{
@@ -486,7 +477,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			return mock;
 		}
 
-		private Mock<ILog> SetupFatalForLoggerMock ( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
+		private Mock<ILog> SetupFatalForLoggerMock( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
 		{
 			if ( props.IsFatalEnabled )
 			{
@@ -515,7 +506,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			return mock;
 		}
 
-		private Mock<ILog> SetupInfoForLoggerMock ( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
+		private Mock<ILog> SetupInfoForLoggerMock( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
 		{
 			if ( props.IsInfoEnabled )
 			{
@@ -533,7 +524,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 				{
 					mock.Setup( m => m.Info( It.IsAny<string>() ) )
 						.Verifiable();
-					mock.Setup( m => m.InfoFormat( It.IsAny<string>(), It.IsAny<string[]>() ) )
+					mock.Setup( m => m.InfoFormat( It.IsAny<string>(), It.IsAny<string []>() ) )
 						.Verifiable();
 				};
 			}
@@ -544,7 +535,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			return mock;
 		}
 
-		private Mock<ILog> SetupTraceForLoggerMock ( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
+		private Mock<ILog> SetupTraceForLoggerMock( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
 		{
 			if ( props.IsTraceEnabled )
 			{
@@ -562,7 +553,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 				{
 					mock.Setup( m => m.Info( It.IsAny<string>() ) )
 						.Verifiable();
-					mock.Setup( m => m.InfoFormat( It.IsAny<string>(), It.IsAny<string[]>() ) )
+					mock.Setup( m => m.InfoFormat( It.IsAny<string>(), It.IsAny<string []>() ) )
 						.Verifiable();
 				};
 			}
@@ -573,7 +564,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			return mock;
 		}
 
-		private Mock<ILog> SetupWarnForLoggerMock ( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
+		private Mock<ILog> SetupWarnForLoggerMock( Mock<ILog> mock, TargetLoggerMockLoggerSetupProperties props )
 		{
 			if ( props.IsWarnEnabled )
 			{
@@ -596,7 +587,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 						.Verifiable();
 					mock.Setup( m => m.Warn( It.IsAny<string>(), It.IsAny<Exception>() ) )
 						.Verifiable();
-					mock.Setup( m => m.WarnFormat( It.IsAny<string>(), It.IsAny<string[]>() ) )
+					mock.Setup( m => m.WarnFormat( It.IsAny<string>(), It.IsAny<string []>() ) )
 						.Verifiable();
 				};
 			}

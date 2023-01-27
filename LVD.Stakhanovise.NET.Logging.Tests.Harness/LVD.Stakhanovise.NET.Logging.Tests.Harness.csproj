@@ -9,4 +9,8 @@
 		<PackageReference Include="Bogus" Version="34.0.2" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
+	</ItemGroup>
+
 </Project>
