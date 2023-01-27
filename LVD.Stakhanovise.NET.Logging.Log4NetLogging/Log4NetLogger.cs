@@ -7,12 +7,10 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging
 	{
 		private ILog mLog4NetLog;
 
-		private Type mThisType;
-
 		public Log4NetLogger( ILog log4NetLog )
 		{
-			mLog4NetLog = log4NetLog ?? throw new ArgumentNullException( nameof( log4NetLog ) );
-			mThisType = GetType();
+			mLog4NetLog = log4NetLog 
+				?? throw new ArgumentNullException( nameof( log4NetLog ) );
 		}
 
 		public void Debug( string message )

@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
+﻿using log4net;
+using LVD.Stakhanovise.NET.Logging.Tests.Harness;
 using Moq;
-using log4net;
-using Bogus;
+using NUnit.Framework;
+using System;
 
 namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 {

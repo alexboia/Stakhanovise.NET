@@ -12,7 +12,7 @@ namespace LVD.Stakhanovise.NET.Logging.NLogLogging
 			if ( setup == null )
 				throw new ArgumentNullException( nameof( setup ) );
 
-			return setup.WithLoggingProvider( new NLogLoggingProvider() );
+			return setup.WithLoggingProvider( new StakhanoviseNLogLoggingProvider() );
 		}
 	}
 }

@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
+namespace LVD.Stakhanovise.NET.Logging.Tests.Harness
 {
 	public class TargetLoggerMockLoggerSetupProperties
 	{
-		public static TargetLoggerMockLoggerSetupProperties DebugEnabledWithoutExpectations ()
+		public static TargetLoggerMockLoggerSetupProperties DebugEnabledWithoutExpectations()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -15,7 +15,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties DebugEnabledWithExpectations ( LogMessageExpectations expectations )
+		public static TargetLoggerMockLoggerSetupProperties DebugEnabledWithExpectations( LogMessageExpectations expectations )
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -24,7 +24,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties DebugDisabled ()
+		public static TargetLoggerMockLoggerSetupProperties DebugDisabled()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -33,7 +33,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties ErrorEnabledWithoutExpectations ()
+		public static TargetLoggerMockLoggerSetupProperties ErrorEnabledWithoutExpectations()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -42,7 +42,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties ErrorDisabled ()
+		public static TargetLoggerMockLoggerSetupProperties ErrorDisabled()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -51,7 +51,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties ErrorEnabledWithExpectations ( LogMessageExpectations expectations )
+		public static TargetLoggerMockLoggerSetupProperties ErrorEnabledWithExpectations( LogMessageExpectations expectations )
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -60,7 +60,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties FatalEnabledWithoutExpectations ()
+		public static TargetLoggerMockLoggerSetupProperties FatalEnabledWithoutExpectations()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -69,7 +69,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties FatalDisabled ()
+		public static TargetLoggerMockLoggerSetupProperties FatalDisabled()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -78,7 +78,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties FatalEnabledWithExpectations ( LogMessageExpectations expectations )
+		public static TargetLoggerMockLoggerSetupProperties FatalEnabledWithExpectations( LogMessageExpectations expectations )
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -87,7 +87,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties InfoEnabledWithoutExpectations ()
+		public static TargetLoggerMockLoggerSetupProperties InfoEnabledWithoutExpectations()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -96,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties InfoDisabled ()
+		public static TargetLoggerMockLoggerSetupProperties InfoDisabled()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -105,7 +105,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties InfoEnabledWithExpectations ( LogMessageExpectations expectations )
+		public static TargetLoggerMockLoggerSetupProperties InfoEnabledWithExpectations( LogMessageExpectations expectations )
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -114,7 +114,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties TraceEnabledWithoutExpectations ()
+		public static TargetLoggerMockLoggerSetupProperties TraceEnabledWithoutExpectations()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -123,7 +123,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties TraceDisabled ()
+		public static TargetLoggerMockLoggerSetupProperties TraceDisabled()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -132,7 +132,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties TraceEnabledWithExpectations ( LogMessageExpectations expectations )
+		public static TargetLoggerMockLoggerSetupProperties TraceEnabledWithExpectations( LogMessageExpectations expectations )
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -141,7 +141,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties WarnEnabledWithoutExpectations ()
+		public static TargetLoggerMockLoggerSetupProperties WarnEnabledWithoutExpectations()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -150,7 +150,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties WarnDisabled ()
+		public static TargetLoggerMockLoggerSetupProperties WarnDisabled()
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -159,7 +159,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public static TargetLoggerMockLoggerSetupProperties WarnEnabledWithExpectations ( LogMessageExpectations expectations )
+		public static TargetLoggerMockLoggerSetupProperties WarnEnabledWithExpectations( LogMessageExpectations expectations )
 		{
 			return new TargetLoggerMockLoggerSetupProperties()
 			{
@@ -168,28 +168,64 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			};
 		}
 
-		public bool IsDebugEnabled { get; set; }
+		public bool IsDebugEnabled
+		{
+			get; set;
+		}
 
-		public LogMessageExpectations DebugMessageExpectations { get; set; }
+		public LogMessageExpectations DebugMessageExpectations
+		{
+			get; set;
+		}
 
-		public bool IsErrorEnabled { get; set; }
+		public bool IsErrorEnabled
+		{
+			get; set;
+		}
 
-		public LogMessageExpectations ErrorMessageExpectations { get; set; }
+		public LogMessageExpectations ErrorMessageExpectations
+		{
+			get; set;
+		}
 
-		public bool IsFatalEnabled { get; set; }
+		public bool IsFatalEnabled
+		{
+			get; set;
+		}
 
-		public LogMessageExpectations FatalMessageExpectations { get; set; }
+		public LogMessageExpectations FatalMessageExpectations
+		{
+			get; set;
+		}
 
-		public bool IsInfoEnabled { get; set; }
+		public bool IsInfoEnabled
+		{
+			get; set;
+		}
 
-		public LogMessageExpectations InfoMessageExpectations { get; set; }
+		public LogMessageExpectations InfoMessageExpectations
+		{
+			get; set;
+		}
 
-		public bool IsTraceEnabled { get; set; }
+		public bool IsTraceEnabled
+		{
+			get; set;
+		}
 
-		public LogMessageExpectations TraceMessageExpectations { get; set; }
+		public LogMessageExpectations TraceMessageExpectations
+		{
+			get; set;
+		}
 
-		public bool IsWarnEnabled { get; set; }
+		public bool IsWarnEnabled
+		{
+			get; set;
+		}
 
-		public LogMessageExpectations WarnMessageExpectations { get; set; }
+		public LogMessageExpectations WarnMessageExpectations
+		{
+			get; set;
+		}
 	}
 }

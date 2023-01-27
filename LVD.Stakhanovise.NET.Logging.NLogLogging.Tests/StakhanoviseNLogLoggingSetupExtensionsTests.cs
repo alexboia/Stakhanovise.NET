@@ -3,14 +3,14 @@ using Moq;
 using NUnit.Framework;
 using System;
 
-namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
+namespace LVD.Stakhanovise.NET.Logging.NLogLogging.Tests
 {
 	[TestFixture]
-	public class StakhanoviseLog4NetLoggingSetupExtensionsTests
+	public class StakhanoviseNLogLoggingSetupExtensionsTests
 	{
 		[Test]
 		[Repeat( 10 )]
-		public void Test_CanRegisterLoggingProvider_NonNullTargetSetup ()
+		public void Test_CanRegisterLoggingProvider_NonNullTargetSetup()
 		{
 			Mock<IStakhanoviseSetup> setupMock =
 				CreateSetupMock();
@@ -19,7 +19,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 				setupMock.Object;
 
 			IStakhanoviseSetup chainedSetup =
-				targetSetup.WithLog4NetLogging();
+				targetSetup.WithNLogLogging();
 
 			Assert.AreSame( targetSetup,
 				chainedSetup );
@@ -29,17 +29,17 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 		}
 
 		[Test]
-		public void Test_CanRegisterLoggingProvider_NullTargetSetup ()
+		public void Test_CanRegisterLoggingProvider_NullTargetSetup()
 		{
 			IStakhanoviseSetup targetSetup = null;
-			Assert.Throws<ArgumentNullException>( () => targetSetup.WithLog4NetLogging() );
+			Assert.Throws<ArgumentNullException>( () => targetSetup.WithNLogLogging() );
 		}
 
-		private Mock<IStakhanoviseSetup> CreateSetupMock ()
+		private Mock<IStakhanoviseSetup> CreateSetupMock()
 		{
 			Mock<IStakhanoviseSetup> mock = new Mock<IStakhanoviseSetup>( MockBehavior.Strict );
 
-			mock.Setup( m => m.WithLoggingProvider( It.IsAny<Log4NetLoggingProvider>() ) )
+			mock.Setup( m => m.WithLoggingProvider( It.IsAny<StakhanoviseNLogLoggingProvider>() ) )
 				.Returns( mock.Object );
 
 			return mock;

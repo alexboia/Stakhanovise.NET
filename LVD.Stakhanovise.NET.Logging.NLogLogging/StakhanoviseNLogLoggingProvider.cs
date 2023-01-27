@@ -5,12 +5,12 @@ using NLog;
 
 namespace LVD.Stakhanovise.NET.Logging.NLogLogging
 {
-	public class NLogLoggingProvider : IStakhanoviseLoggingProvider
+	public class StakhanoviseNLogLoggingProvider : IStakhanoviseLoggingProvider
 	{
 		public IStakhanoviseLogger CreateLogger ( string name )
 		{
 			Logger nlogLog = LogManager.GetLogger( name );
-			return new NLogLogger( nlogLog );
+			return new StakhanoviseNLogLogger( nlogLog );
 		}
 	}
 }

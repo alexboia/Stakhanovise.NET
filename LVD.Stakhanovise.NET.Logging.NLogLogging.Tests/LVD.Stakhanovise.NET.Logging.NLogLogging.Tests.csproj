@@ -6,7 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="log4net" Version="2.0.14" />
+		<PackageReference Include="NLog" Version="4.7.15" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
 		<PackageReference Include="Moq" Version="4.17.2" />
 		<PackageReference Include="NUnit" Version="3.13.3" />
@@ -14,9 +14,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\LVD.Stakhanovise.NET.Logging.Log4NetLogging\LVD.Stakhanovise.NET.Logging.Log4NetLogging.csproj" />
-		<ProjectReference Include="..\LVD.Stakhanovise.NET.Logging.Tests.Harness\LVD.Stakhanovise.NET.Logging.Tests.Harness.csproj" />
-		<ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
+	  <ProjectReference Include="..\LVD.Stakhanovise.NET.Logging.NLogLogging\LVD.Stakhanovise.NET.Logging.NLogLogging.csproj" />
+	  <ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
 	</ItemGroup>
 
 </Project>

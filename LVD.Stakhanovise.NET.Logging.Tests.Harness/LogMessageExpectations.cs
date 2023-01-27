@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Bogus;
+﻿using Bogus;
+using System;
 
-namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
+namespace LVD.Stakhanovise.NET.Logging.Tests.Harness
 {
 	public class LogMessageExpectations
 	{

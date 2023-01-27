@@ -5,11 +5,11 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Logging.NLogLogging
 {
-	public class NLogLogger : IStakhanoviseLogger
+	public class StakhanoviseNLogLogger : IStakhanoviseLogger
 	{
 		private Logger mNlogLog;
 
-		public NLogLogger ( Logger nlogLog )
+		public StakhanoviseNLogLogger ( Logger nlogLog )
 		{
 			mNlogLog = nlogLog ?? throw new ArgumentNullException( nameof( nlogLog ) );
 		}
