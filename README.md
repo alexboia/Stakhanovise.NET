@@ -411,6 +411,20 @@ await Stakhanovise
 	})
 ```
 
+### 3. Disable application metrics monitoring
+
+Simply call `IStakhanoviseSetup.DisableAppMetricsMonitoring()` during setup:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.DisableAppMetricsMonitoring();
+	})
+```
+*Note*: when disabled, the related DB assets setup will also be skipped.
+
 ## Add-on packages
 <a name="sk-addon-packages"></a>
 
