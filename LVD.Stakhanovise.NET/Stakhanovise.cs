@@ -83,6 +83,7 @@ namespace LVD.Stakhanovise.NET
 
 		public Stakhanovise WithProcessIdProvider( IProcessIdProvider processIdProvider )
 		{
+			//TODO: throw if already started
 			mProcessIdProvider = processIdProvider ?? throw new ArgumentNullException( nameof( processIdProvider ) );
 			return this;
 		}

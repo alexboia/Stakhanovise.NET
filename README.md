@@ -423,6 +423,46 @@ await Stakhanovise
 	.StartFulfillingFiveYearPlanAsync();
 ```
 
+## Process Id
+
+Since there can be multiple Stakhanovise processes operating in parallel on the same queue, 
+there needs to be a way of differentiating between them.
+Currently, however, this is only needed (or relevant) when persisting metrics 
+and execution performance data.
+
+A process Id is generated using an instance of `IProcessIdProvider`, 
+whose default implementation currently is [`AutoProcessIdProvider`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Processor/AutoProcessIdProvider.cs), which does a couple of things:
+
+- checks for a `.sk-process-id` in the current application's directory;
+- if that file *is present*, it reads its contents and uses that as the process Id;
+- if the file *is not present*, it generates a new process Id (a `System.Guid` converted to string) and writes it down to that file.
+
+There is another implementation out-of-the-box, [`StaticProcessIdProvider`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Processor/StaticProcessIdProvider.cs), 
+which doesn't really do anything except for the fact that you can create a new instance of it with a given process Id 
+and will return that one each time anyone requests it.
+
+### Implementing a custom process Id provider
+
+As mentioned, you need to implement `IProcessIdProvider`, which has two metods:
+
+- `Task SetupAsync()` - perform any preparatory actions required (called by Stakhanovise before setup begins);
+- `string GetProcessId()` - generate and/or return a process id, must be the same within a single process process, each time it is called.
+
+### Registering a custom process Id provider
+
+Simply call `Stakhanovise.WithProcessIdProvider()`:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.WithProcessIdProvider(new MyCustomProcessIdProvider())
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		//Do setup
+	})
+	.StartFulfillingFiveYearPlanAsync();
+```
+
 ## Advanced usage
 <a name="sk-advanced-usage"></a>
 

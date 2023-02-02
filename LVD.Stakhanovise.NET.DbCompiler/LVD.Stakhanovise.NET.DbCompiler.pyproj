@@ -131,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="compile.bat" />
+    <Content Include="README.md" />
     <Content Include="src\makefile" />
     <Content Include="src\parts\readme_db_footer.md" />
     <Content Include="src\parts\readme_db_header.md" />
