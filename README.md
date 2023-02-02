@@ -268,6 +268,29 @@ await Stakhanovise
 
 ## Task properties
 
+- `Task Id` - Internal task identifier;
+- `Lock handle Id` - Internal identifer used for locking during task acquisition;
+- `Type` - Fully qualified name of payload type;
+- `Payload` - Serialized task payload;
+- `Source` - User provided description of which entity posted the task;
+- `Priority` - User provided numerical descriptor of task priority (lower values mean higher priority);
+- `Locked until` - A timestamp after which the task is retrievable (this provides a mechanism for posting a task now but having Stakhanovise attempt to dequeue it later);
+- `Status` - Task status (see below for additional discussion).
+
+### Task statuses
+
+The following tasks tatuses are available:
+
+- `Unprocessed` - The task has been posted to the queue and is pending processing;
+- `Processing` - The task has been locked and processing has started;
+- `Processed` - The task has been successfully processed;
+- `Error` - The task has been processed, but an error occured and has been scheduled for retrial;
+- `Faulted` - The task processing has errored out, beyond the configured number of processing errors threshold and has been flagged for special processing;
+- `Fatal` - Fault state could not be handled;
+- `Cancelled`.
+
+Also see [`QueuedTaskStatus`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskStatus.cs).
+
 ## Result properties
 
 ## Timestamp provider
