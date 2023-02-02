@@ -399,8 +399,8 @@ See the dedicated pages for how to enable and use each provider.
 
 Using a custom logging provider is a two step process:
 
-- first, develop a provider if you don't already have one;
-- second, register it with Stakhanovise to enable its usage.
+a) Develop a provider if you don't already have one;
+b) Register it with Stakhanovise to enable its usage.
 
 ### Developing a custom logging provider
 
@@ -495,7 +495,7 @@ await Stakhanovise
 
 There is a dedicated setup sub-flow for configuring the application metrics monitor writer, 
 that can be entered by calling `IStakhanoviseSetup.SetupAppMetricsMonitorWriter()`, 
-which needs an `Action<SetupBuiltInWriter>` as a parameter.
+which needs an `Action<IAppMetricsMonitorWriterSetup>` as a parameter.
 
 You can then use the `IAppMetricsMonitorWriterSetup.SetupBuiltInWriter()` method to configure the built-in writer:
 
@@ -509,6 +509,11 @@ await Stakhanovise
 			writerSetup.SetupBuiltInWriter(builtinWriterSetup => 
 			{
 				//only DB connection options can be modified at this time
+				//normally you don't need to do this unless:
+				//	a) you want to store these to a separate database
+				//		OR
+				//	b) you want o alter the additional connection parameters 
+				//		(DB connect retry count, retry delay and so on)
 				builtinWriterSetup.WithConnectionOptions(connSetup => 
 				{
 					connSetup.WithConnectionString(...)
@@ -523,6 +528,43 @@ await Stakhanovise
 ```
 
 ### 5. Replacing the application metrics monitor writer
+
+Replacing the built-in writer requires you to:
+
+a) Implement the [`IAppMetricsMonitorWriter`]() interface
+b) Register it with Stakhanovise to enable its usage.
+
+### Implementing a custom writer
+
+There is only one method which needs to be implemented: 
+`IAppMetricsMonitorWriter.WriteAsync(string processId, IEnumerable<AppMetric> appMetrics)`. 
+
+Where:
+- `processId` is the identifier of the currently running Stakhanovise instance;
+- `appMetrics` is the list of metrics objects to be written (see [`AppMetric` class](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Model/AppMetric.cs)).
+
+The return value should be the number of entries actually written.
+
+### Registering the custom writer
+
+There is a dedicated setup sub-flow for configuring the application metrics monitor writer, that can be entered by calling `IStakhanoviseSetup.SetupAppMetricsMonitorWriter()`, 
+which needs an `Action<IAppMetricsMonitorWriterSetup>` as a parameter.
+
+You can then use the `IAppMetricsMonitorWriterSetup.UseWriter()` or `IAppMetricsMonitorWriterSetup.UseWriterFactory()` method 
+to register the custom writer:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.SetupAppMetricsMonitorWriter(writerSetup => 
+		{
+			writerSetup.UseWriter(new MyCustomMetricsWriter());
+		});
+	})
+	.StartFulfillingFiveYearPlanAsync();
+```
 
 ## Add-on packages
 <a name="sk-addon-packages"></a>
