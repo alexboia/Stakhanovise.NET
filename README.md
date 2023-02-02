@@ -323,7 +323,7 @@ await Stakhanovise
 	.CreateForTheMotherland()
 	.SetupWorkingPeoplesCommittee(setup => 
 	{
-		setup.WithTimestampProvider(...);
+		setup.WithTimestampProvider( new MyCustomTimestampProvider() );
 	})
 ```
 
@@ -354,7 +354,7 @@ Also see the following:
 
 - above discussion for the meaning of related parameters and properties;
 - [`QueuedTaskProduceInfo` here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskProduceInfo.cs);
-- [producer tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Producer.Tests/PostgreSqlTaskQueueProducerTests.cs).
+- [Producer tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Producer.Tests/PostgreSqlTaskQueueProducerTests.cs).
 
 ## Inspecting the queue
 <a name="sk-inspecting-queue"></a>
@@ -378,12 +378,48 @@ To create a new instance, you need to provide:
 Also see the following:
 
 - [`TaskQueueMetrics` here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/TaskQueueMetrics.cs);
-- [info tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.Net.Info.Tests/PostgreSqlTaskQueueInfoTests.cs).
+- [Info tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.Net.Info.Tests/PostgreSqlTaskQueueInfoTests.cs).
 
 ## Logging
 <a name="sk-logging"></a>
 
+Two loggers are bundled with the `LVD.Stakhanovise.NET` package:
+- a no-op logger, which simply discards the messages ([see `NoOpLogger`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Logging/NoOpLogger.cs));
+- a console logger, which prints them out to standard output ([see `ConsoleLogger`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Logging/ConsoleLogger.cs)).
 
+Additionally, the following add-on packages are available:
+- [`LVD.Stakhanovise.NET.Logging.NLogLogging`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Logging.NLogLogging) - for NLog integration;
+- [`LVD.Stakhanovise.NET.Logging.Log4NetLogging`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Logging.Log4NetLogging) - for Log4Net integration;
+- [`LVD.Stakhanovise.NET.Logging.Serilog`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Logging.Serilog) - for Serilog integration (more or less work in progress right now).
+
+See the dedicated pages for how to enable and use each provider.
+
+### Custom logging provider
+
+Using a custom logging provider is a two step process:
+
+- first, develop a provider if you don't already have one;
+- second, register it with Stakhanovise to enable its usage.
+
+### Developing a custom logging provider
+
+You need to implement two interfaces:
+
+- [`IStakhanoviseLogger`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Logging/IStakhanoviseLogger.cs), which is the interface actually used for logging;
+- [`IStakhanoviseLoggingProvider`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Logging/IStakhanoviseLoggingProvider.cs), which is the actual logging provider.
+
+### Registering a custom logging provider
+
+Simply call `IStakhanoviseSetup.WithLoggingProvider()` during setup:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.WithLoggingProvider( new MyCustomLoggingProvider() );
+	})
+```
 
 ## Advanced usage
 <a name="sk-advanced-usage"></a>
@@ -451,7 +487,7 @@ await Stakhanovise
 ```
 *Note*: when disabled, the related DB assets setup will also be skipped.
 
-### 4. Configuring the buiult-in application metrics monitor writer
+### 4. Configuring the built-in application metrics monitor writer
 
 ### 5. Replacing the application metrics monitor writer
 
