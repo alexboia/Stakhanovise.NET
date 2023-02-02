@@ -25,7 +25,6 @@ The makefile specifies:
 - how to search for database definition files;
 - what to output.
 
-
 The makefile specifies one property per line in `[KEY]=[VALUE]` pairs.
 Supported makefile properties: 
 
