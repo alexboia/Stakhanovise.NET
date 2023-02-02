@@ -69,11 +69,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Produc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.RedisResultQueueBackup", "LVD.Stakhanovise.NET.RedisResultQueueBackup\LVD.Stakhanovise.NET.RedisResultQueueBackup.csproj", "{52A5AFA8-E401-41C9-B2C4-39C0AB29DA31}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.Net.Info.Tests", "LVD.Stakhanovise.Net.Info.Tests\LVD.Stakhanovise.Net.Info.Tests.csproj", "{95030A75-DCD7-4A80-89C9-1F1E060DC10C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Info.Tests", "LVD.Stakhanovise.Net.Info.Tests\LVD.Stakhanovise.NET.Info.Tests.csproj", "{95030A75-DCD7-4A80-89C9-1F1E060DC10C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.Logging.Tests.Harness", "LVD.Stakhanovise.NET.Logging.Tests.Harness\LVD.Stakhanovise.NET.Logging.Tests.Harness.csproj", "{EDD6268C-D31C-4ED9-8642-55FDDF7D99E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Logging.Tests.Harness", "LVD.Stakhanovise.NET.Logging.Tests.Harness\LVD.Stakhanovise.NET.Logging.Tests.Harness.csproj", "{EDD6268C-D31C-4ED9-8642-55FDDF7D99E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.Logging.NLogLogging.Tests", "LVD.Stakhanovise.NET.Logging.NLogLogging.Tests\LVD.Stakhanovise.NET.Logging.NLogLogging.Tests.csproj", "{A6C570C0-AAD6-47F0-BB74-6768C1A56527}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Logging.NLogLogging.Tests", "LVD.Stakhanovise.NET.Logging.NLogLogging.Tests\LVD.Stakhanovise.NET.Logging.NLogLogging.Tests.csproj", "{A6C570C0-AAD6-47F0-BB74-6768C1A56527}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
