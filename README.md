@@ -273,14 +273,32 @@ await Stakhanovise
 ## Timestamp provider
 <a name="sk-timestamp-provider"></a>
 
+There are various instances that require an `ITimestampProvider` instance, or simply, a timestamp provider. 
+A timestamp provider is responsible for retrieving the current date and time, as a `DateTimeOffset`. (`ITimestampProvider`.`GetNow()`).
+
+There is a default implementation provided in the `LVD.Stakhanovise.NET.Common` package: [`UtcNowTimestampProvider`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common/UtcNowTimestampProvider.cs).
+
+You may provide a different implementation by calling `IStakhanoviseSetup.WithTimestampProvider()` during setup:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.WithTimestampProvider(...);
+	})
+```
+
+Whatever instance Stakhanovise ends up with after setup will automatically be registered with the DI container.
+
 ## Adding to queue
 <a name="sk-adding-to-queue"></a>
 
 Adding tasks to queue is done using an `ITaskQueueProducer` instance. 
-If you are using the main package, `LVD.Stakhanovise.NET`,this is registered for you by default and you may simple request that it be injected.
+If you are using the main package, `LVD.Stakhanovise.NET`,this is registered for you with the DI container by default and you may simple request that it be injected.
 Otherwise, you need to install the `LVD.Stakhanovise.NET.Producer` package, which also provides an implementation: `PostgreSqlTaskQueueProducer`.
 
-### Creating a `PostgreSqlTaskQueueProducer`
+### Creating a `PostgreSqlTaskQueueProducer` instance
 
 To create a new instance, you need to provide:
 
@@ -294,9 +312,11 @@ There are two metods available for producing tasks, both of which are pretty str
 - `Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload, string source, int priority )`;
 - `Task<IQueuedTask> EnqueueAsync ( QueuedTaskProduceInfo queuedTaskInfo )`.
 
-See discussion above for the meaning of related parameters and properties.
-See [`QueuedTaskProduceInfo` here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskProduceInfo.cs).
-See [producer tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Producer.Tests/PostgreSqlTaskQueueProducerTests.cs).
+Also see the following:
+
+- above discussion for the meaning of related parameters and properties;
+- [`QueuedTaskProduceInfo` here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskProduceInfo.cs);
+- [producer tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Producer.Tests/PostgreSqlTaskQueueProducerTests.cs).
 
 ## Inspecting the queue
 <a name="sk-inspecting-queue"></a>

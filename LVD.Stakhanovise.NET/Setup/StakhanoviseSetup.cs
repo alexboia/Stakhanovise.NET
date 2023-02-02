@@ -70,6 +70,8 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		private ITaskResultQueueBackup mResultQueueBackup;
 
+		private ITimestampProvider mTimestampProvider;
+
 		private bool mRegisterOwnDependencies = true;
 
 		private bool mSetupBuiltInDbAsssets = true;
@@ -82,6 +84,7 @@ namespace LVD.Stakhanovise.NET.Setup
 				throw new ArgumentNullException( nameof( defaults ) );
 
 			mMapping = defaults.Mapping;
+			mTimestampProvider = new UtcNowTimestampProvider();
 
 			mSetupBuiltInDbAsssets = defaults
 				.SetupBuiltInDbAsssets;
@@ -225,6 +228,15 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
+		public IStakhanoviseSetup WithTimestampProvider( ITimestampProvider timestampProvider )
+		{
+			if ( timestampProvider == null )
+				throw new ArgumentNullException( nameof( timestampProvider ) );
+
+			mTimestampProvider = timestampProvider;
+			return this;
+		}
+
 		public IStakhanoviseSetup SetupTaskQueueConsumer( Action<ITaskQueueConsumerSetup> setupAction )
 		{
 			if ( setupAction == null )
@@ -311,10 +323,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			IExecutionPerformanceMonitorWriter executionPerfMonWriter = mPerformanceMonitorWriterSetup
 				.BuildWriter();
 
-			ITimestampProvider timestampProvider =
-				new UtcNowTimestampProvider();
-
-			ITaskResultQueueBackup resultQueueBackup = mResultQueueBackup 
+			ITaskResultQueueBackup resultQueueBackup = mResultQueueBackup
 				?? new InMemoryTaskResultQueueBackup();
 
 			TaskQueueConsumerOptions consumerOptions = mTaskQueueConsumerSetup
@@ -327,28 +336,34 @@ namespace LVD.Stakhanovise.NET.Setup
 				?? new NoOpLoggingProvider();
 
 			ITaskQueueProducer taskQueueProducer = new PostgreSqlTaskQueueProducer( producerOptions,
-				timestampProvider );
+				mTimestampProvider );
 
 			ITaskQueueInfo taskQueueInfo = new PostgreSqlTaskQueueInfo( mTaskQueueInfoSetup.BuildOptions(),
-				timestampProvider );
+				mTimestampProvider );
+
+			Dictionary<Type, object> initialDependencies =
+				new Dictionary<Type, object>();
+
+			initialDependencies.Add( typeof( ITimestampProvider ),
+				mTimestampProvider );
 
 			if ( mRegisterOwnDependencies )
 			{
-				executorRegistry.LoadDependencies( new Dictionary<Type, object>()
-				{
-					{ typeof(ITaskQueueProducer),
-						taskQueueProducer },
-					{ typeof(ITaskQueueInfo),
-						taskQueueInfo }
-				} );
+				initialDependencies.Add( typeof( ITaskQueueProducer ),
+					taskQueueProducer );
+				initialDependencies.Add( typeof( ITaskQueueInfo ),
+					taskQueueInfo );
 			}
+
+			if ( initialDependencies.Count > 0 )
+				executorRegistry.LoadDependencies( initialDependencies );
 
 			return mTaskEngineSetup.BuildTaskEngine( consumerOptions,
 				producerOptions,
 				executorRegistry,
 				executionPerfMonWriter,
 				resultQueueBackup,
-				timestampProvider,
+				mTimestampProvider,
 				processId );
 		}
 

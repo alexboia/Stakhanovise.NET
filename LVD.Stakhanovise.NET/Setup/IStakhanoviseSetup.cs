@@ -44,6 +44,8 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		IStakhanoviseSetup WithTaskQueueMapping( QueuedTaskMapping mapping );
 
+		IStakhanoviseSetup WithTimestampProvider( ITimestampProvider timestampProvider );
+
 		IStakhanoviseSetup SetupPerformanceMonitorWriter( Action<IExecutionPerformanceMonitorWriterSetup> setupAction );
 
 		IStakhanoviseSetup DisableAppMetricsMonitoring();
