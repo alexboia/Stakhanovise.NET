@@ -44,7 +44,5 @@ namespace LVD.Stakhanovise.NET.Queue
 			int priority );
 
 		Task<IQueuedTask> EnqueueAsync ( QueuedTaskProduceInfo queuedTaskInfo );
-
-		ITimestampProvider TimestampProvider { get; }
 	}
 }

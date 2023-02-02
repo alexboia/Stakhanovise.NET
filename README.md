@@ -266,8 +266,37 @@ await Stakhanovise
 	.StartFulfillingFiveYearPlanAsync();
 ```
 
+## Task properties
+
+## Result properties
+
+## Timestamp provider
+<a name="sk-timestamp-provider"></a>
+
 ## Adding to queue
 <a name="sk-adding-to-queue"></a>
+
+Adding tasks to queue is done using an `ITaskQueueProducer` instance. 
+If you are using the main package, `LVD.Stakhanovise.NET`,this is registered for you by default and you may simple request that it be injected.
+Otherwise, you need to install the `LVD.Stakhanovise.NET.Producer` package, which also provides an implementation: `PostgreSqlTaskQueueProducer`.
+
+### Creating a `PostgreSqlTaskQueueProducer`
+
+To create a new instance, you need to provide:
+
+- A `TaskQueueOptions` object, [which is a simple POCO options object](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common/Options/TaskQueueOptions.cs);
+- An `ITimestampProvider` instance (see above discussion).
+
+### Producing tasks
+
+There are two metods available for producing tasks, both of which are pretty straightforward:
+
+- `Task<IQueuedTask> EnqueueAsync<TPayload> ( TPayload payload, string source, int priority )`;
+- `Task<IQueuedTask> EnqueueAsync ( QueuedTaskProduceInfo queuedTaskInfo )`.
+
+See discussion above for the meaning of related parameters and properties.
+See [`QueuedTaskProduceInfo` here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskProduceInfo.cs).
+See [producer tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Producer.Tests/PostgreSqlTaskQueueProducerTests.cs).
 
 ## Inspecting the queue
 <a name="sk-inspecting-queue"></a>

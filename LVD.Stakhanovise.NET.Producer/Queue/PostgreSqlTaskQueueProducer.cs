@@ -245,8 +245,5 @@ namespace LVD.Stakhanovise.NET.Queue
 			await conn.NotifyAsync( mOptions.Mapping.NewTaskNotificationChannelName,
 				tx );
 		}
-
-		public ITimestampProvider TimestampProvider
-			=> mTimestampProvider;
 	}
 }
