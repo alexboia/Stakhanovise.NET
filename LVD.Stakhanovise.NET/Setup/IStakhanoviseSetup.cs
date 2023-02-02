@@ -50,13 +50,13 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		IStakhanoviseSetup DisableAppMetricsMonitoring();
 
-		IStakhanoviseSetup WithLoggingProvider( IStakhanoviseLoggingProvider loggingProvider );
-
-		IStakhanoviseSetup WithResultQueueBackup( ITaskResultQueueBackup resultQueueBackup );
-
 		IStakhanoviseSetup SetupAppMetricsMonitor( Action<IAppMetricsMonitorSetup> setupAction );
 
 		IStakhanoviseSetup SetupAppMetricsMonitorWriter( Action<IAppMetricsMonitorWriterSetup> setupAction );
+
+		IStakhanoviseSetup WithLoggingProvider( IStakhanoviseLoggingProvider loggingProvider );
+
+		IStakhanoviseSetup WithResultQueueBackup( ITaskResultQueueBackup resultQueueBackup );
 
 		IStakhanoviseSetup SetupEngine( Action<ITaskEngineSetup> setupAction );
 

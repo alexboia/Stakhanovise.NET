@@ -179,14 +179,5 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			return peekedTask;
 		}
-
-		public ITimestampProvider TimestampProvider
-		{
-			get
-			{
-				CheckNotDisposedOrThrow();
-				return mTimestampProvider;
-			}
-		}
 	}
 }

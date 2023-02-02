@@ -39,10 +39,8 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public interface ITaskQueueInfo
 	{
-		Task<TaskQueueMetrics> ComputeMetricsAsync ();
+		Task<TaskQueueMetrics> ComputeMetricsAsync();
 
-		Task<IQueuedTask> PeekAsync ();
-
-		ITimestampProvider TimestampProvider { get; }
+		Task<IQueuedTask> PeekAsync();
 	}
 }

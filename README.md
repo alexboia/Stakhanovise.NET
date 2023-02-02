@@ -333,7 +333,7 @@ Whatever instance Stakhanovise ends up with after setup will automatically be re
 <a name="sk-adding-to-queue"></a>
 
 Adding tasks to queue is done using an `ITaskQueueProducer` instance. 
-If you are using the main package, `LVD.Stakhanovise.NET`,this is registered for you with the DI container by default and you may simple request that it be injected.
+If you are using the main package, `LVD.Stakhanovise.NET`, this is registered for you with the DI container by default and you may simple request that it be injected.
 Otherwise, you need to install the `LVD.Stakhanovise.NET.Producer` package, which also provides an implementation: `PostgreSqlTaskQueueProducer`.
 
 ### Creating a `PostgreSqlTaskQueueProducer` instance
@@ -358,6 +358,32 @@ Also see the following:
 
 ## Inspecting the queue
 <a name="sk-inspecting-queue"></a>
+
+Inspecting the queue is done using an `ITaskQueueInfo` instance.
+If you are using the main package, `LVD.Stakhanovise.NET`, this is registered for you with the DI container by default and you may simple request that it be injected.
+Otherwise, you need to install the `LVD.Stakhanovise.NET.Info` package, which also provides an implementation: `PostgreSqlTaskQueueInfo`.
+
+### Creating a `PostgreSqlTaskQueueInfo` instance
+
+To create a new instance, you need to provide:
+
+- A `TaskQueueInfoOptions` object, [which is a simple POCO options object](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Info/Options/TaskQueueInfoOptions.cs);
+- An `ITimestampProvider` instance (see above discussion).
+
+### Retrieving queue information
+
+- Computing queue metrics - `ITaskQueueInfo.ComputeMetricsAsync()`;
+- Peeking - `ITaskQueueInfo.PeekAsync()`.
+
+Also see the following:
+
+- [`TaskQueueMetrics` here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/TaskQueueMetrics.cs);
+- [info tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.Net.Info.Tests/PostgreSqlTaskQueueInfoTests.cs).
+
+## Logging
+<a name="sk-logging"></a>
+
+
 
 ## Advanced usage
 <a name="sk-advanced-usage"></a>
@@ -424,6 +450,10 @@ await Stakhanovise
 	})
 ```
 *Note*: when disabled, the related DB assets setup will also be skipped.
+
+### 4. Configuring the buiult-in application metrics monitor writer
+
+### 5. Replacing the application metrics monitor writer
 
 ## Add-on packages
 <a name="sk-addon-packages"></a>
