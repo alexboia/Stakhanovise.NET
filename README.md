@@ -325,6 +325,7 @@ await Stakhanovise
 	{
 		setup.WithTimestampProvider( new MyCustomTimestampProvider() );
 	})
+	.StartFulfillingFiveYearPlanAsync();
 ```
 
 Whatever instance Stakhanovise ends up with after setup will automatically be registered with the DI container.
@@ -419,6 +420,7 @@ await Stakhanovise
 	{
 		setup.WithLoggingProvider( new MyCustomLoggingProvider() );
 	})
+	.StartFulfillingFiveYearPlanAsync();
 ```
 
 ## Advanced usage
@@ -458,6 +460,7 @@ await Stakhanovise
 			.Default
 			.AddTablePrefix("prfx_"));
 	})
+	.StartFulfillingFiveYearPlanAsync();
 ```
 
 ### 2. Skip setting up database assets
@@ -484,10 +487,40 @@ await Stakhanovise
 	{
 		setup.DisableAppMetricsMonitoring();
 	})
+	.StartFulfillingFiveYearPlanAsync();
 ```
 *Note*: when disabled, the related DB assets setup will also be skipped.
 
 ### 4. Configuring the built-in application metrics monitor writer
+
+There is a dedicated setup sub-flow for configuring the application metrics monitor writer, 
+that can be entered by calling `IStakhanoviseSetup.SetupAppMetricsMonitorWriter()`, 
+which needs an `Action<SetupBuiltInWriter>` as a parameter.
+
+You can then use the `IAppMetricsMonitorWriterSetup.SetupBuiltInWriter()` method to configure the built-in writer:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.SetupAppMetricsMonitorWriter(writerSetup => 
+		{
+			writerSetup.SetupBuiltInWriter(builtinWriterSetup => 
+			{
+				//only DB connection options can be modified at this time
+				builtinWriterSetup.WithConnectionOptions(connSetup => 
+				{
+					connSetup.WithConnectionString(...)
+						.WithConnectionRetryCount(...)
+						.WithConnectionRetryDelayMilliseconds(...)
+						.WithConnectionKeepAlive(...);
+				});
+			});
+		});
+	})
+	.StartFulfillingFiveYearPlanAsync();
+```
 
 ### 5. Replacing the application metrics monitor writer
 
