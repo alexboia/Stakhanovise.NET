@@ -270,16 +270,14 @@ await Stakhanovise
 
 - `Task Id` - Internal task identifier;
 - `Lock handle Id` - Internal identifer used for locking during task acquisition;
-- `Type` - Fully qualified name of payload type;
-- `Payload` - Serialized task payload;
+- `Type` - Fully qualified name of payload CLR type;
+- `Payload` - Task payload data, of type described by the `Type` field;
 - `Source` - User provided description of which entity posted the task;
 - `Priority` - User provided numerical descriptor of task priority (lower values mean higher priority);
 - `Locked until` - A timestamp after which the task is retrievable (this provides a mechanism for posting a task now but having Stakhanovise attempt to dequeue it later);
 - `Status` - Task status (see below for additional discussion).
 
 ### Task statuses
-
-The following tasks tatuses are available:
 
 - `Unprocessed` - The task has been posted to the queue and is pending processing;
 - `Processing` - The task has been locked and processing has started;
@@ -292,6 +290,23 @@ The following tasks tatuses are available:
 Also see [`QueuedTaskStatus`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskStatus.cs).
 
 ## Result properties
+
+- `Task Id` - Task id is also used as result id;
+- `Type` - Same as task type;
+- `Source` - Same as task source;
+- `Payload` - Same as task payload;
+- `Status` - Same as task status;
+- `Priority` - Same as task priority;
+- `Processing time milliseconds` - Last processing duration, in milliseconds;
+- `Last error` - Last error that has occurred (see [`QueuedTaskError`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskError.cs));
+- `Last error is recoverable` - Whether or not last error was recoverable;
+- `Error count - Current error count;
+- `Posted at` - When the task was posted;
+- `First procssing attempted at` - When the first processing was first attempted;
+- `Last procssing attempted at` - When the last processing was first attempted;
+- `Processing finalized at` - When the first processing was finalized.
+
+Also see [`IQueuedTaskResult`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/IQueuedTaskResult.cs) and [`QueuedTaskResult`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskResult.cs).
 
 ## Timestamp provider
 <a name="sk-timestamp-provider"></a>
