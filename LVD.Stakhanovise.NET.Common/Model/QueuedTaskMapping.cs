@@ -47,16 +47,30 @@ namespace LVD.Stakhanovise.NET.Model
 			DequeueFunctionName = "sk_try_dequeue_task";
 		}
 
-		public void AddTablePrefix( string tablePrefix )
+		public QueuedTaskMapping AddTablePrefix( string tablePrefix )
 		{
 			QueueTableName = $"{tablePrefix}{QueueTableName}";
 			ResultsQueueTableName = $"{tablePrefix}{ResultsQueueTableName}";
 			ExecutionTimeStatsTableName = $"{tablePrefix}{ExecutionTimeStatsTableName}";
 			MetricsTableName = $"{tablePrefix}{MetricsTableName}";
+			return this;
 		}
 
 		public static QueuedTaskMapping Default
 			=> new QueuedTaskMapping();
+
+		public bool IsValid
+		{
+			get
+			{
+				return !string.IsNullOrWhiteSpace( QueueTableName )
+					&& !string.IsNullOrWhiteSpace( ResultsQueueTableName )
+					&& !string.IsNullOrWhiteSpace( NewTaskNotificationChannelName )
+					&& !string.IsNullOrWhiteSpace( ExecutionTimeStatsTableName )
+					&& !string.IsNullOrWhiteSpace( MetricsTableName )
+					&& !string.IsNullOrWhiteSpace( DequeueFunctionName );
+			}
+		}
 
 		public string QueueTableName
 		{

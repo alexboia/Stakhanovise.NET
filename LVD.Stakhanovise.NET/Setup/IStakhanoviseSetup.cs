@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using LVD.Stakhanovise.NET.Logging;
+using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Queue;
 using System;
@@ -41,6 +42,8 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public interface IStakhanoviseSetup
 	{
+		IStakhanoviseSetup WithTaskQueueMapping( QueuedTaskMapping mapping );
+
 		IStakhanoviseSetup SetupPerformanceMonitorWriter( Action<IExecutionPerformanceMonitorWriterSetup> setupAction );
 
 		IStakhanoviseSetup DisableAppMetricsMonitoring();

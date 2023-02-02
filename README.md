@@ -10,10 +10,10 @@ That's it and nothing more. Interested? Read on, komrade!
 ## Current status
 
 The codebase is pretty much completed, but there are still a number of items that must be tended to:
-- [ ] Additional testing;
+- [x] Additional testing;
 - [ ] Additional documentation;
 - [ ] Nice to have-ish: finish work on some of the companion libraries;
-- [ ] Sample application;
+- [x] Sample application;
 - [ ] Publish the package tot he NuGet package repository.
 
 ## Contents
@@ -266,8 +266,58 @@ await Stakhanovise
 	.StartFulfillingFiveYearPlanAsync();
 ```
 
+## Adding to queue
+<a name="sk-adding-to-queue"></a>
+
+## Inspecting the queue
+<a name="sk-inspecting-queue"></a>
+
 ## Advanced usage
 <a name="sk-advanced-usage"></a>
+
+### 1. Change database asset mapping
+
+The following mapping properties can be changed:
+
+- queue table name (defaults to `sk_tasks_queue_t`);
+- results queue table name (defaults to `sk_task_results_t`);
+- execution time stats table name (defaults to `sk_task_execution_time_stats_t`);
+- metrics table name (defaults to `sk_metrics_t`);
+- new task notification channel name (defaults to `sk_task_queue_item_added`);
+- dequeue function name name (defaults to `sk_try_dequeue_task`).
+
+To alter the mapping, simply call `IStakhanoviseSetup.WithTaskQueueMapping()` during setup:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		// Manually set all properties	
+		setup.WithTaskQueueMapping(new QueuedTaskMapping() 
+		{
+			//...
+		});
+
+		// Or just alter the prefix
+		setup.WithTaskQueueMapping(QueuedTaskMapping
+			.Default
+			.AddTablePrefix("prfx_"));
+	})
+```
+
+### 2. Skip setting up database assets
+
+Simply call `IStakhanoviseSetup.DontSetupBuiltInDbAssets()` during setup:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.DontSetupBuiltInDbAssets();
+	})
+```
 
 ## Add-on packages
 <a name="sk-addon-packages"></a>
@@ -275,7 +325,14 @@ await Stakhanovise
 ## Samples
 <a name="sk-samples"></a>
 
-1. [File hashing sample application](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Samples.FileHasher) - generates some random files and then computes a SHA-256 for each one using a Stakhanovise instance.
+###. File hashing sample application
+
+Generates some random files and then computes a SHA-256 for each one using a Stakhanovise instance. 
+[Check it out here](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Samples.FileHasher).
+
+Things that may be of interest:
+- Stakhanovice instance setup;
+- Executor implementation.
 
 ## Architecture description
 <a name="sk-architecture-description"></a>

@@ -211,6 +211,9 @@ namespace LVD.Stakhanovise.NET.Setup
 			if ( mapping == null )
 				throw new ArgumentNullException( nameof( mapping ) );
 
+			if ( !mapping.IsValid )
+				throw new ArgumentException( "All mapping properties are mandatory", nameof( mapping ) );
+
 			mTaskQueueConsumerSetup.WithMapping( mapping );
 			mTaskQueueProducerSetup.WithMapping( mapping );
 			mTaskQueueInfoSetup.WithMapping( mapping );
