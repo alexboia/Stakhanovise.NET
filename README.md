@@ -293,13 +293,18 @@ await Stakhanovise
 	.CreateForTheMotherland()
 	.SetupWorkingPeoplesCommittee(setup => 
 	{
-		// Manually set all properties	
+		// Manually set all properties	that you need
 		setup.WithTaskQueueMapping(new QueuedTaskMapping() 
 		{
-			//...
+			QueueTableName = "...",
+			ResultsQueueTableName = "...",
+			ExecutionTimeStatsTableName = "...",
+			MetricsTableName = "...",
+			NewTaskNotificationChannelName = "...",
+			DequeueFunctionName = "..."
 		});
 
-		// Or just alter the prefix
+		// Or just alter the table prefix (this only affects table DB objects)
 		setup.WithTaskQueueMapping(QueuedTaskMapping
 			.Default
 			.AddTablePrefix("prfx_"));
@@ -325,7 +330,7 @@ await Stakhanovise
 ## Samples
 <a name="sk-samples"></a>
 
-###. File hashing sample application
+### File hashing sample application
 
 Generates some random files and then computes a SHA-256 for each one using a Stakhanovise instance. 
 [Check it out here](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Samples.FileHasher).
