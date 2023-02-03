@@ -54,6 +54,8 @@ These keys can then be referenced in:
 The mapping file is specified in the makefile. 
 By default, the `sk_mapping.dbmap` file name is used.
 
+See [here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.DbCompiler/src/makefile) for the current makefile.
+
 #### 3. The database object definition files
 
 The database object definition files describe what database objects to create. There can be one object per file.
@@ -64,6 +66,37 @@ That is, all files ending with the `.dbdef` extension are discovered.
 
 ### Compilation process
 
+This is a three-step process:
+
+1. Read and parse makefile;
+2. Read and parse the mapping and databsae object definitions files defined in the makefile;
+3. Execute the output routines as specified in the makefile.
+
+### Supported output routines
+
+Output routines are expressed similar to function calls with named arguments, separated by semicolons.
+The order of output routine arguments is not relevant.
+
+### 1. Console (`console`)
+
+The console output routine simply outputs the database objects to standard output. 
+The objects that should be output are selected using the routine arguments.
+
+Definition: 
+```
+console(func=[true/false]; seq=[true/false]; tbl=[true/false]; tbl_index=[true/false]; tbl_unq=[true/false])
+````
+
+Where:
+
+| Argument | Value | Notes |
+| --- | --- | --- |
+| `func` | `true/false` | Whether to output function definitions or not |
+| `seq` | `true/false` | Whether to output sequence definitions or not |
+| `tbl` | `true/false` | Whether to output table definitions or not |
+| `tbl_index` | `true/false` | Whether to output table index definitions or not |
+| `tbl_unq` | `true/false` | Whether to output table unique keys definitions or not |
+
 ## Asset definition
 
 ### Mapping definition
@@ -73,8 +106,6 @@ That is, all files ending with the `.dbdef` extension are discovered.
 ### Sequence definition
 
 ### Function definition
-
-## Makefile
 
 ## Running the database compiler
 
