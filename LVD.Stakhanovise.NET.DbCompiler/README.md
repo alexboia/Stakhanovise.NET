@@ -77,7 +77,13 @@ This is a three-step process:
 Output routines are expressed similar to function calls with named arguments, separated by semicolons.
 The order of output routine arguments is not relevant.
 
-### 1. Console (`console`)
+There is no constraint as to how many times a given output routine can be defined in the makefile: 
+some make sense to appear multiple times (with different arguments, to produce different assets), 
+some do not (such as the console output).
+
+Each output routine is executed independent of the other output routines.
+
+#### 1. Console output (`console`)
 
 The console output routine simply outputs the database objects to standard output. 
 The objects that should be output are selected using the routine arguments.
@@ -88,7 +94,6 @@ console(func=[true/false]; seq=[true/false]; tbl=[true/false]; tbl_index=[true/f
 ````
 
 Where:
-
 | Argument | Value | Notes |
 | --- | --- | --- |
 | `func` | `true/false` | Whether to output function definitions or not |
@@ -96,6 +101,48 @@ Where:
 | `tbl` | `true/false` | Whether to output table definitions or not |
 | `tbl_index` | `true/false` | Whether to output table index definitions or not |
 | `tbl_unq` | `true/false` | Whether to output table unique keys definitions or not |
+
+Example (outputs all object types):
+```
+OUTPUT=console(func=true; seq=true; tbl=true; tbl_index=true; tbl_unq=true)
+```
+
+#### 2. SQL Script (`sql_script`)
+
+The sql script output routine produces sql scripts for the database objects and registers the resulting sql script files 
+to the specified VS project, with the specified properties (whether or not to copy to output, build action and item grup).
+To this end, it will also alter the target project's `.csproj` file.
+
+This output routine can either produce a single file that contains all the database objects OR a file per database object.
+It is not possible to choose what objects to group in a single file.
+
+This output routine only works in the context of a VS project.
+
+Definition:
+```
+OUTPUT=sql_script(proj=[project name]; dir=[directory in project]; mode=[consolidated/single]; file=[file name]; item_group=[item group name]; build_action=[VS build action spec]; copy_output=[VS copy output spec])
+```
+
+Where: 
+| Argument | Value | Notes |
+| --- | --- | --- |
+| `mode` | `single/consolidated` | Whether to output one file per database object (`single`) or a single file for all objects (`consolidated`) |
+| `proj` | VS project name (eg. `LVD.Stakhanovise.NET`) | - |
+| `dir` | directory in project (eg. `Setup/BuiltInDbAssetsSetup/Scripts`) | Relative path to project root |
+| `file` | file name (eg. `sk_db.sql`, `$db_object$.sql`) | File name only, including extension. If output mode is `single`, then the `$db_object$` placeholder can be used to define the file name, to derive the file name based on the target object. |
+| `copy_output` | VS copy output spec (eg. `Never`) | - |
+| `build_action` | VS build action spec (eg. `None`, `EmbeddedResource`) | - |
+| `item_group` | item group name (eg. `SK_DbScripts`, `SK_Setup_DbScripts`) | - |
+
+Example (outputs one file per object):
+```
+OUTPUT=sql_script(proj=LVD.Stakhanovise.NET; dir=Setup/BuiltInDbAssetsSetup/Scripts; mode=single; item_group=SK_Setup_DbScripts; file=$db_object$.sql; build_action=EmbeddedResource; copy_output=Never)
+```
+
+Example (outputs one file for all objects):
+```
+OUTPUT=sql_script(proj=LVD.Stakhanovise.NET; dir=Db/scripts; mode=consolidated; file=sk_db.sql; item_group=SK_DbScripts; build_action=None)
+```
 
 ## Asset definition
 
