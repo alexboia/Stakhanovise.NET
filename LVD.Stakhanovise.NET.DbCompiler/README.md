@@ -156,7 +156,7 @@ db_create(connection_string=[connection string spec]; if_exists=[drop/keep])
 Where: 
 | Argument | Value | Notes |
 | --- | --- | --- |
-| `connection_string` | Connection string  (eg. `host:localhost,port:5432,user:postgres,password:postgres,database:lvd_stakhanovise_test_db`) | See connection string format below. |
+| `connection_string` | Connection string spec | See connection string format below. |
 | `if_exists` | `drop/keep` | Whether to drop the database if it exists (`drop`) or keep it (`keep`) |
 
 Connection string format:
