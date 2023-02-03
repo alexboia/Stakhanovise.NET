@@ -132,7 +132,7 @@ Where:
 | `file` | file name (eg. `sk_db.sql`, `$db_object$.sql`) | File name only, including extension. If output mode is `single`, then the `$db_object$` placeholder can be used to define the file name, to derive the file name based on the target object. |
 | `copy_output` | VS copy output spec (eg. `Never`) | - |
 | `build_action` | VS build action spec (eg. `None`, `EmbeddedResource`) | - |
-| `item_group` | item group name (eg. `SK_DbScripts`, `SK_Setup_DbScripts`) | - |
+| `item_group` | Item group name (eg. `SK_DbScripts`, `SK_Setup_DbScripts`) | - |
 
 Example (outputs one file per object):
 ```
@@ -143,6 +143,35 @@ Example (outputs one file for all objects):
 ```
 OUTPUT=sql_script(proj=LVD.Stakhanovise.NET; dir=Db/scripts; mode=consolidated; file=sk_db.sql; item_group=SK_DbScripts; build_action=None)
 ```
+
+#### 3. Direct database asset creation (`db_create`)
+
+This output routine will create all the database objects to the specified target database, located using the given connection string.
+
+Definition:
+```
+db_create(connection_string=[connection string spec]; if_exists=[drop/keep])
+```
+
+Where: 
+| Argument | Value | Notes |
+| --- | --- | --- |
+| `connection_string` | Connection string  (eg. `host:localhost,port:5432,user:postgres,password:postgres,database:lvd_stakhanovise_test_db`) | See connection string format below. |
+| `if_exists` | `drop/keep` | Whether to drop the database if it exists (`drop`) or keep it (`keep`) |
+
+Connection string format:
+```
+host:[host name or ip address],port:[port number],user:[server user name],password:[server user password],database:[database name]
+```
+
+Example:
+```
+OUTPUT=db_create(connection_string=host:localhost,port:5432,user:postgres,password:postgres,database:lvd_stakhanovise_test_db; if_exists=drop)
+```
+
+#### 4. Markdown documentation (`markdown_docs`)
+
+#### 5. Mapping code (`mapping_code`)
 
 ## Asset definition
 
