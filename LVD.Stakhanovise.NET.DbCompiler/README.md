@@ -120,7 +120,7 @@ This output routine only works in the context of a VS project.
 
 Definition:
 ```
-OUTPUT=sql_script(proj=[project name]; dir=[directory in project]; mode=[consolidated/single]; file=[file name]; item_group=[item group name]; build_action=[VS build action spec]; copy_output=[VS copy output spec])
+OUTPUT=sql_script(proj=[VS project name]; dir=[directory in project]; mode=[consolidated/single]; file=[file name]; item_group=[item group name]; build_action=[VS build action spec]; copy_output=[VS copy output spec])
 ```
 
 Where: 
@@ -171,7 +171,53 @@ OUTPUT=db_create(connection_string=host:localhost,port:5432,user:postgres,passwo
 
 #### 4. Markdown documentation (`markdown_docs`)
 
+This output routine will create markdown document that describes the structure of the database objects ([see here the result](https://github.com/alexboia/Stakhanovise.NET/blob/master/README-DB.md)).
+
+Definition:
+```
+markdown_docs(header=[relative path to header]; footer=[relative path to footer]; proj=[VS project name]; dir=[directory in project]; file=[target file name]; item_group=[item group name]; build_action=[VS build action spec])
+```
+
+Where: 
+| Argument | Value | Notes |
+| --- | --- | --- |
+| `header` | Header file path (eg. `parts/readme_db_header.md`) | Path is relative to project root. Contents will be prepended to the final content. |
+| `footer` | Footer file path (eg. `parts/readme_db_footer.md`) | Path is relative to project root. Contents will be prepended to the final content. |
+| `proj` | VS project name (eg. `LVD.Stakhanovise.NET`) | - |
+| `dir` | directory in project (eg. `Db/docs`) | Relative path to project root |
+| `file` | file name (eg. `README-DB.md`) | File name only, including extension. |
+| `build_action` | VS build action spec (eg. `None`) | - |
+| `item_group` | Item group name (eg. `SK_DbDocs`) | - |
+
+Example:
+```
+OUTPUT=markdown_docs(header=parts/readme_db_header.md; footer=parts/readme_db_footer.md; proj=LVD.Stakhanovise.NET; dir=Db/docs; file=README-DB.md; item_group=SK_DbDocs; build_action=None)
+```
+
 #### 5. Mapping code (`mapping_code`)
+
+This output routine will generate the mapping class that's used by Stakhanovise to store database name mappings.
+By default, the class is named [`QueuedTaskMapping`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common/Model/QueuedTaskMapping.cs) and the important part of this generation process is setting the default mapping values of the class so that they match the values specified in the mapping file (which is, in turn, declared in the makefile, as mentioned above).
+
+The class is automatically added in the `SK_MappingCode` item group within the target project.
+
+Definition:
+```
+mapping_code(proj=[VS project name]; ns=[class namespace]; dir=[directory in project]; cls=[class name])
+```
+
+Where:
+| Argument | Value | Notes |
+| --- | --- | --- |
+| `proj` | VS project name (eg. `LVD.Stakhanovise.NET`) | - |
+| `ns` | Class namespace (eg. `LVD.Stakhanovise.NET.Common`) | - |
+| `dir` | directory in project (eg. `Db/docs`) | Relative path to project root |
+| `cls` | Class name(eg. `QueuedTaskMapping`) | - |
+
+Example:
+```
+OUTPUT=mapping_code(proj=LVD.Stakhanovise.NET.Common; ns=LVD.Stakhanovise.NET.Model; dir=Model; cls=QueuedTaskMapping)
+```
 
 ## Asset definition
 
