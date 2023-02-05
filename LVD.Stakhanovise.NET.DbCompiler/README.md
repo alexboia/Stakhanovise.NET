@@ -233,6 +233,7 @@ MAP: [key]=[value]
 ```
 
 Where `[key]` can be any of the above-mentioned values (see `2. The mapping file`).
+Any line that does not start with `MAP:` is ignored.
 
 ### Table definition
 

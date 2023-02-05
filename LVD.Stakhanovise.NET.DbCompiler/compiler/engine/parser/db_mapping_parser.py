@@ -17,11 +17,12 @@ class DbMappingParser:
         symbols: dict = {}
 
         for mappingLine in mappingFileLines:
-            symbolParts = self._getSymbolParts(mappingLine)
-            if (len(symbolParts) == 2):
-                symbolName = symbolParts[0]
-                if (DbMapping.isValidTokenName(symbolName)):
-                    symbols[symbolName] = symbolParts[1]
+            if mappingLine.startswith(MARKER_MAP_SYMBOL_LINE):
+                symbolParts = self._getSymbolParts(mappingLine)
+                if (len(symbolParts) == 2):
+                    symbolName = symbolParts[0]
+                    if (DbMapping.isValidTokenName(symbolName)):
+                        symbols[symbolName] = symbolParts[1]
 
         return symbols
 
