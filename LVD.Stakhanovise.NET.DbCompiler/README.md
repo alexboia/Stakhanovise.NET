@@ -237,6 +237,35 @@ Any line that does not start with `MAP:` is ignored.
 
 ### Table definition
 
+Each table is declared in a separate file. 
+Table definition files, along with definition files for other objects, are discovered using the `DEFINITIONS` makefile property.
+
+Table definition files are declared using the `TBL` directive on the first line of the file.
+After that, each attribute can be specified *one-per-line* in the following form:
+
+```
+[attibute directive marker]: [attribute directive spec]
+```
+
+A table definition file supports specifying the following attributes:
+
+#### Table name (`NAME`)
+
+Valid PostgreSQL table name.
+Only one declaration per file is supported and, if multiple `NAME` directives are specified, then the last one takes precedence.
+
+#### Table properties (`PROPS`)
+
+Key-value pair of random properties, in the format:
+```
+PROPS: [key 1]=[value 1]; ... [key N]=[value N]
+```
+
+Only `title` and `description` are currently used (eg. in markdown generation output routine).
+Multiple declarations per file are supported and they accummulate.
+
+#### Table column (`COL`)
+
 ### Sequence definition
 
 ### Function definition
