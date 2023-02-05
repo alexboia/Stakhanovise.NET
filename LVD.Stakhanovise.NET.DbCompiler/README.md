@@ -223,6 +223,17 @@ OUTPUT=mapping_code(proj=LVD.Stakhanovise.NET.Common; ns=LVD.Stakhanovise.NET.Mo
 
 ### Mapping definition
 
+A mapping is defined in a separate file. 
+The file can be named in anyway, so long as is declared in the makefile.
+If it is not declared, the compiler will search by deafult for `sk_mapping.dbmap`.
+
+The mapping is defined one key-value declaration per line and each declaration line must start with `MAP:`:
+```
+MAP: [key]=[value]
+```
+
+Where `[key]` can be any of the above-mentioned values (see `2. The mapping file`).
+
 ### Table definition
 
 ### Sequence definition
