@@ -37,16 +37,34 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 {
 	public class QueuedTaskMappingConfig
 	{
-		public string QueueTableName { get; set; }
+		public string QueueTableName
+		{
+			get; set;
+		}
 
-		public string ResultsQueueTableName { get; set; }
+		public string ResultsQueueTableName
+		{
+			get; set;
+		}
 
-		public string NewTaskNotificationChannelName { get; set; }
+		public string NewTaskNotificationChannelName
+		{
+			get; set;
+		}
 
-		public string ExecutionTimeStatsTableName { get; set; }
+		public string ExecutionTimeStatsTableName
+		{
+			get; set;
+		}
 
-		public string MetricsTableName { get; set; }
+		public string MetricsTableName
+		{
+			get; set;
+		}
 
-		public string DequeueFunctionName { get; set; }
+		public string DequeueFunctionName
+		{
+			get; set;
+		}
 	}
 }

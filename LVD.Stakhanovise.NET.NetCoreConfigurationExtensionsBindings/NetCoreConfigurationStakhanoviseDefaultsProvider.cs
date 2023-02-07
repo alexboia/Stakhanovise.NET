@@ -55,15 +55,15 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 
 		private IStakhanoviseSetupDefaultsProvider mFallbackDefaultsProvider;
 
-		private string[] mImports;
+		private string [] mImports;
 
-		public NetCoreConfigurationStakhanoviseDefaultsProvider ()
+		public NetCoreConfigurationStakhanoviseDefaultsProvider()
 			: this( new ReasonableStakhanoviseDefaultsProvider() )
 		{
 			return;
 		}
 
-		public NetCoreConfigurationStakhanoviseDefaultsProvider ( IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider )
+		public NetCoreConfigurationStakhanoviseDefaultsProvider( IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider )
 			: this( Directory.GetCurrentDirectory(),
 					DefaultConfigFileName,
 					DefaultConfigSectionName,
@@ -72,7 +72,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return;
 		}
 
-		public NetCoreConfigurationStakhanoviseDefaultsProvider ( string basePath,
+		public NetCoreConfigurationStakhanoviseDefaultsProvider( string basePath,
 			string configFileName,
 			string configSectionName )
 			: this( basePath,
@@ -84,7 +84,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return;
 		}
 
-		public NetCoreConfigurationStakhanoviseDefaultsProvider ( string basePath,
+		public NetCoreConfigurationStakhanoviseDefaultsProvider( string basePath,
 			string configFileName,
 			string configSectionName,
 			IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider )
@@ -103,7 +103,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			mConfigSectionName = configSectionName;
 			mFallbackDefaultsProvider = fallbackDefaultsProvider;
 
-			mImports = new string[]
+			mImports = new string []
 			{
 				"System",
 				"System.Linq",
@@ -113,7 +113,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			};
 		}
 
-		public StakhanoviseSetupDefaults GetDefaults ()
+		public StakhanoviseSetupDefaults GetDefaults()
 		{
 			IConfiguration config = GetConfig();
 
@@ -137,7 +137,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return defaults;
 		}
 
-		private ScriptOptions ConstructParseOptions ()
+		private ScriptOptions ConstructParseOptions()
 		{
 			ScriptOptions parseOptions = ScriptOptions.Default
 				.AddReferences( typeof( object ).GetTypeInfo().Assembly )
@@ -150,13 +150,13 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return parseOptions;
 		}
 
-		private StakhanoviseSetupDefaults MergeDefaultsFromConfig ( StakhanoviseSetupDefaults targetDefaults,
+		private StakhanoviseSetupDefaults MergeDefaultsFromConfig( StakhanoviseSetupDefaults targetDefaults,
 			StakhanoviseSetupDefaultsConfig defaultsConfig,
 			IConfiguration config )
 		{
 			ScriptOptions parseOptions = ConstructParseOptions();
 
-			Assembly[] executorAssemblies = ParseExecutorAssembliesFromConfig( defaultsConfig );
+			Assembly [] executorAssemblies = ParseExecutorAssembliesFromConfig( defaultsConfig );
 			if ( executorAssemblies != null )
 				targetDefaults.ExecutorAssemblies = executorAssemblies;
 
@@ -199,7 +199,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return targetDefaults;
 		}
 
-		private QueuedTaskMapping GetQueudTaskMappingFromDefaultsConfig ( StakhanoviseSetupDefaultsConfig defaultsConfig )
+		private QueuedTaskMapping GetQueudTaskMappingFromDefaultsConfig( StakhanoviseSetupDefaultsConfig defaultsConfig )
 		{
 			QueuedTaskMapping mapping = new QueuedTaskMapping();
 
@@ -218,7 +218,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 		}
 
 
-		private QueuedTaskMapping MergeMappingFromConfig ( QueuedTaskMapping targeMapping, QueuedTaskMapping mappingFromConfig )
+		private QueuedTaskMapping MergeMappingFromConfig( QueuedTaskMapping targeMapping, QueuedTaskMapping mappingFromConfig )
 		{
 			if ( !string.IsNullOrWhiteSpace( mappingFromConfig.DequeueFunctionName ) )
 				targeMapping.DequeueFunctionName = mappingFromConfig.DequeueFunctionName;
@@ -236,7 +236,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return targeMapping;
 		}
 
-		private Func<IQueuedTaskToken, long> CompileCalculateDelayTicksTaskAfterFailureFnFromConfig ( StakhanoviseSetupDefaultsConfig defaultsConfig,
+		private Func<IQueuedTaskToken, long> CompileCalculateDelayTicksTaskAfterFailureFnFromConfig( StakhanoviseSetupDefaultsConfig defaultsConfig,
 			ScriptOptions parseOptions )
 		{
 			if ( !string.IsNullOrEmpty( defaultsConfig.CalculateDelayTicksTaskAfterFailure ) )
@@ -249,7 +249,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 				return null;
 		}
 
-		private Func<IQueuedTask, Exception, bool> CompileIsTaskErrorRecoverableFnFromConfig ( StakhanoviseSetupDefaultsConfig defaultsConfig,
+		private Func<IQueuedTask, Exception, bool> CompileIsTaskErrorRecoverableFnFromConfig( StakhanoviseSetupDefaultsConfig defaultsConfig,
 			ScriptOptions parseOptions )
 		{
 			if ( !string.IsNullOrEmpty( defaultsConfig.IsTaskErrorRecoverable ) )
@@ -262,21 +262,21 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 				return null;
 		}
 
-		private Assembly[] ParseExecutorAssembliesFromConfig ( StakhanoviseSetupDefaultsConfig defaultsConfig )
+		private Assembly [] ParseExecutorAssembliesFromConfig( StakhanoviseSetupDefaultsConfig defaultsConfig )
 		{
-			Assembly[] assemblies = null;
+			Assembly [] assemblies = null;
 
 			if ( defaultsConfig.ExecutorAssemblies != null && defaultsConfig.ExecutorAssemblies.Count > 0 )
 			{
-				assemblies = new Assembly[ defaultsConfig.ExecutorAssemblies.Count ];
+				assemblies = new Assembly [ defaultsConfig.ExecutorAssemblies.Count ];
 				for ( int i = 0; i < defaultsConfig.ExecutorAssemblies.Count; i++ )
-					assemblies[ i ] = Assembly.LoadFrom( defaultsConfig.ExecutorAssemblies[ i ] );
+					assemblies [ i ] = Assembly.LoadFrom( defaultsConfig.ExecutorAssemblies [ i ] );
 			}
 
 			return assemblies;
 		}
 
-		private IConfiguration GetConfig () => new ConfigurationBuilder()
+		private IConfiguration GetConfig() => new ConfigurationBuilder()
 			.SetBasePath( mBasePath )
 			.AddJsonFile( mConfigFileName, optional: false, reloadOnChange: false )
 			.Build();

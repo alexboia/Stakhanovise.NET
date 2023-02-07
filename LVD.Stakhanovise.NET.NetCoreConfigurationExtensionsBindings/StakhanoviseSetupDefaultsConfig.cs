@@ -37,24 +37,54 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 {
 	public class StakhanoviseSetupDefaultsConfig
 	{
-		public List<string> ExecutorAssemblies { get; set; }
+		public List<string> ExecutorAssemblies
+		{
+			get; set;
+		}
 
-		public int WorkerCount { get; set; }
+		public int WorkerCount
+		{
+			get; set;
+		}
 
-		public QueuedTaskMappingConfig Mapping { get; set; }
+		public QueuedTaskMappingConfig Mapping
+		{
+			get; set;
+		}
 
-		public string CalculateDelayTicksTaskAfterFailure { get; set; }
+		public string CalculateDelayTicksTaskAfterFailure
+		{
+			get; set;
+		}
 
-		public string IsTaskErrorRecoverable { get; set; }
+		public string IsTaskErrorRecoverable
+		{
+			get; set;
+		}
 
-		public int FaultErrorThresholdCount { get; set; }
+		public int FaultErrorThresholdCount
+		{
+			get; set;
+		}
 
-		public int AppMetricsCollectionIntervalMilliseconds { get; set; }
+		public int AppMetricsCollectionIntervalMilliseconds
+		{
+			get; set;
+		}
 
-		public bool? AppMetricsMonitoringEnabled { get; set; }
+		public bool? AppMetricsMonitoringEnabled
+		{
+			get; set;
+		}
 
-		public bool? SetupBuiltInDbAsssets { get; set; }
+		public bool? SetupBuiltInDbAsssets
+		{
+			get; set;
+		}
 
-		public string ConnectionStringName { get; set; }
+		public string ConnectionStringName
+		{
+			get; set;
+		}
 	}
 }
