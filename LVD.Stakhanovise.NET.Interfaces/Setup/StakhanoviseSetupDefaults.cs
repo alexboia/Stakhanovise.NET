@@ -40,24 +40,54 @@ namespace LVD.Stakhanovise.NET.Setup
 {
 	public class StakhanoviseSetupDefaults
 	{
-		public Assembly[] ExecutorAssemblies { get; set; }
+		public Assembly [] ExecutorAssemblies
+		{
+			get; set;
+		}
 
-		public int WorkerCount { get; set; }
+		public int WorkerCount
+		{
+			get; set;
+		}
 
-		public QueuedTaskMapping Mapping { get; set; }
+		public QueuedTaskMapping Mapping
+		{
+			get; set;
+		}
 
-		public Func<IQueuedTaskToken, long> CalculateDelayMillisecondsTaskAfterFailure { get; set; }
+		public Func<IQueuedTaskToken, long> CalculateDelayMillisecondsTaskAfterFailure
+		{
+			get; set;
+		}
 
-		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable { get; set; }
+		public Func<IQueuedTask, Exception, bool> IsTaskErrorRecoverable
+		{
+			get; set;
+		}
 
-		public int FaultErrorThresholdCount { get; set; }
+		public int FaultErrorThresholdCount
+		{
+			get; set;
+		}
 
-		public int AppMetricsCollectionIntervalMilliseconds { get; set; }
+		public int AppMetricsCollectionIntervalMilliseconds
+		{
+			get; set;
+		}
 
-		public bool AppMetricsMonitoringEnabled { get; set; }
+		public bool AppMetricsMonitoringEnabled
+		{
+			get; set;
+		}
 
-		public bool SetupBuiltInDbAsssets { get; set; }
+		public bool SetupBuiltInDbAsssets
+		{
+			get; set;
+		}
 
-		public string ConnectionString { get; set; }
+		public string ConnectionString
+		{
+			get; set;
+		}
 	}
 }

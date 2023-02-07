@@ -43,7 +43,6 @@ namespace LVD.Stakhanovise.NET.Setup
 	{
 		ITaskEngineSetup WithExecutorAssemblies( params Assembly[] assemblies );
 
-
 		ITaskEngineSetup WithWorkerCount( int workerCount );
 
 		ITaskEngineSetup SetupTaskProcessing( Action<ITaskProcessingSetup> setupAction );

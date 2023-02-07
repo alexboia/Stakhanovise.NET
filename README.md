@@ -463,6 +463,37 @@ await Stakhanovise
 	.StartFulfillingFiveYearPlanAsync();
 ```
 
+## Configuration
+
+At a minimum, you only need to provide a connection string and that's it. 
+However, there are other options that can be configured, before even entering (but which can be overridden during) the actual setup sequence. 
+They are called defaults, since that's what they act like - default values used if you don't provide any.
+
+The following options are available (also see [StakhanoviseSetupDefaults](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Setup/StakhanoviseSetupDefaults.cs)):
+
+| Property | Type | Notes |
+| `ExecutorAssemblies` | `Assembly[]` | Where to search for task executors |
+| `WorkerCount` | `int` | How many worker threads to use |
+| `Mapping` | `QueuedTaskMapping` | Default mapping |
+| `CalculateDelayMillisecondsTaskAfterFailure` | `Func<IQueuedTaskToken, long>` | After a task execution fails, Stakhanovise will use this function to determine how long should it delay its re-execution |
+| `IsTaskErrorRecoverable` | `Func<IQueuedTask, Exception, bool>` | After a task execution fails, Stakhanovise will use this function to determine if it is recoverable or not |
+| `FaultErrorThresholdCount` | `int` | Stakhanovise will use this as a reference to determine how many times a task should be retried |
+| `AppMetricsCollectionIntervalMilliseconds` | `int` | If app metrics collection is enabled, then they will be collected using this interval. |
+| `AppMetricsMonitoringEnabled ` | `bool` | Whether or not to enable app metrics monitoring and collection. |
+| `SetupBuiltInDbAsssets` | `bool` | Whether or not to enable built-in db assets. |
+| `ConnectionString` | `string` | Db connection string. |
+
+They can be passed to Stakhanovoise using an instance of `IStakhanoviseSetupDefaultsProvider`. 
+If none is passed, then a `ReasonableStakhanoviseDefaultsProvider` is used, which provides the following values:
+
+### Configuration file bindings
+
+It's up to you how you provide the values, but if pulling them from a standard appsettings.json file is all you need, then you might consider using this add-on package: [`LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings).
+
+### Writing a custom defaults provider
+
+
+
 ## Advanced usage
 <a name="sk-advanced-usage"></a>
 
