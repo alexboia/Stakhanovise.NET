@@ -472,6 +472,7 @@ They are called defaults, since that's what they act like - default values used 
 The following options are available (also see [StakhanoviseSetupDefaults](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Setup/StakhanoviseSetupDefaults.cs)):
 
 | Property | Type | Notes |
+| --- | --- | --- |
 | `ExecutorAssemblies` | `Assembly[]` | Where to search for task executors |
 | `WorkerCount` | `int` | How many worker threads to use |
 | `Mapping` | `QueuedTaskMapping` | Default mapping |
