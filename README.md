@@ -489,11 +489,30 @@ If none is passed, then a `ReasonableStakhanoviseDefaultsProvider` is used, whic
 
 ### Configuration file bindings
 
-It's up to you how you provide the values, but if pulling them from a standard appsettings.json file is all you need, then you might consider using this add-on package: [`LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings).
+It's up to you how you provide the values, but if pulling them from a standard `appsettings.json` file is all you need, then you might consider using this add-on package: [`LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings).
 
-### Writing a custom defaults provider
+### Implementing a custom defaults provider
 
+All you need to do is implement [`IStakhanoviseSetupDefaultsProvider`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Setup/IStakhanoviseSetupDefaultsProvider.cs), which has only one method:
 
+- `StakhanoviseSetupDefaults GetDefaults ()` - returns the default values to be used by Stakhanovise, as a `StakhanoviseSetupDefaults`.
+
+### Using a custom defaults provider
+
+In lieu of:
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	. (...)
+```
+
+Use:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland( new MyCustomStakhanoviseDefaultsProvider() )
+	. (...)
+```
 
 ## Advanced usage
 <a name="sk-advanced-usage"></a>
