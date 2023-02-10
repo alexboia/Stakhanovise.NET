@@ -276,6 +276,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return assemblies;
 		}
 
+		//TODO: also include env-specifixc files (i.e. appsettings.production.json)
 		private IConfiguration GetConfig() => new ConfigurationBuilder()
 			.SetBasePath( mBasePath )
 			.AddJsonFile( mConfigFileName, optional: false, reloadOnChange: false )

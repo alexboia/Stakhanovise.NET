@@ -622,10 +622,10 @@ await Stakhanovise
 
 Replacing the built-in writer requires you to:
 
-a) Implement the [`IAppMetricsMonitorWriter`]() interface
+a) Implement the [`IAppMetricsMonitorWriter`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Processor/IAppMetricsMonitorWriter.cs) interface
 b) Register it with Stakhanovise to enable its usage.
 
-### Implementing a custom writer
+#### Implementing a custom writer
 
 There is only one method which needs to be implemented: 
 `IAppMetricsMonitorWriter.WriteAsync(string processId, IEnumerable<AppMetric> appMetrics)`. 
@@ -636,12 +636,14 @@ Where:
 
 The return value should be the number of entries actually written.
 
-### Registering the custom writer
+#### Registering the custom writer
 
-There is a dedicated setup sub-flow for configuring the application metrics monitor writer, that can be entered by calling `IStakhanoviseSetup.SetupAppMetricsMonitorWriter()`, 
+There is a dedicated setup sub-flow for configuring the application metrics monitor writer, 
+that can be entered by calling `IStakhanoviseSetup.SetupAppMetricsMonitorWriter()`, 
 which needs an `Action<IAppMetricsMonitorWriterSetup>` as a parameter.
 
-You can then use the `IAppMetricsMonitorWriterSetup.UseWriter()` or `IAppMetricsMonitorWriterSetup.UseWriterFactory()` method 
+You can then use the `IAppMetricsMonitorWriterSetup.UseWriter()` 
+or `IAppMetricsMonitorWriterSetup.UseWriterFactory()` method 
 to register the custom writer:
 
 ```csharp
@@ -650,6 +652,83 @@ await Stakhanovise
 	.SetupWorkingPeoplesCommittee(setup => 
 	{
 		setup.SetupAppMetricsMonitorWriter(writerSetup => 
+		{
+			writerSetup.UseWriter(new MyCustomMetricsWriter());
+		});
+	})
+	.StartFulfillingFiveYearPlanAsync();
+```
+
+### 6. Configuring the built-in execution performance monitoring writer
+
+There is a dedicated setup sub-flow for configuring the execution performance monitor writer, 
+that can be entered by calling `IStakhanoviseSetup.SetupPerformanceMonitorWriter()`, 
+which needs an `Action<IExecutionPerformanceMonitorWriterSetup>` as a parameter.
+
+You can then use the `IExecutionPerformanceMonitorWriterSetup.SetupBuiltInWriter()` method to configure the built-in writer:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.SetupPerformanceMonitorWriter(writerSetup => 
+		{
+			writerSetup.SetupBuiltInWriter(builtinWriterSetup => 
+			{
+				//only DB connection options can be modified at this time
+				//normally you don't need to do this unless:
+				//	a) you want to store these to a separate database
+				//		OR
+				//	b) you want o alter the additional connection parameters 
+				//		(DB connect retry count, retry delay and so on)
+				builtinWriterSetup.WithConnectionOptions(connSetup => 
+				{
+					connSetup.WithConnectionString(...)
+						.WithConnectionRetryCount(...)
+						.WithConnectionRetryDelayMilliseconds(...)
+						.WithConnectionKeepAlive(...);
+				});
+			});
+		});
+	})
+	.StartFulfillingFiveYearPlanAsync();
+```
+
+### 7. Replacing the execution performance monitoring writer
+
+Replacing the built-in writer requires you to:
+
+a) Implement the [`IExecutionPerformanceMonitorWriter`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Processor/IExecutionPerformanceMonitorWriter.cs) interface
+b) Register it with Stakhanovise to enable its usage.
+
+#### Implementing a custom writer
+
+There is only one method which needs to be implemented: 
+`IExecutionPerformanceMonitorWriter.WriteAsync( string processId, IEnumerable<TaskPerformanceStats> executionTimeInfoBatch )`. 
+
+Where:
+- `processId` is the identifier of the currently running Stakhanovise instance;
+- `executionTimeInfoBatch` is a batch of performance monitoring stats to be written (see [`TaskPerformanceStats` class](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Model/TaskPerformanceStats.cs)).
+
+The return value should be the number of entries actually written or updated.
+
+#### Registering the custom writer
+
+There is a dedicated setup sub-flow for configuring the execution performance monitor writer, 
+that can be entered by calling `IStakhanoviseSetup.SetupPerformanceMonitorWriter()`, 
+which needs an `Action<IExecutionPerformanceMonitorWriterSetup>` as a parameter.
+
+You can then use the `IExecutionPerformanceMonitorWriterSetup.UseWriter()` 
+or `IExecutionPerformanceMonitorWriterSetup.UseWriterFactory()` method 
+to register the custom writer:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.SetupPerformanceMonitorWriter(writerSetup => 
 		{
 			writerSetup.UseWriter(new MyCustomMetricsWriter());
 		});
