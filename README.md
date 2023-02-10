@@ -776,6 +776,22 @@ await Stakhanovise
 ## Add-on packages
 <a name="sk-addon-packages"></a>
 
+### Logging
+
+TODO
+
+### DI containers
+
+TODO
+
+### Configuration
+
+TODO
+
+### Result queue
+
+TODO
+
 ## Samples
 <a name="sk-samples"></a>
 
