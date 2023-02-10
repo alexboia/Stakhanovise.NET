@@ -424,6 +424,7 @@ await Stakhanovise
 ```
 
 ## Process Id
+<a name="sk-process-id"></a>
 
 Since there can be multiple Stakhanovise processes operating in parallel on the same queue, 
 there needs to be a way of differentiating between them.
@@ -464,6 +465,7 @@ await Stakhanovise
 ```
 
 ## Configuration
+<a name="sk-configuration"></a>
 
 At a minimum, you only need to provide a connection string and that's it. 
 However, there are other options that can be configured, before even entering (but which can be overridden during) the actual setup sequence. 
@@ -513,6 +515,9 @@ await Stakhanovise
 	.CreateForTheMotherland( new MyCustomStakhanoviseDefaultsProvider() )
 	. (...)
 ```
+
+## Managing dependencies
+<a name="sk-manage-dependencies"></a>
 
 ## Advanced usage
 <a name="sk-advanced-usage"></a>
