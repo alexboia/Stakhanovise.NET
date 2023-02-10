@@ -622,8 +622,8 @@ await Stakhanovise
 
 Replacing the built-in writer requires you to:
 
-	a) Implement the [`IAppMetricsMonitorWriter`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Processor/IAppMetricsMonitorWriter.cs) interface;
-	b) Register it with Stakhanovise to enable its usage.
+- Implement the [`IAppMetricsMonitorWriter`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Processor/IAppMetricsMonitorWriter.cs) interface;
+- Register it with Stakhanovise to enable its usage.
 
 #### Implementing a custom writer
 
@@ -699,8 +699,8 @@ await Stakhanovise
 
 Replacing the built-in writer requires you to:
 
-	a) Implement the [`IExecutionPerformanceMonitorWriter`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Processor/IExecutionPerformanceMonitorWriter.cs) interface
-	b) Register it with Stakhanovise to enable its usage.
+- Implement the [`IExecutionPerformanceMonitorWriter`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Processor/IExecutionPerformanceMonitorWriter.cs) interface
+- Register it with Stakhanovise to enable its usage.
 
 #### Implementing a custom writer
 
