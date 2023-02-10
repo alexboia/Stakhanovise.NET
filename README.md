@@ -11,7 +11,7 @@ That's it and nothing more. Interested? Read on, komrade!
 
 The codebase is pretty much completed, but there are still a number of items that must be tended to:
 - [x] Additional testing;
-- [ ] Additional documentation;
+- [x] Additional documentation;
 - [ ] Nice to have-ish: finish work on some of the companion libraries;
 - [x] Sample application;
 - [ ] Publish the package tot he NuGet package repository.
@@ -474,7 +474,7 @@ The following options are available (also see [StakhanoviseSetupDefaults](https:
 | Property | Type | Notes |
 | --- | --- | --- |
 | `ExecutorAssemblies` | `Assembly[]` | Where to search for task executors |
-| `WorkerCount` | `int` | How many worker threads to use |
+| `WorkerCount` | `int` | How many worker threads to use. Workers are object instances that actually execute tasks. |
 | `Mapping` | `QueuedTaskMapping` | Default mapping |
 | `CalculateDelayMillisecondsTaskAfterFailure` | `Func<IQueuedTaskToken, long>` | After a task execution fails, Stakhanovise will use this function to determine how long should it delay its re-execution |
 | `IsTaskErrorRecoverable` | `Func<IQueuedTask, Exception, bool>` | After a task execution fails, Stakhanovise will use this function to determine if it is recoverable or not |
@@ -731,6 +731,43 @@ await Stakhanovise
 		setup.SetupPerformanceMonitorWriter(writerSetup => 
 		{
 			writerSetup.UseWriter(new MyCustomMetricsWriter());
+		});
+	})
+	.StartFulfillingFiveYearPlanAsync();
+```
+
+### 8. Configuring the task engine
+
+There is a dedicated setup sub-flow for configuring the task engine, 
+that can be entered by calling `ITaskEngineSetup.SetupEngine()`,
+which needs an `Action<ITaskEngineSetup>` as a parameter:
+
+```csharp
+await Stakhanovise
+	.CreateForTheMotherland()
+	.SetupWorkingPeoplesCommittee(setup => 
+	{
+		setup.SetupEngine(engineSetup => 
+		{
+			//Specify which assemblies to scan for executors;
+			//	this will replace all the assemblies specified 
+			//	via defaults configuration.
+			engineSetup.WithExecutorAssemblies( ... );
+
+			//How many worker threads to use;
+			//	this will replace the value specified 
+			//	via defaults configuration.
+			engineSetup.WithWorkerCount( ... );
+
+			//Drill down to task processing setup:
+			engineSetup.SetupTaskProcessing(processingSetup => 
+			{
+				processingSetup.WithDelayTicksTaskAfterFailureCalculator( ... );
+
+				processingSetup.WithTaskErrorRecoverabilityCallback( ... );
+
+				processingSetup.WithFaultErrorThresholdCount( ... );
+			});
 		});
 	})
 	.StartFulfillingFiveYearPlanAsync();

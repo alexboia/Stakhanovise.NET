@@ -43,6 +43,6 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		ITaskProcessingSetup WithTaskErrorRecoverabilityCallback ( Func<IQueuedTask, Exception, bool> isTaskErrorRecoverable );
 
-		ITaskProcessingSetup WithFaultErrorThresholCount ( int faultErrorThresholdCount );
+		ITaskProcessingSetup WithFaultErrorThresholdCount ( int faultErrorThresholdCount );
 	}
 }

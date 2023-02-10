@@ -77,7 +77,7 @@ namespace LVD.Stakhanovise.NET.Setup
 			return this;
 		}
 
-		public ITaskProcessingSetup WithFaultErrorThresholCount ( int faultErrorThresholdCount )
+		public ITaskProcessingSetup WithFaultErrorThresholdCount ( int faultErrorThresholdCount )
 		{
 			if ( faultErrorThresholdCount < 1 )
 				throw new ArgumentOutOfRangeException( nameof( faultErrorThresholdCount ),
