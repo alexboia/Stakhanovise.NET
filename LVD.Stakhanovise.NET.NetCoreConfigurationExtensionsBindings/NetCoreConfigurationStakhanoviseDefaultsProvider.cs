@@ -36,7 +36,9 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
@@ -47,27 +49,43 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 
 		public const string DefaultConfigSectionName = "Lvd.Stakhanovise.Net.Config";
 
-		private string mBasePath;
+		private readonly string mBasePath;
 
-		private string mConfigFileName;
+		private readonly string mConfigFileName;
 
-		private string mConfigSectionName;
+		private readonly string mConfigSectionName;
 
-		private IStakhanoviseSetupDefaultsProvider mFallbackDefaultsProvider;
+		private readonly IStakhanoviseSetupDefaultsProvider mFallbackDefaultsProvider;
 
-		private string [] mImports;
+		private readonly string [] mImports;
+
+		private readonly List<string> mAdditionalConfigFileNames = new List<string>();
 
 		public NetCoreConfigurationStakhanoviseDefaultsProvider()
-			: this( new ReasonableStakhanoviseDefaultsProvider() )
+			: this( new ReasonableStakhanoviseDefaultsProvider(), null )
+		{
+			return;
+		}
+
+		public NetCoreConfigurationStakhanoviseDefaultsProvider( string [] additionalConfigFileNames )
+			: this( new ReasonableStakhanoviseDefaultsProvider(), additionalConfigFileNames )
 		{
 			return;
 		}
 
 		public NetCoreConfigurationStakhanoviseDefaultsProvider( IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider )
+			: this( fallbackDefaultsProvider, null )
+		{
+			return;
+		}
+
+		public NetCoreConfigurationStakhanoviseDefaultsProvider( IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider,
+			string [] additionalConfigFileNames )
 			: this( Directory.GetCurrentDirectory(),
 					DefaultConfigFileName,
 					DefaultConfigSectionName,
-					fallbackDefaultsProvider )
+					fallbackDefaultsProvider,
+					additionalConfigFileNames )
 		{
 			return;
 		}
@@ -78,7 +96,8 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			: this( basePath,
 					configFileName,
 					configSectionName,
-					new ReasonableStakhanoviseDefaultsProvider() )
+					new ReasonableStakhanoviseDefaultsProvider(),
+					null )
 		{
 
 			return;
@@ -87,7 +106,8 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 		public NetCoreConfigurationStakhanoviseDefaultsProvider( string basePath,
 			string configFileName,
 			string configSectionName,
-			IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider )
+			IStakhanoviseSetupDefaultsProvider fallbackDefaultsProvider,
+			string [] additionalConfigFileNames )
 		{
 			if ( string.IsNullOrEmpty( basePath ) )
 				throw new ArgumentNullException( nameof( basePath ) );
@@ -111,6 +131,22 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 				"LVD.Stakhanovise.NET.Model",
 				"LVD.Stakhanovise.NET.Queue"
 			};
+
+			if ( additionalConfigFileNames != null
+				&& additionalConfigFileNames.Length > 0 )
+			{
+				foreach ( string additionalConfigFileName in additionalConfigFileNames )
+					AddConfigFileName( additionalConfigFileName );
+			}
+		}
+
+		public NetCoreConfigurationStakhanoviseDefaultsProvider AddConfigFileName( string configFileName )
+		{
+			if ( !string.IsNullOrEmpty( configFileName )
+				&& !mAdditionalConfigFileNames.Any( f => string.Equals( f, configFileName ) ) )
+				mAdditionalConfigFileNames.Add( configFileName );
+
+			return this;
 		}
 
 		public StakhanoviseSetupDefaults GetDefaults()
@@ -217,7 +253,6 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return mapping;
 		}
 
-
 		private QueuedTaskMapping MergeMappingFromConfig( QueuedTaskMapping targeMapping, QueuedTaskMapping mappingFromConfig )
 		{
 			if ( !string.IsNullOrWhiteSpace( mappingFromConfig.DequeueFunctionName ) )
@@ -276,10 +311,23 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings
 			return assemblies;
 		}
 
-		//TODO: also include env-specifixc files (i.e. appsettings.production.json)
-		private IConfiguration GetConfig() => new ConfigurationBuilder()
-			.SetBasePath( mBasePath )
-			.AddJsonFile( mConfigFileName, optional: false, reloadOnChange: false )
-			.Build();
+		private IConfiguration GetConfig()
+		{
+			IConfigurationBuilder builder = new ConfigurationBuilder()
+				.SetBasePath( mBasePath )
+				.AddJsonFile( mConfigFileName, 
+					optional: false, 
+					reloadOnChange: false );
+
+			foreach ( string additionalConfigFileName in mAdditionalConfigFileNames )
+			{
+				builder.AddJsonFile( additionalConfigFileName, 
+					optional: true, 
+					reloadOnChange: false );
+			}
+
+			return builder
+				.Build();
+		}
 	}
 }

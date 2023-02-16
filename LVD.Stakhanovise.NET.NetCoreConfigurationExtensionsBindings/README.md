@@ -4,7 +4,14 @@ This is a [Stakhanovise.NET](https://github.com/alexboia/Stakhanovise.NET) add-o
 
 ## Installation
 
-TODO
+Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings/).
+
+### 1. Via Package Manager
+
+`Install-Package LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings -Version 1.1.0`
+
+### 2. Via .NET CLI
+`dotnet add package LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings --version 1.1.0`
 
 ## Usage
 
@@ -52,6 +59,17 @@ Please see the corresponding [test project](https://github.com/alexboia/Stakhano
 There is no need to specify all the configuration options in the configuration file. 
 The ones that are missing will be pulled from a fallback provider, which by default is Stakhanovise.NET's built-in [ReasonableStakhanoviseDefaultsProvider](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Setup/ReasonableStakhanoviseDefaultsProvider.cs).
 One may specify a custom fallback provider when setting up a `NetCoreConfigurationStakhanoviseDefaultsProvider` instance.
+
+### 5. Registering additional files
+
+You may use `.AddConfigFileName()`:
+
+```csharp
+new NetCoreConfigurationStakhanoviseDefaultsProvider()
+	.AddConfigFileName("appsettings.Production.json");
+```
+
+Or one of the constructors which allows you to specify additional config file names.
 
 ## Dependencies
 
