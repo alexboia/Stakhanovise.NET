@@ -266,7 +266,9 @@ await Stakhanovise
 	.StartFulfillingFiveYearPlanAsync();
 ```
 
-## Task properties
+## Basic information and usage
+
+### 1. Task properties
 
 - `Task Id` - Internal task identifier;
 - `Lock handle Id` - Internal identifer used for locking during task acquisition;
@@ -277,7 +279,7 @@ await Stakhanovise
 - `Locked until` - A timestamp after which the task is retrievable (this provides a mechanism for posting a task now but having Stakhanovise attempt to dequeue it later);
 - `Status` - Task status (see below for additional discussion).
 
-### Task statuses
+#### Task statuses
 
 - `Unprocessed` - The task has been posted to the queue and is pending processing;
 - `Processing` - The task has been locked and processing has started;
@@ -289,7 +291,7 @@ await Stakhanovise
 
 Also see [`QueuedTaskStatus`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskStatus.cs).
 
-## Result properties
+#### Result properties
 
 - `Task Id` - Task id is also used as result id;
 - `Type` - Same as task type;
@@ -308,7 +310,7 @@ Also see [`QueuedTaskStatus`](https://github.com/alexboia/Stakhanovise.NET/blob/
 
 Also see [`IQueuedTaskResult`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/IQueuedTaskResult.cs) and [`QueuedTaskResult`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskResult.cs).
 
-## Timestamp provider
+### 2. Timestamp provider
 <a name="sk-timestamp-provider"></a>
 
 There are various instances that require an `ITimestampProvider` instance, or simply, a timestamp provider. 
@@ -330,21 +332,21 @@ await Stakhanovise
 
 Whatever instance Stakhanovise ends up with after setup will automatically be registered with the DI container.
 
-## Adding to queue
+### 3. Adding to queue
 <a name="sk-adding-to-queue"></a>
 
 Adding tasks to queue is done using an `ITaskQueueProducer` instance. 
 If you are using the main package, `LVD.Stakhanovise.NET`, this is registered for you with the DI container by default and you may simple request that it be injected.
 Otherwise, you need to install the `LVD.Stakhanovise.NET.Producer` package, which also provides an implementation: `PostgreSqlTaskQueueProducer`.
 
-### Creating a `PostgreSqlTaskQueueProducer` instance
+#### Creating a `PostgreSqlTaskQueueProducer` instance
 
 To create a new instance, you need to provide:
 
 - A `TaskQueueOptions` object, [which is a simple POCO options object](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common/Options/TaskQueueOptions.cs);
 - An `ITimestampProvider` instance (see above discussion).
 
-### Producing tasks
+#### Producing tasks
 
 There are two metods available for producing tasks, both of which are pretty straightforward:
 
@@ -357,21 +359,21 @@ Also see the following:
 - [`QueuedTaskProduceInfo` here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/QueuedTaskProduceInfo.cs);
 - [Producer tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Producer.Tests/PostgreSqlTaskQueueProducerTests.cs).
 
-## Inspecting the queue
+### 4. Inspecting the queue
 <a name="sk-inspecting-queue"></a>
 
 Inspecting the queue is done using an `ITaskQueueInfo` instance.
 If you are using the main package, `LVD.Stakhanovise.NET`, this is registered for you with the DI container by default and you may simple request that it be injected.
 Otherwise, you need to install the `LVD.Stakhanovise.NET.Info` package, which also provides an implementation: `PostgreSqlTaskQueueInfo`.
 
-### Creating a `PostgreSqlTaskQueueInfo` instance
+#### Creating a `PostgreSqlTaskQueueInfo` instance
 
 To create a new instance, you need to provide:
 
 - A `TaskQueueInfoOptions` object, [which is a simple POCO options object](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Info/Options/TaskQueueInfoOptions.cs);
 - An `ITimestampProvider` instance (see above discussion).
 
-### Retrieving queue information
+#### Retrieving queue information
 
 - Computing queue metrics - `ITaskQueueInfo.ComputeMetricsAsync()`;
 - Peeking - `ITaskQueueInfo.PeekAsync()`.
@@ -381,7 +383,7 @@ Also see the following:
 - [`TaskQueueMetrics` here](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Common.Interfaces/Model/TaskQueueMetrics.cs);
 - [Info tests](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.Net.Info.Tests/PostgreSqlTaskQueueInfoTests.cs).
 
-## Logging
+### 5. Logging
 <a name="sk-logging"></a>
 
 Two loggers are bundled with the `LVD.Stakhanovise.NET` package:
@@ -395,21 +397,21 @@ Additionally, the following add-on packages are available:
 
 See the dedicated pages for how to enable and use each provider.
 
-### Custom logging provider
+#### Custom logging provider
 
 Using a custom logging provider is a two step process:
 
 a) Develop a provider if you don't already have one;
 b) Register it with Stakhanovise to enable its usage.
 
-### Developing a custom logging provider
+#### Developing a custom logging provider
 
 You need to implement two interfaces:
 
 - [`IStakhanoviseLogger`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Logging/IStakhanoviseLogger.cs), which is the interface actually used for logging;
 - [`IStakhanoviseLoggingProvider`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Logging/IStakhanoviseLoggingProvider.cs), which is the actual logging provider.
 
-### Registering a custom logging provider
+#### Registering a custom logging provider
 
 Simply call `IStakhanoviseSetup.WithLoggingProvider()` during setup:
 
@@ -423,7 +425,7 @@ await Stakhanovise
 	.StartFulfillingFiveYearPlanAsync();
 ```
 
-## Process Id
+### 6. Process Id
 <a name="sk-process-id"></a>
 
 Since there can be multiple Stakhanovise processes operating in parallel on the same queue, 
@@ -442,14 +444,14 @@ There is another implementation out-of-the-box, [`StaticProcessIdProvider`](http
 which doesn't really do anything except for the fact that you can create a new instance of it with a given process Id 
 and will return that one each time anyone requests it.
 
-### Implementing a custom process Id provider
+#### Implementing a custom process Id provider
 
 As mentioned, you need to implement `IProcessIdProvider`, which has two metods:
 
 - `Task SetupAsync()` - perform any preparatory actions required (called by Stakhanovise before setup begins);
 - `string GetProcessId()` - generate and/or return a process id, must be the same within a single process process, each time it is called.
 
-### Registering a custom process Id provider
+#### Registering a custom process Id provider
 
 Simply call `Stakhanovise.WithProcessIdProvider()`:
 
@@ -464,7 +466,7 @@ await Stakhanovise
 	.StartFulfillingFiveYearPlanAsync();
 ```
 
-## Configuration
+### 7. Configuration
 <a name="sk-configuration"></a>
 
 At a minimum, you only need to provide a connection string and that's it. 
@@ -489,17 +491,17 @@ The following options are available (also see [StakhanoviseSetupDefaults](https:
 They can be passed to Stakhanovoise using an instance of `IStakhanoviseSetupDefaultsProvider`. 
 If none is passed, then a `ReasonableStakhanoviseDefaultsProvider` is used, which provides the following values:
 
-### Configuration file bindings
+#### Configuration file bindings
 
 It's up to you how you provide the values, but if pulling them from a standard `appsettings.json` file is all you need, then you might consider using this add-on package: [`LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings).
 
-### Implementing a custom defaults provider
+#### Implementing a custom defaults provider
 
 All you need to do is implement [`IStakhanoviseSetupDefaultsProvider`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Setup/IStakhanoviseSetupDefaultsProvider.cs), which has only one method:
 
 - `StakhanoviseSetupDefaults GetDefaults ()` - returns the default values to be used by Stakhanovise, as a `StakhanoviseSetupDefaults`.
 
-### Using a custom defaults provider
+#### Using a custom defaults provider
 
 In lieu of:
 ```csharp
@@ -516,7 +518,7 @@ await Stakhanovise
 	. (...)
 ```
 
-## Managing dependencies
+### 8. Managing dependencies
 <a name="sk-manage-dependencies"></a>
 
 ## Advanced usage
