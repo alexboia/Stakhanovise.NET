@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<Version>1.0.2</Version>
+		<AssemblyVersion>1.0.2.0</AssemblyVersion>
+		<FileVersion>1.0.2.0</FileVersion>
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
 		<Title>LVD.Stakhanovise.NET.Common.Interfaces</Title>
@@ -14,7 +17,7 @@
 		<RepositoryUrl>https://github.com/alexboia/Stakhanovise.NET</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageTags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</PackageTags>
-		<PackageReleaseNotes>Initial release</PackageReleaseNotes>
+		<PackageReleaseNotes>Initial release - updated README</PackageReleaseNotes>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>

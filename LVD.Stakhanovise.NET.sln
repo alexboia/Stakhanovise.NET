@@ -13,10 +13,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		LICENSE = LICENSE
 		logo.png = logo.png
 		_Docs\overall-arch-diagram.png = _Docs\overall-arch-diagram.png
+		publish-all-core.ps1 = publish-all-core.ps1
+		publish-add-ons.ps1 = publish-add-ons.ps1
 		README-BUILTIN-APPMETRICS.md = README-BUILTIN-APPMETRICS.md
 		README-CONFIG.md = README-CONFIG.md
 		README-DB.md = README-DB.md
 		README.md = README.md
+		unpublish-all.ps1 = unpublish-all.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Logging.Log4NetLogging", "LVD.Stakhanovise.NET.Logging.Log4NetLogging\LVD.Stakhanovise.NET.Logging.Log4NetLogging.csproj", "{5334E253-9BC2-4C45-83F1-99091726EA39}"

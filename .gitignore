@@ -11,3 +11,6 @@ aspnet_client
 license-ss.txt
 __pycache__
 *.pyc
+publish-all-core.ps1
+publish-add-ons.ps1
+unpublish-all.ps1
