@@ -147,4 +147,4 @@ await Stakhanovise
 ```
 
 ## More
-See more information [`here`](https://github.com/alexboia/Stakhanovise.NET/blob/master/README.md)
+See more information [`here`](https://github.com/alexboia/Stakhanovise.NET/blob/master/README-MORE.md)
