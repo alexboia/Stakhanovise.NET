@@ -4,7 +4,14 @@ This is a [Stakhanovise.NET](https://github.com/alexboia/Stakhanovise.NET) add-o
 
 ## Installation
 
-TODO
+Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.Stakhanovise.NET.Logging.Log4NetLogging/).
+
+### 1. Via Package Manager
+
+`Install-Package LVD.Stakhanovise.NET.Logging.Log4NetLogging -Version 1.0.3`
+
+### 2. Via .NET CLI
+`dotnet add package LVD.Stakhanovise.NET.Logging.Log4NetLogging --version 1.0.3`
 
 ## Usage
 

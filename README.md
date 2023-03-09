@@ -1,6 +1,6 @@
 # Stakhanovise.NET
 
-Despite the project title and tagline which are very much in jest, the project does attempt to solve the down-to-earth and pragmatic task of putting together a job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. 
+Despite the project title and tagline which are very much in jest, the project does attempt to solve the down-to-earth and pragmatic task of putting together a job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1. 
 That's it and nothing more. Interested? Read on, komrade!
 
 ## Features
@@ -93,10 +93,10 @@ Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.Stakhano
 
 ### 1. Via Package Manager
 
-`Install-Package LVD.Stakhanovise.NET -Version 1.0.2`
+`Install-Package LVD.Stakhanovise.NET -Version 1.0.3`
 
 ### 2. Via .NET CLI
-`dotnet add package LVD.Stakhanovise.NET --version 1.0.2`
+`dotnet add package LVD.Stakhanovise.NET --version 1.0.3`
 
 ## Getting started
 <a name="sk-basic-usage"></a>

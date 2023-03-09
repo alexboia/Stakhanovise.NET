@@ -1,10 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.2</Version>
-		<AssemblyVersion>1.0.2.0</AssemblyVersion>
-		<FileVersion>1.0.2.0</FileVersion>
+		<Version>1.0.3</Version>
+		<AssemblyVersion>1.0.3.0</AssemblyVersion>
+		<FileVersion>1.0.3.0</FileVersion>
+
 		<TargetFramework>netstandard2.1</TargetFramework>
+		<RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
+
 		<Title>LVD.Stakhanovise.NET</Title>
 		<Company>S.C. MyClar Software Solutions S.R.L.</Company>
 		<Authors>Alexandru BOIA</Authors>
@@ -73,12 +76,17 @@
 	</ItemGroup>
 
 	<ItemGroup Label="SK_DbDocs">
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
 		<None Include="Db\docs\README-DB.md" />
 	</ItemGroup>
+
 	<ItemGroup Label="SK_DbScripts">
 		<None Include="Db\scripts\sk_db.sql" />
 	</ItemGroup>
-	
+
 	<ItemGroup Label="SK_Setup_DbScripts">
 		<EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_tasks_queue_t_task_lock_handle_id_seq.sql">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>

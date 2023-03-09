@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>1.0.2</Version>
-		<AssemblyVersion>1.0.2.0</AssemblyVersion>
-		<FileVersion>1.0.2.0</FileVersion>
+		<Version>1.0.3</Version>
+		<AssemblyVersion>1.0.3.0</AssemblyVersion>
+		<FileVersion>1.0.3.0</FileVersion>
+		
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
+		
 		<Title>LVD.Stakhanovise.NET.Common</Title>
 		<Authors>Alexandru BOIA</Authors>
 		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. Common classes package.</Description>
@@ -33,6 +35,10 @@
 		  <PackagePath>\</PackagePath>
 		</None>
 		<None Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.licenseheader" Link="LVD.Stakhanovise.NET.licenseheader" />
+		<None Include="..\README.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>

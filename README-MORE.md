@@ -11,9 +11,9 @@
 
 Stakhanovise is built for:
 - PostgrSQL 9.5 or higher;
-- .NET Standard 2.0;
-- `Npgsql 4.1.5` or higher;
-- `Newtonsoft.Json 12.0.3` or higher.
+- .NET Standard 2.1;
+- `Npgsql 7.0.1` or higher;
+- `Newtonsoft.Json 13.0.2` or higher.
 
 ## Basic information and usage
 
