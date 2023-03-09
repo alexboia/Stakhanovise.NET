@@ -2,11 +2,10 @@
 
 	<PropertyGroup>	
 		<TargetFramework>netstandard2.1</TargetFramework>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
 
-		<Version>1.0.3</Version>
-		<AssemblyVersion>1.0.3.0</AssemblyVersion>
-		<FileVersion>1.0.3.0</FileVersion>
+		<Version>1.0.4</Version>
+		<AssemblyVersion>1.0.4.0</AssemblyVersion>
+		<FileVersion>1.0.4.0</FileVersion>
 		
 		<Title>LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings</Title>
 		<Company>S.C. MyClar Software Solutions S.R.L.</Company>
@@ -26,10 +25,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="..\LVD.Stakhanovise.NET.Logging.Log4NetLogging\README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
 		<None Include="..\LICENSE">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
@@ -51,6 +46,13 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 </Project>

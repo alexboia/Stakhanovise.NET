@@ -2,17 +2,6 @@
 
 This is a [Stakhanovise.NET](https://github.com/alexboia/Stakhanovise.NET) add-on package that enables configuration via the `Microsoft.Extensions.Configuration` package, using the json format.
 
-## Installation
-
-Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings/).
-
-### 1. Via Package Manager
-
-`Install-Package LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings -Version 1.0.3`
-
-### 2. Via .NET CLI
-`dotnet add package LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings --version 1.0.3`
-
 ## Usage
 
 ### 1. Add namespace references
