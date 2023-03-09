@@ -25,14 +25,14 @@
 
 	<ItemGroup>
 		<PackageReference Include="Bogus" Version="34.0.2" />
-		<PackageReference Include="LVD.Stakhanovise.NET.Logging.Log4NetLogging" Version="1.0.2" />
-		<PackageReference Include="LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings" Version="1.0.2" />
+		<PackageReference Include="LVD.Stakhanovise.NET.Logging.Log4NetLogging" Version="1.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.2" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
 
-		<PackageReference Include="LVD.Stakhanovise.NET" Version="1.0.2" />
-		<PackageReference Include="LVD.Stakhanovise.NET.Producer" Version="1.0.2" />
+		<PackageReference Include="LVD.Stakhanovise.NET" Version="1.0.3" />
+		<PackageReference Include="LVD.Stakhanovise.NET.Producer" Version="1.0.3" />
+		<PackageReference Include="LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings" Version="1.0.3" />
 	</ItemGroup>
 </Project>
