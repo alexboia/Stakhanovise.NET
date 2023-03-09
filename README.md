@@ -93,10 +93,10 @@ Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.Stakhano
 
 ### 1. Via Package Manager
 
-`Install-Package LVD.Stakhanovise.NET -Version 1.1.0`
+`Install-Package LVD.Stakhanovise.NET -Version 1.0.2`
 
 ### 2. Via .NET CLI
-`dotnet add package LVD.Stakhanovise.NET --version 1.1.0`
+`dotnet add package LVD.Stakhanovise.NET --version 1.0.2`
 
 ## Getting started
 <a name="sk-basic-usage"></a>
