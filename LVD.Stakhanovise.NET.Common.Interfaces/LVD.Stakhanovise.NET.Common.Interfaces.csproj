@@ -10,7 +10,7 @@
 		
 		<Title>LVD.Stakhanovise.NET.Common.Interfaces</Title>
 		<Authors>Alexandru BOIA</Authors>
-		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. Common Interfaces package.</Description>
+		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1. Common Interfaces package.</Description>
 		<Company>S.C. MyClar Software Solutions S.R.L.</Company>
 		<Copyright>Copyright (c) 2020-2023, Alexandru Boia</Copyright>
 		<PackageProjectUrl>https://github.com/alexboia/Stakhanovise.NET</PackageProjectUrl>

@@ -20,7 +20,7 @@
 		<PackageReleaseNotes>Initial release - updated README</PackageReleaseNotes>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. Configuration file bindings add-on package.</Description>
+		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1. Configuration file bindings add-on package.</Description>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	</PropertyGroup>
 

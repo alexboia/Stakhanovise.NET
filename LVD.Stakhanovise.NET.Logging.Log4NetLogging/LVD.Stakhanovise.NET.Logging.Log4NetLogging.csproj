@@ -21,7 +21,7 @@
 		<PackageReleaseNotes>Initial release - updated README</PackageReleaseNotes>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. Log4Net logging bindings package.</Description>
+		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1. Log4Net logging bindings package.</Description>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	</PropertyGroup>
 
