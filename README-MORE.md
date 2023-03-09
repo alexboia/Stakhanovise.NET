@@ -1,10 +1,11 @@
 ## Contents
 
 1. Compatibility
-2. Advanced usage
-3. Add-on packages
-4. Samples
-5. Architecture description
+2. Basic information and usage
+3. Advanced usage
+4. Add-on packages
+5. Samples
+6. Architecture description
 
 ## Compatibility
 <a name="sk-compatibility"></a>
