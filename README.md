@@ -1,20 +1,7 @@
-<p align="center">
-   <img align="center" width="210" height="210" src="https://github.com/alexboia/Stakhanovise.NET/blob/master/logo.png?raw=true" style="margin-bottom: 20px; margin-right: 20px; border-radius: 5px;" />
-</p>
-
 # Stakhanovise.NET
 
 Despite the project title and tagline which are very much in jest, the project does attempt to solve the down-to-earth and pragmatic task of putting together a job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. 
 That's it and nothing more. Interested? Read on, komrade!
-
-## Current status
-
-The codebase is pretty much completed, but there are still a number of items that must be tended to:
-- [x] Additional testing;
-- [x] Additional documentation;
-- [ ] Nice to have-ish: finish work on some of the companion libraries;
-- [x] Sample application;
-- [ ] Publish the package tot he NuGet package repository.
 
 ## Contents
 
@@ -783,7 +770,7 @@ await Stakhanovise
 ## Add-on packages
 <a name="sk-addon-packages"></a>
 
-### Logging
+### 1. Logging
 
 The following logging add-on packages are available:
 - [`LVD.Stakhanovise.NET.Logging.NLogLogging`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Logging.NLogLogging) - for NLog integration;
@@ -791,23 +778,23 @@ The following logging add-on packages are available:
 - [`LVD.Stakhanovise.NET.Logging.Serilog`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Logging.Serilog) - for Serilog integration (more or less work in progress right now).
 
 
-### DI containers
+### 2. DI containers
 
 TODO
 
-### Configuration
+### 3. Configuration
 
 The following configuration add-on packages are available:
 - [`LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings) - allows you to pull default values from a classic `appsettings.json`.
 
-### Result queue
+### 4. Result queue
 
 TODO
 
 ## Samples
 <a name="sk-samples"></a>
 
-### File hashing sample application
+### 1. File hashing sample application
 
 Generates some random files and then computes a SHA-256 for each one using a Stakhanovise instance. 
 [Check it out here](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Samples.FileHasher).

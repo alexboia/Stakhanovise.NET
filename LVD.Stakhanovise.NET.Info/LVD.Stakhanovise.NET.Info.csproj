@@ -1,16 +1,45 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
+		<Title>LVD.Stakhanovise.NET.Info</Title>
+		<Authors>Alexandru BOIA</Authors>
+		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. Queue info provider package.</Description>
+		<Company>S.C. MyClar Software Solutions S.R.L.</Company>
+		<Copyright>Copyright (c) 2020-2023, Alexandru Boia</Copyright>
+		<PackageProjectUrl>https://github.com/alexboia/Stakhanovise.NET</PackageProjectUrl>
+		<PackageIcon>logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/alexboia/Stakhanovise.NET</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</PackageTags>
+		<PackageReleaseNotes>Initial release</PackageReleaseNotes>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.licenseheader" Link="LVD.Stakhanovise.NET.licenseheader" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\LVD.Stakhanovise.NET\LVD.Stakhanovise.NET.licenseheader" Link="LVD.Stakhanovise.NET.licenseheader" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Common\LVD.Stakhanovise.NET.Common.csproj" />
+	</ItemGroup>
 
+	<ItemGroup>
+		<None Include="..\LICENSE">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 </Project>

@@ -15,8 +15,7 @@
 		<PackageReleaseNotes>Initial release</PackageReleaseNotes>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. Main package.</Description>
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.0. Main package</Description>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -68,6 +67,8 @@
 	<ItemGroup>
 		<Folder Include="Db\scripts\" />
 	</ItemGroup>
+
+
 
 	<ItemGroup Label="SK_DbDocs">
 		<None Include="Db\docs\README-DB.md" />
