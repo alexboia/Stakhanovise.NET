@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+	<version>1.0.5</version>
+	<authors>Alexandru BOIA</authors>
+	<company>S.C. MyClar Software Solutions S.R.L.</company>
+	<description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1</description>
+	<tags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</tags>
+
+	<packages>
+		<p name="LVD.Stakhanovise.NET">
+			<description>Main package</description>
+		</p>
+	</packages>
+</manifest>
