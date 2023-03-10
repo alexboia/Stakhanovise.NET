@@ -87,17 +87,6 @@ Additionally, there's a fairly decent amount of options which one may use to fur
 Stakhanovise only requires you to provie a connection string and it will either figure out or use sensible defaults for the rest.
 However, should you need to pass in some custom values for the supported options, there's a fluent API available for doing just that.
 
-## Installation
-
-Available as a NuGet package, [here](https://www.nuget.org/packages/LVD.Stakhanovise.NET/).
-
-### 1. Via Package Manager
-
-`Install-Package LVD.Stakhanovise.NET -Version 1.0.3`
-
-### 2. Via .NET CLI
-`dotnet add package LVD.Stakhanovise.NET --version 1.0.3`
-
 ## Getting started
 <a name="sk-basic-usage"></a>
 
