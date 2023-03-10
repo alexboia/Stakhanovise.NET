@@ -586,10 +586,3 @@ The source code is published under the terms of the [BSD New License](https://op
 1. [Npgsql](https://github.com/npgsql/npgsql) - The .NET data provider for PostgreSQL. 
 2. [Json.NET / Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) - Json.NET is a popular high-performance JSON framework for .NET.
 3. [Monotonic timestamp implementation](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET/Model/MonotonicTimestamp.cs) - coutesy of [https://antonymale.co.uk/monotonic-timestamps-in-csharp.html](https://antonymale.co.uk/monotonic-timestamps-in-csharp.html).
-
-## Donate
-
-I put some of my free time into developing and maintaining this plugin.
-If helped you in your projects and you are happy with it, you can...
-
-[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q01KGLM)
