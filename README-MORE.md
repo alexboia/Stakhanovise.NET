@@ -20,9 +20,6 @@ Stakhanovise is built for:
 
 Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Basic-information-and-usage)
 
-### 8. Managing dependencies
-<a name="sk-manage-dependencies"></a>
-
 ## Advanced usage
 <a name="sk-advanced-usage"></a>
 
