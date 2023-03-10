@@ -56,6 +56,7 @@ class SqlDbTableWriter(SqlDbObjectWriter[DbTable]):
         dbPrimaryKey = dbTable.getPrimaryKey()
 
         self._sqlStringBuilder.appendEmptyLine()
+        self._sqlStringBuilder.appendLine('ALTER TABLE ' + dbTable.getName() + ' DROP CONSTRAINT  IF EXISTS ' + dbPrimaryKey.getName() + ' CASCADE;')
         self._sqlStringBuilder.appendLine('ALTER TABLE ONLY public.' + dbTable.getName())
         self._sqlStringBuilder.appendLineIndented('ADD CONSTRAINT ' + dbPrimaryKey.getName())
         self._sqlStringBuilder.appendLineIndented('PRIMARY KEY (' + ','.join(dbPrimaryKey.getColumnNames()) + ');')
@@ -63,6 +64,7 @@ class SqlDbTableWriter(SqlDbObjectWriter[DbTable]):
     def _writeUniqueKeysSqlString(self, dbTable: DbTable) -> None:
         for dbUniqueKey in dbTable.getUniqueKeys():
             self._sqlStringBuilder.appendEmptyLine()
+            self._sqlStringBuilder.appendLine('ALTER TABLE ' + dbTable.getName() + ' DROP CONSTRAINT  IF EXISTS ' + dbUniqueKey.getName() + ' CASCADE;')
             self._sqlStringBuilder.appendLine('ALTER TABLE ONLY public.' + dbTable.getName())
             self._sqlStringBuilder.appendLineIndented('ADD CONSTRAINT ' + dbUniqueKey.getName())
             self._sqlStringBuilder.appendLineIndented('UNIQUE (' + ','.join(dbUniqueKey.getColumnNames()) + ');')
@@ -70,7 +72,7 @@ class SqlDbTableWriter(SqlDbObjectWriter[DbTable]):
     def _writeIndexesSqlString(self, dbTable: DbTable) -> None:
         for dbIndex in dbTable.getIndexes():
             self._sqlStringBuilder.appendEmptyLine()
-            self._sqlStringBuilder.appendLine('CREATE INDEX ' + dbIndex.getName())
+            self._sqlStringBuilder.appendLine('CREATE INDEX IF NOT EXISTS ' + dbIndex.getName())
             self._sqlStringBuilder.appendLineIndented('ON public.' + dbTable.getName() + ' USING ' + dbIndex.getIndexType())
             self._sqlStringBuilder.appendLineIndented('(' + self._getIndexSqlColumnsString(dbIndex) + ');')
 

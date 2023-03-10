@@ -14,11 +14,12 @@ CREATE TABLE IF NOT EXISTS public.sk_metrics_t(
 	metric_last_updated  timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE sk_metrics_t DROP CONSTRAINT  IF EXISTS pk_sk_metrics_t CASCADE;
 ALTER TABLE ONLY public.sk_metrics_t
 	ADD CONSTRAINT pk_sk_metrics_t
 	PRIMARY KEY (metric_id,metric_owner_process_id);
 
-CREATE INDEX idx_sk_metrics_t_category
+CREATE INDEX IF NOT EXISTS idx_sk_metrics_t_category
 	ON public.sk_metrics_t USING btree
 	(metric_category ASC);
 
@@ -33,19 +34,21 @@ CREATE TABLE IF NOT EXISTS public.sk_tasks_queue_t(
 	task_locked_until_ts timestamp with time zone NOT NULL
 );
 
+ALTER TABLE sk_tasks_queue_t DROP CONSTRAINT  IF EXISTS pk_sk_tasks_queue_t CASCADE;
 ALTER TABLE ONLY public.sk_tasks_queue_t
 	ADD CONSTRAINT pk_sk_tasks_queue_t
 	PRIMARY KEY (task_id);
 
+ALTER TABLE sk_tasks_queue_t DROP CONSTRAINT  IF EXISTS unq_sk_tasks_queue_t_task_lock_handle_id CASCADE;
 ALTER TABLE ONLY public.sk_tasks_queue_t
 	ADD CONSTRAINT unq_sk_tasks_queue_t_task_lock_handle_id
 	UNIQUE (task_lock_handle_id);
 
-CREATE INDEX idx_sk_tasks_queue_t_filter_index
+CREATE INDEX IF NOT EXISTS idx_sk_tasks_queue_t_filter_index
 	ON public.sk_tasks_queue_t USING btree
 	(task_type ASC, task_locked_until_ts ASC);
 
-CREATE INDEX idx_sk_tasks_queue_t_sort_index
+CREATE INDEX IF NOT EXISTS idx_sk_tasks_queue_t_sort_index
 	ON public.sk_tasks_queue_t USING btree
 	(task_priority ASC, task_locked_until_ts ASC, task_lock_handle_id ASC);
 
@@ -60,6 +63,7 @@ CREATE TABLE IF NOT EXISTS public.sk_task_execution_time_stats_t(
 	et_total_execution_time bigint NOT NULL
 );
 
+ALTER TABLE sk_task_execution_time_stats_t DROP CONSTRAINT  IF EXISTS pk_sk_task_execution_time_stats_t CASCADE;
 ALTER TABLE ONLY public.sk_task_execution_time_stats_t
 	ADD CONSTRAINT pk_sk_task_execution_time_stats_t
 	PRIMARY KEY (et_payload_type,et_owner_process_id);
@@ -81,15 +85,16 @@ CREATE TABLE IF NOT EXISTS public.sk_task_results_t(
 	task_processing_finalized_at_ts timestamp with time zone
 );
 
+ALTER TABLE sk_task_results_t DROP CONSTRAINT  IF EXISTS pk_sk_task_results_t CASCADE;
 ALTER TABLE ONLY public.sk_task_results_t
 	ADD CONSTRAINT pk_sk_task_results_t
 	PRIMARY KEY (task_id);
 
-CREATE INDEX idx_sk_task_results_t_task_status
+CREATE INDEX IF NOT EXISTS idx_sk_task_results_t_task_status
 	ON public.sk_task_results_t USING btree
 	(task_status ASC);
 
-CREATE INDEX idx_sk_task_results_t_task_type
+CREATE INDEX IF NOT EXISTS idx_sk_task_results_t_task_type
 	ON public.sk_task_results_t USING btree
 	(task_type ASC);
 

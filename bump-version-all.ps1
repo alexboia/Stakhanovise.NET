@@ -3,7 +3,7 @@ Param(
 	[string]$versionNumber
 )
 
-. .\common-versioning.ps1
+. .\common-manifest.ps1
 . .\common-projects.ps1
 
 function Set-Version {

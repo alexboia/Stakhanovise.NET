@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.sk_task_execution_time_stats_t(
 	et_total_execution_time bigint NOT NULL
 );
 
+ALTER TABLE sk_task_execution_time_stats_t DROP CONSTRAINT  IF EXISTS pk_sk_task_execution_time_stats_t CASCADE;
 ALTER TABLE ONLY public.sk_task_execution_time_stats_t
 	ADD CONSTRAINT pk_sk_task_execution_time_stats_t
 	PRIMARY KEY (et_payload_type,et_owner_process_id);

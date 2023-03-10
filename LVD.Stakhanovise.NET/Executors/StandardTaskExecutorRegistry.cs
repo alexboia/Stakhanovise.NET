@@ -42,8 +42,8 @@ namespace LVD.Stakhanovise.NET.Executors
 		private Dictionary<Type, Type> mMessageExecutorTypes
 			  = new Dictionary<Type, Type>();
 
-		private Dictionary<Type, PropertyInfo[]> mMessageExecutorInjectableProperties
-			= new Dictionary<Type, PropertyInfo[]>();
+		private Dictionary<Type, PropertyInfo []> mMessageExecutorInjectableProperties
+			= new Dictionary<Type, PropertyInfo []>();
 
 		private Dictionary<string, Type> mPayloadTypes
 			= new Dictionary<string, Type>();
@@ -84,7 +84,9 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		private void ScanAssembly( Assembly assembly )
 		{
-			Type[] executorTypes = assembly.GetTypes();
+			Type [] executorTypes = assembly.GetTypes();
+			List<IDependencyRegistration> executorRegistrations =
+				new List<IDependencyRegistration>();
 
 			foreach ( Type candidateType in executorTypes )
 			{
@@ -99,18 +101,26 @@ namespace LVD.Stakhanovise.NET.Executors
 				if ( payloadType == null )
 					continue;
 
-				PropertyInfo[] injectableProperties = candidateType
+				DependencyRegistration executorReg = DependencyRegistration
+					.BindToType( candidateType,
+						candidateType,
+						DependencyScope.Transient );
+
+				PropertyInfo [] injectableProperties = candidateType
 					.GetProperties( BindingFlags.Public | BindingFlags.Instance )
 					.Where( p => p.CanRead && p.CanWrite && IsInjectableProperty( p ) )
 					.ToArray();
 
 				//Register these two pieces of information for later use
-				mPayloadTypes[ payloadType.FullName ] = payloadType;
-				mMessageExecutorTypes[ payloadType ] = candidateType;
+				mPayloadTypes [ payloadType.FullName ] = payloadType;
+				mMessageExecutorTypes [ payloadType ] = candidateType;
 
 				if ( injectableProperties != null && injectableProperties.Length > 0 )
-					mMessageExecutorInjectableProperties[ candidateType ] = injectableProperties;
+					mMessageExecutorInjectableProperties [ candidateType ] = injectableProperties;
 			}
+
+			if ( executorRegistrations.Any() )
+				mDependencyResolver.Load( executorRegistrations );
 		}
 
 		public void LoadDependencies( IDictionary<Type, object> deps )
@@ -127,7 +137,7 @@ namespace LVD.Stakhanovise.NET.Executors
 			mDependencyResolver.Load( regs );
 		}
 
-		public void ScanAssemblies( params Assembly[] assemblies )
+		public void ScanAssemblies( params Assembly [] assemblies )
 		{
 			if ( assemblies != null && assemblies.Length > 0 )
 			{
@@ -149,14 +159,14 @@ namespace LVD.Stakhanovise.NET.Executors
 		{
 			Type executorType;
 
-			PropertyInfo[] injectableProperties;
+			PropertyInfo [] injectableProperties;
 			ITaskExecutor executorInstance;
 
 			if ( mMessageExecutorTypes.TryGetValue( payloadType, out executorType ) )
 			{
 				//Create executor instance, if a type is found for the payload type
-				executorInstance = ( ITaskExecutor ) Activator
-					.CreateInstance( executorType );
+				executorInstance = ( ITaskExecutor ) mDependencyResolver
+					.TryResolve( executorType );
 
 				//If we have any injectable properties, 
 				//  attempt to resolve values and inject them accordingly
@@ -188,7 +198,7 @@ namespace LVD.Stakhanovise.NET.Executors
 		public IEnumerable<string> DetectedPayloadTypeNames
 			=> DetectedPayloadTypes
 			.Select( t => t.FullName )
-			.ToArray() ?? new string[ 0 ];
+			.ToArray() ?? new string [ 0 ];
 
 		public IEnumerable<Type> DetectedPayloadTypes
 			=> mPayloadTypes.Values;

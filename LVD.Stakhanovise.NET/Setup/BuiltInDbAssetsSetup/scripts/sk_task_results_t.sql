@@ -15,15 +15,16 @@ CREATE TABLE IF NOT EXISTS public.sk_task_results_t(
 	task_processing_finalized_at_ts timestamp with time zone
 );
 
+ALTER TABLE sk_task_results_t DROP CONSTRAINT  IF EXISTS pk_sk_task_results_t CASCADE;
 ALTER TABLE ONLY public.sk_task_results_t
 	ADD CONSTRAINT pk_sk_task_results_t
 	PRIMARY KEY (task_id);
 
-CREATE INDEX idx_sk_task_results_t_task_status
+CREATE INDEX IF NOT EXISTS idx_sk_task_results_t_task_status
 	ON public.sk_task_results_t USING btree
 	(task_status ASC);
 
-CREATE INDEX idx_sk_task_results_t_task_type
+CREATE INDEX IF NOT EXISTS idx_sk_task_results_t_task_type
 	ON public.sk_task_results_t USING btree
 	(task_type ASC);
 

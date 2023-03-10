@@ -129,9 +129,10 @@ namespace LVD.Stakhanovise.NET
 			return this;
 		}
 
-		private void EnableNpgsqlLegacyTimestampBehavior()
+		public Stakhanovise EnableNpgsqlLegacyTimestampBehavior()
 		{
 			AppContext.SetSwitch( "Npgsql.EnableLegacyTimestampBehavior", true );
+			return this;
 		}
 
 		public Stakhanovise StartFulfillingFiveYearPlan()

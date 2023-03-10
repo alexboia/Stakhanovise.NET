@@ -38,6 +38,15 @@ namespace LVD.Stakhanovise.NET.Tests.Executors
 {
 	public class SampleTaskPayloadExecutor : ITaskExecutor<SampleTaskPayload>
 	{
+		private readonly ISampleExecutorDependency mSampleExecutorDependency;
+
+
+		public SampleTaskPayloadExecutor( ISampleExecutorDependency sampleExecutorDependency )
+		{
+			mSampleExecutorDependency = sampleExecutorDependency
+				?? throw new ArgumentNullException( nameof( sampleExecutorDependency ) );
+		}
+
 		public async Task ExecuteAsync( SampleTaskPayload payload, ITaskExecutionContext executionContext )
 		{
 			await Task.Delay( 100 );

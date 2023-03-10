@@ -1,4 +1,5 @@
 function Get-CurrentVersion() {
+
 	return "1.0.5"
 }
 

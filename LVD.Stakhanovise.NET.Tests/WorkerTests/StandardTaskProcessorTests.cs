@@ -79,7 +79,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 
 			taskExecutorResolverMock
 				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.IsOfType<SampleTaskPayload>() ) ) )
-				.Returns( new SampleTaskPayloadExecutor() );
+				.Returns( It.IsAny<SampleTaskPayloadExecutor>() );
 
 			taskExecutorResolverMock
 				.Setup( e => e.ResolveExecutor( It.Is<IQueuedTask>( q => q.IsOfType<SampleTaskPayloadWithResult>() ) ) )
