@@ -47,26 +47,7 @@ Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/
 
 ## Add-on packages
 
-### 1. Logging
-
-The following logging add-on packages are available:
-- [`LVD.Stakhanovise.NET.Logging.NLogLogging`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Logging.NLogLogging) - for NLog integration;
-- [`LVD.Stakhanovise.NET.Logging.Log4NetLogging`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Logging.Log4NetLogging) - for Log4Net integration;
-- [`LVD.Stakhanovise.NET.Logging.Serilog`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.Logging.Serilog) - for Serilog integration (more or less work in progress right now).
-
-
-### 2. DI containers
-
-TODO
-
-### 3. Configuration
-
-The following configuration add-on packages are available:
-- [`LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings`](https://github.com/alexboia/Stakhanovise.NET/tree/master/LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings) - allows you to pull default values from a classic `appsettings.json`.
-
-### 4. Result queue
-
-TODO
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Add-on-packages)
 
 ## Samples
 
