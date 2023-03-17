@@ -74,31 +74,11 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="Db\docs\README-DB.md" />
-  </ItemGroup>
+    <None Include="Db\docs\README-DB.md" /></ItemGroup>
   <ItemGroup Label="SK_DbScripts">
-    <None Include="Db\scripts\sk_db.sql" />
-  </ItemGroup>
+    <None Include="Db\scripts\sk_db.sql" /></ItemGroup>
   <ItemGroup Label="SK_Setup_DbScripts">
-    <EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_tasks_queue_t_task_lock_handle_id_seq.sql">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_metrics_t.sql">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_tasks_queue_t.sql">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_task_execution_time_stats_t.sql">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_task_results_t.sql">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_try_dequeue_task.sql">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-  </ItemGroup>
+    <EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_tasks_queue_t_task_lock_handle_id_seq.sql"><CopyToOutputDirectory>Never</CopyToOutputDirectory></EmbeddedResource><EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_metrics_t.sql"><CopyToOutputDirectory>Never</CopyToOutputDirectory></EmbeddedResource><EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_tasks_queue_t.sql"><CopyToOutputDirectory>Never</CopyToOutputDirectory></EmbeddedResource><EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_task_execution_time_stats_t.sql"><CopyToOutputDirectory>Never</CopyToOutputDirectory></EmbeddedResource><EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_task_results_t.sql"><CopyToOutputDirectory>Never</CopyToOutputDirectory></EmbeddedResource><EmbeddedResource Include="Setup\BuiltInDbAssetsSetup\Scripts\sk_try_dequeue_task.sql"><CopyToOutputDirectory>Never</CopyToOutputDirectory></EmbeddedResource></ItemGroup>
   <ItemGroup>
     <None Include="..\LICENSE">
       <Pack>True</Pack>

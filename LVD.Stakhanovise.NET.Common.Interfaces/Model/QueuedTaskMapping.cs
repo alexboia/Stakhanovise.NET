@@ -1,7 +1,7 @@
 // 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020-2022, Boia Alexandru
+// Copyright (c) 2020-2023, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,25 @@ namespace LVD.Stakhanovise.NET.Model
 			ResultsQueueTableName = $"{tablePrefix}{ResultsQueueTableName}";
 			ExecutionTimeStatsTableName = $"{tablePrefix}{ExecutionTimeStatsTableName}";
 			MetricsTableName = $"{tablePrefix}{MetricsTableName}";
+			NewTaskNotificationChannelName = $"{tablePrefix}{NewTaskNotificationChannelName}";
+			DequeueFunctionName = $"{tablePrefix}{DequeueFunctionName}";
 			return this;
+		}
+
+		public static QueuedTaskMapping DefaultWithPrefix( string prefix )
+		{
+			return Default
+				.AddTablePrefix( prefix );
+		}
+
+		public static QueuedTaskMapping DefaultWithPrefix( string prefix, Action<QueuedTaskMapping> modifier )
+		{
+			if ( modifier == null )
+				throw new ArgumentNullException(nameof(modifier));
+			
+			QueuedTaskMapping mapping = DefaultWithPrefix( prefix );
+			modifier.Invoke( mapping );
+			return mapping;
 		}
 
 		public static QueuedTaskMapping Default

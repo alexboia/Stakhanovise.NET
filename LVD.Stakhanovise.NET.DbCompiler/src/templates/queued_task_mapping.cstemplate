@@ -17,16 +17,48 @@ namespace $class_namespace_name
 			DequeueFunctionName = "$dequeue_function_name";
 		}
 
-		public void AddTablePrefix( string tablePrefix )
+		public $class_name AddTablePrefix( string tablePrefix )
 		{
 			QueueTableName = $$"{tablePrefix}{QueueTableName}";
 			ResultsQueueTableName = $$"{tablePrefix}{ResultsQueueTableName}";
 			ExecutionTimeStatsTableName = $$"{tablePrefix}{ExecutionTimeStatsTableName}";
 			MetricsTableName = $$"{tablePrefix}{MetricsTableName}";
+			NewTaskNotificationChannelName = $$"{tablePrefix}{NewTaskNotificationChannelName}";
+			DequeueFunctionName = $$"{tablePrefix}{DequeueFunctionName}";
+			return this;
+		}
+
+		public static QueuedTaskMapping DefaultWithPrefix( string prefix )
+		{
+			return Default
+				.AddTablePrefix( prefix );
+		}
+
+		public static QueuedTaskMapping DefaultWithPrefix( string prefix, Action<QueuedTaskMapping> modifier )
+		{
+			if ( modifier == null )
+				throw new ArgumentNullException(nameof(modifier));
+			
+			QueuedTaskMapping mapping = DefaultWithPrefix( prefix );
+			modifier.Invoke( mapping );
+			return mapping;
 		}
 
 		public static $class_name Default
 			=> new $class_name();
+
+		public bool IsValid
+		{
+			get
+			{
+				return !string.IsNullOrWhiteSpace( QueueTableName )
+					&& !string.IsNullOrWhiteSpace( ResultsQueueTableName )
+					&& !string.IsNullOrWhiteSpace( NewTaskNotificationChannelName )
+					&& !string.IsNullOrWhiteSpace( ExecutionTimeStatsTableName )
+					&& !string.IsNullOrWhiteSpace( MetricsTableName )
+					&& !string.IsNullOrWhiteSpace( DequeueFunctionName );
+			}
+		}
 
 		public string QueueTableName
 		{
