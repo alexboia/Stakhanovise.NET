@@ -1,14 +1,4 @@
-## Contents
-
-1. Compatibility
-2. Basic information and usage
-3. Advanced usage
-4. Add-on packages
-5. Samples
-6. Architecture description
-
 ## Compatibility
-<a name="sk-compatibility"></a>
 
 Stakhanovise is built for:
 - PostgrSQL 9.5 or higher;
@@ -25,68 +15,15 @@ Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/
 
 ### 1. Change database asset mapping
 
-The following mapping properties can be changed:
-
-- queue table name (defaults to `sk_tasks_queue_t`);
-- results queue table name (defaults to `sk_task_results_t`);
-- execution time stats table name (defaults to `sk_task_execution_time_stats_t`);
-- metrics table name (defaults to `sk_metrics_t`);
-- new task notification channel name (defaults to `sk_task_queue_item_added`);
-- dequeue function name name (defaults to `sk_try_dequeue_task`).
-
-To alter the mapping, simply call `IStakhanoviseSetup.WithTaskQueueMapping()` during setup:
-
-```csharp
-await Stakhanovise
-	.CreateForTheMotherland()
-	.SetupWorkingPeoplesCommittee(setup => 
-	{
-		// Manually set all properties	that you need
-		setup.WithTaskQueueMapping(new QueuedTaskMapping() 
-		{
-			QueueTableName = "...",
-			ResultsQueueTableName = "...",
-			ExecutionTimeStatsTableName = "...",
-			MetricsTableName = "...",
-			NewTaskNotificationChannelName = "...",
-			DequeueFunctionName = "..."
-		});
-
-		// Or just alter the table prefix (this only affects table DB objects)
-		setup.WithTaskQueueMapping(QueuedTaskMapping
-			.Default
-			.AddTablePrefix("prfx_"));
-	})
-	.StartFulfillingFiveYearPlanAsync();
-```
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Advanced-usage:-Change-database-asset-mapping)
 
 ### 2. Skip setting up database assets
 
-Simply call `IStakhanoviseSetup.DontSetupBuiltInDbAssets()` during setup:
-
-```csharp
-await Stakhanovise
-	.CreateForTheMotherland()
-	.SetupWorkingPeoplesCommittee(setup => 
-	{
-		setup.DontSetupBuiltInDbAssets();
-	})
-```
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Advanced-usage:-Skip-setting-up-database-assets)
 
 ### 3. Disable application metrics monitoring
 
-Simply call `IStakhanoviseSetup.DisableAppMetricsMonitoring()` during setup:
-
-```csharp
-await Stakhanovise
-	.CreateForTheMotherland()
-	.SetupWorkingPeoplesCommittee(setup => 
-	{
-		setup.DisableAppMetricsMonitoring();
-	})
-	.StartFulfillingFiveYearPlanAsync();
-```
-*Note*: when disabled, the related DB assets setup will also be skipped.
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Advanced-usage:-Disable-application-metrics-monitoring)
 
 ### 4. Configuring the built-in application metrics monitor writer
 
