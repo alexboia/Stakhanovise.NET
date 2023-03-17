@@ -27,197 +27,25 @@ Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/
 
 ### 4. Configuring the built-in application metrics monitor writer
 
-There is a dedicated setup sub-flow for configuring the application metrics monitor writer, 
-that can be entered by calling `IStakhanoviseSetup.SetupAppMetricsMonitorWriter()`, 
-which needs an `Action<IAppMetricsMonitorWriterSetup>` as a parameter.
-
-You can then use the `IAppMetricsMonitorWriterSetup.SetupBuiltInWriter()` method to configure the built-in writer:
-
-```csharp
-await Stakhanovise
-	.CreateForTheMotherland()
-	.SetupWorkingPeoplesCommittee(setup => 
-	{
-		setup.SetupAppMetricsMonitorWriter(writerSetup => 
-		{
-			writerSetup.SetupBuiltInWriter(builtinWriterSetup => 
-			{
-				//only DB connection options can be modified at this time
-				//normally you don't need to do this unless:
-				//	a) you want to store these to a separate database
-				//		OR
-				//	b) you want o alter the additional connection parameters 
-				//		(DB connect retry count, retry delay and so on)
-				builtinWriterSetup.WithConnectionOptions(connSetup => 
-				{
-					connSetup.WithConnectionString(...)
-						.WithConnectionRetryCount(...)
-						.WithConnectionRetryDelayMilliseconds(...)
-						.WithConnectionKeepAlive(...);
-				});
-			});
-		});
-	})
-	.StartFulfillingFiveYearPlanAsync();
-```
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Advanced-usage:-Configuring-the-built-in-application-metrics-monitor-writer)
 
 ### 5. Replacing the application metrics monitor writer
 
-Replacing the built-in writer requires you to:
-
-- Implement the [`IAppMetricsMonitorWriter`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Processor/IAppMetricsMonitorWriter.cs) interface;
-- Register it with Stakhanovise to enable its usage.
-
-#### Implementing a custom writer
-
-There is only one method which needs to be implemented: 
-`IAppMetricsMonitorWriter.WriteAsync(string processId, IEnumerable<AppMetric> appMetrics)`. 
-
-Where:
-- `processId` is the identifier of the currently running Stakhanovise instance;
-- `appMetrics` is the list of metrics objects to be written (see [`AppMetric` class](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Model/AppMetric.cs)).
-
-The return value should be the number of entries actually written.
-
-#### Registering the custom writer
-
-There is a dedicated setup sub-flow for configuring the application metrics monitor writer, 
-that can be entered by calling `IStakhanoviseSetup.SetupAppMetricsMonitorWriter()`, 
-which needs an `Action<IAppMetricsMonitorWriterSetup>` as a parameter.
-
-You can then use the `IAppMetricsMonitorWriterSetup.UseWriter()` 
-or `IAppMetricsMonitorWriterSetup.UseWriterFactory()` method 
-to register the custom writer:
-
-```csharp
-await Stakhanovise
-	.CreateForTheMotherland()
-	.SetupWorkingPeoplesCommittee(setup => 
-	{
-		setup.SetupAppMetricsMonitorWriter(writerSetup => 
-		{
-			writerSetup.UseWriter(new MyCustomMetricsWriter());
-		});
-	})
-	.StartFulfillingFiveYearPlanAsync();
-```
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Advanced-usage:-Replacing-the-application-metrics-monitor-writer)
 
 ### 6. Configuring the built-in execution performance monitoring writer
 
-There is a dedicated setup sub-flow for configuring the execution performance monitor writer, 
-that can be entered by calling `IStakhanoviseSetup.SetupPerformanceMonitorWriter()`, 
-which needs an `Action<IExecutionPerformanceMonitorWriterSetup>` as a parameter.
-
-You can then use the `IExecutionPerformanceMonitorWriterSetup.SetupBuiltInWriter()` method to configure the built-in writer:
-
-```csharp
-await Stakhanovise
-	.CreateForTheMotherland()
-	.SetupWorkingPeoplesCommittee(setup => 
-	{
-		setup.SetupPerformanceMonitorWriter(writerSetup => 
-		{
-			writerSetup.SetupBuiltInWriter(builtinWriterSetup => 
-			{
-				//only DB connection options can be modified at this time
-				//normally you don't need to do this unless:
-				//	a) you want to store these to a separate database
-				//		OR
-				//	b) you want o alter the additional connection parameters 
-				//		(DB connect retry count, retry delay and so on)
-				builtinWriterSetup.WithConnectionOptions(connSetup => 
-				{
-					connSetup.WithConnectionString(...)
-						.WithConnectionRetryCount(...)
-						.WithConnectionRetryDelayMilliseconds(...)
-						.WithConnectionKeepAlive(...);
-				});
-			});
-		});
-	})
-	.StartFulfillingFiveYearPlanAsync();
-```
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Advanced-usage:-Configuring-the-built-in-execution-performance-monitoring-writer)
 
 ### 7. Replacing the execution performance monitoring writer
 
-Replacing the built-in writer requires you to:
-
-- Implement the [`IExecutionPerformanceMonitorWriter`](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Processor/IExecutionPerformanceMonitorWriter.cs) interface
-- Register it with Stakhanovise to enable its usage.
-
-#### Implementing a custom writer
-
-There is only one method which needs to be implemented: 
-`IExecutionPerformanceMonitorWriter.WriteAsync( string processId, IEnumerable<TaskPerformanceStats> executionTimeInfoBatch )`. 
-
-Where:
-- `processId` is the identifier of the currently running Stakhanovise instance;
-- `executionTimeInfoBatch` is a batch of performance monitoring stats to be written (see [`TaskPerformanceStats` class](https://github.com/alexboia/Stakhanovise.NET/blob/master/LVD.Stakhanovise.NET.Interfaces/Model/TaskPerformanceStats.cs)).
-
-The return value should be the number of entries actually written or updated.
-
-#### Registering the custom writer
-
-There is a dedicated setup sub-flow for configuring the execution performance monitor writer, 
-that can be entered by calling `IStakhanoviseSetup.SetupPerformanceMonitorWriter()`, 
-which needs an `Action<IExecutionPerformanceMonitorWriterSetup>` as a parameter.
-
-You can then use the `IExecutionPerformanceMonitorWriterSetup.UseWriter()` 
-or `IExecutionPerformanceMonitorWriterSetup.UseWriterFactory()` method 
-to register the custom writer:
-
-```csharp
-await Stakhanovise
-	.CreateForTheMotherland()
-	.SetupWorkingPeoplesCommittee(setup => 
-	{
-		setup.SetupPerformanceMonitorWriter(writerSetup => 
-		{
-			writerSetup.UseWriter(new MyCustomMetricsWriter());
-		});
-	})
-	.StartFulfillingFiveYearPlanAsync();
-```
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Advanced-usage:-Replacing-the-execution-performance-monitoring-writer)
 
 ### 8. Configuring the task engine
 
-There is a dedicated setup sub-flow for configuring the task engine, 
-that can be entered by calling `ITaskEngineSetup.SetupEngine()`,
-which needs an `Action<ITaskEngineSetup>` as a parameter:
-
-```csharp
-await Stakhanovise
-	.CreateForTheMotherland()
-	.SetupWorkingPeoplesCommittee(setup => 
-	{
-		setup.SetupEngine(engineSetup => 
-		{
-			//Specify which assemblies to scan for executors;
-			//	this will replace all the assemblies specified 
-			//	via defaults configuration.
-			engineSetup.WithExecutorAssemblies( ... );
-
-			//How many worker threads to use;
-			//	this will replace the value specified 
-			//	via defaults configuration.
-			engineSetup.WithWorkerCount( ... );
-
-			//Drill down to task processing setup:
-			engineSetup.SetupTaskProcessing(processingSetup => 
-			{
-				processingSetup.WithDelayTicksTaskAfterFailureCalculator( ... );
-
-				processingSetup.WithTaskErrorRecoverabilityCallback( ... );
-
-				processingSetup.WithFaultErrorThresholdCount( ... );
-			});
-		});
-	})
-	.StartFulfillingFiveYearPlanAsync();
-```
+Moved to [this separate wiki page](https://github.com/alexboia/Stakhanovise.NET/wiki/Advanced-usage:--Configuring-the-task-engine)
 
 ## Add-on packages
-<a name="sk-addon-packages"></a>
 
 ### 1. Logging
 
@@ -241,7 +69,6 @@ The following configuration add-on packages are available:
 TODO
 
 ## Samples
-<a name="sk-samples"></a>
 
 ### 1. File hashing sample application
 
@@ -262,12 +89,10 @@ Stakhanovise's high-level processing workflow and primitives are described in th
 </p>
 
 ## License
-<a name="sk-license"></a> 
 
 The source code is published under the terms of the [BSD New License](https://opensource.org/licenses/BSD-3-Clause) licence.
 
 ## Credits
-<a name="sk-credits"></a>
 
 1. [Npgsql](https://github.com/npgsql/npgsql) - The .NET data provider for PostgreSQL. 
 2. [Json.NET / Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) - Json.NET is a popular high-performance JSON framework for .NET.
