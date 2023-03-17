@@ -15,7 +15,7 @@ function Publish-Project {
 		[string]$sourceUrl
 	)
 
-	Write-Host ("Publishing project " + $projectName + ", version = " + $packageVersion + "...") -ForegroundColor Yellow
+	Write-Host ("Publishing project " + $projectName + ", version = " + $apiKey + "...") -ForegroundColor Yellow
 
 	cd ./$projectName
 	dotnet clean -c $configuration
@@ -24,7 +24,6 @@ function Publish-Project {
 	[string]$projectFileName = ($projectName + ".csproj")
 	dotnet pack $projectFileName -c $configuration -p:PackageVersion=$packageVersion
 
-	cd ./bin/$configuration
-	dotnet nuget push .\$projectName.$packageVersion.nupkg --api-key $ApiKey --source $sourceUrl --skip-duplicates
-	cd ../../..
+	dotnet nuget push ./bin/$configuration/$projectName.$packageVersion.nupkg --api-key $apiKey --source $sourceUrl --skip-duplicate
+	cd ../
 }
