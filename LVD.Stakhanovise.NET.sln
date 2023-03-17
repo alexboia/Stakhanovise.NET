@@ -20,14 +20,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		nuget-publish-all.ps1 = nuget-publish-all.ps1
 		nuget-setup.ps1 = nuget-setup.ps1
 		_Docs\overall-arch-diagram.png = _Docs\overall-arch-diagram.png
-		publish-add-ons.ps1 = publish-add-ons.ps1
-		publish-all-core.ps1 = publish-all-core.ps1
 		README-BUILTIN-APPMETRICS.md = README-BUILTIN-APPMETRICS.md
 		README-CONFIG.md = README-CONFIG.md
 		README-DB.md = README-DB.md
 		README-MORE.md = README-MORE.md
 		README.md = README.md
-		unpublish-all.ps1 = unpublish-all.ps1
 		update-manifest-all.ps1 = update-manifest-all.ps1
 	EndProjectSection
 EndProject
