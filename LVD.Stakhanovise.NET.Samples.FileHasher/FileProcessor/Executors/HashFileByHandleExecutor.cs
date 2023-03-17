@@ -44,17 +44,31 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor.Executors
 {
 	public class HashFileByHandleExecutor : BaseTaskExecutor<HashFileByHandle>
 	{
+		//Keep these dependency injected
+		private readonly ISourceFileRepository mSourceFileRepository;
+
+		private readonly IFileHashRepository mFileHashRepository;
+
+		public HashFileByHandleExecutor( ISourceFileRepository sourceFileRepository, 
+			IFileHashRepository fileHashRepository )
+		{
+			mSourceFileRepository = sourceFileRepository
+				?? throw new ArgumentNullException( nameof( sourceFileRepository ) );
+			mFileHashRepository = fileHashRepository
+				?? throw new ArgumentNullException( nameof( fileHashRepository ) );
+		}
+		
 		public override async Task ExecuteAsync( HashFileByHandle payload, ITaskExecutionContext executionContext )
 		{
 			using ( SHA256 sha256 = SHA256.Create() )
 			{
-				FileHandle fileHandle = 
+				FileHandle fileHandle =
 					ResolveFileHandle( payload.HandleId );
 
-				byte[] fileContents = 
+				byte [] fileContents =
 					await ReadFileAsync( fileHandle );
 
-				FileHashInfo fileHashInfo = ComputeHash( fileHandle, 
+				FileHashInfo fileHashInfo = ComputeHash( fileHandle,
 					fileContents );
 
 				StoreFileHashAndNotifyCompletion( fileHashInfo );
@@ -63,19 +77,19 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor.Executors
 
 		private FileHandle ResolveFileHandle( Guid handleId )
 		{
-			return SourceFileRepository.ResolveFileByHandleId( handleId );
+			return mSourceFileRepository.ResolveFileByHandleId( handleId );
 		}
 
-		private async Task<byte[]> ReadFileAsync( FileHandle fileHandle )
+		private async Task<byte []> ReadFileAsync( FileHandle fileHandle )
 		{
 			return await File.ReadAllBytesAsync( fileHandle.Path );
 		}
 
-		private FileHashInfo ComputeHash( FileHandle fileHandle, byte[] fileContents )
+		private FileHashInfo ComputeHash( FileHandle fileHandle, byte [] fileContents )
 		{
 			using ( SHA256 sha256 = SHA256.Create() )
 			{
-				byte[] fileHash = sha256.ComputeHash( fileContents );
+				byte [] fileHash = sha256.ComputeHash( fileContents );
 				FileHashInfo fileHashInfo = new FileHashInfo( fileHandle, fileHash );
 
 				return fileHashInfo;
@@ -84,14 +98,14 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor.Executors
 
 		private void StoreFileHashAndNotifyCompletion( FileHashInfo fileHashInfo )
 		{
-			FileHashRepository.AddFileHash( fileHashInfo );
+			mFileHashRepository.AddFileHash( fileHashInfo );
 			ProcessingWatcher.NotifyFileHashed( fileHashInfo.FileHandle );
 		}
 
-		public ISourceFileRepository SourceFileRepository { get; set; }
-
-		public IFileHashRepository FileHashRepository { get; set; }
-
-		public IProcessingWatcher ProcessingWatcher { get; set; }
+		//Keep this property-injected
+		public IProcessingWatcher ProcessingWatcher
+		{
+			get; set;
+		}
 	}
 }
