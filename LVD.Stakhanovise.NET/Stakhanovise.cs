@@ -29,14 +29,9 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Setup;
-using LVD.Stakhanovise.NET.Setup.Exceptions;
 using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET
@@ -188,6 +183,15 @@ namespace LVD.Stakhanovise.NET
 		{
 			Dispose( true );
 			GC.SuppressFinalize( this );
+		}
+
+		public bool IsStarted
+		{
+			get
+			{
+				return mEngine != null 
+					&& mEngine.IsStarted;
+			}
 		}
 	}
 }

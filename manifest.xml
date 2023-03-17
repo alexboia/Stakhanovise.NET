@@ -6,9 +6,40 @@
 	<description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1</description>
 	<tags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</tags>
 
+	<releaseNotes>
+		- Enabled executor constructor injection;
+		- Updated setup db scripts to avoid creating duplicate indexes and duplicate constraints;
+		- Added option to enable npgsql legacy timestamp behaviour (see https://www.npgsql.org/doc/types/datetime.html).
+	</releaseNotes>
+
 	<packages>
 		<p name="LVD.Stakhanovise.NET">
-			<description>Main package</description>
+			<description mode="add">Main package</description>
+		</p>
+		<p name="LVD.Stakhanovise.NET.Common">
+			<description mode="add">Common classes package</description>
+		</p>
+		<p name="LVD.Stakhanovise.NET.Common.Interfaces">
+			<description mode="add">Common interfaces package</description>
+		</p>
+		<p name="LVD.Stakhanovise.NET.Interfaces">
+			<description mode="add">Main Interfaces package</description>
+		</p>
+		<p name="LVD.Stakhanovise.NET.Info">
+			<description mode="add">Queue info provider package</description>
+		</p>
+		<p name="LVD.Stakhanovise.NET.Producer">
+			<description mode="add">Queue producer provider package</description>
+		</p>
+
+		<p name="LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings">
+			<description mode="add">Configuration file bindings add-on package.</description>
+			<releaseNotes mode="replace">Version sync with core packages</releaseNotes>
+		</p>
+
+		<p name="LVD.Stakhanovise.NET.Logging.Log4NetLogging">
+			<description mode="add">Log4Net logging bindings package.</description>
+			<releaseNotes mode="replace">Version sync with core packages</releaseNotes>
 		</p>
 	</packages>
 </manifest>

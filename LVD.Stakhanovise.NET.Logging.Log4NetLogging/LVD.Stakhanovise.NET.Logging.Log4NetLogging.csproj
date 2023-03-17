@@ -14,7 +14,7 @@
     <RepositoryUrl>https://github.com/alexboia/Stakhanovise.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</PackageTags>
-    <PackageReleaseNotes>Initial release - updated README</PackageReleaseNotes>
+    <PackageReleaseNotes>Version sync with core packages</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1. Log4Net logging bindings package.</Description>

@@ -11,21 +11,24 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		common-copyright.ps1 = common-copyright.ps1
-		LICENSE = LICENSE
 		common-manifest.ps1 = common-manifest.ps1
+		common-nuget.ps1 = common-nuget.ps1
 		common-projects.ps1 = common-projects.ps1
-		bump-version-all.ps1 = bump-version-all.ps1
+		LICENSE = LICENSE
 		logo.png = logo.png
 		manifest.xml = manifest.xml
+		nuget-publish-all.ps1 = nuget-publish-all.ps1
+		nuget-setup.ps1 = nuget-setup.ps1
 		_Docs\overall-arch-diagram.png = _Docs\overall-arch-diagram.png
 		publish-add-ons.ps1 = publish-add-ons.ps1
 		publish-all-core.ps1 = publish-all-core.ps1
 		README-BUILTIN-APPMETRICS.md = README-BUILTIN-APPMETRICS.md
 		README-CONFIG.md = README-CONFIG.md
 		README-DB.md = README-DB.md
+		README-MORE.md = README-MORE.md
 		README.md = README.md
 		unpublish-all.ps1 = unpublish-all.ps1
-		README-MORE.md = README-MORE.md
+		update-manifest-all.ps1 = update-manifest-all.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Logging.Log4NetLogging", "LVD.Stakhanovise.NET.Logging.Log4NetLogging\LVD.Stakhanovise.NET.Logging.Log4NetLogging.csproj", "{5334E253-9BC2-4C45-83F1-99091726EA39}"
@@ -83,6 +86,14 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Logging.Tests.Harness", "LVD.Stakhanovise.NET.Logging.Tests.Harness\LVD.Stakhanovise.NET.Logging.Tests.Harness.csproj", "{EDD6268C-D31C-4ED9-8642-55FDDF7D99E3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Logging.NLogLogging.Tests", "LVD.Stakhanovise.NET.Logging.NLogLogging.Tests\LVD.Stakhanovise.NET.Logging.NLogLogging.Tests.csproj", "{A6C570C0-AAD6-47F0-BB74-6768C1A56527}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Management", "Management", "{39540FB7-EEA8-42F4-BF9C-CE32F5D3751B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Management.Model", "LVD.Stakhanovise.NET.Management.Model\LVD.Stakhanovise.NET.Management.Model.csproj", "{C19D2D98-54EE-4782-A4B5-8D5108351167}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Management.WebConsole", "LVD.Stakhanovise.NET.Management.WebConsole\LVD.Stakhanovise.NET.Management.WebConsole.csproj", "{BE2E3E47-9F89-46B3-88CE-AD7128238B9E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Management.WebConsole.ServiceModel", "LVD.Stakhanovise.NET.Management.WebConsole.ServiceModel\LVD.Stakhanovise.NET.Management.WebConsole.ServiceModel.csproj", "{7551ACFE-C688-4A06-BBAA-838102DD0DAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -192,6 +203,18 @@ Global
 		{A6C570C0-AAD6-47F0-BB74-6768C1A56527}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6C570C0-AAD6-47F0-BB74-6768C1A56527}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6C570C0-AAD6-47F0-BB74-6768C1A56527}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C19D2D98-54EE-4782-A4B5-8D5108351167}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C19D2D98-54EE-4782-A4B5-8D5108351167}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C19D2D98-54EE-4782-A4B5-8D5108351167}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C19D2D98-54EE-4782-A4B5-8D5108351167}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE2E3E47-9F89-46B3-88CE-AD7128238B9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE2E3E47-9F89-46B3-88CE-AD7128238B9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE2E3E47-9F89-46B3-88CE-AD7128238B9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE2E3E47-9F89-46B3-88CE-AD7128238B9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7551ACFE-C688-4A06-BBAA-838102DD0DAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7551ACFE-C688-4A06-BBAA-838102DD0DAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7551ACFE-C688-4A06-BBAA-838102DD0DAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7551ACFE-C688-4A06-BBAA-838102DD0DAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -221,6 +244,9 @@ Global
 		{95030A75-DCD7-4A80-89C9-1F1E060DC10C} = {1F5D8110-B27C-44B4-9EB5-C6BA53B9E7C8}
 		{EDD6268C-D31C-4ED9-8642-55FDDF7D99E3} = {1F5D8110-B27C-44B4-9EB5-C6BA53B9E7C8}
 		{A6C570C0-AAD6-47F0-BB74-6768C1A56527} = {1F5D8110-B27C-44B4-9EB5-C6BA53B9E7C8}
+		{C19D2D98-54EE-4782-A4B5-8D5108351167} = {39540FB7-EEA8-42F4-BF9C-CE32F5D3751B}
+		{BE2E3E47-9F89-46B3-88CE-AD7128238B9E} = {39540FB7-EEA8-42F4-BF9C-CE32F5D3751B}
+		{7551ACFE-C688-4A06-BBAA-838102DD0DAA} = {39540FB7-EEA8-42F4-BF9C-CE32F5D3751B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7257DD3E-0CDA-4722-A635-469CB9494445}

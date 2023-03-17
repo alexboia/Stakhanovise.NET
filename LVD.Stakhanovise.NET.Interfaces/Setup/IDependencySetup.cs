@@ -36,6 +36,9 @@ using System.Text;
 
 namespace LVD.Stakhanovise.NET.Setup
 {
+	//TODO: add BindToDelegate for setting up dependencies
+	//TODO: support modules
+	//TODO: add support for Microsoft.Extensions.Options via add-on package
 	public interface IDependencySetup
 	{
 		IDependencySetup BindToType<T, TImplementation> ( DependencyScope scope )

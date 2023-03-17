@@ -7,7 +7,7 @@
     <RootNamespace>LVD.Stakhanovise.NET</RootNamespace>
     <Title>LVD.Stakhanovise.NET.Info</Title>
     <Authors>Alexandru BOIA</Authors>
-    <Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1. Queue info provider package.</Description>
+    <Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1. Queue info provider package</Description>
     <Company>S.C. MyClar Software Solutions S.R.L.</Company>
     <Copyright>Copyright (c) 2020-2023, Alexandru Boia</Copyright>
     <PackageProjectUrl>https://github.com/alexboia/Stakhanovise.NET</PackageProjectUrl>
@@ -16,7 +16,9 @@
     <RepositoryUrl>https://github.com/alexboia/Stakhanovise.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</PackageTags>
-    <PackageReleaseNotes>Initial release - updated README</PackageReleaseNotes>
+    <PackageReleaseNotes>- Enabled executor constructor injection;
+		- Updated setup db scripts to avoid creating duplicate indexes and duplicate constraints;
+		- Added option to enable npgsql legacy timestamp behaviour (see https://www.npgsql.org/doc/types/datetime.html).</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>

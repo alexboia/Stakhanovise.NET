@@ -15,3 +15,21 @@ function Get-AllProjectFiles {
 
 	return $csprojFiles
 }
+
+function Get-ProjectFileName {
+	param(
+		[string]$csprojFile
+	)
+
+	[string]$csprojFileName = (Split-path $csprojFile -leaf)
+	return $csprojFileName
+}
+
+function Get-ProjectName {
+	param(
+		[string]$csprojFile
+	)
+
+	[string]$csprojFileName = (ProjectFileName -csprojFile $csprojFile)
+	return $csprojFileName.Replace(".csproj", "")
+}

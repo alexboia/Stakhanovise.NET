@@ -88,7 +88,6 @@ Stakhanovise only requires you to provie a connection string and it will either 
 However, should you need to pass in some custom values for the supported options, there's a fluent API available for doing just that.
 
 ## Getting started
-<a name="sk-basic-usage"></a>
 
 ### 1. Add namespace references
 
