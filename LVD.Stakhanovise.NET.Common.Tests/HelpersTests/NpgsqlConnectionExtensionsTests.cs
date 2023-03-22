@@ -44,28 +44,28 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 	public class NpgsqlConnectionExtensionsTests : BaseTestWithConfiguration
 	{
 		[Test]
-		public void TryOpenConnectionAsync_ConnectionOptions_Null_ThrowsArgumentNullException()
+		public void Test_TryOpenConnectionAsync_ConnectionOptions_Null_ThrowsArgumentNullException()
 		{
 			ConnectionOptions options = null;
 			Assert.ThrowsAsync<ArgumentNullException>( async () => await options.TryOpenConnectionAsync() );
 		}
 
 		[Test]
-		public void TryOpenConnectionAsync_String_Null_ThrowsArgumentNullException()
+		public void Test_TryOpenConnectionAsync_String_Null_ThrowsArgumentNullException()
 		{
 			string connectionString = null;
 			Assert.ThrowsAsync<ArgumentNullException>( async () => await connectionString.TryOpenConnectionAsync() );
 		}
 
 		[Test]
-		public void TryOpenConnectionAsync_MaxRetryCount_LessThanOne_ThrowsArgumentOutOfRangeException()
+		public void Test_TryOpenConnectionAsync_MaxRetryCount_LessThanOne_ThrowsArgumentOutOfRangeException()
 		{
 			string connectionString = "server=localhost;database=mydatabase;user id=myuser;password=mypassword";
 			Assert.ThrowsAsync<ArgumentOutOfRangeException>( async () => await connectionString.TryOpenConnectionAsync( maxRetryCount: 0 ) );
 		}
 
 		[Test]
-		public void TryOpenConnectionAsync_RetryDelayMilliseconds_LessThanOne_ThrowsArgumentOutOfRangeException()
+		public void Test_TryOpenConnectionAsync_RetryDelayMilliseconds_LessThanOne_ThrowsArgumentOutOfRangeException()
 		{
 			string connectionString = "server=localhost;database=mydatabase;user id=myuser;password=mypassword";
 			Assert.ThrowsAsync<ArgumentOutOfRangeException>( async () => await connectionString.TryOpenConnectionAsync( retryDelayMilliseconds: 0 ) );

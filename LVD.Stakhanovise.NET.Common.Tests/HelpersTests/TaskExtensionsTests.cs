@@ -29,22 +29,20 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using NUnit.Framework;
-using LVD.Stakhanovise.NET.Helpers;
-using System.Threading.Tasks;
 using Bogus;
+using LVD.Stakhanovise.NET.Helpers;
+using NUnit.Framework;
+using System;
 using System.Threading;
+using System.Threading.Tasks;
 
-namespace LVD.Stakhanovise.NET.Common.Tests
+namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 {
 	[TestFixture]
 	public class TaskExtensionsTests
 	{
 		[Test]
-		public async Task Test_CanInvokeCleanup_TaskWithSuccessResult ()
+		public async Task Test_CanInvokeCleanup_TaskWithSuccessResult()
 		{
 			bool cleanupCalled = true;
 			int expectedResult = new Faker().Random.Int();
@@ -60,7 +58,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 		}
 
 		[Test]
-		public void Test_CanInvokeCleanup_TaskFailedWithException ()
+		public void Test_CanInvokeCleanup_TaskFailedWithException()
 		{
 			Faker faker = null;
 			bool cleanupCalled = false;
@@ -73,7 +71,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 		}
 
 		[Test]
-		public void Test_CanInvokeCleanup_CancelledTask ()
+		public void Test_CanInvokeCleanup_CancelledTask()
 		{
 			Faker faker = new Faker();
 			CancellationTokenSource cts = new CancellationTokenSource();
