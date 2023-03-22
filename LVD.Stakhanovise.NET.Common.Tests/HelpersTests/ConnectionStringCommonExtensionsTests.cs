@@ -3,7 +3,7 @@ using LVD.Stakhanovise.NET.Helpers;
 using Npgsql;
 using NUnit.Framework;
 
-namespace LVD.Stakhanovise.NET.Common.Tests
+namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 {
 	[TestFixture]
 	public class ConnectionStringCommonExtensionsTests
@@ -18,14 +18,14 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 				builder.Copy();
 
 			Assert.NotNull( builderCopy );
-			
-			Assert_BuildersMatch( builder, 
+
+			Assert_BuildersMatch( builder,
 				builderCopy );
 		}
 
 		private NpgsqlConnectionStringBuilder CreateNonEmptyBuilder()
 		{
-			Faker faker = 
+			Faker faker =
 				new Faker();
 
 			NpgsqlConnectionStringBuilder builder =
