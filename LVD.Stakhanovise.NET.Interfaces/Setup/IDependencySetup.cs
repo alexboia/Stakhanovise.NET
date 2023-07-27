@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Executors;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace LVD.Stakhanovise.NET.Setup
@@ -69,6 +70,11 @@ namespace LVD.Stakhanovise.NET.Setup
 		IDependencyBindingScopeSetup BindToProviderInstance<T, TImplementation> ( IDependencyProvider<TImplementation> implementationProvider )
 			where TImplementation : T;
 
+		IDependencySetup BindToProviderInstance<T>( IDependencyProvider<T> implementationProvider, 
+			DependencyScope scope );
+
+		IDependencyBindingScopeSetup BindToProviderInstance<T>( IDependencyProvider<T> implementationProvider );
+
 		IDependencySetup BindToType ( Type target,
 			Type implementationType,
 			DependencyScope scope );
@@ -90,6 +96,8 @@ namespace LVD.Stakhanovise.NET.Setup
 
 		IDependencyBindingScopeSetup BindToProvider ( Type target,
 			Type providerType );
+
+		void RegisterServicesByInterface<TInterface>( Assembly fromSourceAssembly );
 
 		bool HasBindingFor<T> ();
 

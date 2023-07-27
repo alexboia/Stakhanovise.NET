@@ -115,9 +115,6 @@ namespace LVD.Stakhanovise.NET.Processor
 				&& executionContext.ExecutionFailed )
 				retryAt = ComputeRetryAt( executionContext );
 
-			//TODO: at some point, take not of whether or not the error
-			//	(if any, is reported as recoverable and DO NOT flag it for retrial)
-
 			TaskExecutionResult executionResult =
 				new TaskExecutionResult( executionContext.ResultInfo,
 					executionContext.Duration,

@@ -45,7 +45,7 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public QueuedTaskResult( IQueuedTask task )
 		{
-			if ( task == null )
+			if (task == null)
 				throw new ArgumentNullException( nameof( task ) );
 
 			Id = task.Id;
@@ -65,14 +65,19 @@ namespace LVD.Stakhanovise.NET.Model
 			//Task processing lifecycle ends with one of these statuses
 			//	Hence, if the result reaches one of these points, 
 			//	no more updates can be performed
-			if ( !CanBeUpdated )
+			if (!CanBeUpdated)
 				throw new InvalidOperationException( $"A result with {Status} status can no longer be updated" );
 
-			if ( result.ExecutedSuccessfully )
+			if (result.ExecutedSuccessfully)
 				Processed( result );
-			else if ( result.ExecutionFailed )
-				repostTask = HadError( result );
-			else if ( result.ExecutionCancelled )
+			else if (result.ExecutionFailed)
+			{
+				if (result.IsRecoverable)
+					repostTask = HadError( result );
+				else
+					repostTask = HadPermanentError( result );
+			}
+			else if (result.ExecutionCancelled)
 				Cancelled( result );
 
 			return repostTask;
@@ -85,7 +90,7 @@ namespace LVD.Stakhanovise.NET.Model
 			ProcessingFinalizedAtTs = DateTimeOffset.UtcNow;
 			ProcessingTimeMilliseconds = result.ProcessingTimeMilliseconds;
 
-			if ( !FirstProcessingAttemptedAtTs.HasValue )
+			if (!FirstProcessingAttemptedAtTs.HasValue)
 				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 
 			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
@@ -98,18 +103,18 @@ namespace LVD.Stakhanovise.NET.Model
 			LastErrorIsRecoverable = result.IsRecoverable;
 			ErrorCount += 1;
 
-			if ( !FirstProcessingAttemptedAtTs.HasValue )
+			if (!FirstProcessingAttemptedAtTs.HasValue)
 				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 
 			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 
 			//If the error is recoverable, work out the status transition 
 			//	from the current error count
-			if ( result.IsRecoverable )
+			if (result.IsRecoverable)
 			{
-				if ( ErrorCount > result.FaultErrorThresholdCount + 1 )
+				if (ErrorCount > result.FaultErrorThresholdCount + 1)
 					Status = QueuedTaskStatus.Fatal;
-				else if ( ErrorCount > result.FaultErrorThresholdCount )
+				else if (ErrorCount > result.FaultErrorThresholdCount)
 					Status = QueuedTaskStatus.Faulted;
 				else
 					Status = QueuedTaskStatus.Error;
@@ -120,10 +125,18 @@ namespace LVD.Stakhanovise.NET.Model
 
 			//If status is not fatal, compute the information 
 			//	necessary to retry task execution
-			if ( Status != QueuedTaskStatus.Fatal )
+			if (Status != QueuedTaskStatus.Fatal)
 				return GetRetryToQueueInfo( result );
 			else
 				return null;
+		}
+
+		private QueuedTaskProduceInfo HadPermanentError( TaskExecutionResult result )
+		{
+			HadError( result );
+			LastErrorIsRecoverable = false;
+			Status = QueuedTaskStatus.Fatal;
+			return null;
 		}
 
 		private QueuedTaskProduceInfo GetRetryToQueueInfo( TaskExecutionResult result )
@@ -145,7 +158,7 @@ namespace LVD.Stakhanovise.NET.Model
 			Status = QueuedTaskStatus.Cancelled;
 
 			ProcessingFinalizedAtTs = DateTimeOffset.UtcNow;
-			if ( !FirstProcessingAttemptedAtTs.HasValue )
+			if (!FirstProcessingAttemptedAtTs.HasValue)
 				FirstProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
 
 			LastProcessingAttemptedAtTs = DateTimeOffset.UtcNow;
@@ -153,10 +166,10 @@ namespace LVD.Stakhanovise.NET.Model
 
 		public bool Equals( QueuedTaskResult other )
 		{
-			if ( other == null )
+			if (other == null)
 				return false;
 
-			if ( Id.Equals( Guid.Empty ) && other.Id.Equals( Guid.Empty ) )
+			if (Id.Equals( Guid.Empty ) && other.Id.Equals( Guid.Empty ))
 				return ReferenceEquals( this, other );
 
 			return Id.Equals( other.Id );
