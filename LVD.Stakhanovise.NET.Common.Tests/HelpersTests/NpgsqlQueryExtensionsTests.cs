@@ -36,6 +36,7 @@ using NUnit.Framework;
 using System.Threading;
 using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Tests;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 {
@@ -54,10 +55,10 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 				NotificationEventHandler neh = ( s, e )
 					=> notificationReceived.Set();
 
-				Assert.IsFalse( conn.IsListening( channelName ) );
+				ClassicAssert.IsFalse( conn.IsListening( channelName ) );
 
 				await conn.ListenAsync( channelName, neh );
-				Assert.IsTrue( conn.IsListening( channelName ) );
+				ClassicAssert.IsTrue( conn.IsListening( channelName ) );
 
 				if ( sendSampleNotification )
 				{
@@ -75,7 +76,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 					await Task.Delay( 500 );
 
 				await conn.UnlistenAsync( channelName, neh );
-				Assert.IsFalse( conn.IsListening( channelName ) );
+				ClassicAssert.IsFalse( conn.IsListening( channelName ) );
 
 				await conn.CloseAsync();
 			}

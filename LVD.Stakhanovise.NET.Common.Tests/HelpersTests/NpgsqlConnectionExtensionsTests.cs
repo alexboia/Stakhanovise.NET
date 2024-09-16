@@ -34,6 +34,7 @@ using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Tests;
 using Npgsql;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Data;
 using System.Threading.Tasks;
@@ -76,8 +77,8 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 		{
 			string connectionString = GetConnectionString( "testDbConnectionString" );
 			NpgsqlConnection conn = await connectionString.TryOpenConnectionAsync();
-			Assert.IsNotNull( conn );
-			Assert.AreEqual( conn.State, ConnectionState.Open );
+			ClassicAssert.IsNotNull( conn );
+			ClassicAssert.AreEqual( conn.State, ConnectionState.Open );
 			conn.Close();
 		}
 
@@ -97,7 +98,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 		{
 			string connectionString = "server=localhost;database=mydatabase;user id=myuser;password=mypassword";
 			NpgsqlConnection conn = await connectionString.TryOpenConnectionAsync( maxRetryCount, retryDelayMilliseconds );
-			Assert.IsNull( conn );
+			ClassicAssert.IsNull( conn );
 		}
 	}
 }

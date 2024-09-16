@@ -1,6 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Tests.Asserts
@@ -22,9 +23,9 @@ namespace LVD.Stakhanovise.NET.Tests.Asserts
 
 		public void Check( IQueuedTaskResult actualResult )
 		{
-			Assert.NotNull( actualResult );
+			ClassicAssert.NotNull( actualResult );
 
-			Assert.AreEqual( actualResult.ErrorCount,
+			ClassicAssert.AreEqual( actualResult.ErrorCount,
 				mExpectedResult.ErrorCount );
 
 			mExpectedResult.PostedAtTs
@@ -37,21 +38,21 @@ namespace LVD.Stakhanovise.NET.Tests.Asserts
 			mExpectedResult.ProcessingFinalizedAtTs
 				.AssertEquals( actualResult.ProcessingFinalizedAtTs, 10 );
 
-			Assert.AreEqual( actualResult.LastError,
+			ClassicAssert.AreEqual( actualResult.LastError,
 				mExpectedResult.LastError );
-			Assert.AreEqual( actualResult.LastErrorIsRecoverable,
+			ClassicAssert.AreEqual( actualResult.LastErrorIsRecoverable,
 				mExpectedResult.LastErrorIsRecoverable );
 
-			Assert.AreEqual( actualResult.Priority,
+			ClassicAssert.AreEqual( actualResult.Priority,
 				mExpectedResult.Priority );
 
-			Assert.AreEqual( actualResult.ProcessingTimeMilliseconds,
+			ClassicAssert.AreEqual( actualResult.ProcessingTimeMilliseconds,
 				mExpectedResult.ProcessingTimeMilliseconds );
-			Assert.AreEqual( actualResult.Source,
+			ClassicAssert.AreEqual( actualResult.Source,
 				mExpectedResult.Source );
-			Assert.AreEqual( actualResult.Status,
+			ClassicAssert.AreEqual( actualResult.Status,
 				mExpectedResult.Status );
-			Assert.AreEqual( actualResult.Type,
+			ClassicAssert.AreEqual( actualResult.Type,
 				mExpectedResult.Type );
 		}
 	}

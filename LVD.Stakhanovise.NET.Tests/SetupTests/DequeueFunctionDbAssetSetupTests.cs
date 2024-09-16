@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Setup;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -70,7 +71,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			bool functionExists = await PgFunctionExists( mapping.DequeueFunctionName, 
 				GetDequeueFunctionExpectedParametersInfo() );
 
-			Assert.IsTrue( functionExists,
+			ClassicAssert.IsTrue( functionExists,
 				"Function {0} does not exist or does not have expected arguments",
 				mapping.DequeueFunctionName );
 		}

@@ -3,6 +3,7 @@ using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Setup;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Reflection;
 
@@ -22,9 +23,9 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			StakhanoviseSetupDefaults setupDefaults = defaultsProvider
 				.GetDefaults();
 
-			Assert.IsNotNull( setupDefaults );
+			ClassicAssert.IsNotNull( setupDefaults );
 
-			Assert.AreEqual( ExpectedDefaultWorkerCount,
+			ClassicAssert.AreEqual( ExpectedDefaultWorkerCount,
 				setupDefaults.WorkerCount );
 
 			AssertCorrectDefaultQueuedTaskMapping( setupDefaults );
@@ -32,48 +33,48 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			AssertCorrectDefaultCalculateDelayMillisecondsTaskAfterFailureFn( setupDefaults );
 			AssertCorrectDefaultIsTaskErrorRecoverableFn( setupDefaults );
 
-			Assert.AreEqual( ReasonableStakhanoviseDefaultsProvider.DefaultFaultErrorThresholdCount,
+			ClassicAssert.AreEqual( ReasonableStakhanoviseDefaultsProvider.DefaultFaultErrorThresholdCount,
 				setupDefaults.FaultErrorThresholdCount );
-			Assert.AreEqual( ReasonableStakhanoviseDefaultsProvider.DefaultAppMetricsCollectionIntervalMilliseconds,
+			ClassicAssert.AreEqual( ReasonableStakhanoviseDefaultsProvider.DefaultAppMetricsCollectionIntervalMilliseconds,
 				setupDefaults.AppMetricsCollectionIntervalMilliseconds );
 
-			Assert.IsTrue( setupDefaults.AppMetricsMonitoringEnabled );
-			Assert.IsTrue( setupDefaults.SetupBuiltInDbAsssets );
+			ClassicAssert.IsTrue( setupDefaults.AppMetricsMonitoringEnabled );
+			ClassicAssert.IsTrue( setupDefaults.SetupBuiltInDbAsssets );
 		}
 
 		private void AssertCorrectDefaultQueuedTaskMapping ( StakhanoviseSetupDefaults setupDefaults )
 		{
-			Assert.NotNull( setupDefaults.Mapping );
+			ClassicAssert.NotNull( setupDefaults.Mapping );
 			AssertQueuedTaskMappingsMatch( ExpectedDefaultMapping,
 				setupDefaults.Mapping );
 		}
 
 		private void AssertQueuedTaskMappingsMatch ( QueuedTaskMapping expected, QueuedTaskMapping actual )
 		{
-			Assert.AreEqual( expected.DequeueFunctionName,
+			ClassicAssert.AreEqual( expected.DequeueFunctionName,
 				actual.DequeueFunctionName );
-			Assert.AreEqual( expected.ExecutionTimeStatsTableName,
+			ClassicAssert.AreEqual( expected.ExecutionTimeStatsTableName,
 				actual.ExecutionTimeStatsTableName );
-			Assert.AreEqual( expected.MetricsTableName,
+			ClassicAssert.AreEqual( expected.MetricsTableName,
 				actual.MetricsTableName );
-			Assert.AreEqual( expected.NewTaskNotificationChannelName,
+			ClassicAssert.AreEqual( expected.NewTaskNotificationChannelName,
 				actual.NewTaskNotificationChannelName );
-			Assert.AreEqual( expected.QueueTableName,
+			ClassicAssert.AreEqual( expected.QueueTableName,
 				actual.QueueTableName );
-			Assert.AreEqual( expected.ResultsQueueTableName,
+			ClassicAssert.AreEqual( expected.ResultsQueueTableName,
 				actual.ResultsQueueTableName );
 		}
 
 		private void AssertCorrectDefaultExecutingAssemblyList ( StakhanoviseSetupDefaults setupDefaults )
 		{
-			Assert.NotNull( setupDefaults.ExecutorAssemblies );
-			Assert.AreEqual( 1, setupDefaults.ExecutorAssemblies.Length );
-			Assert.AreEqual( ExpectedExecutingAssembly, setupDefaults.ExecutorAssemblies[ 0 ] );
+			ClassicAssert.NotNull( setupDefaults.ExecutorAssemblies );
+			ClassicAssert.AreEqual( 1, setupDefaults.ExecutorAssemblies.Length );
+			ClassicAssert.AreEqual( ExpectedExecutingAssembly, setupDefaults.ExecutorAssemblies[ 0 ] );
 		}
 
 		private void AssertCorrectDefaultCalculateDelayMillisecondsTaskAfterFailureFn ( StakhanoviseSetupDefaults setupDefaults )
 		{
-			Assert.NotNull( setupDefaults.CalculateDelayMillisecondsTaskAfterFailure );
+			ClassicAssert.NotNull( setupDefaults.CalculateDelayMillisecondsTaskAfterFailure );
 			for ( int iErrorCount = 0; iErrorCount < TestCalculateDelayMillisecondsErrorCountMax; iErrorCount++ )
 			{
 				long expectedDelayMilliseconds =
@@ -85,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 				long actualDelayMilliseconds = setupDefaults
 					.CalculateDelayMillisecondsTaskAfterFailure( mockTokenWithErrorCount );
 
-				Assert.AreEqual( expectedDelayMilliseconds,
+				ClassicAssert.AreEqual( expectedDelayMilliseconds,
 					actualDelayMilliseconds );
 			}
 		}
@@ -109,13 +110,13 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		{
 			IQueuedTask mockTask = MockQueuedTask();
 
-			Assert.NotNull( setupDefaults.IsTaskErrorRecoverable );
-			Assert.IsFalse( setupDefaults.IsTaskErrorRecoverable( mockTask, new NullReferenceException() ) );
-			Assert.IsFalse( setupDefaults.IsTaskErrorRecoverable( mockTask, new ArgumentException() ) );
+			ClassicAssert.NotNull( setupDefaults.IsTaskErrorRecoverable );
+			ClassicAssert.IsFalse( setupDefaults.IsTaskErrorRecoverable( mockTask, new NullReferenceException() ) );
+			ClassicAssert.IsFalse( setupDefaults.IsTaskErrorRecoverable( mockTask, new ArgumentException() ) );
 
-			Assert.IsTrue( setupDefaults.IsTaskErrorRecoverable( mockTask, new ApplicationException() ) );
-			Assert.IsTrue( setupDefaults.IsTaskErrorRecoverable( mockTask, new Exception() ) );
-			Assert.IsTrue( setupDefaults.IsTaskErrorRecoverable( mockTask, new NotSupportedException() ) );
+			ClassicAssert.IsTrue( setupDefaults.IsTaskErrorRecoverable( mockTask, new ApplicationException() ) );
+			ClassicAssert.IsTrue( setupDefaults.IsTaskErrorRecoverable( mockTask, new Exception() ) );
+			ClassicAssert.IsTrue( setupDefaults.IsTaskErrorRecoverable( mockTask, new NotSupportedException() ) );
 		}
 
 		private IQueuedTask MockQueuedTask ()

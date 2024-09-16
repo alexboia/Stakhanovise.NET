@@ -1,6 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Threading.Tasks;
 
@@ -22,25 +23,25 @@ namespace LVD.Stakhanovise.NET.Producer.Tests.Asserts
 
 		public async Task CheckAsync( IQueuedTask queuedTask )
 		{
-			Assert.NotNull( queuedTask );
+			ClassicAssert.NotNull( queuedTask );
 
 			IQueuedTaskResult queuedTaskResult =
 				await GetQueuedTaskResultFromDbByIdAsync( queuedTask );
 
-			Assert.NotNull( queuedTaskResult );
-			Assert.NotNull( queuedTaskResult.Payload );
+			ClassicAssert.NotNull( queuedTaskResult );
+			ClassicAssert.NotNull( queuedTaskResult.Payload );
 
-			Assert.AreEqual( queuedTask.Id,
+			ClassicAssert.AreEqual( queuedTask.Id,
 				queuedTaskResult.Id );
-			Assert.AreEqual( queuedTask.Type,
+			ClassicAssert.AreEqual( queuedTask.Type,
 				queuedTaskResult.Type );
-			Assert.AreEqual( queuedTask.Source,
+			ClassicAssert.AreEqual( queuedTask.Source,
 				queuedTaskResult.Source );
-			Assert.AreEqual( queuedTask.Priority,
+			ClassicAssert.AreEqual( queuedTask.Priority,
 				queuedTaskResult.Priority );
-			Assert.LessOrEqual( Math.Abs( ( queuedTask.PostedAtTs - queuedTaskResult.PostedAtTs ).TotalMilliseconds ),
+			ClassicAssert.LessOrEqual( Math.Abs( ( queuedTask.PostedAtTs - queuedTaskResult.PostedAtTs ).TotalMilliseconds ),
 				10 );
-			Assert.AreEqual( QueuedTaskStatus.Unprocessed,
+			ClassicAssert.AreEqual( QueuedTaskStatus.Unprocessed,
 				queuedTaskResult.Status );
 		}
 

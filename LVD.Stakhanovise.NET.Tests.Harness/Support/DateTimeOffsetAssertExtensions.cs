@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
@@ -9,7 +10,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		{
 			double actualMillisecondDelta = Math.Abs( ( expected - actual )
 				.TotalMilliseconds );
-			Assert.LessOrEqual( actualMillisecondDelta,
+			ClassicAssert.LessOrEqual( actualMillisecondDelta,
 				( double ) millisecondDelta );
 		}
 
@@ -17,11 +18,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 		{
 			if ( expected.HasValue )
 			{
-				Assert.IsTrue( actual.HasValue );
+				ClassicAssert.IsTrue( actual.HasValue );
 				expected.Value.AssertEquals( actual.Value, millisecondDelta );
 			}
 			else
-				Assert.IsFalse( actual.HasValue );
+				ClassicAssert.IsFalse( actual.HasValue );
 		}
 	}
 }

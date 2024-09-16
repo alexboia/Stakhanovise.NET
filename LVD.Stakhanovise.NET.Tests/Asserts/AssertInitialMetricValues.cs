@@ -1,5 +1,6 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -24,9 +25,9 @@ namespace LVD.Stakhanovise.NET.Tests.Asserts
 			IEnumerable<AppMetric> metrics = provider
 				.CollectMetrics();
 
-			Assert.AreEqual( mExpectedCount, metrics.Count() );
+			ClassicAssert.AreEqual( mExpectedCount, metrics.Count() );
 			foreach ( AppMetric metric in metrics )
-				Assert.AreEqual( metric.Id.DefaultValue, metric.Value );
+				ClassicAssert.AreEqual( metric.Id.DefaultValue, metric.Value );
 		}
 	}
 }

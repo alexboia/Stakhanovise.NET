@@ -37,6 +37,7 @@ using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Setup;
 using NUnit.Framework;
 using Bogus;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
@@ -79,7 +80,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		{
 			bool tableExists = await TableExistsAsync( mapping.MetricsTableName );
 
-			Assert.IsTrue( tableExists,
+			ClassicAssert.IsTrue( tableExists,
 				"Table {0} does not exist!",
 				mapping.MetricsTableName );
 		}
@@ -93,7 +94,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 				"metric_value",
 				"metric_last_updated" );
 
-			Assert.IsTrue( tableHasColumns,
+			ClassicAssert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",
 				mapping.MetricsTableName );
 		}
@@ -106,7 +107,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			bool metricCategoryIndexExists = await TableIndexExistsAsync( mapping.MetricsTableName,
 				expectedMetricCategoryIndexName );
 
-			Assert.IsTrue( metricCategoryIndexExists,
+			ClassicAssert.IsTrue( metricCategoryIndexExists,
 				"Table {0} does not have expected index {1}",
 				mapping.MetricsTableName,
 				expectedMetricCategoryIndexName );

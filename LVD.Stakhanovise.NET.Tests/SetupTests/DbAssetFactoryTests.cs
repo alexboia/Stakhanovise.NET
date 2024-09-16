@@ -42,6 +42,7 @@ using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Bogus;
 using LVD.Stakhanovise.NET.Setup.Exceptions;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
@@ -148,8 +149,8 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 				thrownSetupException = exc;
 			}
 
-			Assert.NotNull( thrownSetupException );
-			Assert.AreSame( innerExc, thrownSetupException.InnerException );
+			ClassicAssert.NotNull( thrownSetupException );
+			ClassicAssert.AreSame( innerExc, thrownSetupException.InnerException );
 		}
 
 		private Mock<ISetupDbAsset> CreateDbAssetSetupMockWithError ( Exception exc )

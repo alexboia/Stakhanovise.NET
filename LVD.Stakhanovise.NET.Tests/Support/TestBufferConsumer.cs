@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Queue;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -78,11 +79,11 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public void AssertMatchesProducedTasks ( IEnumerable<IQueuedTaskToken> producedTasks )
 		{
-			Assert.AreEqual( producedTasks.Count(),
+			ClassicAssert.AreEqual( producedTasks.Count(),
 				mConsumedTasks.Count );
 
 			foreach ( IQueuedTaskToken pt in producedTasks )
-				Assert.AreEqual( 1, mConsumedTasks.Count( ct => ct.DequeuedTask.Id
+				ClassicAssert.AreEqual( 1, mConsumedTasks.Count( ct => ct.DequeuedTask.Id
 					== pt.DequeuedTask.Id ) );
 		}
 

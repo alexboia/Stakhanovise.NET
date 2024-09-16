@@ -1,5 +1,6 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.Net.Info.Tests.Asserts
 {
@@ -21,12 +22,12 @@ namespace LVD.Stakhanovise.Net.Info.Tests.Asserts
 		{
 			if ( mExpectedTopOfQueue != null )
 			{
-				Assert.NotNull( actualTopOfQueue );
-				Assert.AreEqual( mExpectedTopOfQueue.Id,
+				ClassicAssert.NotNull( actualTopOfQueue );
+				ClassicAssert.AreEqual( mExpectedTopOfQueue.Id,
 					actualTopOfQueue.Id );
 			}
 			else
-				Assert.IsNull( actualTopOfQueue );			
+				ClassicAssert.IsNull( actualTopOfQueue );			
 		}
 	}
 }

@@ -30,6 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -141,24 +142,24 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 
 			await Task.WhenAll( tasks );
 
-			Assert.AreEqual( 1, tryRequestStartCount );
-			Assert.AreEqual( 1, tryRequestStopCount );
+			ClassicAssert.AreEqual( 1, tryRequestStartCount );
+			ClassicAssert.AreEqual( 1, tryRequestStopCount );
 		}
 
 		private void AssertControllerStopped ( StateController stateController )
 		{
-			Assert.IsFalse( stateController.IsStarted );
-			Assert.IsTrue( stateController.IsStopped );
-			Assert.IsFalse( stateController.IsStartRequested );
-			Assert.IsFalse( stateController.IsStopRequested );
+			ClassicAssert.IsFalse( stateController.IsStarted );
+			ClassicAssert.IsTrue( stateController.IsStopped );
+			ClassicAssert.IsFalse( stateController.IsStartRequested );
+			ClassicAssert.IsFalse( stateController.IsStopRequested );
 		}
 
 		private void AssertControllerStarted ( StateController stateController )
 		{
-			Assert.IsTrue( stateController.IsStarted );
-			Assert.IsFalse( stateController.IsStopped );
-			Assert.IsFalse( stateController.IsStartRequested );
-			Assert.IsFalse( stateController.IsStopRequested );
+			ClassicAssert.IsTrue( stateController.IsStarted );
+			ClassicAssert.IsFalse( stateController.IsStopped );
+			ClassicAssert.IsFalse( stateController.IsStartRequested );
+			ClassicAssert.IsFalse( stateController.IsStopRequested );
 		}
 	}
 }

@@ -1,6 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Tests.Asserts
@@ -22,23 +23,23 @@ namespace LVD.Stakhanovise.NET.Tests.Asserts
 
 		public void Check( TaskProcessingResult processingResult )
 		{
-			Assert.NotNull( processingResult );
-			Assert.NotNull( processingResult.QueuedTaskToken );
-			Assert.NotNull( processingResult.QueuedTaskToken.DequeuedTask );
-			Assert.NotNull( processingResult.QueuedTaskToken.LastQueuedTaskResult );
+			ClassicAssert.NotNull( processingResult );
+			ClassicAssert.NotNull( processingResult.QueuedTaskToken );
+			ClassicAssert.NotNull( processingResult.QueuedTaskToken.DequeuedTask );
+			ClassicAssert.NotNull( processingResult.QueuedTaskToken.LastQueuedTaskResult );
 
-			Assert.AreEqual( mTaskToken.DequeuedTask,
+			ClassicAssert.AreEqual( mTaskToken.DequeuedTask,
 				processingResult.QueuedTaskToken.DequeuedTask );
 
-			Assert.NotNull( processingResult.ExecutionResult );
-			Assert.IsTrue( processingResult.ExecutionResult.HasResult );
+			ClassicAssert.NotNull( processingResult.ExecutionResult );
+			ClassicAssert.IsTrue( processingResult.ExecutionResult.HasResult );
 
-			Assert.IsFalse( processingResult.ExecutedSuccessfully );
-			Assert.IsTrue( processingResult.ExecutionCancelled );
-			Assert.IsFalse( processingResult.ExecutionFailed );
-			Assert.Greater( processingResult.ProcessingTimeMilliseconds, 0 );
+			ClassicAssert.IsFalse( processingResult.ExecutedSuccessfully );
+			ClassicAssert.IsTrue( processingResult.ExecutionCancelled );
+			ClassicAssert.IsFalse( processingResult.ExecutionFailed );
+			ClassicAssert.Greater( processingResult.ProcessingTimeMilliseconds, 0 );
 
-			Assert.IsNull( processingResult.Error );
+			ClassicAssert.IsNull( processingResult.Error );
 		}
 	}
 }

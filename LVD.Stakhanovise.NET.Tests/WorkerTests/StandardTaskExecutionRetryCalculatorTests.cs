@@ -5,6 +5,7 @@ using LVD.Stakhanovise.NET.Queue;
 using Moq;
 using NUnit.Framework;
 using System;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 {
@@ -34,12 +35,12 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 			DateTimeOffset retryAt = calculator
 				.ComputeRetryAt( queuedTasToken );
 
-			Assert.AreEqual( 1, optionsMock.RetryCalculationCallCount );
-			Assert.IsTrue( optionsMock.WasRetryCalculationCalledFor( queuedTasToken ) );
+			ClassicAssert.AreEqual( 1, optionsMock.RetryCalculationCallCount );
+			ClassicAssert.IsTrue( optionsMock.WasRetryCalculationCalledFor( queuedTasToken ) );
 
-			Assert.GreaterOrEqual( retryAt, expectedRetryAt );
+			ClassicAssert.GreaterOrEqual( retryAt, expectedRetryAt );
 			double deltaMilliseconds = ( retryAt - expectedRetryAt ).TotalMilliseconds;
-			Assert.LessOrEqual( deltaMilliseconds, AcceptedDeltaMilliseconds );
+			ClassicAssert.LessOrEqual( deltaMilliseconds, AcceptedDeltaMilliseconds );
 		}
 
 		private IQueuedTaskToken CreateQueuedTaskTokenMock()

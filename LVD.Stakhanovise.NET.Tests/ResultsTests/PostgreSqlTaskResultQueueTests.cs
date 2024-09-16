@@ -36,6 +36,7 @@ using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Asserts;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -98,13 +99,13 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 				for ( int i = 0; i < repeatCycles; i++ )
 				{
 					await rq.StartAsync();
-					Assert.IsTrue( rq.IsRunning );
+					ClassicAssert.IsTrue( rq.IsRunning );
 
 					if ( timeBetweenStartStopCalls > 0 )
 						await Task.Delay( timeBetweenStartStopCalls );
 
 					await rq.StopAsync();
-					Assert.IsFalse( rq.IsRunning );
+					ClassicAssert.IsFalse( rq.IsRunning );
 				}
 			}
 		}

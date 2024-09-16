@@ -39,6 +39,7 @@ using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -84,10 +85,10 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 				resultQueueMock.Object ) )
 			{
 				await worker.StartAsync();
-				Assert.IsTrue( worker.IsRunning );
+				ClassicAssert.IsTrue( worker.IsRunning );
 
 				await worker.StopAync();
-				Assert.IsFalse( worker.IsRunning );
+				ClassicAssert.IsFalse( worker.IsRunning );
 			}
 		}
 

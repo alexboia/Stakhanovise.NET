@@ -49,6 +49,7 @@ using LVD.Stakhanovise.NET.Tests.Payloads.Working;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Npgsql;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -287,7 +288,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( countRemainingSql, conn ) )
 			{
 				long remainingCount = ( long ) await cmd.ExecuteScalarAsync();
-				Assert.AreEqual( expectedTotal, remainingCount );
+				ClassicAssert.AreEqual( expectedTotal, remainingCount );
 			}
 		}
 
@@ -300,7 +301,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( countRemainingSql, conn ) )
 			{
 				long remainingCount = ( long ) await cmd.ExecuteScalarAsync();
-				Assert.AreEqual( expectedTotal, remainingCount );
+				ClassicAssert.AreEqual( expectedTotal, remainingCount );
 			}
 		}
 
@@ -317,7 +318,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( countCompletedSql, conn ) )
 			{
 				long completedCount = ( long ) await cmd.ExecuteScalarAsync();
-				Assert.AreEqual( expectedTaskResultCount, completedCount );
+				ClassicAssert.AreEqual( expectedTaskResultCount, completedCount );
 			}
 		}
 
@@ -335,7 +336,7 @@ namespace LVD.Stakhanovise.NET.Tests
 			using ( NpgsqlCommand cmd = new NpgsqlCommand( countCyclesSql, conn ) )
 			{
 				long countCycles = ( long ) await cmd.ExecuteScalarAsync();
-				Assert.AreEqual( expectedCount, countCycles );
+				ClassicAssert.AreEqual( expectedCount, countCycles );
 			}
 		}
 

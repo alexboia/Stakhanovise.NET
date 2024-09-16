@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Setup;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
@@ -79,7 +80,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		{
 			bool tableExists = await TableExistsAsync( mapping.QueueTableName );
 
-			Assert.IsTrue( tableExists,
+			ClassicAssert.IsTrue( tableExists,
 				"Table {0} does not exist!",
 				mapping.QueueTableName );
 		}
@@ -96,7 +97,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 				"task_posted_at_ts",
 				"task_locked_until_ts" );
 
-			Assert.IsTrue( tableHasColumns,
+			ClassicAssert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",
 				mapping.QueueTableName );
 		}
@@ -109,7 +110,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			bool sortIndexExists = await TableIndexExistsAsync( mapping.QueueTableName,
 				expectedSortIndexName );
 
-			Assert.AreEqual( shouldHaveSortIndex,
+			ClassicAssert.AreEqual( shouldHaveSortIndex,
 				sortIndexExists );
 
 			string expectedFilterIndexName = string.Format( "idx_{0}_filter_index",
@@ -118,7 +119,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			bool filterIndexExists = await TableIndexExistsAsync( mapping.QueueTableName,
 				expectedFilterIndexName );
 
-			Assert.AreEqual( shouldHaveFilterIndex,
+			ClassicAssert.AreEqual( shouldHaveFilterIndex,
 				filterIndexExists );
 		}
 
@@ -129,7 +130,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 
 			bool sequenceExists = await SequenceExistsAsync( sequenceName );
 
-			Assert.IsTrue( sequenceExists,
+			ClassicAssert.IsTrue( sequenceExists,
 				"Expected sequence {0} does not exist!",
 				sequenceName );
 		}

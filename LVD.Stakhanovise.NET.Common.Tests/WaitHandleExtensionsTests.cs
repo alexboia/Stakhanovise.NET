@@ -1,5 +1,6 @@
 ﻿using LVD.Stakhanovise.NET.Helpers;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,15 +20,15 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			Task whTask = waitHandle
 				.ToTask();
 
-			Assert.NotNull( whTask );
-			Assert.AreEqual( false, whTask.IsCompleted );
+			ClassicAssert.NotNull( whTask );
+			ClassicAssert.AreEqual( false, whTask.IsCompleted );
 
 			Task.Delay( 1000 )
 				.ContinueWith( d => waitHandle.Set() )
 				.Wait();
 
 			whTask.Wait();
-			Assert.AreEqual( true, whTask.IsCompleted );
+			ClassicAssert.AreEqual( true, whTask.IsCompleted );
 		}
 
 		[Test]
@@ -44,14 +45,14 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			Task whTask = waitHandle
 				.ToTask( timeoutMilliseconds );
 
-			Assert.NotNull( whTask );
-			Assert.AreEqual( false, whTask.IsCompleted );
+			ClassicAssert.NotNull( whTask );
+			ClassicAssert.AreEqual( false, whTask.IsCompleted );
 
 			Task.Delay( checkAfterTimeout )
 				.Wait();
 
 			whTask.Wait();
-			Assert.AreEqual( true, whTask.IsCompleted );
+			ClassicAssert.AreEqual( true, whTask.IsCompleted );
 		}
 
 		[Test]
@@ -63,10 +64,10 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			Task whTask = waitHandle
 				.ToTask();
 
-			Assert.NotNull( whTask );
+			ClassicAssert.NotNull( whTask );
 
 			whTask.Wait();
-			Assert.AreEqual( true, whTask.IsCompleted );
+			ClassicAssert.AreEqual( true, whTask.IsCompleted );
 		}
 
 		private TimeSpan NoTimeout()

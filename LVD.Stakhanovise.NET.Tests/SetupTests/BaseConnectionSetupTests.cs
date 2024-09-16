@@ -34,6 +34,7 @@ using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Setup;
 using LVD.Stakhanovise.NET.Tests.SetupTests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
@@ -65,14 +66,14 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		protected void AssertConnectionOptionsMatchesSourceData ( ConnectionOptionsSourceData sourceData,
 			ConnectionOptions options )
 		{
-			Assert.NotNull( options );
-			Assert.AreEqual( sourceData.ConnectionString,
+			ClassicAssert.NotNull( options );
+			ClassicAssert.AreEqual( sourceData.ConnectionString,
 				options.ConnectionString );
-			Assert.AreEqual( sourceData.ConnectionKeepAliveSeconds,
+			ClassicAssert.AreEqual( sourceData.ConnectionKeepAliveSeconds,
 				options.ConnectionKeepAliveSeconds );
-			Assert.AreEqual( sourceData.ConnectionRetryCount,
+			ClassicAssert.AreEqual( sourceData.ConnectionRetryCount,
 				options.ConnectionRetryCount );
-			Assert.AreEqual( sourceData.ConnectionRetryDelayMilliseconds,
+			ClassicAssert.AreEqual( sourceData.ConnectionRetryDelayMilliseconds,
 				options.ConnectionRetryDelayMilliseconds );
 		}
 	}

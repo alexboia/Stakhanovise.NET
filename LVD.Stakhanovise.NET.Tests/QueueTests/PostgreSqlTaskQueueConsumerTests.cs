@@ -37,6 +37,7 @@ using LVD.Stakhanovise.NET.Tests.Helpers;
 using LVD.Stakhanovise.NET.Tests.Support;
 using Npgsql;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Linq;
 using System.Threading;
@@ -169,7 +170,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			int [] loopPartitions = expectedDequeueCount
 				.PartitionValue( nConsumers );
 
-			Assert.AreEqual( expectedDequeueCount,
+			ClassicAssert.AreEqual( expectedDequeueCount,
 				loopPartitions.Sum() );
 
 			for ( int iConsumer = 0; iConsumer < nConsumers; iConsumer++ )
@@ -235,7 +236,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			int [] loopCountForConsumers = expectedDequeueCount
 				.PartitionValue( nConsumers );
 
-			Assert.AreEqual( expectedDequeueCount,
+			ClassicAssert.AreEqual( expectedDequeueCount,
 				loopCountForConsumers.Sum() );
 
 			for ( int iConsumer = 0; iConsumer < nConsumers; iConsumer++ )
@@ -272,13 +273,13 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 					notificationWaitHandle.Set();
 
 				await taskQueue.StartReceivingNewTaskUpdatesAsync();
-				Assert.IsTrue( taskQueue.IsReceivingNewTaskUpdates );
+				ClassicAssert.IsTrue( taskQueue.IsReceivingNewTaskUpdates );
 
 				await SendNewTaskNotificationAsync();
 				notificationWaitHandle.WaitOne();
 
 				await taskQueue.StopReceivingNewTaskUpdatesAsync();
-				Assert.IsFalse( taskQueue.IsReceivingNewTaskUpdates );
+				ClassicAssert.IsFalse( taskQueue.IsReceivingNewTaskUpdates );
 			}
 		}
 

@@ -38,6 +38,7 @@ using System.Linq;
 using Bogus;
 using MoreLinq;
 using LVD.Stakhanovise.NET.Tests.Helpers;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 {
@@ -113,7 +114,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			}
 
 			foreach ( AppMetricId metricId in targetMetricIds )
-				Assert.AreEqual( times, metrics.QueryMetric( metricId ).Value );
+				ClassicAssert.AreEqual( times, metrics.QueryMetric( metricId ).Value );
 		}
 
 		[Test]
@@ -145,7 +146,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			}
 
 			foreach ( AppMetricId metricId in targetMetricIds )
-				Assert.AreEqual( initialValue - times, metrics.QueryMetric( metricId ).Value );
+				ClassicAssert.AreEqual( initialValue - times, metrics.QueryMetric( metricId ).Value );
 		}
 
 		[Test]
@@ -178,7 +179,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			}
 
 			foreach ( AppMetricId metricId in targetMetricIds )
-				Assert.AreEqual( expectedTotal, metrics.QueryMetric( metricId ).Value );
+				ClassicAssert.AreEqual( expectedTotal, metrics.QueryMetric( metricId ).Value );
 		}
 
 		[Test]
@@ -205,7 +206,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 					long randomNewVal = faker.Random.Long();
 					metrics.UpdateMetric( metricId, m => m.Update( randomNewVal ) );
 
-					Assert.AreEqual( randomNewVal, metrics
+					ClassicAssert.AreEqual( randomNewVal, metrics
 						.QueryMetric( metricId )
 						.Value );
 				}
@@ -373,7 +374,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			IEnumerable<IAppMetricId> metricIds = AppMetricsCollection
 				.JoinExportedMetrics( collections );
 
-			Assert.NotNull( metricIds );
+			ClassicAssert.NotNull( metricIds );
 			CollectionAssert.AreEquivalent( expectedMetricIds,
 				metricIds );
 		}
@@ -398,7 +399,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			IEnumerable<IAppMetricId> metricIds = AppMetricsCollection
 				.JoinExportedMetrics( collections );
 
-			Assert.NotNull( metricIds );
+			ClassicAssert.NotNull( metricIds );
 			CollectionAssert.AreEquivalent( expectedMetricIds,
 				metricIds );
 		}
@@ -423,7 +424,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			IEnumerable<IAppMetricId> metricIds = AppMetricsCollection
 				.JoinExportedMetrics( collections );
 
-			Assert.NotNull( metricIds );
+			ClassicAssert.NotNull( metricIds );
 			CollectionAssert.AreEquivalent( expectedMetricIds,
 				metricIds );
 		}
@@ -493,7 +494,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 				AppMetric testMetric = AppMetricsCollection.JoinQueryMetric( testMetricId, 
 					collections );
 
-				Assert.IsNull( testMetric );
+				ClassicAssert.IsNull( testMetric );
 			}
 		}
 
@@ -503,7 +504,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			IEnumerable<IAppMetricId> actualMetricIds = metrics
 				.ExportedMetrics;
 
-			Assert.AreEqual( expectedMetricIds.Count(),
+			ClassicAssert.AreEqual( expectedMetricIds.Count(),
 				actualMetricIds.Count() );
 
 			foreach ( AppMetricId metricId in expectedMetricIds )
@@ -512,16 +513,16 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			foreach ( AppMetricId id in expectedMetricIds )
 			{
 				AppMetric metric = metrics.QueryMetric( id );
-				Assert.NotNull( metric );
-				Assert.AreEqual( 0, metric.Value );
+				ClassicAssert.NotNull( metric );
+				ClassicAssert.AreEqual( 0, metric.Value );
 			}
 
-			Assert.AreEqual( expectedMetricIds.Count(), metrics
+			ClassicAssert.AreEqual( expectedMetricIds.Count(), metrics
 				.CollectMetrics()
 				.Count() );
 
 			foreach ( AppMetric metric in metrics.CollectMetrics() )
-				Assert.AreEqual( 0, metric.Value );
+				ClassicAssert.AreEqual( 0, metric.Value );
 		}
 
 		private void Assert_CorrectJoinQueryAppMetrics ( IEnumerable<AppMetricId> checkMetricIds,
@@ -535,8 +536,8 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 				AppMetric metric = AppMetricsCollection.JoinQueryMetric( metricId,
 					collectionBatches );
 
-				Assert.NotNull( metric );
-				Assert.AreEqual( expectedValue, metric.Value );
+				ClassicAssert.NotNull( metric );
+				ClassicAssert.AreEqual( expectedValue, metric.Value );
 			}
 		}
 
@@ -546,7 +547,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			IEnumerable<IAppMetricId> actualMetricIds = metrics
 				.ExportedMetrics;
 
-			Assert.AreEqual( expectedMetrics.Count(),
+			ClassicAssert.AreEqual( expectedMetrics.Count(),
 				actualMetricIds.Count() );
 
 			foreach ( AppMetric expectedMetric in expectedMetrics )
@@ -555,11 +556,11 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			foreach ( AppMetric m in expectedMetrics )
 			{
 				AppMetric metric = metrics.QueryMetric( m.Id );
-				Assert.NotNull( metric );
-				Assert.AreEqual( m.Value, metric.Value );
+				ClassicAssert.NotNull( metric );
+				ClassicAssert.AreEqual( m.Value, metric.Value );
 			}
 
-			Assert.AreEqual( expectedMetrics.Count(), metrics
+			ClassicAssert.AreEqual( expectedMetrics.Count(), metrics
 				.CollectMetrics()
 				.Count() );
 		}

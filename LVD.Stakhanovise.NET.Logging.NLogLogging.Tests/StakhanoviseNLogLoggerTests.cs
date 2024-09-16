@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using NLog;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Logging.NLogLogging.Tests
 {
@@ -402,9 +403,9 @@ namespace LVD.Stakhanovise.NET.Logging.NLogLogging.Tests
 				new StakhanoviseNLogLogger( targetLoggerMock.Object );
 
 			if ( isLevelEnabled )
-				Assert.IsTrue( stakhanoviseLogger.IsEnabled( logLevel ) );
+				ClassicAssert.IsTrue( stakhanoviseLogger.IsEnabled( logLevel ) );
 			else
-				Assert.IsFalse( stakhanoviseLogger.IsEnabled( logLevel ) );
+				ClassicAssert.IsFalse( stakhanoviseLogger.IsEnabled( logLevel ) );
 		}
 
 		private Mock<ILogger> CreateNLogLoggerMock( TargetLoggerMockLoggerSetupProperties props )

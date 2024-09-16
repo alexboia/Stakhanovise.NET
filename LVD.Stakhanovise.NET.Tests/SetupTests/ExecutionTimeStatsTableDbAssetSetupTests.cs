@@ -37,6 +37,7 @@ using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Setup;
 using NUnit.Framework;
 using Bogus;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
@@ -78,7 +79,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		{
 			bool tableExists = await TableExistsAsync( mapping.ExecutionTimeStatsTableName );
 
-			Assert.IsTrue( tableExists,
+			ClassicAssert.IsTrue( tableExists,
 				"Table {0} does not exist!",
 				mapping.ExecutionTimeStatsTableName );
 		}
@@ -95,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 				"et_longest_execution_time",
 				"et_total_execution_time" );
 
-			Assert.IsTrue( tableHasColumns,
+			ClassicAssert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",
 				mapping.ExecutionTimeStatsTableName );
 		}

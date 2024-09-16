@@ -34,6 +34,7 @@ using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Threading;
 
@@ -61,11 +62,11 @@ namespace LVD.Stakhanovise.NET.Tests
 				TaskExecutionContext ctx = new TaskExecutionContext( taskMock.Object, cts.Token );
 				ctx.SetTaskCompleted();
 
-				Assert.IsTrue( ctx.HasResult );
-				Assert.NotNull( ctx.ResultInfo );
-				Assert.IsTrue( ctx.ResultInfo.ExecutedSuccessfully );
-				Assert.IsFalse( ctx.ResultInfo.ExecutionCancelled );
-				Assert.IsFalse( ctx.IsCancellationRequested );
+				ClassicAssert.IsTrue( ctx.HasResult );
+				ClassicAssert.NotNull( ctx.ResultInfo );
+				ClassicAssert.IsTrue( ctx.ResultInfo.ExecutedSuccessfully );
+				ClassicAssert.IsFalse( ctx.ResultInfo.ExecutionCancelled );
+				ClassicAssert.IsFalse( ctx.IsCancellationRequested );
 			}
 		}
 
@@ -86,19 +87,19 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				ctx.SetTaskErrored( new QueuedTaskError( exc ), isRecoverable );
 
-				Assert.IsTrue( ctx.HasResult );
-				Assert.NotNull( ctx.ResultInfo );
-				Assert.IsFalse( ctx.ResultInfo.ExecutedSuccessfully );
-				Assert.IsFalse( ctx.ResultInfo.ExecutionCancelled );
+				ClassicAssert.IsTrue( ctx.HasResult );
+				ClassicAssert.NotNull( ctx.ResultInfo );
+				ClassicAssert.IsFalse( ctx.ResultInfo.ExecutedSuccessfully );
+				ClassicAssert.IsFalse( ctx.ResultInfo.ExecutionCancelled );
 
-				Assert.NotNull( ctx.ResultInfo.Error );
-				Assert.AreEqual( exc.GetType().FullName, ctx.ResultInfo.Error.Type );
-				Assert.AreEqual( exc.Message, ctx.ResultInfo.Error.Message );
-				Assert.AreEqual( exc.StackTrace, ctx.ResultInfo.Error.StackTrace );
+				ClassicAssert.NotNull( ctx.ResultInfo.Error );
+				ClassicAssert.AreEqual( exc.GetType().FullName, ctx.ResultInfo.Error.Type );
+				ClassicAssert.AreEqual( exc.Message, ctx.ResultInfo.Error.Message );
+				ClassicAssert.AreEqual( exc.StackTrace, ctx.ResultInfo.Error.StackTrace );
 
-				Assert.AreEqual( isRecoverable, ctx.ResultInfo.IsRecoverable );
+				ClassicAssert.AreEqual( isRecoverable, ctx.ResultInfo.IsRecoverable );
 
-				Assert.IsFalse( ctx.IsCancellationRequested );
+				ClassicAssert.IsFalse( ctx.IsCancellationRequested );
 			}
 		}
 
@@ -115,10 +116,10 @@ namespace LVD.Stakhanovise.NET.Tests
 				TaskExecutionContext ctx = new TaskExecutionContext( taskMock.Object, cts.Token );
 
 				ctx.SetCancellationObserved();
-				Assert.IsTrue( ctx.HasResult );
-				Assert.NotNull( ctx.ResultInfo );
-				Assert.IsFalse( ctx.ResultInfo.ExecutedSuccessfully );
-				Assert.IsTrue( ctx.ResultInfo.ExecutionCancelled );
+				ClassicAssert.IsTrue( ctx.HasResult );
+				ClassicAssert.NotNull( ctx.ResultInfo );
+				ClassicAssert.IsFalse( ctx.ResultInfo.ExecutedSuccessfully );
+				ClassicAssert.IsTrue( ctx.ResultInfo.ExecutionCancelled );
 			}
 		}
 
@@ -159,7 +160,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				ctx.StopTimingExecution();
 
 				double measureDuration = ctx.Duration.TotalMilliseconds;
-				Assert.LessOrEqual( Math.Abs( measureDuration - duration ) / duration,
+				ClassicAssert.LessOrEqual( Math.Abs( measureDuration - duration ) / duration,
 					RelativeDurationDelta );
 			}
 		}
@@ -184,7 +185,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				Thread.Sleep( duration );
 
 				double measureDuration = ctx.Duration.TotalMilliseconds;
-				Assert.LessOrEqual( Math.Abs( measureDuration - duration ) / duration,
+				ClassicAssert.LessOrEqual( Math.Abs( measureDuration - duration ) / duration,
 					RelativeDurationDelta );
 			}
 		}

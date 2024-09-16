@@ -43,6 +43,7 @@ using MoreLinq;
 using Npgsql;
 using NpgsqlTypes;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 {
@@ -260,7 +261,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 		private static void AssertAppMetricsAreAllZero( List<AppMetric> dbMetrics )
 		{
 			foreach ( AppMetric m in dbMetrics )
-				Assert.AreEqual( 0, m.Value );
+				ClassicAssert.AreEqual( 0, m.Value );
 		}
 
 		private List<List<AppMetric>> InterleaveAppMetricLists( List<List<AppMetric>> appMetricLists )

@@ -72,13 +72,13 @@ namespace LVD.Stakhanovise.NET.Queue
 			ITaskQueueConsumerMetricsProvider metricsProvider,
 			ITimestampProvider timestampProvider )
 		{
-			if ( options == null )
+			if (options == null)
 				throw new ArgumentNullException( nameof( options ) );
 
-			if ( timestampProvider == null )
+			if (timestampProvider == null)
 				throw new ArgumentNullException( nameof( timestampProvider ) );
 
-			if ( metricsProvider == null )
+			if (metricsProvider == null)
 				throw new ArgumentNullException( nameof( metricsProvider ) );
 
 			mOptions = options;
@@ -120,7 +120,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private void NotifyClearForDequeue( ClearForDequeReason reason )
 		{
 			EventHandler<ClearForDequeueEventArgs> eventHandler = ClearForDequeue;
-			if ( eventHandler != null )
+			if (eventHandler != null)
 				eventHandler( this, new ClearForDequeueEventArgs( reason ) );
 		}
 
@@ -145,7 +145,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		private string BuildTaskDequeueSql( QueuedTaskMapping mapping )
 		{
 			//See https://dba.stackexchange.com/questions/69471/postgres-update-limit-1/69497#69497
-			return $@"SELECT tq.* FROM { mapping.DequeueFunctionName }(@types, @excluded, @ref_now) tq";
+			return $@"SELECT tq.* FROM {mapping.DequeueFunctionName}(@types, @excluded, @ref_now) tq";
 		}
 
 		private string BuildTaskAcquireSql( QueuedTaskMapping mapping )
@@ -190,10 +190,10 @@ namespace LVD.Stakhanovise.NET.Queue
 					.Now();
 
 				conn = await OpenQueueConnectionAsync();
-				if ( conn == null )
+				if (conn == null)
 					return null;
 
-				using ( NpgsqlTransaction tx = conn.BeginTransaction( IsolationLevel.ReadCommitted ) )
+				using (NpgsqlTransaction tx = conn.BeginTransaction( IsolationLevel.ReadCommitted ))
 				{
 					//1. Dequeue means that we acquire lock on a task in the queue
 					//	with the guarantee that nobody else did, and respecting 
@@ -201,14 +201,14 @@ namespace LVD.Stakhanovise.NET.Queue
 					//	that it should not be pulled out of the queue until the 
 					//	current abstract time reaches that tick value)
 					dequeuedTask = await TryDequeueTaskAsync( selectTaskTypes, refNow, conn, tx );
-					if ( dequeuedTask != null )
+					if (dequeuedTask != null)
 					{
 						//2. Mark the task as being "Processing" and pull result info
 						//	The result is stored separately and it's what allows us to remove 
 						//	the task from the queue at step #2, 
 						//	whils also tracking its processing status and previous results
 						dequeuedTaskResult = await TryUpdateTaskResultAsync( dequeuedTask, conn, tx );
-						if ( dequeuedTaskResult != null )
+						if (dequeuedTaskResult != null)
 						{
 							await tx.CommitAsync();
 							dequeuedTaskToken = new QueuedTaskToken( dequeuedTask,
@@ -217,7 +217,7 @@ namespace LVD.Stakhanovise.NET.Queue
 						}
 					}
 
-					if ( dequeuedTaskToken != null )
+					if (dequeuedTaskToken != null)
 						IncrementDequeueCount( MonotonicTimestamp.Since( startDequeue ) );
 					else
 						await tx.RollbackAsync();
@@ -225,7 +225,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			}
 			finally
 			{
-				if ( conn != null )
+				if (conn != null)
 				{
 					await conn.CloseAsync();
 					conn.Dispose();
@@ -241,7 +241,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			NpgsqlTransaction tx )
 		{
 			QueuedTask dequeuedTask;
-			using ( NpgsqlCommand dequeueCmd = new NpgsqlCommand( mTaskDequeueSql, conn, tx ) )
+			using (NpgsqlCommand dequeueCmd = new NpgsqlCommand( mTaskDequeueSql, conn, tx ))
 			{
 				dequeueCmd.Parameters.AddWithValue( "types",
 					parameterType: NpgsqlDbType.Array | NpgsqlDbType.Varchar,
@@ -256,7 +256,7 @@ namespace LVD.Stakhanovise.NET.Queue
 					value: refNow );
 
 				await dequeueCmd.PrepareAsync();
-				using ( NpgsqlDataReader taskRdr = await dequeueCmd.ExecuteReaderAsync() )
+				using (NpgsqlDataReader taskRdr = await dequeueCmd.ExecuteReaderAsync())
 				{
 					dequeuedTask = await taskRdr.ReadAsync()
 						? await taskRdr.ReadQueuedTaskAsync()
@@ -272,27 +272,37 @@ namespace LVD.Stakhanovise.NET.Queue
 			NpgsqlTransaction tx )
 		{
 			QueuedTaskResult dequeuedTaskResult = null;
-			using ( NpgsqlCommand addOrUpdateResultCmd = new NpgsqlCommand( mTaskResultUpdateSql, conn, tx ) )
+			using (NpgsqlCommand addOrUpdateResultCmd = new NpgsqlCommand( mTaskResultUpdateSql, conn, tx ))
 			{
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_id",
 					NpgsqlDbType.Uuid,
 					dequeuedTask.Id );
 				addOrUpdateResultCmd.Parameters.AddWithValue( "t_status",
 					NpgsqlDbType.Integer,
-					( int ) QueuedTaskStatus.Processing );
+					(int) QueuedTaskStatus.Processing );
 
 				await addOrUpdateResultCmd.PrepareAsync();
-				using ( NpgsqlDataReader resultRdr = await addOrUpdateResultCmd.ExecuteReaderAsync() )
+				using (NpgsqlDataReader resultRdr = await addOrUpdateResultCmd.ExecuteReaderAsync())
 				{
-					if ( await resultRdr.ReadAsync() )
+					if (await resultRdr.ReadAsync())
 						dequeuedTaskResult = await resultRdr.ReadQueuedTaskResultAsync( mOptions
 							.SerializerOptions
 							.OnConfigureSerializerSettings );
 
-					if ( dequeuedTaskResult != null )
-						mLogger.Debug( "Successfully dequeued, acquired and initialized/updated task result." );
+					if (dequeuedTaskResult != null)
+					{
+						mLogger.Debug( 
+							$"Successfully dequeued, acquired " +
+							$"and initialized/updated task result " +
+							$"for task id = {dequeuedTask.Id}." );
+					}
 					else
-						mLogger.Debug( "Failed to initialize or update task result. Will release lock..." );
+					{
+						mLogger.Debug( 
+							$"Failed to initialize or update task result " +
+							$"for task id = {dequeuedTask.Id}. " +
+							$"Will release lock..." );
+					}
 				}
 			}
 
@@ -319,9 +329,9 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		protected void Dispose( bool disposing )
 		{
-			if ( !mIsDisposed )
+			if (!mIsDisposed)
 			{
-				if ( disposing )
+				if (disposing)
 				{
 					ClearForDequeue = null;
 
@@ -351,7 +361,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void CheckNotDisposedOrThrow()
 		{
-			if ( mIsDisposed )
+			if (mIsDisposed)
 			{
 				throw new ObjectDisposedException(
 					nameof( PostgreSqlTaskQueueConsumer ),

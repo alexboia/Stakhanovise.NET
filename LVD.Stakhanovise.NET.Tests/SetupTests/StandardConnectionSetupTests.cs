@@ -33,6 +33,7 @@ using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Setup;
 using LVD.Stakhanovise.NET.Tests.SetupTests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
 {
@@ -43,10 +44,10 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		public void Test_NewInstance_ReportsAllNotConfigured ()
 		{
 			StandardConnectionSetup setup = new StandardConnectionSetup();
-			Assert.IsFalse( setup.IsConnectionKeepAliveSecondsUserConfigured );
-			Assert.IsFalse( setup.IsConnectionRetryCountUserConfigured );
-			Assert.IsFalse( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
-			Assert.IsFalse( setup.IsConnectionStringUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionKeepAliveSecondsUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionRetryCountUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionStringUserConfigured );
 		}
 
 		[Test]
@@ -57,28 +58,28 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			ConnectionOptionsSourceData sourceData = GenerateConnectionOptionsData();
 
 			setup.WithConnectionKeepAlive( sourceData.ConnectionKeepAliveSeconds );
-			Assert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
-			Assert.IsFalse( setup.IsConnectionRetryCountUserConfigured );
-			Assert.IsFalse( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
-			Assert.IsFalse( setup.IsConnectionStringUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionRetryCountUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionStringUserConfigured );
 
 			setup.WithConnectionRetryCount( sourceData.ConnectionRetryCount );
-			Assert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
-			Assert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
-			Assert.IsFalse( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
-			Assert.IsFalse( setup.IsConnectionStringUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionStringUserConfigured );
 
 			setup.WithConnectionRetryDelayMilliseconds( sourceData.ConnectionRetryDelayMilliseconds );
-			Assert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
-			Assert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
-			Assert.IsTrue( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
-			Assert.IsFalse( setup.IsConnectionStringUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
+			ClassicAssert.IsFalse( setup.IsConnectionStringUserConfigured );
 
 			setup.WithConnectionString( sourceData.ConnectionString );
-			Assert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
-			Assert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
-			Assert.IsTrue( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
-			Assert.IsTrue( setup.IsConnectionStringUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionKeepAliveSecondsUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionRetryCountUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionRetryDelayMillisecondsUserConfigured );
+			ClassicAssert.IsTrue( setup.IsConnectionStringUserConfigured );
 		}
 
 		[Test]

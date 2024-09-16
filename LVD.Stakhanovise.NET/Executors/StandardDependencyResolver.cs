@@ -93,6 +93,7 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		public T TryResolve<T> () where T : class
 		{
+			//TODO: throw exception if cannot resolve
 			if ( mContainer.TryResolve<T>( out T instance ) )
 				mContainer.BuildUp( instance );
 			else
@@ -103,6 +104,7 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		public object TryResolve ( Type serviceType )
 		{
+			//TODO: throw exception if cannot resolve
 			if ( mContainer.TryResolve( serviceType, out object instance ) )
 				mContainer.BuildUp( instance );
 			else

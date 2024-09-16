@@ -78,6 +78,8 @@ namespace LVD.Stakhanovise.NET.Setup
 				return new StandardTaskExecutorRegistry( mBuiltInTaskExecutorRegistrySetup
 					.BuildDependencyResolver() );
 			else
+				//TODO: should be able to pass dependency resolver
+				//	to task executor registry.
 				return mTaskExecutorRegistryFactory.Invoke();
 		}
 

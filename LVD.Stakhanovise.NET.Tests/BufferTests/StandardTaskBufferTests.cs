@@ -34,6 +34,7 @@ using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Asserts;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,10 +52,10 @@ namespace LVD.Stakhanovise.NET.Tests.BufferTests
 		{
 			using ( StandardTaskBuffer buffer = CreateBuffer( capacity ) )
 			{
-				Assert.IsFalse( buffer.HasTasks );
-				Assert.IsFalse( buffer.IsFull );
-				Assert.AreEqual( capacity, buffer.Capacity );
-				Assert.IsFalse( buffer.IsCompleted );
+				ClassicAssert.IsFalse( buffer.HasTasks );
+				ClassicAssert.IsFalse( buffer.IsFull );
+				ClassicAssert.AreEqual( capacity, buffer.Capacity );
+				ClassicAssert.IsFalse( buffer.IsCompleted );
 			}
 		}
 
@@ -67,11 +68,11 @@ namespace LVD.Stakhanovise.NET.Tests.BufferTests
 			using ( StandardTaskBuffer buffer = CreateBuffer( capacity ) )
 			{
 				for ( int i = 0; i < buffer.Capacity; i++ )
-					Assert.IsTrue( buffer.TryAddNewTask( CreateMockQueuedTaskToken() ) );
+					ClassicAssert.IsTrue( buffer.TryAddNewTask( CreateMockQueuedTaskToken() ) );
 
-				Assert.AreEqual( buffer.Capacity, buffer.Count );
-				Assert.IsTrue( buffer.IsFull );
-				Assert.IsFalse( buffer.IsCompleted );
+				ClassicAssert.AreEqual( buffer.Capacity, buffer.Count );
+				ClassicAssert.IsTrue( buffer.IsFull );
+				ClassicAssert.IsFalse( buffer.IsCompleted );
 			}
 		}
 
@@ -97,13 +98,13 @@ namespace LVD.Stakhanovise.NET.Tests.BufferTests
 					IQueuedTaskToken queuedTaskToken = buffer
 						.TryGetNextTask();
 
-					Assert.NotNull( queuedTaskToken );
-					Assert.IsTrue( addedTasks.Any( t => t.DequeuedTask.Id
+					ClassicAssert.NotNull( queuedTaskToken );
+					ClassicAssert.IsTrue( addedTasks.Any( t => t.DequeuedTask.Id
 						== queuedTaskToken.DequeuedTask.Id ) );
 				}
 
-				Assert.IsFalse( buffer.IsFull );
-				Assert.IsFalse( buffer.IsCompleted );
+				ClassicAssert.IsFalse( buffer.IsFull );
+				ClassicAssert.IsFalse( buffer.IsCompleted );
 			}
 		}
 
@@ -128,7 +129,7 @@ namespace LVD.Stakhanovise.NET.Tests.BufferTests
 		{
 			using ( StandardTaskBuffer buffer = CreateBuffer( capacity ) )
 			{
-				Assert.IsNull( buffer.TryGetNextTask() );
+				ClassicAssert.IsNull( buffer.TryGetNextTask() );
 			}
 		}
 
@@ -142,7 +143,7 @@ namespace LVD.Stakhanovise.NET.Tests.BufferTests
 			{
 				FillBuffer( buffer );
 				//Now attempt to add one more
-				Assert.IsFalse( buffer.TryAddNewTask( CreateMockQueuedTaskToken() ) );
+				ClassicAssert.IsFalse( buffer.TryAddNewTask( CreateMockQueuedTaskToken() ) );
 			}
 		}
 
@@ -169,19 +170,19 @@ namespace LVD.Stakhanovise.NET.Tests.BufferTests
 				buffer.CompleteAdding();
 
 				if ( buffer.Count > 0 )
-					Assert.IsFalse( buffer.IsCompleted );
+					ClassicAssert.IsFalse( buffer.IsCompleted );
 				else
-					Assert.IsTrue( buffer.IsCompleted );
+					ClassicAssert.IsTrue( buffer.IsCompleted );
 
 				//We can no longer add items
-				Assert.IsFalse( buffer.TryAddNewTask( CreateMockQueuedTaskToken() ) );
+				ClassicAssert.IsFalse( buffer.TryAddNewTask( CreateMockQueuedTaskToken() ) );
 
 				//We must be able to retrieve the other items
 				for ( int i = 0; i < actualItemNumber; i++ )
-					Assert.NotNull( buffer.TryGetNextTask() );
+					ClassicAssert.NotNull( buffer.TryGetNextTask() );
 
 				//Now it must be marked as completed
-				Assert.IsTrue( buffer.IsCompleted );
+				ClassicAssert.IsTrue( buffer.IsCompleted );
 			}
 		}
 
@@ -218,7 +219,7 @@ namespace LVD.Stakhanovise.NET.Tests.BufferTests
 				buffer.TryAddNewTask( CreateMockQueuedTaskToken() );
 			}
 
-			Assert.IsTrue( handlerCalled );
+			ClassicAssert.IsTrue( handlerCalled );
 		}
 
 		[Test]
@@ -234,7 +235,7 @@ namespace LVD.Stakhanovise.NET.Tests.BufferTests
 				buffer.TryGetNextTask();
 			}
 
-			Assert.IsTrue( handlerCalled );
+			ClassicAssert.IsTrue( handlerCalled );
 		}
 
 		private StandardTaskBuffer CreateBuffer(int capacity)

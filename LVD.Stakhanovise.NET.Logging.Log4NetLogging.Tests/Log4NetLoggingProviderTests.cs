@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
@@ -14,8 +15,8 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			Log4NetLoggingProvider provider = new Log4NetLoggingProvider();
 			IStakhanoviseLogger logger = provider.CreateLogger( name );
 
-			Assert.NotNull( logger );
-			Assert.IsInstanceOf<Log4NetLogger>( logger );
+			ClassicAssert.NotNull( logger );
+			ClassicAssert.IsInstanceOf<Log4NetLogger>( logger );
 		}
 	}
 }

@@ -33,6 +33,7 @@ using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Asserts;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,15 +57,16 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public void AssertConsumedTokenValid ( IQueuedTaskToken newTaskToken, DateTimeOffset now )
 		{
-			Assert.NotNull( newTaskToken );
-			Assert.NotNull( newTaskToken.DequeuedAt );
-			Assert.NotNull( newTaskToken.DequeuedTask );
-			Assert.NotNull( newTaskToken.LastQueuedTaskResult );
+			ClassicAssert.NotNull( newTaskToken );
+			ClassicAssert.NotNull( newTaskToken.DequeuedAt );
+			ClassicAssert.NotNull( newTaskToken.DequeuedTask );
+			ClassicAssert.NotNull( newTaskToken.LastQueuedTaskResult );
 
-			Assert.IsFalse( mDequeuedTokens.Any( t => t.DequeuedTask.Id == newTaskToken.DequeuedTask.Id ) );
+			ClassicAssert.IsFalse( mDequeuedTokens.Any( t => t.DequeuedTask.Id == newTaskToken.DequeuedTask.Id ) );
 
 			if ( mPreviousTaskToken != null )
-				Assert.GreaterOrEqual( newTaskToken.DequeuedTask.PostedAtTs, mPreviousTaskToken.DequeuedTask.PostedAtTs );
+				ClassicAssert.GreaterOrEqual( newTaskToken.DequeuedTask.PostedAtTs, 
+					mPreviousTaskToken.DequeuedTask.PostedAtTs );
 
 			mPreviousTaskToken = newTaskToken;
 			mDequeuedTokens.Add( newTaskToken );
@@ -72,7 +74,7 @@ namespace LVD.Stakhanovise.NET.Tests.Support
 
 		public async Task AssertTaskNotInDbAnymoreAsync ( IQueuedTaskToken newTaskToken )
 		{
-			Assert.IsNull( await mDataSource.GetQueuedTaskFromDbByIdAsync( newTaskToken
+			ClassicAssert.IsNull( await mDataSource.GetQueuedTaskFromDbByIdAsync( newTaskToken
 				.DequeuedTask
 				.Id ) );
 		}

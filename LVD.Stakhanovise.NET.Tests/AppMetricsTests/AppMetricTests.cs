@@ -38,6 +38,7 @@ using System.Threading;
 using Bogus;
 using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 {
@@ -85,7 +86,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 
 			prevValues.Add( metric.Update( faker.Random.Long() ) );
 
-			Assert.AreEqual( threadValues.Count + 1,
+			ClassicAssert.AreEqual( threadValues.Count + 1,
 				prevValues.Count );
 
 			CollectionAssert.Contains( prevValues, initialValue );
@@ -116,7 +117,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			foreach ( Thread t in threads )
 				t.Join();
 
-			Assert.AreEqual( nThreads, metric.Value );
+			ClassicAssert.AreEqual( nThreads, metric.Value );
 		}
 
 		[Test]
@@ -142,7 +143,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			foreach ( Thread t in threads )
 				t.Join();
 
-			Assert.AreEqual( 0, metric.Value );
+			ClassicAssert.AreEqual( 0, metric.Value );
 		}
 
 		[Test]
@@ -169,7 +170,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			foreach ( Thread t in threads )
 				t.Join();
 
-			Assert.AreEqual( nThreads * valueToAdd, metric.Value );
+			ClassicAssert.AreEqual( nThreads * valueToAdd, metric.Value );
 		}
 
 		[Test]
@@ -208,7 +209,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			foreach ( Thread t in threads )
 				t.Join();
 
-			Assert.AreEqual( threadValues.Min(),
+			ClassicAssert.AreEqual( threadValues.Min(),
 				metric.Value );
 		}
 
@@ -248,7 +249,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			foreach ( Thread t in threads )
 				t.Join();
 
-			Assert.AreEqual( threadValues.Max(),
+			ClassicAssert.AreEqual( threadValues.Max(),
 				metric.Value );
 		}
 
@@ -269,9 +270,9 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 
 			AppMetric metric = metric1.JoinWith( metric2 );
 
-			Assert.AreEqual( value1 + value2, metric.Value );
-			Assert.AreNotSame( metric, metric1 );
-			Assert.AreNotSame( metric, metric2 );
+			ClassicAssert.AreEqual( value1 + value2, metric.Value );
+			ClassicAssert.AreNotSame( metric, metric1 );
+			ClassicAssert.AreNotSame( metric, metric2 );
 		}
 	}
 }

@@ -2,6 +2,7 @@
 using LVD.Stakhanovise.NET.Helpers;
 using Npgsql;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 {
@@ -17,7 +18,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 			NpgsqlConnectionStringBuilder builderCopy =
 				builder.Copy();
 
-			Assert.NotNull( builderCopy );
+			ClassicAssert.NotNull( builderCopy );
 
 			Assert_BuildersMatch( builder,
 				builderCopy );
@@ -45,17 +46,17 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 		private void Assert_BuildersMatch( NpgsqlConnectionStringBuilder builder,
 			NpgsqlConnectionStringBuilder copy )
 		{
-			Assert.AreEqual( builder.Host, copy.Host );
-			Assert.AreEqual( builder.Port, copy.Port );
-			Assert.AreEqual( builder.Pooling, copy.Pooling );
-			Assert.AreEqual( builder.MinPoolSize, copy.MinPoolSize );
-			Assert.AreEqual( builder.MaxPoolSize, copy.MaxPoolSize );
-			Assert.AreEqual( builder.Username, copy.Username );
+			ClassicAssert.AreEqual( builder.Host, copy.Host );
+			ClassicAssert.AreEqual( builder.Port, copy.Port );
+			ClassicAssert.AreEqual( builder.Pooling, copy.Pooling );
+			ClassicAssert.AreEqual( builder.MinPoolSize, copy.MinPoolSize );
+			ClassicAssert.AreEqual( builder.MaxPoolSize, copy.MaxPoolSize );
+			ClassicAssert.AreEqual( builder.Username, copy.Username );
 
 			foreach ( string key in builder.Keys )
 			{
-				Assert.IsTrue( copy.ContainsKey( key ) );
-				Assert.AreEqual( builder [ key ], copy [ key ] );
+				ClassicAssert.IsTrue( copy.ContainsKey( key ) );
+				ClassicAssert.AreEqual( builder [ key ], copy [ key ] );
 			}
 		}
 
@@ -68,7 +69,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 			NpgsqlConnectionStringBuilder builderCopy =
 				builder.Copy();
 
-			Assert.NotNull( builderCopy );
+			ClassicAssert.NotNull( builderCopy );
 
 			Assert_BuildersMatch( builder,
 				builderCopy );

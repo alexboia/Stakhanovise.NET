@@ -1,6 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -26,10 +27,10 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 				CreateLogger() );
 
 			await processor.StartAsync();
-			Assert.IsTrue( processor.IsRunning );
+			ClassicAssert.IsTrue( processor.IsRunning );
 
 			await processor.StopAsync();
-			Assert.IsFalse( processor.IsRunning );
+			ClassicAssert.IsFalse( processor.IsRunning );
 		}
 
 		private Task NoOpProcessingDelegate( AsyncProcessingRequestBatch<AsyncProcessingRequest<int>> requestBatch )
@@ -74,16 +75,16 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 
 			await processor.StopAsync();
 
-			Assert.AreEqual( generatedRequests.Count,
+			ClassicAssert.AreEqual( generatedRequests.Count,
 				processedRequestIds.Count );
 
 			foreach ( AsyncProcessingRequest<long> request in generatedRequests )
 			{
-				Assert.IsTrue( request.IsCompleted );
-				Assert.IsFalse( request.IsTimedOut );
-				Assert.IsFalse( request.IsFaulted );
+				ClassicAssert.IsTrue( request.IsCompleted );
+				ClassicAssert.IsFalse( request.IsTimedOut );
+				ClassicAssert.IsFalse( request.IsFaulted );
 
-				Assert.AreEqual( request.Id,
+				ClassicAssert.AreEqual( request.Id,
 					request.Result );
 
 				CollectionAssert.Contains( processedRequestIds,
@@ -159,24 +160,24 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 			countdowntHandle.Wait();
 			await processor.StopAsync();
 
-			Assert.AreEqual( generatedRequests.Count,
+			ClassicAssert.AreEqual( generatedRequests.Count,
 				processedRequestIds.Count );
 
 			foreach ( AsyncProcessingRequest<long> request in generatedRequests )
 			{
-				Assert.IsTrue( request.IsCompleted );
-				Assert.IsFalse( request.IsTimedOut );
+				ClassicAssert.IsTrue( request.IsCompleted );
+				ClassicAssert.IsFalse( request.IsTimedOut );
 
 				if ( request.Id % 3 != 2 )
 				{
-					Assert.IsFalse( request.IsFaulted );
-					Assert.AreEqual( request.Id,
+					ClassicAssert.IsFalse( request.IsFaulted );
+					ClassicAssert.AreEqual( request.Id,
 						request.Result );
 				}
 				else
-					Assert.IsTrue( request.IsFaulted );
+					ClassicAssert.IsTrue( request.IsFaulted );
 
-				Assert.IsTrue( processedRequestIds
+				ClassicAssert.IsTrue( processedRequestIds
 					.ContainsKey( request.Id ) );
 
 				int expectedProcessingCount;
@@ -190,7 +191,7 @@ namespace LVD.Stakhanovise.NET.Tests.ModelTests
 				else
 					expectedProcessingCount = DefaultMaxFailCount;
 
-				Assert.AreEqual( expectedProcessingCount,
+				ClassicAssert.AreEqual( expectedProcessingCount,
 					processingCount );
 			}
 		}

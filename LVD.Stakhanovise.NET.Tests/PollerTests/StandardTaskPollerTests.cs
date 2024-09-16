@@ -35,6 +35,7 @@ using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.PollerTests
@@ -72,14 +73,14 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 			{
 				await poller.StartAsync();
 
-				Assert.IsTrue( poller.IsStarted );
-				Assert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
+				ClassicAssert.IsTrue( poller.IsStarted );
+				ClassicAssert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
 
 				await poller.StopAync();
 
-				Assert.IsFalse( poller.IsStarted );
-				Assert.IsFalse( taskQueueConsumer.IsReceivingNewTaskUpdates );
-				Assert.IsFalse( taskBuffer.IsCompleted );
+				ClassicAssert.IsFalse( poller.IsStarted );
+				ClassicAssert.IsFalse( taskQueueConsumer.IsReceivingNewTaskUpdates );
+				ClassicAssert.IsFalse( taskBuffer.IsCompleted );
 			}
 		}
 
@@ -141,9 +142,9 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 
 				testTaskBufferConsumer.WaitForBufferToBeConsumed();
 
-				Assert.IsFalse( taskBuffer.HasTasks );
-				Assert.IsTrue( taskBuffer.IsCompleted );
-				Assert.AreEqual( taskBuffer.RefusedElementCount,
+				ClassicAssert.IsFalse( taskBuffer.HasTasks );
+				ClassicAssert.IsTrue( taskBuffer.IsCompleted );
+				ClassicAssert.AreEqual( taskBuffer.RefusedElementCount,
 					taskQueueProducer.ProducedTasksCount );
 
 				testTaskBufferConsumer.AssertMatchesProducedTasks( taskQueueConsumer
@@ -177,10 +178,10 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				await Task.Delay( GenerateMilliseconDelayAmount() );
 				await poller.StopAync();
 
-				Assert.AreEqual( 1, taskQueueConsumer.DequeueCallCount );
-				Assert.IsTrue( taskBuffer.IsEmpty );
+				ClassicAssert.AreEqual( 1, taskQueueConsumer.DequeueCallCount );
+				ClassicAssert.IsTrue( taskBuffer.IsEmpty );
 
-				Assert.AreEqual( taskBuffer.RefusedElementCount,
+				ClassicAssert.AreEqual( taskBuffer.RefusedElementCount,
 					taskQueueProducer.ProducedTasksCount );
 			}
 		}
@@ -224,13 +225,13 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				await GenerateTaskBufferFakeTaskRetrieveEventsAsync( taskBuffer );
 				await poller.StopAync();
 
-				Assert.AreEqual( taskBuffer.RefusedElementCount,
+				ClassicAssert.AreEqual( taskBuffer.RefusedElementCount,
 					taskQueueConsumer.ActuallyDequeuedElementsCount );
 
-				Assert.AreEqual( taskBuffer.RefusedElementCount,
+				ClassicAssert.AreEqual( taskBuffer.RefusedElementCount,
 					taskQueueProducer.ProducedTasksCount );
 
-				Assert.IsTrue( taskBuffer.IsFull );
+				ClassicAssert.IsTrue( taskBuffer.IsFull );
 			}
 		}
 

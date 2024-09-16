@@ -32,6 +32,7 @@
 using Bogus;
 using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Tests
@@ -53,16 +54,16 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
-			Assert.IsTrue( successful.ExecutedSuccessfully );
-			Assert.IsFalse( successful.ExecutionCancelled );
-			Assert.IsFalse( successful.ExecutionFailed );
-			Assert.IsNull( successful.Error );
+			ClassicAssert.IsTrue( successful.ExecutedSuccessfully );
+			ClassicAssert.IsFalse( successful.ExecutionCancelled );
+			ClassicAssert.IsFalse( successful.ExecutionFailed );
+			ClassicAssert.IsNull( successful.Error );
 
-			Assert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
+			ClassicAssert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
 				successful.ProcessingTimeMilliseconds );
 
-			Assert.AreEqual( sampleRetryAt, successful.RetryAt );
-			Assert.AreEqual( sampleFaultErrorThresholdCount, successful.FaultErrorThresholdCount );
+			ClassicAssert.AreEqual( sampleRetryAt, successful.RetryAt );
+			ClassicAssert.AreEqual( sampleFaultErrorThresholdCount, successful.FaultErrorThresholdCount );
 		}
 
 		[Test]
@@ -79,16 +80,16 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
-			Assert.IsFalse( cancelled.ExecutedSuccessfully );
-			Assert.IsTrue( cancelled.ExecutionCancelled );
-			Assert.IsFalse( cancelled.ExecutionFailed );
-			Assert.IsNull( cancelled.Error );
+			ClassicAssert.IsFalse( cancelled.ExecutedSuccessfully );
+			ClassicAssert.IsTrue( cancelled.ExecutionCancelled );
+			ClassicAssert.IsFalse( cancelled.ExecutionFailed );
+			ClassicAssert.IsNull( cancelled.Error );
 
-			Assert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
+			ClassicAssert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
 				cancelled.ProcessingTimeMilliseconds );
 
-			Assert.AreEqual( sampleRetryAt, cancelled.RetryAt );
-			Assert.AreEqual( sampleFaultErrorThresholdCount, cancelled.FaultErrorThresholdCount );
+			ClassicAssert.AreEqual( sampleRetryAt, cancelled.RetryAt );
+			ClassicAssert.AreEqual( sampleFaultErrorThresholdCount, cancelled.FaultErrorThresholdCount );
 		}
 
 		[Test]
@@ -110,17 +111,19 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
-			Assert.IsFalse( failedWithError.ExecutedSuccessfully );
-			Assert.IsFalse( failedWithError.ExecutionCancelled );
-			Assert.IsTrue( failedWithError.ExecutionFailed );
-			Assert.NotNull( failedWithError.Error );
-			Assert.AreEqual( failedWithErrorInfo.Error, failedWithError.Error );
+			ClassicAssert.IsFalse( failedWithError.ExecutedSuccessfully );
+			ClassicAssert.IsFalse( failedWithError.ExecutionCancelled );
+			ClassicAssert.IsTrue( failedWithError.ExecutionFailed );
+			ClassicAssert.NotNull( failedWithError.Error );
+			ClassicAssert.AreEqual( failedWithErrorInfo.Error, failedWithError.Error );
 
-			Assert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
+			ClassicAssert.AreEqual( ( long )( Math.Ceiling( sampleDuration.TotalMilliseconds ) ),
 				failedWithError.ProcessingTimeMilliseconds );
 
-			Assert.AreEqual( sampleRetryAt, failedWithError.RetryAt );
-			Assert.AreEqual( sampleFaultErrorThresholdCount, failedWithError.FaultErrorThresholdCount );
+			ClassicAssert.AreEqual( sampleRetryAt, 
+				failedWithError.RetryAt );
+			ClassicAssert.AreEqual( sampleFaultErrorThresholdCount, 
+				failedWithError.FaultErrorThresholdCount );
 		}
 
 		[Test]
@@ -142,8 +145,8 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
-			Assert.AreEqual( successful1, successful2 );
-			Assert.AreEqual( successful1, successful1 );
+			ClassicAssert.AreEqual( successful1, successful2 );
+			ClassicAssert.AreEqual( successful1, successful1 );
 		}
 
 		[Test]
@@ -170,7 +173,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetryAt2,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount2 );
 
-			Assert.AreNotEqual( successful1, successful2 );
+			ClassicAssert.AreNotEqual( successful1, successful2 );
 		}
 
 		[Test]
@@ -192,8 +195,8 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
-			Assert.AreEqual( cancelled1, cancelled2 );
-			Assert.AreEqual( cancelled1, cancelled1 );
+			ClassicAssert.AreEqual( cancelled1, cancelled2 );
+			ClassicAssert.AreEqual( cancelled1, cancelled1 );
 		}
 
 		[Test]
@@ -220,7 +223,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetry2,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount2 );
 
-			Assert.AreNotEqual( cancelled1, cancelled2 );
+			ClassicAssert.AreNotEqual( cancelled1, cancelled2 );
 		}
 
 		[Test]
@@ -247,8 +250,8 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetryAt,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount );
 
-			Assert.AreEqual( failedWithError1, failedWithError2 );
-			Assert.AreEqual( failedWithError1, failedWithError1 );
+			ClassicAssert.AreEqual( failedWithError1, failedWithError2 );
+			ClassicAssert.AreEqual( failedWithError1, failedWithError1 );
 		}
 
 		[Test]
@@ -282,7 +285,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				retryAt: sampleRetryAt2,
 				faultErrorThresholdCount: sampleFaultErrorThresholdCount2 );
 
-			Assert.AreNotEqual( failedWithError1, failedWithError2 );
+			ClassicAssert.AreNotEqual( failedWithError1, failedWithError2 );
 		}
 	}
 }

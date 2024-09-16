@@ -1,6 +1,7 @@
 ﻿using Bogus;
 using LVD.Stakhanovise.NET.Common.Tests.TestDataStructures;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Linq;
 
@@ -23,13 +24,13 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			SupportedValuesContainer<SamplePerson, string> supportedPersons =
 				new SupportedValuesContainer<SamplePerson, string>( p => p.Name );
 
-			Assert.NotNull( supportedPersons.SupportedValues );
-			Assert.IsEmpty( supportedPersons.SupportedValues );
+			ClassicAssert.NotNull( supportedPersons.SupportedValues );
+			ClassicAssert.IsEmpty( supportedPersons.SupportedValues );
 
 			string personName = faker.Name.FullName();
 
-			Assert.IsFalse( supportedPersons.IsSupported( personName ) );
-			Assert.IsNull( supportedPersons.TryParse( personName ) );
+			ClassicAssert.IsFalse( supportedPersons.IsSupported( personName ) );
+			ClassicAssert.IsNull( supportedPersons.TryParse( personName ) );
 		}
 
 		[Test]
@@ -39,24 +40,24 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			SupportedValuesContainer<SamplePredefinedPerson, Guid> supportedPersons =
 				new SupportedValuesContainer<SamplePredefinedPerson, Guid>( p => p.Id );
 
-			Assert.NotNull( supportedPersons.SupportedValues );
-			Assert.AreEqual( 3, supportedPersons.SupportedValues.Count() );
+			ClassicAssert.NotNull( supportedPersons.SupportedValues );
+			ClassicAssert.AreEqual( 3, supportedPersons.SupportedValues.Count() );
 
-			Assert.IsTrue( supportedPersons.IsSupported( SamplePredefinedPerson.PersonA.Id ) );
-			Assert.AreSame( SamplePredefinedPerson.PersonA, supportedPersons
+			ClassicAssert.IsTrue( supportedPersons.IsSupported( SamplePredefinedPerson.PersonA.Id ) );
+			ClassicAssert.AreSame( SamplePredefinedPerson.PersonA, supportedPersons
 				.TryParse( SamplePredefinedPerson.PersonA.Id ) );
 
-			Assert.IsTrue( supportedPersons.IsSupported( SamplePredefinedPerson.PersonB.Id ) );
-			Assert.AreSame( SamplePredefinedPerson.PersonB, supportedPersons
+			ClassicAssert.IsTrue( supportedPersons.IsSupported( SamplePredefinedPerson.PersonB.Id ) );
+			ClassicAssert.AreSame( SamplePredefinedPerson.PersonB, supportedPersons
 				.TryParse( SamplePredefinedPerson.PersonB.Id ) );
 
-			Assert.IsTrue( supportedPersons.IsSupported( SamplePredefinedPerson.PersonC.Id ) );
-			Assert.AreSame( SamplePredefinedPerson.PersonC, supportedPersons
+			ClassicAssert.IsTrue( supportedPersons.IsSupported( SamplePredefinedPerson.PersonC.Id ) );
+			ClassicAssert.AreSame( SamplePredefinedPerson.PersonC, supportedPersons
 				.TryParse( SamplePredefinedPerson.PersonC.Id ) );
 
 			Guid randomPersonId = Guid.NewGuid();
-			Assert.IsFalse( supportedPersons.IsSupported( randomPersonId ) );
-			Assert.IsNull( supportedPersons.TryParse( randomPersonId ) );
+			ClassicAssert.IsFalse( supportedPersons.IsSupported( randomPersonId ) );
+			ClassicAssert.IsNull( supportedPersons.TryParse( randomPersonId ) );
 		}
 	}
 }

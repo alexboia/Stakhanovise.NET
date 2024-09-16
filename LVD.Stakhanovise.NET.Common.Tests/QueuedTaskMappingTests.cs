@@ -1,5 +1,6 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Common.Tests
@@ -12,14 +13,14 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 		{
 			QueuedTaskMapping mapping = QueuedTaskMapping.Default;
 
-			Assert.IsNotNull( mapping );
-			Assert.IsTrue( mapping.IsValid );
-			Assert.AreEqual( "sk_tasks_queue_t", mapping.QueueTableName );
-			Assert.AreEqual( "sk_task_results_t", mapping.ResultsQueueTableName );
-			Assert.AreEqual( "sk_task_execution_time_stats_t", mapping.ExecutionTimeStatsTableName );
-			Assert.AreEqual( "sk_metrics_t", mapping.MetricsTableName );
-			Assert.AreEqual( "sk_task_queue_item_added", mapping.NewTaskNotificationChannelName );
-			Assert.AreEqual( "sk_try_dequeue_task", mapping.DequeueFunctionName );
+			ClassicAssert.IsNotNull( mapping );
+			ClassicAssert.IsTrue( mapping.IsValid );
+			ClassicAssert.AreEqual( "sk_tasks_queue_t", mapping.QueueTableName );
+			ClassicAssert.AreEqual( "sk_task_results_t", mapping.ResultsQueueTableName );
+			ClassicAssert.AreEqual( "sk_task_execution_time_stats_t", mapping.ExecutionTimeStatsTableName );
+			ClassicAssert.AreEqual( "sk_metrics_t", mapping.MetricsTableName );
+			ClassicAssert.AreEqual( "sk_task_queue_item_added", mapping.NewTaskNotificationChannelName );
+			ClassicAssert.AreEqual( "sk_try_dequeue_task", mapping.DequeueFunctionName );
 		}
 
 		[Test]
@@ -35,7 +36,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 				ResultsQueueTableName = null
 			};
 
-			Assert.IsFalse( mapping.IsValid );
+			ClassicAssert.IsFalse( mapping.IsValid );
 		}
 
 		[Test]
@@ -45,27 +46,27 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 		{
 			QueuedTaskMapping mapping = new QueuedTaskMapping();
 			mapping.ExecutionTimeStatsTableName = emptyValue;
-			Assert.IsFalse( mapping.IsValid );
+			ClassicAssert.IsFalse( mapping.IsValid );
 
 			mapping = new QueuedTaskMapping();
 			mapping.ResultsQueueTableName = emptyValue;
-			Assert.IsFalse( mapping.IsValid );
+			ClassicAssert.IsFalse( mapping.IsValid );
 
 			mapping = new QueuedTaskMapping();
 			mapping.DequeueFunctionName = emptyValue;
-			Assert.IsFalse( mapping.IsValid );
+			ClassicAssert.IsFalse( mapping.IsValid );
 
 			mapping = new QueuedTaskMapping();
 			mapping.QueueTableName = emptyValue;
-			Assert.IsFalse( mapping.IsValid );
+			ClassicAssert.IsFalse( mapping.IsValid );
 
 			mapping = new QueuedTaskMapping();
 			mapping.NewTaskNotificationChannelName = emptyValue;
-			Assert.IsFalse( mapping.IsValid );
+			ClassicAssert.IsFalse( mapping.IsValid );
 
 			mapping = new QueuedTaskMapping();
 			mapping.MetricsTableName = emptyValue;
-			Assert.IsFalse( mapping.IsValid );
+			ClassicAssert.IsFalse( mapping.IsValid );
 		}
 
 		[Test]
@@ -81,12 +82,12 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 		{
 			QueuedTaskMapping mapping = QueuedTaskMapping.DefaultWithPrefix( prefix );
 
-			Assert.AreEqual( $"{prefix}sk_tasks_queue_t", mapping.QueueTableName );
-			Assert.AreEqual( $"{prefix}sk_task_results_t", mapping.ResultsQueueTableName );
-			Assert.AreEqual( $"{prefix}sk_task_execution_time_stats_t", mapping.ExecutionTimeStatsTableName );
-			Assert.AreEqual( $"{prefix}sk_metrics_t", mapping.MetricsTableName );
-			Assert.AreEqual( $"{prefix}sk_task_queue_item_added", mapping.NewTaskNotificationChannelName );
-			Assert.AreEqual( $"{prefix}sk_try_dequeue_task", mapping.DequeueFunctionName );
+			ClassicAssert.AreEqual( $"{prefix}sk_tasks_queue_t", mapping.QueueTableName );
+			ClassicAssert.AreEqual( $"{prefix}sk_task_results_t", mapping.ResultsQueueTableName );
+			ClassicAssert.AreEqual( $"{prefix}sk_task_execution_time_stats_t", mapping.ExecutionTimeStatsTableName );
+			ClassicAssert.AreEqual( $"{prefix}sk_metrics_t", mapping.MetricsTableName );
+			ClassicAssert.AreEqual( $"{prefix}sk_task_queue_item_added", mapping.NewTaskNotificationChannelName );
+			ClassicAssert.AreEqual( $"{prefix}sk_try_dequeue_task", mapping.DequeueFunctionName );
 		}
 
 		[Test]
@@ -99,12 +100,12 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 				m.ResultsQueueTableName = "new_results";
 			} );
 
-			Assert.AreEqual( "new_queue", mapping.QueueTableName );
-			Assert.AreEqual( "new_results", mapping.ResultsQueueTableName );
-			Assert.AreEqual( $"{prefix}sk_task_execution_time_stats_t", mapping.ExecutionTimeStatsTableName );
-			Assert.AreEqual( $"{prefix}sk_metrics_t", mapping.MetricsTableName );
-			Assert.AreEqual( $"{prefix}sk_task_queue_item_added", mapping.NewTaskNotificationChannelName );
-			Assert.AreEqual( $"{prefix}sk_try_dequeue_task", mapping.DequeueFunctionName );
+			ClassicAssert.AreEqual( "new_queue", mapping.QueueTableName );
+			ClassicAssert.AreEqual( "new_results", mapping.ResultsQueueTableName );
+			ClassicAssert.AreEqual( $"{prefix}sk_task_execution_time_stats_t", mapping.ExecutionTimeStatsTableName );
+			ClassicAssert.AreEqual( $"{prefix}sk_metrics_t", mapping.MetricsTableName );
+			ClassicAssert.AreEqual( $"{prefix}sk_task_queue_item_added", mapping.NewTaskNotificationChannelName );
+			ClassicAssert.AreEqual( $"{prefix}sk_try_dequeue_task", mapping.DequeueFunctionName );
 		}
 	}
 }

@@ -35,6 +35,7 @@ using System.Text;
 using Bogus;
 using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -46,15 +47,15 @@ namespace LVD.Stakhanovise.NET.Tests
 		{
 			QueuedTaskError errBase = new QueuedTaskError( new Exception( "Sample exception message" ) );
 
-			Assert.AreEqual( "System.Exception", errBase.Type );
-			Assert.AreEqual( "Sample exception message", errBase.Message );
-			Assert.IsNull( errBase.StackTrace );
+			ClassicAssert.AreEqual( "System.Exception", errBase.Type );
+			ClassicAssert.AreEqual( "Sample exception message", errBase.Message );
+			ClassicAssert.IsNull( errBase.StackTrace );
 
 			QueuedTaskError errInvOp = new QueuedTaskError( new InvalidOperationException( "Sample invalid operation exception message" ) );
 
-			Assert.AreEqual( "System.InvalidOperationException", errInvOp.Type );
-			Assert.AreEqual( "Sample invalid operation exception message", errInvOp.Message );
-			Assert.IsNull( errInvOp.StackTrace );
+			ClassicAssert.AreEqual( "System.InvalidOperationException", errInvOp.Type );
+			ClassicAssert.AreEqual( "Sample invalid operation exception message", errInvOp.Message );
+			ClassicAssert.IsNull( errInvOp.StackTrace );
 
 			QueuedTaskError errAppThrown;
 
@@ -67,9 +68,9 @@ namespace LVD.Stakhanovise.NET.Tests
 				errAppThrown = new QueuedTaskError( exc );
 			}
 
-			Assert.AreEqual( "System.ApplicationException", errAppThrown.Type );
-			Assert.AreEqual( "Sample application exception message", errAppThrown.Message );
-			Assert.NotNull( errAppThrown.StackTrace );
+			ClassicAssert.AreEqual( "System.ApplicationException", errAppThrown.Type );
+			ClassicAssert.AreEqual( "Sample application exception message", errAppThrown.Message );
+			ClassicAssert.NotNull( errAppThrown.StackTrace );
 		}
 
 		[Test]
@@ -87,8 +88,8 @@ namespace LVD.Stakhanovise.NET.Tests
 				err1.Message,
 				err1.StackTrace );
 
-			Assert.AreEqual( err1, err1 );
-			Assert.AreEqual( err1, err2 );
+			ClassicAssert.AreEqual( err1, err1 );
+			ClassicAssert.AreEqual( err1, err2 );
 		}
 
 		[Test]
@@ -106,7 +107,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				faker.Lorem.Sentence(),
 				faker.Random.String() );
 
-			Assert.AreNotEqual( err1, err2 );
+			ClassicAssert.AreNotEqual( err1, err2 );
 		}
 	}
 }

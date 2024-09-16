@@ -38,6 +38,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Tests;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Common.Tests
 {
@@ -59,7 +60,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			exceptionTask.ContinueWith( prev => exceptionTaskReady.Set() );
 			exceptionTaskReady.WaitOne();
 
-			Assert.NotNull( exceptionTask.Exception );
+			ClassicAssert.NotNull( exceptionTask.Exception );
 			Assert.Throws<AggregateException>( ()
 				 => exceptionTask.Wait() );
 		}
@@ -120,7 +121,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 					while ( !waitTask.IsCompleted )
 						await Task.Delay( 10 );
 
-					Assert.IsTrue( waitTask.IsCompleted );
+					ClassicAssert.IsTrue( waitTask.IsCompleted );
 					Assert.Throws<AggregateException>( ()
 						 => waitTask.Wait() );
 				}
@@ -153,7 +154,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 				}
 			}
 
-			Assert.Contains( ConnectionState.Closed,
+			ClassicAssert.Contains( ConnectionState.Closed,
 				connectionStates );
 		}
 
@@ -178,7 +179,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 					 => await conn.WaitAsync( cancellation.Token ) );
 			}
 
-			Assert.IsFalse( notificationReceived );
+			ClassicAssert.IsFalse( notificationReceived );
 		}
 
 		[Test]
@@ -205,7 +206,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 					 => await conn.WaitAsync( cancellation.Token ) );
 			}
 
-			Assert.IsFalse( notificationReceived );
+			ClassicAssert.IsFalse( notificationReceived );
 		}
 
 		[Test]
@@ -257,16 +258,16 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			await tNotify;
 			await tListen;
 
-			Assert.AreEqual( 5, notificationData.Count );
+			ClassicAssert.AreEqual( 5, notificationData.Count );
 
 			foreach ( NpgsqlNotificationEventArgs noteData in notificationData )
-				Assert.AreEqual( "sk_test_queue_item_added", noteData.Channel );
+				ClassicAssert.AreEqual( "sk_test_queue_item_added", noteData.Channel );
 
-			Assert.NotNull( notificationData.Any( n => n.Payload.Equals( "1" ) ) );
-			Assert.NotNull( notificationData.Any( n => n.Payload.Equals( "2" ) ) );
-			Assert.NotNull( notificationData.Any( n => n.Payload.Equals( "3" ) ) );
-			Assert.NotNull( notificationData.Any( n => n.Payload.Equals( "4" ) ) );
-			Assert.NotNull( notificationData.Any( n => n.Payload.Equals( "5" ) ) );
+			ClassicAssert.NotNull( notificationData.Any( n => n.Payload.Equals( "1" ) ) );
+			ClassicAssert.NotNull( notificationData.Any( n => n.Payload.Equals( "2" ) ) );
+			ClassicAssert.NotNull( notificationData.Any( n => n.Payload.Equals( "3" ) ) );
+			ClassicAssert.NotNull( notificationData.Any( n => n.Payload.Equals( "4" ) ) );
+			ClassicAssert.NotNull( notificationData.Any( n => n.Payload.Equals( "5" ) ) );
 		}
 
 		private string ConnectionString

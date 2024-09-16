@@ -35,6 +35,7 @@ using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Setup;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.IO;
 
@@ -73,7 +74,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			StakhanoviseSetupDefaults reasonableDefaults =
 				reasonableDefaultsProvider.GetDefaults();
 
-			Assert.NotNull( defaults );
+			ClassicAssert.NotNull( defaults );
 
 			AssertDefaultsFromConfigMatchReasonableDefaults( defaults,
 				reasonableDefaults );
@@ -89,7 +90,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 		private void AssertConnectionStringEmpty ( StakhanoviseSetupDefaults defaults )
 		{
-			Assert.Null( defaults.ConnectionString );
+			ClassicAssert.Null( defaults.ConnectionString );
 		}
 
 		[Test]
@@ -110,7 +111,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			StakhanoviseSetupDefaults reasonableDefaults =
 				reasonableDefaultsProvider.GetDefaults();
 
-			Assert.NotNull( defaults );
+			ClassicAssert.NotNull( defaults );
 
 			AssertDefaultsFromConfigMatchReasonableDefaults( defaults,
 				reasonableDefaults );
@@ -126,15 +127,15 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 		private void AssertConnectionStringCorrect ( StakhanoviseSetupDefaults defaults )
 		{
-			Assert.NotNull( defaults.ConnectionString );
-			Assert.IsNotEmpty( defaults.ConnectionString );
-			Assert.AreEqual( TestConnectionString, defaults.ConnectionString );
+			ClassicAssert.NotNull( defaults.ConnectionString );
+			ClassicAssert.IsNotEmpty( defaults.ConnectionString );
+			ClassicAssert.AreEqual( TestConnectionString, defaults.ConnectionString );
 		}
 
 		private void AssertExecutorAssembliesMatchReasonableDefaultsAssemblies ( StakhanoviseSetupDefaults defaults,
 			StakhanoviseSetupDefaults reasonableDefaults )
 		{
-			Assert.AreEqual( reasonableDefaults.ExecutorAssemblies.Length,
+			ClassicAssert.AreEqual( reasonableDefaults.ExecutorAssemblies.Length,
 				defaults.ExecutorAssemblies.Length );
 			CollectionAssert.AreEqual( reasonableDefaults.ExecutorAssemblies,
 				defaults.ExecutorAssemblies );
@@ -143,19 +144,19 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 		private void AssertDefaultsFromConfigMatchReasonableDefaults ( StakhanoviseSetupDefaults defaults,
 			StakhanoviseSetupDefaults reasonableDefaults )
 		{
-			Assert.AreEqual( reasonableDefaults.WorkerCount,
+			ClassicAssert.AreEqual( reasonableDefaults.WorkerCount,
 				defaults.WorkerCount );
-			Assert.AreEqual( reasonableDefaults.CalculateDelayMillisecondsTaskAfterFailure,
+			ClassicAssert.AreEqual( reasonableDefaults.CalculateDelayMillisecondsTaskAfterFailure,
 				defaults.CalculateDelayMillisecondsTaskAfterFailure );
-			Assert.AreEqual( reasonableDefaults.IsTaskErrorRecoverable,
+			ClassicAssert.AreEqual( reasonableDefaults.IsTaskErrorRecoverable,
 				defaults.IsTaskErrorRecoverable );
-			Assert.AreEqual( reasonableDefaults.FaultErrorThresholdCount,
+			ClassicAssert.AreEqual( reasonableDefaults.FaultErrorThresholdCount,
 				defaults.FaultErrorThresholdCount );
-			Assert.AreEqual( reasonableDefaults.AppMetricsCollectionIntervalMilliseconds,
+			ClassicAssert.AreEqual( reasonableDefaults.AppMetricsCollectionIntervalMilliseconds,
 				defaults.AppMetricsCollectionIntervalMilliseconds );
-			Assert.AreEqual( reasonableDefaults.AppMetricsMonitoringEnabled,
+			ClassicAssert.AreEqual( reasonableDefaults.AppMetricsMonitoringEnabled,
 				defaults.AppMetricsMonitoringEnabled );
-			Assert.AreEqual( reasonableDefaults.SetupBuiltInDbAsssets,
+			ClassicAssert.AreEqual( reasonableDefaults.SetupBuiltInDbAsssets,
 				defaults.SetupBuiltInDbAsssets );
 		}
 
@@ -170,18 +171,18 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 		private void AssertMappingsEqual ( QueuedTaskMapping expected, QueuedTaskMapping actual )
 		{
-			Assert.NotNull( actual );
-			Assert.AreEqual( expected.QueueTableName,
+			ClassicAssert.NotNull( actual );
+			ClassicAssert.AreEqual( expected.QueueTableName,
 				actual.QueueTableName );
-			Assert.AreEqual( expected.ResultsQueueTableName,
+			ClassicAssert.AreEqual( expected.ResultsQueueTableName,
 				actual.ResultsQueueTableName );
-			Assert.AreEqual( expected.NewTaskNotificationChannelName,
+			ClassicAssert.AreEqual( expected.NewTaskNotificationChannelName,
 				actual.NewTaskNotificationChannelName );
-			Assert.AreEqual( expected.ExecutionTimeStatsTableName,
+			ClassicAssert.AreEqual( expected.ExecutionTimeStatsTableName,
 				actual.ExecutionTimeStatsTableName );
-			Assert.AreEqual( expected.MetricsTableName,
+			ClassicAssert.AreEqual( expected.MetricsTableName,
 				actual.MetricsTableName );
-			Assert.AreEqual( expected.DequeueFunctionName,
+			ClassicAssert.AreEqual( expected.DequeueFunctionName,
 				actual.DequeueFunctionName );
 		}
 
@@ -197,22 +198,22 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			StakhanoviseSetupDefaults defaults =
 				provider.GetDefaults();
 
-			Assert.NotNull( defaults );
+			ClassicAssert.NotNull( defaults );
 
-			Assert.AreEqual( 12, defaults.WorkerCount );
-			Assert.AreEqual( 13, defaults.FaultErrorThresholdCount );
-			Assert.AreEqual( 1234, defaults.AppMetricsCollectionIntervalMilliseconds );
-			Assert.AreEqual( true, defaults.AppMetricsMonitoringEnabled );
-			Assert.AreEqual( true, defaults.SetupBuiltInDbAsssets );
+			ClassicAssert.AreEqual( 12, defaults.WorkerCount );
+			ClassicAssert.AreEqual( 13, defaults.FaultErrorThresholdCount );
+			ClassicAssert.AreEqual( 1234, defaults.AppMetricsCollectionIntervalMilliseconds );
+			ClassicAssert.AreEqual( true, defaults.AppMetricsMonitoringEnabled );
+			ClassicAssert.AreEqual( true, defaults.SetupBuiltInDbAsssets );
 
 			AssertExecutorAssembliesMatchTestAssemblies( defaults );
 
-			Assert.NotNull( defaults.CalculateDelayMillisecondsTaskAfterFailure );
+			ClassicAssert.NotNull( defaults.CalculateDelayMillisecondsTaskAfterFailure );
 			AssertCalculateDelayTicksTaskAfterFailureFnCorrect( defaults,
 				expected: ( token ) => ( long )Math.Ceiling( Math.Exp( token.LastQueuedTaskResult.ErrorCount + 1 ) ),
 				numberOfRuns: 100 );
 
-			Assert.NotNull( defaults.IsTaskErrorRecoverable );
+			ClassicAssert.NotNull( defaults.IsTaskErrorRecoverable );
 			AssertIsTaskErrorRecoverableFnCorrect( defaults,
 				expected: ( task, exc ) => !( exc is NullReferenceException )
 					&& !( exc is ArgumentException )
@@ -225,9 +226,9 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 		private void AssertExecutorAssembliesMatchTestAssemblies ( StakhanoviseSetupDefaults defaults )
 		{
-			Assert.NotNull( defaults.ExecutorAssemblies );
-			Assert.AreEqual( 1, defaults.ExecutorAssemblies.Length );
-			Assert.AreEqual( "WinSCPnet.dll", Path.GetFileName( defaults.ExecutorAssemblies[ 0 ].Location ) );
+			ClassicAssert.NotNull( defaults.ExecutorAssemblies );
+			ClassicAssert.AreEqual( 1, defaults.ExecutorAssemblies.Length );
+			ClassicAssert.AreEqual( "WinSCPnet.dll", Path.GetFileName( defaults.ExecutorAssemblies[ 0 ].Location ) );
 		}
 
 		private void AssertCalculateDelayTicksTaskAfterFailureFnCorrect ( StakhanoviseSetupDefaults defaults,
@@ -249,7 +250,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 				long actualVal = defaults.CalculateDelayMillisecondsTaskAfterFailure
 					.Invoke( tokenMock.Object );
 
-				Assert.AreEqual( expectedVal, actualVal );
+				ClassicAssert.AreEqual( expectedVal, actualVal );
 			}
 		}
 
@@ -275,11 +276,11 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 			for ( int i = 0; i < numberOfRuns; i++ )
 			{
-				Assert.IsFalse( defaults.IsTaskErrorRecoverable( taskMock.Object,
+				ClassicAssert.IsFalse( defaults.IsTaskErrorRecoverable( taskMock.Object,
 					new NullReferenceException( faker.Lorem.Sentence() ) ) );
-				Assert.IsFalse( defaults.IsTaskErrorRecoverable( taskMock.Object,
+				ClassicAssert.IsFalse( defaults.IsTaskErrorRecoverable( taskMock.Object,
 					new ArgumentException( faker.Lorem.Sentence() ) ) );
-				Assert.IsFalse( defaults.IsTaskErrorRecoverable( taskMock.Object,
+				ClassicAssert.IsFalse( defaults.IsTaskErrorRecoverable( taskMock.Object,
 					new ApplicationException( faker.Lorem.Sentence() ) ) );
 			}
 		}
@@ -291,11 +292,11 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 
 			for ( int i = 0; i < numberOfRuns; i++ )
 			{
-				Assert.IsTrue( defaults.IsTaskErrorRecoverable( taskMock.Object,
+				ClassicAssert.IsTrue( defaults.IsTaskErrorRecoverable( taskMock.Object,
 					new FileNotFoundException( faker.Lorem.Sentence() ) ) );
-				Assert.IsTrue( defaults.IsTaskErrorRecoverable( taskMock.Object,
+				ClassicAssert.IsTrue( defaults.IsTaskErrorRecoverable( taskMock.Object,
 					new FileLoadException( faker.Lorem.Sentence() ) ) );
-				Assert.IsTrue( defaults.IsTaskErrorRecoverable( taskMock.Object,
+				ClassicAssert.IsTrue( defaults.IsTaskErrorRecoverable( taskMock.Object,
 					new ArithmeticException( faker.Lorem.Sentence() ) ) );
 			}
 		}
@@ -310,7 +311,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			for ( int i = 0; i < numberOfRuns; i++ )
 			{
 				Exception exc = faker.System.Exception();
-				Assert.AreEqual( expected.Invoke( taskMock.Object, exc ),
+				ClassicAssert.AreEqual( expected.Invoke( taskMock.Object, exc ),
 					defaults.IsTaskErrorRecoverable.Invoke( taskMock.Object, exc ) );
 			}
 		}
@@ -341,7 +342,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			StakhanoviseSetupDefaults reasonableDefaults =
 				reasonableDefaultsProvider.GetDefaults();
 
-			Assert.NotNull( defaults );
+			ClassicAssert.NotNull( defaults );
 
 			AssertDefaultsFromConfigMatchReasonableDefaults( defaults,
 				reasonableDefaults );
@@ -368,7 +369,7 @@ namespace LVD.Stakhanovise.NET.NetCoreConfigurationExtensionsBindings.Tests
 			StakhanoviseSetupDefaults reasonableDefaults =
 				reasonableDefaultsProvider.GetDefaults();
 
-			Assert.NotNull( defaults );
+			ClassicAssert.NotNull( defaults );
 
 			AssertDefaultsFromConfigMatchReasonableDefaults( defaults,
 				reasonableDefaults );

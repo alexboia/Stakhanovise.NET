@@ -42,6 +42,7 @@ using LVD.Stakhanovise.NET.Tests.Support;
 using Npgsql;
 using NpgsqlTypes;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 {
@@ -98,7 +99,7 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 				dbRecords );
 
 			foreach ( ExecutionPerformanceInfoRecord r in dbRecords )
-				Assert.AreEqual( 1, r.NExecutionCycles );
+				ClassicAssert.AreEqual( 1, r.NExecutionCycles );
 		}
 
 		[Test]
@@ -134,7 +135,7 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 				int expectedCycleCount = sampleStats.Count( s => s.PayloadType
 					== r.PayloadType );
 
-				Assert.AreEqual( expectedCycleCount,
+				ClassicAssert.AreEqual( expectedCycleCount,
 					r.NExecutionCycles );
 			}
 		}
@@ -178,7 +179,7 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 					newStats.Count( s => s.PayloadType
 						== r.PayloadType );
 
-				Assert.AreEqual( expectedCycleCount,
+				ClassicAssert.AreEqual( expectedCycleCount,
 					r.NExecutionCycles );
 			}
 		}
@@ -221,7 +222,7 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 					newStats.Count( s => s.PayloadType
 						== r.PayloadType );
 
-				Assert.AreEqual( expectedCycleCount,
+				ClassicAssert.AreEqual( expectedCycleCount,
 					r.NExecutionCycles );
 			}
 		}
@@ -282,8 +283,8 @@ namespace LVD.Stakhanovise.NET.Tests.ExecutionPerformanceMonitorTests
 
 			foreach ( ExecutionPerformanceInfoRecord r in dbRecords )
 			{
-				Assert.AreEqual( nWrites, r.NExecutionCycles );
-				Assert.IsTrue( r.AllZeroValues() );
+				ClassicAssert.AreEqual( nWrites, r.NExecutionCycles );
+				ClassicAssert.IsTrue( r.AllZeroValues() );
 			}
 		}
 

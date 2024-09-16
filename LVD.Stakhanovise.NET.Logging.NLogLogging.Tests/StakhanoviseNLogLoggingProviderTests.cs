@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -16,8 +17,8 @@ namespace LVD.Stakhanovise.NET.Logging.NLogLogging.Tests
 			StakhanoviseNLogLoggingProvider provider = new StakhanoviseNLogLoggingProvider();
 			IStakhanoviseLogger logger = provider.CreateLogger( name );
 
-			Assert.NotNull( logger );
-			Assert.IsInstanceOf<StakhanoviseNLogLogger>( logger );
+			ClassicAssert.NotNull( logger );
+			ClassicAssert.IsInstanceOf<StakhanoviseNLogLogger>( logger );
 		}
 	}
 }

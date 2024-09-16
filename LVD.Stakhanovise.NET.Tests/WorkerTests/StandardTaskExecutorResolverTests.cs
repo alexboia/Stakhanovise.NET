@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using LVD.Stakhanovise.NET.Executors;
+﻿using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
+using System;
 
 namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 {
@@ -31,7 +30,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 			ITaskExecutor executor = resolver
 				.ResolveExecutor( knownTask );
 
-			Assert.NotNull( executor );
+			ClassicAssert.NotNull( executor );
 			registryMock.Verify();
 		}
 
@@ -97,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Tests.WorkerTests
 			ITaskExecutor executor = resolver
 				.ResolveExecutor( knownTask );
 
-			Assert.IsNull( executor );
+			ClassicAssert.IsNull( executor );
 			registryMock.Verify();
 		}
 

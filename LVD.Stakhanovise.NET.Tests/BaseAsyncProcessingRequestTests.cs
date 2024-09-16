@@ -36,6 +36,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -54,14 +55,14 @@ namespace LVD.Stakhanovise.NET.Tests
 			TResult actualResult = rq.Task
 				.Result;
 
-			Assert.AreEqual( TaskStatus.RanToCompletion,
+			ClassicAssert.AreEqual( TaskStatus.RanToCompletion,
 				rq.Task.Status );
 
 			if ( !expectSame )
-				Assert.AreEqual( expectedResult,
+				ClassicAssert.AreEqual( expectedResult,
 					actualResult );
 			else
-				Assert.AreSame( expectedResult,
+				ClassicAssert.AreSame( expectedResult,
 					actualResult );
 		}
 
@@ -95,14 +96,14 @@ namespace LVD.Stakhanovise.NET.Tests
 			TResult actualResult = rq.Task
 				.Result;
 
-			Assert.AreEqual( TaskStatus.RanToCompletion,
+			ClassicAssert.AreEqual( TaskStatus.RanToCompletion,
 				rq.Task.Status );
 
 			if ( !expectSame )
-				Assert.AreEqual( expectedResult,
+				ClassicAssert.AreEqual( expectedResult,
 					actualResult );
 			else
-				Assert.AreSame( expectedResult,
+				ClassicAssert.AreSame( expectedResult,
 					actualResult );
 		}
 
@@ -113,7 +114,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			rq.SetCancelled();
 
-			Assert.AreEqual( TaskStatus.Canceled,
+			ClassicAssert.AreEqual( TaskStatus.Canceled,
 				rq.Task.Status );
 		}
 
@@ -142,7 +143,7 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			await Task.WhenAll( allThreads );
 
-			Assert.AreEqual( TaskStatus.Canceled,
+			ClassicAssert.AreEqual( TaskStatus.Canceled,
 				rq.Task.Status );
 		}
 
@@ -154,10 +155,10 @@ namespace LVD.Stakhanovise.NET.Tests
 			Assert.CatchAsync<TimeoutException>( async ()
 				=> await rq.Task );
 
-			Assert.AreEqual( TaskStatus.Faulted,
+			ClassicAssert.AreEqual( TaskStatus.Faulted,
 				rq.Task.Status );
 
-			Assert.IsTrue( rq.IsTimedOut );
+			ClassicAssert.IsTrue( rq.IsTimedOut );
 		}
 
 		protected void RunTest_CanSetFailed_SingleThread<TResult> ( Func<AsyncProcessingRequest<TResult>> rqFn,
@@ -174,19 +175,19 @@ namespace LVD.Stakhanovise.NET.Tests
 
 				if ( i < maxFailCount - 1 )
 				{
-					Assert.IsTrue( rq.CanBeRetried );
+					ClassicAssert.IsTrue( rq.CanBeRetried );
 
 					Exception actualExc = rq.Task
 						.Exception;
 
-					Assert.AreEqual( TaskStatus.WaitingForActivation,
+					ClassicAssert.AreEqual( TaskStatus.WaitingForActivation,
 						rq.Task.Status );
 
-					Assert.Null( actualExc );
+					ClassicAssert.Null( actualExc );
 				}
 				else
 				{
-					Assert.IsFalse( rq.CanBeRetried );
+					ClassicAssert.IsFalse( rq.CanBeRetried );
 
 					Exception actualExc = rq.Task
 						.Exception;
@@ -195,11 +196,11 @@ namespace LVD.Stakhanovise.NET.Tests
 						? ( ( AggregateException )actualExc ).InnerException
 						: actualExc;
 
-					Assert.AreEqual( TaskStatus.Faulted,
+					ClassicAssert.AreEqual( TaskStatus.Faulted,
 						rq.Task.Status );
 
-					Assert.NotNull( actualExc );
-					Assert.AreSame( exc, actualExc );
+					ClassicAssert.NotNull( actualExc );
+					ClassicAssert.AreSame( exc, actualExc );
 				}
 			}
 		}

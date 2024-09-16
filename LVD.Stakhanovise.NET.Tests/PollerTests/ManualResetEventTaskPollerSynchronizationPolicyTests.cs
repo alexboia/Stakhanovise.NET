@@ -3,6 +3,7 @@ using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.PollerTests.Mocks;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,10 +31,10 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				metricsProviderMock.Object ) )
 			{
 				policy.SignalPollerStarted();
-				Assert.AreEqual( 1, bufferMock.QueuedTaskRetrievedHandlerCount );
-				Assert.AreEqual( 0, bufferMock.QueuedTaskAddedHandlerCount );
+				ClassicAssert.AreEqual( 1, bufferMock.QueuedTaskRetrievedHandlerCount );
+				ClassicAssert.AreEqual( 0, bufferMock.QueuedTaskAddedHandlerCount );
 
-				Assert.AreEqual( 1, consumerMock.ClearForDequeueCount );
+				ClassicAssert.AreEqual( 1, consumerMock.ClearForDequeueCount );
 			}
 
 			AssertNoMetricsIncremented( metricsProviderMock );
@@ -311,9 +312,9 @@ namespace LVD.Stakhanovise.NET.Tests.PollerTests
 				policy.SignalPollerStarted();
 				policy.SignalPollerStopRequested();
 
-				Assert.AreEqual( 0, bufferMock.QueuedTaskRetrievedHandlerCount );
-				Assert.AreEqual( 0, bufferMock.QueuedTaskAddedHandlerCount );
-				Assert.AreEqual( 0, consumerMock.ClearForDequeueCount );
+				ClassicAssert.AreEqual( 0, bufferMock.QueuedTaskRetrievedHandlerCount );
+				ClassicAssert.AreEqual( 0, bufferMock.QueuedTaskAddedHandlerCount );
+				ClassicAssert.AreEqual( 0, consumerMock.ClearForDequeueCount );
 			}
 
 			AssertNoMetricsIncremented( metricsProviderMock );

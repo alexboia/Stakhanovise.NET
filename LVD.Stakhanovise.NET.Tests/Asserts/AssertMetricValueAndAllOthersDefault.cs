@@ -1,5 +1,6 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Collections.Generic;
 
 namespace LVD.Stakhanovise.NET.Tests.Asserts
@@ -26,16 +27,16 @@ namespace LVD.Stakhanovise.NET.Tests.Asserts
 			foreach ( AppMetric metric in metrics )
 			{
 				if ( metric.Id.Equals( metricId ) )
-					Assert.AreEqual( mExpectedValue, metric.Value );
+					ClassicAssert.AreEqual( mExpectedValue, metric.Value );
 				else
-					Assert.AreEqual( metric.Id.DefaultValue, metric.Value );
+					ClassicAssert.AreEqual( metric.Id.DefaultValue, metric.Value );
 			}
 
 			AppMetric queriedMetric = provider
 				.QueryMetric( metricId );
 
-			Assert.NotNull( queriedMetric );
-			Assert.AreEqual( mExpectedValue,
+			ClassicAssert.NotNull( queriedMetric );
+			ClassicAssert.AreEqual( mExpectedValue,
 				queriedMetric.Value );
 		}
 	}

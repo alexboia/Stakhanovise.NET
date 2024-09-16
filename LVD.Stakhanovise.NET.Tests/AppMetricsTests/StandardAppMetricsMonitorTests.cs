@@ -4,6 +4,7 @@ using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,17 +36,17 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 					writer );
 
 			await monitor.StartAsync( metricsProvider );
-			Assert.IsTrue( monitor.IsRunning );
+			ClassicAssert.IsTrue( monitor.IsRunning );
 
 			await monitor.StopAsync();
-			Assert.IsFalse( monitor.IsRunning );
+			ClassicAssert.IsFalse( monitor.IsRunning );
 
 			bool writeCountEventOccurred = writer.WaitForWriteCount( 1, collectionIntervalMilliseconds );
-			Assert.IsTrue( writeCountEventOccurred );
+			ClassicAssert.IsTrue( writeCountEventOccurred );
 
-			Assert.AreEqual( 1,
+			ClassicAssert.AreEqual( 1,
 				metricsProvider.CollectMetricsCallCount );
-			Assert.AreEqual( 1,
+			ClassicAssert.AreEqual( 1,
 				writer.GetWrittenBatchCountForProcessId( options.ProcessId ) );
 		}
 
@@ -77,7 +78,7 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			await monitor.StartAsync( metricsProvider );
 
 			bool writeCountEventOccurred = writer.WaitForWriteCount( stopAfterCycles, collectionIntervalMilliseconds );
-			Assert.IsTrue( writeCountEventOccurred );
+			ClassicAssert.IsTrue( writeCountEventOccurred );
 
 			writer.ResetWriteCountLock( 1 );
 			await monitor.StopAsync();
@@ -85,11 +86,11 @@ namespace LVD.Stakhanovise.NET.Tests.AppMetricsTests
 			bool lastWriteCountEventOccurred = writer.WaitForWriteCount( 1,
 				collectionIntervalMilliseconds );
 
-			Assert.IsTrue( lastWriteCountEventOccurred );
+			ClassicAssert.IsTrue( lastWriteCountEventOccurred );
 
-			Assert.AreEqual( stopAfterCycles + 1,
+			ClassicAssert.AreEqual( stopAfterCycles + 1,
 				metricsProvider.CollectMetricsCallCount );
-			Assert.AreEqual( stopAfterCycles + 1,
+			ClassicAssert.AreEqual( stopAfterCycles + 1,
 				writer.GetWrittenBatchCountForProcessId( options.ProcessId ) );
 		}
 

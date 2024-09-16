@@ -1,5 +1,6 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Collections.Generic;
 
@@ -22,8 +23,8 @@ namespace LVD.Stakhanovise.NET.Tests.Asserts
 
 		public void Check( AsyncProcessingRequestBatch<TElement> batch )
 		{
-			Assert.NotNull( batch );
-			Assert.AreEqual( mGeneratedElements.Count,
+			ClassicAssert.NotNull( batch );
+			ClassicAssert.AreEqual( mGeneratedElements.Count,
 				batch.Count );
 
 			foreach ( TElement bElement in batch )

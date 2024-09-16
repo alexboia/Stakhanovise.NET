@@ -33,6 +33,7 @@ using LVD.Stakhanovise.NET.Logging;
 using LVD.Stakhanovise.NET.Options;
 using LVD.Stakhanovise.NET.Queue;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.QueueTests
@@ -55,10 +56,10 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
 			{
 				await listener.StartAsync();
-				Assert.IsTrue( listener.IsStarted );
+				ClassicAssert.IsTrue( listener.IsStarted );
 
 				await listener.StopAsync();
-				Assert.IsFalse( listener.IsStarted );
+				ClassicAssert.IsFalse( listener.IsStarted );
 			}
 		}
 
@@ -75,8 +76,8 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			{
 				await runner.RunTestsAsync( listener );
 
-				Assert.AreEqual( notificationSendCount, runner.NotificationReceivedCount );
-				Assert.AreEqual( 1, runner.ConnectedCount );
+				ClassicAssert.AreEqual( notificationSendCount, runner.NotificationReceivedCount );
+				ClassicAssert.AreEqual( 1, runner.ConnectedCount );
 			}
 		}
 
@@ -101,7 +102,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
 			{
 				await runner.RunTestsAsync( listener );
-				Assert.AreEqual( 0, runner.ReconnectsRemaining );
+				ClassicAssert.AreEqual( 0, runner.ReconnectsRemaining );
 			}
 		}
 
@@ -122,8 +123,8 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			{
 				await runner.RunTestsAsync( listener );
 
-				Assert.AreEqual( 0, runner.ReconnectsRemaining );
-				Assert.AreEqual( reconnectsCount, runner.NotificationsReceivedCount );
+				ClassicAssert.AreEqual( 0, runner.ReconnectsRemaining );
+				ClassicAssert.AreEqual( reconnectsCount, runner.NotificationsReceivedCount );
 			}
 		}
 
@@ -147,7 +148,7 @@ namespace LVD.Stakhanovise.NET.Tests.QueueTests
 			using ( PostgreSqlTaskQueueNotificationListener listener = CreateListener() )
 			{
 				await runner.RunTestsAsync(listener );
-				Assert.AreEqual( 0, runner.NotificationReceivedCount );
+				ClassicAssert.AreEqual( 0, runner.NotificationReceivedCount );
 			}
 		}
 

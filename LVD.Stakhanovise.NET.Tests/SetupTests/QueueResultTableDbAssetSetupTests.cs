@@ -32,6 +32,7 @@
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Setup;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Tests.SetupTests
@@ -78,7 +79,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 		{
 			bool tableExists = await TableExistsAsync( mapping.ResultsQueueTableName );
 
-			Assert.IsTrue( tableExists,
+			ClassicAssert.IsTrue( tableExists,
 				"Table {0} does not exist!",
 				mapping.ResultsQueueTableName );
 		}
@@ -101,7 +102,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 				"task_last_processing_attempted_at_ts",
 				"task_processing_finalized_at_ts" );
 
-			Assert.IsTrue( tableHasColumns,
+			ClassicAssert.IsTrue( tableHasColumns,
 				"Table {0} does not have all expected columns!",
 				mapping.ResultsQueueTableName );
 		}
@@ -114,7 +115,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			bool taskStatusIndexExists = await TableIndexExistsAsync( mapping.ResultsQueueTableName,
 				expectedTaskStatusIndexName );
 
-			Assert.AreEqual( shouldHaveTaskStatusIndex,
+			ClassicAssert.AreEqual( shouldHaveTaskStatusIndex,
 				taskStatusIndexExists );
 
 			string expectedTaskTypeIndexName = string.Format( "idx_{0}_task_type",
@@ -123,7 +124,7 @@ namespace LVD.Stakhanovise.NET.Tests.SetupTests
 			bool taskTypeIndexExists = await TableIndexExistsAsync( mapping.ResultsQueueTableName,
 				expectedTaskTypeIndexName );
 
-			Assert.AreEqual( shouldHaveTaskTypeIndex,
+			ClassicAssert.AreEqual( shouldHaveTaskTypeIndex,
 				taskTypeIndexExists );
 		}
 

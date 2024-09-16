@@ -33,6 +33,7 @@ using Bogus;
 using LVD.Stakhanovise.NET.Common.Tests.TestDataStructures;
 using LVD.Stakhanovise.NET.Helpers;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 {
@@ -47,7 +48,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 			object obj = null;
 			string json = obj.ToJson( includeTypeInformation );
 
-			Assert.IsNull( json );
+			ClassicAssert.IsNull( json );
 		}
 
 		[Test]
@@ -63,8 +64,8 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 			};
 
 			string json = obj.ToJson( includeTypeInformation );
-			Assert.IsNotNull( json );
-			Assert.IsNotEmpty( json );
+			ClassicAssert.IsNotNull( json );
+			ClassicAssert.IsNotEmpty( json );
 
 			Assert.That( json, Contains.Substring( "Name" ) );
 			Assert.That( json, Contains.Substring( "John" ) );
@@ -86,11 +87,11 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 			SamplePerson samplePerson = CreateSamplePerson();
 
 			string json = samplePerson.ToJson( includeTypeInformation: true );
-			Assert.IsNotNull( json );
-			Assert.IsNotEmpty( json );
+			ClassicAssert.IsNotNull( json );
+			ClassicAssert.IsNotEmpty( json );
 
 			SamplePerson deserializedSamplePerson = json.AsObjectFromJson() as SamplePerson;
-			Assert.IsNotNull( deserializedSamplePerson );
+			ClassicAssert.IsNotNull( deserializedSamplePerson );
 
 			AssertSamplePersonInstancesEqual( samplePerson,
 				deserializedSamplePerson );
@@ -110,13 +111,13 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 		private void AssertSamplePersonInstancesEqual( SamplePerson expected,
 			SamplePerson actual )
 		{
-			Assert.AreEqual( expected.Name,
+			ClassicAssert.AreEqual( expected.Name,
 				actual.Name );
-			Assert.AreEqual( expected.Job,
+			ClassicAssert.AreEqual( expected.Job,
 				actual.Job );
-			Assert.AreEqual( expected.Age,
+			ClassicAssert.AreEqual( expected.Age,
 				actual.Age );
-			Assert.AreEqual( expected.Bio,
+			ClassicAssert.AreEqual( expected.Bio,
 				actual.Bio );
 		}
 
@@ -127,11 +128,11 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 			SamplePerson samplePerson = CreateSamplePerson();
 
 			string json = samplePerson.ToJson( includeTypeInformation: false );
-			Assert.IsNotNull( json );
-			Assert.IsNotEmpty( json );
+			ClassicAssert.IsNotNull( json );
+			ClassicAssert.IsNotEmpty( json );
 
 			SamplePerson deserializedSamplePerson = json.AsObjectFromJson<SamplePerson>();
-			Assert.IsNotNull( deserializedSamplePerson );
+			ClassicAssert.IsNotNull( deserializedSamplePerson );
 
 			AssertSamplePersonInstancesEqual( samplePerson,
 				deserializedSamplePerson );

@@ -37,6 +37,7 @@ using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -148,12 +149,12 @@ namespace LVD.Stakhanovise.NET.info.Tests
 				TaskQueueMetrics metrics = await taskQueue
 					.ComputeMetricsAsync();
 
-				Assert.NotNull( metrics );
-				Assert.AreEqual( mDataSource.NumUnProcessedTasks, metrics.TotalUnprocessed );
-				Assert.AreEqual( mDataSource.NumErroredTasks, metrics.TotalErrored );
-				Assert.AreEqual( mDataSource.NumFaultedTasks, metrics.TotalFaulted );
-				Assert.AreEqual( mDataSource.NumFatalTasks, metrics.TotalFataled );
-				Assert.AreEqual( mDataSource.NumProcessedTasks, metrics.TotalProcessed );
+				ClassicAssert.NotNull( metrics );
+				ClassicAssert.AreEqual( mDataSource.NumUnProcessedTasks, metrics.TotalUnprocessed );
+				ClassicAssert.AreEqual( mDataSource.NumErroredTasks, metrics.TotalErrored );
+				ClassicAssert.AreEqual( mDataSource.NumFaultedTasks, metrics.TotalFaulted );
+				ClassicAssert.AreEqual( mDataSource.NumFatalTasks, metrics.TotalFataled );
+				ClassicAssert.AreEqual( mDataSource.NumProcessedTasks, metrics.TotalProcessed );
 			}
 		}
 

@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using LVD.Stakhanovise.NET.Processor;
 using LVD.Stakhanovise.NET.Model;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests.Support
 {

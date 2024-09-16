@@ -38,8 +38,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using LVD.Stakhanovise.NET.Executors;
 using LVD.Stakhanovise.NET.Tests.Executors;
-using NuGet.Frameworks;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -93,13 +93,13 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			resolver.Load( dependencies );
 
-			Assert.IsTrue( resolver.CanResolve( typeof( IAsSingletonSampleDependency ) ) );
-			Assert.IsTrue( resolver.CanResolve<IAsSingletonSampleDependency>() );
+			ClassicAssert.IsTrue( resolver.CanResolve( typeof( IAsSingletonSampleDependency ) ) );
+			ClassicAssert.IsTrue( resolver.CanResolve<IAsSingletonSampleDependency>() );
 
-			Assert.AreSame( instance,
+			ClassicAssert.AreSame( instance,
 				resolver.TryResolve<IAsSingletonSampleDependency>() );
 
-			Assert.AreSame( resolver.TryResolve<IAsSingletonSampleDependency>(),
+			ClassicAssert.AreSame( resolver.TryResolve<IAsSingletonSampleDependency>(),
 				resolver.TryResolve<IAsSingletonSampleDependency>() );
 		}
 
@@ -168,7 +168,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		private static void Assert_DependenciesCorrectlyResolved ( int nTestThreads, StandardDependencyResolver resolver )
 		{
 			//Check that singletons are resolved as such
-			Assert.AreSame( resolver.TryResolve<IAsSingletonSampleDependency>(),
+			ClassicAssert.AreSame( resolver.TryResolve<IAsSingletonSampleDependency>(),
 				resolver.TryResolve<IAsSingletonSampleDependency>() );
 
 			//Check that thread singletons are resolved as such
@@ -185,7 +185,7 @@ namespace LVD.Stakhanovise.NET.Tests
 					IAsThreadSingletonSampleDependency dep = resolver
 					   .TryResolve<IAsThreadSingletonSampleDependency>();
 
-					Assert.AreSame( dep, resolver
+					ClassicAssert.AreSame( dep, resolver
 					   .TryResolve<IAsThreadSingletonSampleDependency>() );
 
 					threadInstances.AddOrUpdate( Thread.CurrentThread.ManagedThreadId,
@@ -202,38 +202,38 @@ namespace LVD.Stakhanovise.NET.Tests
 
 			for ( int i = 1; i < checkThreadInstances.Length; i++ )
 			{
-				Assert.AreNotSame( checkThreadInstances[ i - 1 ],
+				ClassicAssert.AreNotSame( checkThreadInstances[ i - 1 ],
 					checkThreadInstances[ i ] );
 			}
 
 			//Check that transients are resolved as such
-			Assert.AreNotSame( resolver.TryResolve<IAsTransientSampleDependency>(),
+			ClassicAssert.AreNotSame( resolver.TryResolve<IAsTransientSampleDependency>(),
 				resolver.TryResolve<IAsTransientSampleDependency>() );
 		}
 
 		private static void Assert_DependenciesCanBeResolved ( StandardDependencyResolver resolver )
 		{
-			Assert.IsTrue( resolver.CanResolve( typeof( IAsSingletonSampleDependency ) ) );
-			Assert.IsTrue( resolver.CanResolve( typeof( IAsThreadSingletonSampleDependency ) ) );
-			Assert.IsTrue( resolver.CanResolve( typeof( IAsTransientSampleDependency ) ) );
-			Assert.IsFalse( resolver.CanResolve( typeof( IDependencyNotRegisteredWithResolver ) ) );
+			ClassicAssert.IsTrue( resolver.CanResolve( typeof( IAsSingletonSampleDependency ) ) );
+			ClassicAssert.IsTrue( resolver.CanResolve( typeof( IAsThreadSingletonSampleDependency ) ) );
+			ClassicAssert.IsTrue( resolver.CanResolve( typeof( IAsTransientSampleDependency ) ) );
+			ClassicAssert.IsFalse( resolver.CanResolve( typeof( IDependencyNotRegisteredWithResolver ) ) );
 
-			Assert.IsTrue( resolver.CanResolve<IAsSingletonSampleDependency>() );
-			Assert.IsTrue( resolver.CanResolve<IAsThreadSingletonSampleDependency>() );
-			Assert.IsTrue( resolver.CanResolve<IAsTransientSampleDependency>() );
-			Assert.IsFalse( resolver.CanResolve<IDependencyNotRegisteredWithResolver>() );
+			ClassicAssert.IsTrue( resolver.CanResolve<IAsSingletonSampleDependency>() );
+			ClassicAssert.IsTrue( resolver.CanResolve<IAsThreadSingletonSampleDependency>() );
+			ClassicAssert.IsTrue( resolver.CanResolve<IAsTransientSampleDependency>() );
+			ClassicAssert.IsFalse( resolver.CanResolve<IDependencyNotRegisteredWithResolver>() );
 
-			Assert.IsInstanceOf<AsSingletonSampleDependencyImpl>( resolver.TryResolve( typeof( IAsSingletonSampleDependency ) ) );
-			Assert.IsInstanceOf<AsSingletonSampleDependencyImpl>( resolver.TryResolve<IAsSingletonSampleDependency>() );
+			ClassicAssert.IsInstanceOf<AsSingletonSampleDependencyImpl>( resolver.TryResolve( typeof( IAsSingletonSampleDependency ) ) );
+			ClassicAssert.IsInstanceOf<AsSingletonSampleDependencyImpl>( resolver.TryResolve<IAsSingletonSampleDependency>() );
 
-			Assert.IsInstanceOf<AsThreadSingletonSampleDependencyImpl>( resolver.TryResolve( typeof( IAsThreadSingletonSampleDependency ) ) );
-			Assert.IsInstanceOf<AsThreadSingletonSampleDependencyImpl>( resolver.TryResolve<IAsThreadSingletonSampleDependency>() );
+			ClassicAssert.IsInstanceOf<AsThreadSingletonSampleDependencyImpl>( resolver.TryResolve( typeof( IAsThreadSingletonSampleDependency ) ) );
+			ClassicAssert.IsInstanceOf<AsThreadSingletonSampleDependencyImpl>( resolver.TryResolve<IAsThreadSingletonSampleDependency>() );
 
-			Assert.IsInstanceOf<AsTransientSampleDependencyImpl>( resolver.TryResolve( typeof( IAsTransientSampleDependency ) ) );
-			Assert.IsInstanceOf<AsTransientSampleDependencyImpl>( resolver.TryResolve<IAsTransientSampleDependency>() );
+			ClassicAssert.IsInstanceOf<AsTransientSampleDependencyImpl>( resolver.TryResolve( typeof( IAsTransientSampleDependency ) ) );
+			ClassicAssert.IsInstanceOf<AsTransientSampleDependencyImpl>( resolver.TryResolve<IAsTransientSampleDependency>() );
 
-			Assert.IsNull( resolver.TryResolve( typeof( IDependencyNotRegisteredWithResolver ) ) );
-			Assert.IsNull( resolver.TryResolve<IDependencyNotRegisteredWithResolver>() );
+			ClassicAssert.IsNull( resolver.TryResolve( typeof( IDependencyNotRegisteredWithResolver ) ) );
+			ClassicAssert.IsNull( resolver.TryResolve<IDependencyNotRegisteredWithResolver>() );
 		}
 	}
 }

@@ -40,6 +40,7 @@ using LVD.Stakhanovise.NET.Queue;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Tests
 {
@@ -101,12 +102,12 @@ namespace LVD.Stakhanovise.NET.Tests
 				for ( int i = 0; i < expectedDequeueCount; i++ )
 				{
 					peekTask = await taskQueueInfo.PeekAsync();
-					Assert.NotNull( peekTask );
+					ClassicAssert.NotNull( peekTask );
 
 					dequeuedTaskToken = await taskQueue.DequeueAsync();
-					Assert.NotNull( dequeuedTaskToken );
+					ClassicAssert.NotNull( dequeuedTaskToken );
 
-					Assert.AreEqual( peekTask.Id, dequeuedTaskToken
+					ClassicAssert.AreEqual( peekTask.Id, dequeuedTaskToken
 						.DequeuedTask
 						.Id );
 				}
@@ -129,19 +130,19 @@ namespace LVD.Stakhanovise.NET.Tests
 				CreateTaskQueueConsumer( () => mDataSource.LastPostedAt ) )
 			{
 				peekTask = await taskQueueInfo.PeekAsync();
-				Assert.NotNull( peekTask );
+				ClassicAssert.NotNull( peekTask );
 
 				dequeuedTaskToken = await taskQueueConsumer.DequeueAsync();
-				Assert.NotNull( dequeuedTaskToken );
+				ClassicAssert.NotNull( dequeuedTaskToken );
 
 				rePeekTask = await taskQueueInfo.PeekAsync();
-				Assert.NotNull( rePeekTask );
+				ClassicAssert.NotNull( rePeekTask );
 
 				//Removing a new element from the queue 
 				//  occurs at the beginning of the queue,
 				//  so peeking must yield a different result
 				//  than before dequeue-ing
-				Assert.AreNotEqual( rePeekTask.Id,
+				ClassicAssert.AreNotEqual( rePeekTask.Id,
 					peekTask.Id );
 			}
 		}
@@ -166,19 +167,19 @@ namespace LVD.Stakhanovise.NET.Tests
 				.AddTicks( futureTicks++ ) );
 
 			peekTask = await taskQueueInfo.PeekAsync();
-			Assert.NotNull( peekTask );
+			ClassicAssert.NotNull( peekTask );
 
 			await taskQueueProducer.EnqueueAsync( payload: new SampleTaskPayload( 100 ),
 				source: nameof( Test_EnqueueDoesNotChangePeekResult_SingleConsumer ),
 				priority: 0 );
 
 			rePeekTask = await taskQueueInfo.PeekAsync();
-			Assert.NotNull( rePeekTask );
+			ClassicAssert.NotNull( rePeekTask );
 
 			//Placing a new element in a queue occurs at its end, 
 			//  so peeking must not be affected 
 			//  if no other operation occurs
-			Assert.AreEqual( peekTask.Id,
+			ClassicAssert.AreEqual( peekTask.Id,
 				rePeekTask.Id );
 		}
 
@@ -204,7 +205,7 @@ namespace LVD.Stakhanovise.NET.Tests
 				=> await taskQueueInfo.ComputeMetricsAsync() ) )
 			{
 				await taskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
-				Assert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
+				ClassicAssert.IsTrue( taskQueueConsumer.IsReceivingNewTaskUpdates );
 
 				//Capture previous metrics
 				await diff.CaptureInitialMetricsAsync();

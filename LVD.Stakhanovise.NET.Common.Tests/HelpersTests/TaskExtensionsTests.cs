@@ -32,6 +32,7 @@
 using Bogus;
 using LVD.Stakhanovise.NET.Helpers;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,8 +54,8 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 				return expectedResult;
 			} ).WithCleanup( prev => cleanupCalled = true );
 
-			Assert.AreEqual( expectedResult, result );
-			Assert.IsTrue( cleanupCalled );
+			ClassicAssert.AreEqual( expectedResult, result );
+			ClassicAssert.IsTrue( cleanupCalled );
 		}
 
 		[Test]
@@ -67,7 +68,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 				.Run( () => faker.Random.Int() )
 				.WithCleanup( prev => cleanupCalled = true ) );
 
-			Assert.IsTrue( cleanupCalled );
+			ClassicAssert.IsTrue( cleanupCalled );
 		}
 
 		[Test]
@@ -88,7 +89,7 @@ namespace LVD.Stakhanovise.NET.Common.Tests.HelpersTests
 				 }, token )
 				.WithCleanup( prev => cleanupCalled = true ) );
 
-			Assert.IsTrue( cleanupCalled );
+			ClassicAssert.IsTrue( cleanupCalled );
 		}
 	}
 }

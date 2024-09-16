@@ -170,6 +170,8 @@ namespace LVD.Stakhanovise.NET.Executors
 
 				//If we have any injectable properties, 
 				//  attempt to resolve values and inject them accordingly
+				//TODO: this should probably removed - build up should (if not already)
+				//	be handled by the dependency resolver
 				if ( mMessageExecutorInjectableProperties.TryGetValue( executorType, out injectableProperties ) )
 				{
 					foreach ( PropertyInfo prop in injectableProperties )

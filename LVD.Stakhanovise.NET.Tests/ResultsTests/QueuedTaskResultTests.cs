@@ -33,6 +33,7 @@ using Bogus;
 using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Tests.ResultsTests
@@ -52,13 +53,13 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 
 			QueuedTaskResult result = new QueuedTaskResult( task );
 
-			Assert.AreEqual( task.Id, result.Id );
-			Assert.AreEqual( task.Type, result.Type );
-			Assert.AreSame( task.Payload, result.Payload );
-			Assert.AreEqual( task.Source, result.Source );
-			Assert.AreEqual( task.PostedAtTs, result.PostedAtTs );
-			Assert.AreEqual( 0, result.ProcessingTimeMilliseconds );
-			Assert.AreEqual( QueuedTaskStatus.Unprocessed, result.Status );
+			ClassicAssert.AreEqual( task.Id, result.Id );
+			ClassicAssert.AreEqual( task.Type, result.Type );
+			ClassicAssert.AreSame( task.Payload, result.Payload );
+			ClassicAssert.AreEqual( task.Source, result.Source );
+			ClassicAssert.AreEqual( task.PostedAtTs, result.PostedAtTs );
+			ClassicAssert.AreEqual( 0, result.ProcessingTimeMilliseconds );
+			ClassicAssert.AreEqual( QueuedTaskStatus.Unprocessed, result.Status );
 		}
 
 		[Test]
@@ -84,13 +85,13 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 
 			QueuedTaskProduceInfo repostWithInfo = result.UdpateFromExecutionResult( successful );
 
-			Assert.Null( repostWithInfo );
-			Assert.IsNull( result.LastError );
-			Assert.AreEqual( QueuedTaskStatus.Processed, result.Status );
-			Assert.AreEqual( successful.ProcessingTimeMilliseconds, result.ProcessingTimeMilliseconds );
-			Assert.GreaterOrEqual( result.ProcessingFinalizedAtTs, now );
-			Assert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
-			Assert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
+			ClassicAssert.Null( repostWithInfo );
+			ClassicAssert.IsNull( result.LastError );
+			ClassicAssert.AreEqual( QueuedTaskStatus.Processed, result.Status );
+			ClassicAssert.AreEqual( successful.ProcessingTimeMilliseconds, result.ProcessingTimeMilliseconds );
+			ClassicAssert.GreaterOrEqual( result.ProcessingFinalizedAtTs, now );
+			ClassicAssert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
+			ClassicAssert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
 		}
 
 		[Test]
@@ -116,13 +117,13 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 
 			QueuedTaskProduceInfo repostWithInfo = result.UdpateFromExecutionResult( cancelled );
 
-			Assert.Null( repostWithInfo );
-			Assert.IsNull( result.LastError );
-			Assert.AreEqual( QueuedTaskStatus.Cancelled, result.Status );
-			Assert.AreEqual( 0, result.ProcessingTimeMilliseconds );
-			Assert.GreaterOrEqual( result.ProcessingFinalizedAtTs, now );
-			Assert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
-			Assert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
+			ClassicAssert.Null( repostWithInfo );
+			ClassicAssert.IsNull( result.LastError );
+			ClassicAssert.AreEqual( QueuedTaskStatus.Cancelled, result.Status );
+			ClassicAssert.AreEqual( 0, result.ProcessingTimeMilliseconds );
+			ClassicAssert.GreaterOrEqual( result.ProcessingFinalizedAtTs, now );
+			ClassicAssert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
+			ClassicAssert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
 		}
 
 		[Test]
@@ -159,37 +160,37 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 			for ( int i = 1; i <= faultErrorThresholdCount; i++ )
 			{
 				repostWithInfo = result.UdpateFromExecutionResult( failedWithError );
-				Assert.NotNull( repostWithInfo );
+				ClassicAssert.NotNull( repostWithInfo );
 
-				Assert.AreEqual( QueuedTaskStatus.Error, result.Status );
-				Assert.AreEqual( 0, result.ProcessingTimeMilliseconds );
-				Assert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
-				Assert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
-				Assert.AreEqual( failedWithErrorInfo.Error, result.LastError );
-				Assert.AreEqual( i, result.ErrorCount );
+				ClassicAssert.AreEqual( QueuedTaskStatus.Error, result.Status );
+				ClassicAssert.AreEqual( 0, result.ProcessingTimeMilliseconds );
+				ClassicAssert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
+				ClassicAssert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
+				ClassicAssert.AreEqual( failedWithErrorInfo.Error, result.LastError );
+				ClassicAssert.AreEqual( i, result.ErrorCount );
 			}
 
 			//Antoher failure -> Faulted
 			repostWithInfo = result.UdpateFromExecutionResult( failedWithError );
-			Assert.NotNull( repostWithInfo );
+			ClassicAssert.NotNull( repostWithInfo );
 
-			Assert.AreEqual( QueuedTaskStatus.Faulted, result.Status );
-			Assert.AreEqual( 0, result.ProcessingTimeMilliseconds );
-			Assert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
-			Assert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
-			Assert.AreEqual( failedWithErrorInfo.Error, result.LastError );
-			Assert.AreEqual( faultErrorThresholdCount + 1, result.ErrorCount );
+			ClassicAssert.AreEqual( QueuedTaskStatus.Faulted, result.Status );
+			ClassicAssert.AreEqual( 0, result.ProcessingTimeMilliseconds );
+			ClassicAssert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
+			ClassicAssert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
+			ClassicAssert.AreEqual( failedWithErrorInfo.Error, result.LastError );
+			ClassicAssert.AreEqual( faultErrorThresholdCount + 1, result.ErrorCount );
 
 			//Antoher failure after that -> Fataled
 			repostWithInfo = result.UdpateFromExecutionResult( failedWithError );
-			Assert.Null( repostWithInfo );
+			ClassicAssert.Null( repostWithInfo );
 
-			Assert.AreEqual( QueuedTaskStatus.Fatal, result.Status );
-			Assert.AreEqual( 0, result.ProcessingTimeMilliseconds );
-			Assert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
-			Assert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
-			Assert.AreEqual( failedWithErrorInfo.Error, result.LastError );
-			Assert.AreEqual( faultErrorThresholdCount + 2, result.ErrorCount );	
+			ClassicAssert.AreEqual( QueuedTaskStatus.Fatal, result.Status );
+			ClassicAssert.AreEqual( 0, result.ProcessingTimeMilliseconds );
+			ClassicAssert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
+			ClassicAssert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
+			ClassicAssert.AreEqual( failedWithErrorInfo.Error, result.LastError );
+			ClassicAssert.AreEqual( faultErrorThresholdCount + 2, result.ErrorCount );	
 		}
 
 		[Test]
@@ -225,15 +226,15 @@ namespace LVD.Stakhanovise.NET.Tests.ResultsTests
 				if ( i > 1 )
 					Assert.Throws<InvalidOperationException>( () => result.UdpateFromExecutionResult( failedWithError ) );
 				else
-					Assert.IsNull( result.UdpateFromExecutionResult( failedWithError ) );
+					ClassicAssert.IsNull( result.UdpateFromExecutionResult( failedWithError ) );
 
-				Assert.AreEqual( 1, result.ErrorCount );
-				Assert.AreEqual( failedWithErrorInfo.Error, result.LastError );
-				Assert.IsFalse( result.LastErrorIsRecoverable );
-				Assert.AreEqual( QueuedTaskStatus.Fatal, result.Status );
-				Assert.AreEqual( 0, result.ProcessingTimeMilliseconds );
-				Assert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
-				Assert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
+				ClassicAssert.AreEqual( 1, result.ErrorCount );
+				ClassicAssert.AreEqual( failedWithErrorInfo.Error, result.LastError );
+				ClassicAssert.IsFalse( result.LastErrorIsRecoverable );
+				ClassicAssert.AreEqual( QueuedTaskStatus.Fatal, result.Status );
+				ClassicAssert.AreEqual( 0, result.ProcessingTimeMilliseconds );
+				ClassicAssert.GreaterOrEqual( result.FirstProcessingAttemptedAtTs, now );
+				ClassicAssert.GreaterOrEqual( result.LastProcessingAttemptedAtTs, now );
 			}
 		}
 

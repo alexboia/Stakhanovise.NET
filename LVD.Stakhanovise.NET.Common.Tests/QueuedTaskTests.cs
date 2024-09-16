@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using LVD.Stakhanovise.NET.Model;
+using NUnit.Framework.Legacy;
 
 namespace LVD.Stakhanovise.NET.Common.Tests
 {
@@ -17,8 +18,8 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			QueuedTask t1 = new QueuedTask( id );
 			QueuedTask t2 = new QueuedTask( id );
 
-			Assert.AreEqual( t1, t2 );
-			Assert.IsTrue( t1.Equals( t2 ) );
+			ClassicAssert.AreEqual( t1, t2 );
+			ClassicAssert.IsTrue( t1.Equals( t2 ) );
 		}
 
 		[Test]
@@ -29,8 +30,8 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			QueuedTask t1 = new QueuedTask( id );
 			QueuedTask t2 = t1;
 
-			Assert.AreEqual( t1, t2 );
-			Assert.IsTrue( t1.Equals( t2 ) );
+			ClassicAssert.AreEqual( t1, t2 );
+			ClassicAssert.IsTrue( t1.Equals( t2 ) );
 		}
 
 		[Test]
@@ -39,8 +40,8 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			QueuedTask t1 = new QueuedTask( Guid.NewGuid() );
 			QueuedTask t2 = new QueuedTask( Guid.NewGuid() );
 
-			Assert.AreNotEqual( t1, t2 );
-			Assert.IsFalse( t1.Equals( t2 ) );
+			ClassicAssert.AreNotEqual( t1, t2 );
+			ClassicAssert.IsFalse( t1.Equals( t2 ) );
 		}
 
 		[Test]
@@ -49,8 +50,8 @@ namespace LVD.Stakhanovise.NET.Common.Tests
 			QueuedTask t1 = new QueuedTask();
 			QueuedTask t2 = new QueuedTask();
 
-			Assert.AreNotEqual( t1, t2 );
-			Assert.IsFalse( t1.Equals( t2 ) );
+			ClassicAssert.AreNotEqual( t1, t2 );
+			ClassicAssert.IsFalse( t1.Equals( t2 ) );
 		}
 	}
 }

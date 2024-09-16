@@ -1,5 +1,6 @@
 ﻿using LVD.Stakhanovise.NET.Queue;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -21,11 +22,11 @@ namespace LVD.Stakhanovise.NET.Tests.Asserts
 
 		public void Check( IEnumerable<IQueuedTaskToken> taskTokenList )
 		{
-			Assert.AreEqual( mExpectedCount,
+			ClassicAssert.AreEqual( mExpectedCount,
 				taskTokenList.Count() );
 
 			foreach ( IQueuedTaskToken token in taskTokenList )
-				Assert.AreEqual( 1, taskTokenList.Count( t => t.DequeuedTask.Id == token.DequeuedTask.Id ) );
+				ClassicAssert.AreEqual( 1, taskTokenList.Count( t => t.DequeuedTask.Id == token.DequeuedTask.Id ) );
 		}
 	}
 }

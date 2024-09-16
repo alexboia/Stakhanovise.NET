@@ -1,6 +1,7 @@
 ﻿using LVD.Stakhanovise.NET.Setup;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
@@ -21,7 +22,7 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 			IStakhanoviseSetup chainedSetup =
 				targetSetup.WithLog4NetLogging();
 
-			Assert.AreSame( targetSetup,
+			ClassicAssert.AreSame( targetSetup,
 				chainedSetup );
 
 			setupMock.VerifyAll();

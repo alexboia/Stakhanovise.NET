@@ -34,6 +34,7 @@ using LVD.Stakhanovise.NET.Tests.Executors;
 using LVD.Stakhanovise.NET.Tests.Payloads;
 using LVD.Stakhanovise.NET.Tests.Support;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -54,16 +55,16 @@ namespace LVD.Stakhanovise.NET.Tests
 			taskExecutorRegistry.ScanAssemblies( GetType()
 				.Assembly );
 
-			Assert.NotNull( taskExecutorRegistry
+			ClassicAssert.NotNull( taskExecutorRegistry
 				.DetectedPayloadTypes );
 
-			Assert.AreEqual( ExpectedTestPayloadCount, taskExecutorRegistry
+			ClassicAssert.AreEqual( ExpectedTestPayloadCount, taskExecutorRegistry
 				.DetectedPayloadTypes
 				.Count() );
 
-			Assert.IsTrue( taskExecutorRegistry.DetectedPayloadTypes
+			ClassicAssert.IsTrue( taskExecutorRegistry.DetectedPayloadTypes
 				.Any( p => p.Equals( typeof( AnotherSampleTaskPayload ) ) ) );
-			Assert.IsTrue( taskExecutorRegistry.DetectedPayloadTypes
+			ClassicAssert.IsTrue( taskExecutorRegistry.DetectedPayloadTypes
 				.Any( p => p.Equals( typeof( SampleTaskPayload ) ) ) );
 		}
 
@@ -82,12 +83,12 @@ namespace LVD.Stakhanovise.NET.Tests
 			ITaskExecutor<SampleTaskPayload> genericTaskExecutor = taskExecutorRegistry
 				.ResolveExecutor<SampleTaskPayload>();
 
-			Assert.NotNull( nonGenericTaskExecutor );
-			Assert.AreEqual( typeof( SampleTaskPayloadExecutor ),
+			ClassicAssert.NotNull( nonGenericTaskExecutor );
+			ClassicAssert.AreEqual( typeof( SampleTaskPayloadExecutor ),
 				nonGenericTaskExecutor.GetType() );
 
-			Assert.NotNull( genericTaskExecutor );
-			Assert.AreEqual( typeof( SampleTaskPayloadExecutor ),
+			ClassicAssert.NotNull( genericTaskExecutor );
+			ClassicAssert.AreEqual( typeof( SampleTaskPayloadExecutor ),
 				genericTaskExecutor.GetType() );
 		}
 
@@ -106,18 +107,18 @@ namespace LVD.Stakhanovise.NET.Tests
 			ITaskExecutor<AnotherSampleTaskPayload> genericTaskExecutor = taskExecutorRegistry
 				.ResolveExecutor<AnotherSampleTaskPayload>();
 
-			Assert.NotNull( nonGenericTaskExecutor );
-			Assert.AreEqual( typeof( AnotherSampleTaskPayloadExecutor ),
+			ClassicAssert.NotNull( nonGenericTaskExecutor );
+			ClassicAssert.AreEqual( typeof( AnotherSampleTaskPayloadExecutor ),
 				nonGenericTaskExecutor.GetType() );
 
-			Assert.NotNull( genericTaskExecutor );
-			Assert.AreEqual( typeof( AnotherSampleTaskPayloadExecutor ),
+			ClassicAssert.NotNull( genericTaskExecutor );
+			ClassicAssert.AreEqual( typeof( AnotherSampleTaskPayloadExecutor ),
 				genericTaskExecutor.GetType() );
 
 			AnotherSampleTaskPayloadExecutor asConcreteExecutor =
 				genericTaskExecutor as AnotherSampleTaskPayloadExecutor;
 
-			Assert.NotNull( asConcreteExecutor.SampleExecutorDependency );
+			ClassicAssert.NotNull( asConcreteExecutor.SampleExecutorDependency );
 		}
 
 		[Test]
@@ -135,8 +136,8 @@ namespace LVD.Stakhanovise.NET.Tests
 			ITaskExecutor<SampleNoExecutorPayload> genericTaskExecutor = taskExecutorRegistry
 				.ResolveExecutor<SampleNoExecutorPayload>();
 
-			Assert.IsNull( nonGenericTaskExecutor );
-			Assert.IsNull( genericTaskExecutor );
+			ClassicAssert.IsNull( nonGenericTaskExecutor );
+			ClassicAssert.IsNull( genericTaskExecutor );
 		}
 
 		private ITaskExecutorRegistry CreateTaskExecutorRegistry ()

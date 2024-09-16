@@ -3,6 +3,7 @@ using log4net;
 using LVD.Stakhanovise.NET.Logging.Tests.Harness;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System;
 
 namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
@@ -400,9 +401,9 @@ namespace LVD.Stakhanovise.NET.Logging.Log4NetLogging.Tests
 				new Log4NetLogger( targetLoggerMock.Object );
 
 			if ( isLevelEnabled )
-				Assert.IsTrue( stakhanoviseLogger.IsEnabled( logLevel ) );
+				ClassicAssert.IsTrue( stakhanoviseLogger.IsEnabled( logLevel ) );
 			else
-				Assert.IsFalse( stakhanoviseLogger.IsEnabled( logLevel ) );
+				ClassicAssert.IsFalse( stakhanoviseLogger.IsEnabled( logLevel ) );
 		}
 
 		private Mock<ILog> CreateLog4NetLoggerMock( TargetLoggerMockLoggerSetupProperties props )
