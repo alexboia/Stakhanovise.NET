@@ -15,7 +15,7 @@ function Publish-Project {
 		[string]$sourceUrl
 	)
 
-	Write-Host ("Publishing project " + $projectName + ", version = " + $apiKey + "...") -ForegroundColor Yellow
+	Write-Host ("Publishing project " + $projectName + ", version = " + $packageVersion + ", to " + $sourceUrl + "...") -ForegroundColor Yellow
 
 	cd ./$projectName
 	dotnet clean -c $configuration
