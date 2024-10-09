@@ -7,9 +7,8 @@
 	<tags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</tags>
 
 	<releaseNotes>
-		- Enabled executor constructor injection;
-		- Updated setup db scripts to avoid creating duplicate indexes and duplicate constraints;
-		- Added option to enable npgsql legacy timestamp behaviour (see https://www.npgsql.org/doc/types/datetime.html).
+		- Result queue backup
+		- Bug fixes.
 	</releaseNotes>
 
 	<packages>

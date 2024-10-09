@@ -9,16 +9,15 @@
     <Authors>Alexandru BOIA</Authors>
     <Description>Job processing queue over an existing PostgreSQL instance, for .NET Standard 2.1. Main Interfaces package</Description>
     <Company>S.C. MyClar Software Solutions S.R.L.</Company>
-    <Copyright>Copyright (c) 2020-2023, Alexandru Boia</Copyright>
+    <Copyright>Copyright (c) 2020-2024, Alexandru Boia</Copyright>
     <PackageProjectUrl>https://github.com/alexboia/Stakhanovise.NET</PackageProjectUrl>
     <PackageIcon>logo.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/alexboia/Stakhanovise.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</PackageTags>
-    <PackageReleaseNotes>- Enabled executor constructor injection;
-		- Updated setup db scripts to avoid creating duplicate indexes and duplicate constraints;
-		- Added option to enable npgsql legacy timestamp behaviour (see https://www.npgsql.org/doc/types/datetime.html).</PackageReleaseNotes>
+    <PackageReleaseNotes>- Result queue backup
+		- Bug fixes.</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>

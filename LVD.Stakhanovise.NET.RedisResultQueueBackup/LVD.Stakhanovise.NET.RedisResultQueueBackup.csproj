@@ -2,7 +2,29 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
+		<Company>S.C. MyClar Software Solutions S.R.L.</Company>
+		<Authors>Alexandru BOIA</Authors>
+		<Version>1.0.6</Version>
+		<Copyright>Copyright (c) 2020-2024, Alexandru Boia</Copyright>
+		<PackageProjectUrl>https://github.com/alexboia/Stakhanovise.NET</PackageProjectUrl>
+		<PackageIcon>logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<RepositoryUrl>https://github.com/alexboia/Stakhanovise.NET</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>csharp;queue;dotnet;postgresql;npgsql;dotnet-core;queue-workers</PackageTags>
+		<PackageReleaseNotes>Initial release</PackageReleaseNotes>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Include="..\logo.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	  <None Include="README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="StackExchange.Redis" Version="2.8.16" />
