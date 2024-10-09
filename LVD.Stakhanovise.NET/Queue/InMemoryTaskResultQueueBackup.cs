@@ -11,6 +11,11 @@ namespace LVD.Stakhanovise.NET.Queue
 		private readonly ConcurrentDictionary<Guid, IQueuedTaskResult> mStorage
 			= new ConcurrentDictionary<Guid, IQueuedTaskResult>();
 
+		public Task InitAsync()
+		{
+			return Task.CompletedTask;
+		}
+
 		public Task PutAsync( IQueuedTaskResult result )
 		{
 			if ( result == null )

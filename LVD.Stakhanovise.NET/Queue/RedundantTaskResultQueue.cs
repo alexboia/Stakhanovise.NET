@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
-	public class RedundantTaskResultQueue : ITaskResultQueue
+	public class RedundantTaskResultQueue : ITaskResultQueue, IDisposable
 	{
 		public event EventHandler<TaskResultProcessedEventArgs> TaskResultProcessed;
 
@@ -15,6 +15,8 @@ namespace LVD.Stakhanovise.NET.Queue
 		private readonly ITaskResultQueueBackup mResultQueueBackup;
 
 		private readonly IStakhanoviseLogger mLogger;
+
+		private bool mIsDisposed;
 
 		public RedundantTaskResultQueue( ITaskResultQueue mainResultQueue,
 			ITaskResultQueueBackup resultQueueBackup,
@@ -28,9 +30,22 @@ namespace LVD.Stakhanovise.NET.Queue
 				?? throw new ArgumentNullException( nameof( logger ) );
 		}
 
+		private void CheckNotDisposedOrThrow()
+		{
+			if (mIsDisposed)
+			{
+				throw new ObjectDisposedException(
+					nameof( RedundantTaskResultQueue ),
+					"Cannot reuse a disposed redunant task result queue"
+				);
+			}
+		}
+
 		public async Task PostResultAsync( IQueuedTaskResult result )
 		{
-			if ( result == null )
+			CheckNotDisposedOrThrow();
+
+			if (result == null)
 				throw new ArgumentNullException( nameof( result ) );
 
 			await StoreToBackupAsync( result );
@@ -43,7 +58,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				await mResultQueueBackup.PutAsync( result );
 			}
-			catch ( Exception exc )
+			catch (Exception exc)
 			{
 				mLogger.Error( "Failed to store token result to backup", exc );
 			}
@@ -56,16 +71,19 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task StartAsync()
 		{
+			CheckNotDisposedOrThrow();
+
 			try
 			{
-				if ( !mMainResultQueue.IsRunning )
+				if (!mMainResultQueue.IsRunning)
 				{
+					await mResultQueueBackup.InitAsync();
 					mMainResultQueue.TaskResultProcessed += OnTaskResultProcessed;
 					await mMainResultQueue.StartAsync();
 					await RestoreBackedupItemsAsync();
 				}
 			}
-			catch ( Exception )
+			catch (Exception)
 			{
 				await StopAsync();
 				throw;
@@ -74,10 +92,13 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		private void OnTaskResultProcessed( object sender, TaskResultProcessedEventArgs e )
 		{
+			if (mIsDisposed)
+				return;
+
 			RemoveFromBackup( e.Result );
 
 			EventHandler<TaskResultProcessedEventArgs> handler = TaskResultProcessed;
-			if ( handler != null )
+			if (handler != null)
 				handler( this, new TaskResultProcessedEventArgs( e.Result ) );
 		}
 
@@ -93,7 +114,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			{
 				await mResultQueueBackup.RemoveAsync( result );
 			}
-			catch ( Exception exc )
+			catch (Exception exc)
 			{
 				mLogger.Error( "Error removing token result from back-up", exc );
 			}
@@ -104,7 +125,7 @@ namespace LVD.Stakhanovise.NET.Queue
 			IEnumerable<IQueuedTaskResult> backedupItems =
 				await RetrieveBackedUpItemsAsync();
 
-			foreach ( IQueuedTaskResult backedupItem in backedupItems )
+			foreach (IQueuedTaskResult backedupItem in backedupItems)
 				await PostToMainQueueAsync( backedupItem );
 		}
 
@@ -116,14 +137,46 @@ namespace LVD.Stakhanovise.NET.Queue
 
 		public async Task StopAsync()
 		{
-			if ( mMainResultQueue.IsRunning )
+			CheckNotDisposedOrThrow();
+
+			if (mMainResultQueue.IsRunning)
 			{
 				mMainResultQueue.TaskResultProcessed -= OnTaskResultProcessed;
 				await mMainResultQueue.StopAsync();
 			}
 		}
 
-		public bool IsRunning =>
-			mMainResultQueue.IsRunning;
+		protected void Dispose( bool disposing )
+		{
+			if (!mIsDisposed)
+			{
+				if (disposing)
+				{
+					StopAsync().Wait();
+					if (mMainResultQueue is IDisposable)
+						((IDisposable) mMainResultQueue).Dispose();
+
+					if (mResultQueueBackup is IDisposable)
+						((IDisposable) (mResultQueueBackup)).Dispose();
+				}
+
+				mIsDisposed = true;
+			}
+		}
+
+		public void Dispose()
+		{
+			Dispose( true );
+			GC.SuppressFinalize( this );
+		}
+
+		public bool IsRunning
+		{
+			get
+			{
+				CheckNotDisposedOrThrow();
+				return mMainResultQueue.IsRunning;
+			}
+		}
 	}
 }

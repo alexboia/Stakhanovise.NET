@@ -1,6 +1,5 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using LVD.Stakhanovise.NET.Tests.Support;
-using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using System;
 using System.Threading.Tasks;

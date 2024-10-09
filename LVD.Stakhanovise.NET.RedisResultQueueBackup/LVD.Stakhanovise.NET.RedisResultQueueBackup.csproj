@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="StackExchange.Redis" Version="2.8.12" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\LVD.Stakhanovise.NET.Interfaces\LVD.Stakhanovise.NET.Interfaces.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\LVD.Stakhanovise.NET.Interfaces\LVD.Stakhanovise.NET.Interfaces.csproj" />
+	</ItemGroup>
 
 </Project>

@@ -92,6 +92,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Manage
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LVD.Stakhanovise.NET.Management.WebConsole.ServiceModel", "LVD.Stakhanovise.NET.Management.WebConsole.ServiceModel\LVD.Stakhanovise.NET.Management.WebConsole.ServiceModel.csproj", "{7551ACFE-C688-4A06-BBAA-838102DD0DAA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LVD.Stakhanovise.NET.RedisResultQueueBackup.Tests", "LVD.Stakhanovise.NET.RedisResultQueueBackup.Tests\LVD.Stakhanovise.NET.RedisResultQueueBackup.Tests.csproj", "{B53D7923-DEDE-4E7A-92C1-074A775151A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -212,6 +214,10 @@ Global
 		{7551ACFE-C688-4A06-BBAA-838102DD0DAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7551ACFE-C688-4A06-BBAA-838102DD0DAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7551ACFE-C688-4A06-BBAA-838102DD0DAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B53D7923-DEDE-4E7A-92C1-074A775151A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B53D7923-DEDE-4E7A-92C1-074A775151A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B53D7923-DEDE-4E7A-92C1-074A775151A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B53D7923-DEDE-4E7A-92C1-074A775151A2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -244,6 +250,7 @@ Global
 		{C19D2D98-54EE-4782-A4B5-8D5108351167} = {39540FB7-EEA8-42F4-BF9C-CE32F5D3751B}
 		{BE2E3E47-9F89-46B3-88CE-AD7128238B9E} = {39540FB7-EEA8-42F4-BF9C-CE32F5D3751B}
 		{7551ACFE-C688-4A06-BBAA-838102DD0DAA} = {39540FB7-EEA8-42F4-BF9C-CE32F5D3751B}
+		{B53D7923-DEDE-4E7A-92C1-074A775151A2} = {1F5D8110-B27C-44B4-9EB5-C6BA53B9E7C8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7257DD3E-0CDA-4722-A635-469CB9494445}

@@ -47,7 +47,7 @@ namespace LVD.Stakhanovise.NET.Tests
 		/// <summary>
 		/// Thread.Sleep that we use to simulate timeouts is rather inaccurate
 		/// </summary>
-		private const double RelativeDurationDelta = 0.15;
+		private const double RelativeDurationDelta = 0.25;
 
 		[Test]
 		public void Test_CanNotifyTaskCompleted()

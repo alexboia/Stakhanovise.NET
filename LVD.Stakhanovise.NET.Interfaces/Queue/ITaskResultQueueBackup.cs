@@ -8,6 +8,8 @@ namespace LVD.Stakhanovise.NET.Queue
 {
 	public interface ITaskResultQueueBackup
 	{
+		Task InitAsync();
+		
 		Task PutAsync( IQueuedTaskResult result );
 
 		Task RemoveAsync( IQueuedTaskResult result );

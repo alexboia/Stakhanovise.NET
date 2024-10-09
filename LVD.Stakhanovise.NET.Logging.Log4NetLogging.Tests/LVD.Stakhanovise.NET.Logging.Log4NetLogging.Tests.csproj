@@ -6,7 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="log4net" Version="2.0.17" />
+		<PackageReference Include="log4net" Version="3.0.1" />
 		<PackageReference Include="Moq" Version="4.20.72" />
 		<PackageReference Include="NUnit" Version="4.2.2" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
