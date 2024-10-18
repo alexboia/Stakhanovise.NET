@@ -61,7 +61,7 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		private Type GetImplementedExecutorInterface( Type type )
 		{
-			if ( !type.IsClass || type.IsAbstract )
+			if (!type.IsClass || type.IsAbstract)
 				return null;
 
 			return type.GetInterfaces().FirstOrDefault( i => i.IsGenericType
@@ -88,17 +88,17 @@ namespace LVD.Stakhanovise.NET.Executors
 			List<IDependencyRegistration> executorRegistrations =
 				new List<IDependencyRegistration>();
 
-			foreach ( Type candidateType in executorTypes )
+			foreach (Type candidateType in executorTypes)
 			{
 				//See if the candidate type implements ITaskExecutor<> and that is a non-abstract class;
 				//  if not, skip it
 				Type implementedInterface = GetImplementedExecutorInterface( candidateType );
-				if ( implementedInterface == null )
+				if (implementedInterface == null)
 					continue;
 
 				//Fetch the generic argument - this is the payload type
 				Type payloadType = implementedInterface.GenericTypeArguments.FirstOrDefault();
-				if ( payloadType == null )
+				if (payloadType == null)
 					continue;
 
 				DependencyRegistration executorReg = DependencyRegistration
@@ -115,23 +115,25 @@ namespace LVD.Stakhanovise.NET.Executors
 				mPayloadTypes [ payloadType.FullName ] = payloadType;
 				mMessageExecutorTypes [ payloadType ] = candidateType;
 
-				if ( injectableProperties != null && injectableProperties.Length > 0 )
+				if (injectableProperties != null && injectableProperties.Length > 0)
 					mMessageExecutorInjectableProperties [ candidateType ] = injectableProperties;
+
+				executorRegistrations.Add( executorReg );
 			}
 
-			if ( executorRegistrations.Any() )
+			if (executorRegistrations.Any())
 				mDependencyResolver.Load( executorRegistrations );
 		}
 
 		public void LoadDependencies( IDictionary<Type, object> deps )
 		{
-			if ( deps == null )
+			if (deps == null)
 				throw new ArgumentNullException( nameof( deps ) );
 
 			List<IDependencyRegistration> regs =
 				new List<IDependencyRegistration>();
 
-			foreach ( KeyValuePair<Type, object> depPair in deps )
+			foreach (KeyValuePair<Type, object> depPair in deps)
 				regs.Add( DependencyRegistration.BindToInstance( depPair.Key, depPair.Value ) );
 
 			mDependencyResolver.Load( regs );
@@ -139,11 +141,11 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		public void ScanAssemblies( params Assembly [] assemblies )
 		{
-			if ( assemblies != null && assemblies.Length > 0 )
+			if (assemblies != null && assemblies.Length > 0)
 			{
-				foreach ( Assembly assembly in assemblies )
+				foreach (Assembly assembly in assemblies)
 				{
-					if ( assembly != null )
+					if (assembly != null)
 						ScanAssembly( assembly );
 				}
 			}
@@ -162,19 +164,19 @@ namespace LVD.Stakhanovise.NET.Executors
 			PropertyInfo [] injectableProperties;
 			ITaskExecutor executorInstance;
 
-			if ( mMessageExecutorTypes.TryGetValue( payloadType, out executorType ) )
+			if (mMessageExecutorTypes.TryGetValue( payloadType, out executorType ))
 			{
 				//Create executor instance, if a type is found for the payload type
-				executorInstance = ( ITaskExecutor ) mDependencyResolver
+				executorInstance = (ITaskExecutor) mDependencyResolver
 					.TryResolve( executorType );
 
 				//If we have any injectable properties, 
 				//  attempt to resolve values and inject them accordingly
 				//TODO: this should probably removed - build up should (if not already)
 				//	be handled by the dependency resolver
-				if ( mMessageExecutorInjectableProperties.TryGetValue( executorType, out injectableProperties ) )
+				if (mMessageExecutorInjectableProperties.TryGetValue( executorType, out injectableProperties ))
 				{
-					foreach ( PropertyInfo prop in injectableProperties )
+					foreach (PropertyInfo prop in injectableProperties)
 						prop.SetValue( executorInstance, mDependencyResolver.TryResolve( prop.PropertyType ) );
 				}
 			}
@@ -187,11 +189,11 @@ namespace LVD.Stakhanovise.NET.Executors
 
 		public Type ResolvePayloadType( string typeName )
 		{
-			if ( string.IsNullOrEmpty( typeName ) )
+			if (string.IsNullOrEmpty( typeName ))
 				return null;
 
 			Type type;
-			if ( !mPayloadTypes.TryGetValue( typeName, out type ) )
+			if (!mPayloadTypes.TryGetValue( typeName, out type ))
 				type = null;
 
 			return type;
