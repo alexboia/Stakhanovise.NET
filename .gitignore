@@ -14,3 +14,4 @@ __pycache__
 publish-all-core.ps1
 publish-add-ons.ps1
 unpublish-all.ps1
+node_modules

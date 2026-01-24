@@ -1,0 +1,57 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "DbMap",
+  "scopeName": "source.dbmap",
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#map"},
+    {"include": "#placeholders"},
+    {"include": "#punctuation"}
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.dbmap",
+          "match": "--.*$"
+        }
+      ]
+    },
+    "map": {
+      "patterns": [
+        {
+          "name": "keyword.control.dbmap",
+          "match": "\\bMAP\\b"
+        },
+        {
+          "name": "variable.other.key.dbmap",
+          "match": "(?<=MAP:)\\s*[A-Za-z_][A-Za-z0-9_]*"
+        },
+        {
+          "name": "string.unquoted.value.dbmap",
+          "match": "(?<=MAP:[^=]+=).*$"
+        }
+      ]
+    },
+    "placeholders": {
+      "patterns": [
+        {
+          "name": "variable.other.placeholder.dbmap",
+          "match": "\\$[A-Za-z0-9_]+\\$"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.key-value.dbmap",
+          "match": "="
+        },
+        {
+          "name": "punctuation.separator.directive.dbmap",
+          "match": ":"
+        }
+      ]
+    }
+  }
+}

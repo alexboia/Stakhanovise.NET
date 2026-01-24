@@ -1,0 +1,10 @@
+{
+  "name": "lvd-stakhanovise-dbcompiler-langserver-root",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "compile": "npm run compile -w client && npm run compile -w server",
+    "watch": "npm run watch -w client && npm run watch -w server"
+  }
+}

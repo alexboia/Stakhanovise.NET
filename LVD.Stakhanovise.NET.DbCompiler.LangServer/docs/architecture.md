@@ -1,0 +1,29 @@
+# Language Server Flow
+
+```mermaid
+flowchart TD
+  subgraph Client
+    A["VS Code editor (.dbdef/.dbmap)"]
+    B["LanguageClient (client/src/extension.ts)"]
+  end
+
+  subgraph Server
+    C["createConnection + TextDocuments.listen"]
+    D["TextDocuments collection"]
+    E["validateDocument -> parser -> diagnostics"]
+    F["Completion routing (dbdef/dbmap/placeholder)"]
+    G["Placeholder index (open dbmap + sample/)"]
+  end
+
+  A -->|edit/save| B
+  B -->|textDocument/*| C
+  C --> D
+  D -->|content change events| E
+  D -->|completion lookup| F
+  E -->|sendDiagnostics| B
+  F -->|completion items| B
+  D -->|dbmap updates| G
+  G -->|placeholder completions| F
+  B -->|workspace file changes| C
+  C -->|sample .dbmap scan| G
+```

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "DbDef",
+  "scopeName": "source.dbdef",
+  "patterns": [
+    {"include": "#comments"},
+    {"include": "#keywords"},
+    {"include": "#placeholders"},
+    {"include": "#properties"},
+    {"include": "#punctuation"}
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.dbdef",
+          "match": "--.*$"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.dbdef",
+          "match": "\\b(TBL|SEQ|FUNC|NAME|PROPS|COL|CONSTRAINT|IDX|PARAM|RET|BODY)\\b"
+        },
+        {
+          "name": "storage.type.dbdef",
+          "match": "\\b(type|direction|not_null|default|language|separator|title|description|max_value|min_value|start|increment|cache)\\b"
+        }
+      ]
+    },
+    "properties": {
+      "patterns": [
+        {
+          "name": "variable.other.property.dbdef",
+          "match": "[A-Za-z_][\\\\w]*\\\\s*(?==)"
+        },
+        {
+          "name": "constant.character.escape.dbdef",
+          "match": "'[^']*'"
+        }
+      ]
+    },
+    "placeholders": {
+      "patterns": [
+        {
+          "name": "variable.other.placeholder.dbdef",
+          "match": "\\$[A-Za-z0-9_]+\\$"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.key-value.dbdef",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.terminator.statement.dbdef",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.definition.parameters.dbdef",
+          "match": "[(){}]"
+        }
+      ]
+    }
+  }
+}
