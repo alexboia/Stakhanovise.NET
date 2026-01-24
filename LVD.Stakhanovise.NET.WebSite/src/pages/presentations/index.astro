@@ -1,0 +1,39 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
+
+const presentations = (await getCollection('presentations')).sort(
+  (a: CollectionEntry<'presentations'>, b: CollectionEntry<'presentations'>) =>
+    (b.data.featured ? 1 : 0) - (a.data.featured ? 1 : 0)
+);
+---
+
+<Layout title="Presentations | Stakhanovise.NET" description="Briefings and overview decks for teams adopting Stakhanovise.NET.">
+  <section class="space-y-4">
+    <p class="text-xs uppercase tracking-[0.18em] text-muted">Presentations</p>
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h1 class="text-3xl font-black text-ink" style="font-family: var(--font-display);">Brief the brigade</h1>
+        <p class="text-sm text-muted">Markdown-driven one-pagers for stakeholders.</p>
+      </div>
+      <a href="/" class="rounded-md border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted transition hover:border-accent hover:text-accent">Home</a>
+    </div>
+  </section>
+
+  <section class="grid gap-4 md:grid-cols-2">
+    {presentations.map((item: CollectionEntry<'presentations'>) => (
+      <a
+        href={`/presentations/${item.slug}`}
+        class="group flex flex-col gap-3 rounded-xl border border-border bg-surface/80 p-5 shadow-[0_16px_45px_rgba(0,0,0,0.3)] transition hover:border-accent"
+      >
+        <div class="flex items-center justify-between text-xs uppercase tracking-[0.14em] text-muted">
+          <span>{item.data.audience ?? 'Stakeholders'}</span>
+          {item.data.updated && <span class="rounded-sm bg-black/40 px-2 py-1 text-ink">Updated {item.data.updated}</span>}
+        </div>
+        <h2 class="text-xl font-black text-ink group-hover:text-accent" style="font-family: var(--font-display);">{item.data.title}</h2>
+        <p class="text-sm text-muted">{item.data.tagline}</p>
+        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-accent">Open →</span>
+      </a>
+    ))}
+  </section>
+</Layout>

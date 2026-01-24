@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+	--font-display: "Russo One", system-ui, sans-serif;
+	--font-body: "Space Grotesk", system-ui, sans-serif;
+
+	--color-bg: #0b0a0e;
+	--color-surface: #131118;
+	--color-ink: #f7f1d8;
+	--color-muted: #c8c4aa;
+	--color-accent: #ef3e36;
+	--color-accent-2: #f4be3e;
+	--color-ice: #7ad6ff;
+	--color-border: #2a2733;
+}
+
+:root {
+	color-scheme: dark;
+	background-color: var(--color-bg);
+}
+
+body {
+	font-family: var(--font-body);
+	color: var(--color-ink);
+	background-color: var(--color-bg);
+	min-height: 100vh;
+	letter-spacing: 0.01em;
+}
+
+a {
+	color: inherit;
+}
+
+.grain {
+	background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
+	background-size: 4px 4px;
+}
+
+.poster-grid {
+	background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+	background-size: 22px 22px;
+}
+
+.stamp {
+	clip-path: polygon(0 0, 100% 0, 100% 85%, 95% 85%, 95% 100%, 80% 85%, 0 85%);
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+	font-family: var(--font-display);
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	color: var(--color-ink);
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+}
+
+.markdown p,
+.markdown ul,
+.markdown ol {
+	color: var(--color-ink);
+	margin-top: 1rem;
+	margin-bottom: 1rem;
+	line-height: 1.7;
+}
+
+.markdown strong {
+	color: var(--color-accent-2);
+}
+
+.markdown code {
+	background: rgba(255, 255, 255, 0.06);
+	padding: 0.2rem 0.35rem;
+	border-radius: 0.35rem;
+	border: 1px solid var(--color-border);
+	font-size: 0.95em;
+}
+
+.markdown pre {
+	background: #0f0e14;
+	border: 1px solid var(--color-border);
+	border-radius: 0.75rem;
+	padding: 1rem;
+	overflow-x: auto;
+}
+
+.markdown a {
+	color: var(--color-ice);
+	text-decoration: none;
+	border-bottom: 1px solid rgba(122, 214, 255, 0.4);
+}
+
+.markdown a:hover {
+	border-bottom-color: var(--color-ice);
+}

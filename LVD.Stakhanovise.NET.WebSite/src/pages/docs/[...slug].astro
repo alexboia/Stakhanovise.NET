@@ -1,0 +1,24 @@
+---
+import MarkdownLayout from '../../layouts/MarkdownLayout.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map((doc) => ({ params: { slug: doc.slug.split('/') } }));
+}
+
+const slugParam = Astro.params.slug;
+const slug = Array.isArray(slugParam) ? slugParam.join('/') : slugParam ?? '';
+const allDocs = await getCollection('docs');
+const entry = allDocs.find((doc) => doc.slug === slug);
+
+if (!entry) {
+  throw new Error(`Docs entry not found for slug: ${slug}`);
+}
+
+const { Content } = await entry.render();
+---
+
+<MarkdownLayout title={entry.data.title} subtitle={entry.data.summary} breadcrumbHref="/docs">
+  <Content />
+</MarkdownLayout>

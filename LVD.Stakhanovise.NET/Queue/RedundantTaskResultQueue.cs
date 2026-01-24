@@ -81,6 +81,8 @@ namespace LVD.Stakhanovise.NET.Queue
 					mMainResultQueue.TaskResultProcessed += OnTaskResultProcessed;
 					await mMainResultQueue.StartAsync();
 					await RestoreBackedupItemsAsync();
+					//TODO: one last-ditch effort, but needs to be configurable...
+					//repost tasks from results older THAN if were not found in back-up either
 				}
 			}
 			catch (Exception)

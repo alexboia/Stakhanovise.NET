@@ -42,6 +42,20 @@ namespace LVD.Stakhanovise.NET.Model
 			Status = QueuedTaskStatus.Unprocessed;
 		}
 
+		public QueuedTaskProduceInfo Copy()
+		{
+			return new QueuedTaskProduceInfo()
+			{
+				Id = Id,
+				Payload = Payload,
+				Type = Type,
+				Source = Source,
+				Priority = Priority,
+				LockedUntilTs = LockedUntilTs,
+				Status = Status
+			};
+		}
+
 		public IQueuedTask CreateNewTask( ITimestampProvider timestampProvider )
 		{
 			if ( timestampProvider == null )
