@@ -32,7 +32,7 @@ namespace LVD.Stakhanovise.NET.Queue
 		/// <summary>
 		/// If true, stops evaluating subsequent targets after the first target (which may contain multiple producers) matches the task.
 		/// </summary>
-		public bool StopOnFirstMatch { get; set; } = false;
+		public bool StopOnFirstMatch { get; set; } = true;
 
 		/// <summary>
 		/// If true, ensures the same Task ID is used for all destinations.
@@ -42,6 +42,6 @@ namespace LVD.Stakhanovise.NET.Queue
 		/// <summary>
 		/// Determines how to handle exceptions when one or more producers fail.
 		/// </summary>
-		public FanOutErrorPolicy ErrorPolicy { get; set; } = FanOutErrorPolicy.ThrowOnAnyError;
+		public FanOutErrorPolicy ErrorPolicy { get; set; } = FanOutErrorPolicy.SucceedIfAny;
 	}
 }

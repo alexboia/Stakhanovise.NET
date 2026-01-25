@@ -21,34 +21,33 @@ namespace LVD.Stakhanovise.NET.Queue
 			mAllTasks = allTasks.ToList();
 			mPrimaryTask = mAllTasks.FirstOrDefault();
 			mErrors = (errors ?? new List<Exception>()).ToList();
-
-			if (mPrimaryTask == null)
-				throw new ArgumentException( "At least one task must be provided for the fan-out result.", nameof( allTasks ) );
 		}
 
-		public Guid Id => mPrimaryTask.Id;
+		public Guid Id => mPrimaryTask?.Id ?? Guid.Empty;
 
-		public long LockHandleId => mPrimaryTask.LockHandleId;
+		public long LockHandleId => mPrimaryTask?.LockHandleId ?? 0;
 
 		public string Type
 		{
-			get => mPrimaryTask.Type;
+			get => mPrimaryTask?.Type;
 			set => throw new NotSupportedException( $"Setting {nameof( Source )} not supported on fan-out tasks" );
 		}
 
-		public string Source => mPrimaryTask.Source;
+		public string Source => mPrimaryTask?.Source;
 
-		public object Payload => mPrimaryTask.Payload;
+		public object Payload => mPrimaryTask?.Payload;
 
 		public int Priority
 		{
-			get => mPrimaryTask.Priority;
+			get => mPrimaryTask?.Priority ?? 0;
 			set => throw new NotSupportedException( $"Setting {nameof( Priority )} not supported on fan-out tasks" );
 		}
 
-		public DateTimeOffset PostedAtTs => mPrimaryTask.PostedAtTs;
+		public DateTimeOffset PostedAtTs => mPrimaryTask?.PostedAtTs ?? DateTimeOffset.MinValue;
 
-		public DateTimeOffset LockedUntilTs => mPrimaryTask.LockedUntilTs;
+		public DateTimeOffset LockedUntilTs => mPrimaryTask?.LockedUntilTs ?? DateTimeOffset.MinValue;
+
+		public IEnumerable<IQueuedTask> AllTasks => mAllTasks;
 
 		public IEnumerable<Exception> Errors => mErrors;
 	}

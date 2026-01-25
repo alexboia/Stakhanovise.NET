@@ -1,11 +1,26 @@
 ﻿using LVD.Stakhanovise.NET.Model;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Queue
 {
+
+	/// <summary>
+	/// This implementation allows you to transparently replace 
+	/// any single <see cref="ITaskQueueProducer"/> with this one, 
+	/// enabling scenarios like:
+	/// - Audit Logging: Send a copy of specific tasks 
+	///		to a secondary cold-storage queue.
+	/// - Migration: Dual-write to an old and new queue system 
+	///		during infrastructure transitions.
+	///	- Priority Lanes: Route high-priority payloads to a dedicated 
+	///		Redis queue while default traffic goes to Postgres.
+	///	You may use this directly or use the provided <see cref="FanOutTaskQueueProducerBuilder"/> 
+	///		to build an instance using some convenience methods for common scenarios
+	/// </summary>
 	public class FanOutTaskQueueProducer : ITaskQueueProducer
 	{
 		private class EnqueueResult
@@ -133,6 +148,7 @@ namespace LVD.Stakhanovise.NET.Queue
 
 			// Return the first successful task representation as the handle
 			// (If partial success is allowed, this gives the caller a valid handle)
+			// I know this does break contract somewhat, but it is a fair compromise
 			return new FanOutQueuedTask(
 				successful.Select( r => r.Task ),
 				failures.Select( r => r.Error )
