@@ -52,24 +52,25 @@ namespace LVD.Stakhanovise.NET.Samples.FileHasher.FileProcessor
 		{
 			mSourceFileRepository = sourceFileRepository
 				?? throw new ArgumentNullException( nameof( sourceFileRepository ) );
-			mProcessingCompletionSource = new TaskCompletionSource<int>();
+			mProcessingCompletionSource = new TaskCompletionSource<int>( TaskCreationOptions
+				.RunContinuationsAsynchronously );
 		}
 
 		public void NotifyFileHashed( FileHandle fileHandle )
 		{
-			if ( fileHandle == null )
+			if (fileHandle == null)
 				throw new ArgumentNullException( nameof( fileHandle ) );
 
 			DispatchFileHashedEvent( fileHandle );
 			IncrementTotalHashedFileCount();
-			if ( HaveAllFilesBeenHashed() )
+			if (HaveAllFilesBeenHashed())
 				SetProcessingCompleted();
 		}
 
 		private void DispatchFileHashedEvent( FileHandle fileHandle )
 		{
 			EventHandler callback = FileHashAdded;
-			if ( callback != null )
+			if (callback != null)
 				callback( this, EventArgs.Empty );
 		}
 

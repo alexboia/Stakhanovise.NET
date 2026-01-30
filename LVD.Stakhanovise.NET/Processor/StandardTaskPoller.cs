@@ -96,7 +96,7 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			CheckNotDisposedOrThrow();
 
-			if ( IsStopped )
+			if (IsStopped)
 				await TryRequestStartAsync( requiredPayloadTypes );
 			else
 				mLogger.Debug( "Task poller is already started. Nothing to be done." );
@@ -114,7 +114,7 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			UsePayloadTypes( requiredPayloadTypes );
 			SetupTaskPollingSynchronization();
-			await SetupTaskQueueConsumerAsync();
+			await SetupTaskQueueConsumerAsync().ConfigureAwait( false );
 			StartTaskPolling();
 
 			mLogger.Debug( "Successfully started task poller." );
@@ -133,8 +133,10 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task SetupTaskQueueConsumerAsync()
 		{
-			if ( !mTaskQueueConsumer.IsReceivingNewTaskUpdates )
-				await mTaskQueueConsumer.StartReceivingNewTaskUpdatesAsync();
+			if (!mTaskQueueConsumer.IsReceivingNewTaskUpdates)
+				await mTaskQueueConsumer
+					.StartReceivingNewTaskUpdatesAsync()
+					.ConfigureAwait( false );
 		}
 
 		private void StartTaskPolling()
@@ -150,14 +152,15 @@ namespace LVD.Stakhanovise.NET.Processor
 
 			try
 			{
-				while ( !stopToken.IsCancellationRequested )
-					await RunQueuedTaskPollingIterationAsync( stopToken );
+				while (!stopToken.IsCancellationRequested)
+					await RunQueuedTaskPollingIterationAsync( stopToken )
+						.ConfigureAwait( false );
 			}
-			catch ( OperationCanceledException )
+			catch (OperationCanceledException)
 			{
 				mLogger.Debug( "Stop requested. Polling loop has ended." );
 			}
-			catch ( Exception exc )
+			catch (Exception exc)
 			{
 				mLogger.Error( "Error running task poller loop. Attempting to restart loop.", exc );
 				await RestartTaskPollingAsync();
@@ -166,8 +169,8 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task RestartTaskPollingAsync()
 		{
-			await StopAync();
-			await StartAsync();
+			await StopAync().ConfigureAwait( false );
+			await StartAsync().ConfigureAwait( false );
 		}
 
 		private async Task RunQueuedTaskPollingIterationAsync( CancellationToken stopToken )
@@ -178,12 +181,13 @@ namespace LVD.Stakhanovise.NET.Processor
 			//  since, even if we can dequeue an task, 
 			//  we won't have anywhere to place it yet and we 
 			//  may be needlessly helding a lock to that task 
-			if ( IsTaskBufferFull() )
+			if (IsTaskBufferFull())
 				WaitForClearToAddToBufer( stopToken );
 
 			IQueuedTaskToken dequeuedTaskToken = await TryDequeueTaskAsync( stopToken );
-			if ( dequeuedTaskToken != null )
-				await ProcessDequeuedTaskAsync( dequeuedTaskToken, stopToken );
+			if (dequeuedTaskToken != null)
+				await ProcessDequeuedTaskAsync( dequeuedTaskToken, stopToken )
+					.ConfigureAwait( false );
 			else
 				WaitForClearToDequeue( stopToken );
 		}
@@ -204,9 +208,10 @@ namespace LVD.Stakhanovise.NET.Processor
 			stopToken.ThrowIfCancellationRequested();
 
 			IQueuedTaskToken dequeuedTaskToken = await mTaskQueueConsumer
-				.DequeueAsync( mRequiredPayloadTypes );
+				.DequeueAsync( mRequiredPayloadTypes )
+				.ConfigureAwait( false );
 
-			if ( dequeuedTaskToken != null )
+			if (dequeuedTaskToken != null)
 				IncrementPollerDequeueCount();
 
 			return dequeuedTaskToken;
@@ -224,11 +229,12 @@ namespace LVD.Stakhanovise.NET.Processor
 				dequeuedTaskToken.DequeuedTask.Type );
 
 			bool returnToQueue = true;
-			if ( !stopToken.IsCancellationRequested )
+			if (!stopToken.IsCancellationRequested)
 				returnToQueue = !TryAddDequeuedTaskToBuffer( dequeuedTaskToken );
 
-			if ( returnToQueue )
-				await ReturnDequeuedTaskToQueueAsync( dequeuedTaskToken );
+			if (returnToQueue)
+				await ReturnDequeuedTaskToQueueAsync( dequeuedTaskToken )
+					.ConfigureAwait( false );
 
 			stopToken.ThrowIfCancellationRequested();
 		}
@@ -244,7 +250,7 @@ namespace LVD.Stakhanovise.NET.Processor
 				dequeuedTaskToken.DequeuedTask.Id,
 				dequeuedTaskToken.DequeuedTask.Type );
 
-			await ProduceNewTaskFromDequeuedTaskToken( dequeuedTaskToken );
+			await ProduceNewTaskFromDequeuedTaskToken( dequeuedTaskToken ).ConfigureAwait( false );
 			IncrementPollerReturnedTaskCount();
 		}
 
@@ -254,7 +260,8 @@ namespace LVD.Stakhanovise.NET.Processor
 				.GetReturnToQueueInfo();
 
 			await mTaskQueueProducer
-				.EnqueueAsync( returnInfo );
+				.EnqueueAsync( returnInfo )
+				.ConfigureAwait( false );
 		}
 
 		private void IncrementPollerReturnedTaskCount()
@@ -272,15 +279,17 @@ namespace LVD.Stakhanovise.NET.Processor
 		{
 			CheckNotDisposedOrThrow();
 
-			if ( IsStarted )
-				await TryRequestStopAsync();
+			if (IsStarted)
+				await TryRequestStopAsync().ConfigureAwait( false );
 			else
 				mLogger.Debug( "Task poller is already stopped. Nothing to be done." );
 		}
 
 		private async Task TryRequestStopAsync()
 		{
-			await mStateController.TryRequestStopAsync( DoShutdownSequenceAsync );
+			await mStateController
+				.TryRequestStopAsync( DoShutdownSequenceAsync )
+				.ConfigureAwait( false );
 		}
 
 		private async Task DoShutdownSequenceAsync()
@@ -288,9 +297,9 @@ namespace LVD.Stakhanovise.NET.Processor
 			mLogger.Debug( "Task poller is started. Stopping..." );
 
 			RequestTaskPollingCancellation();
-			await WaitForTaskPollingShutdownAsync();
+			await WaitForTaskPollingShutdownAsync().ConfigureAwait( false );
 
-			await CleanupTaskQueueConsumerAsync();
+			await CleanupTaskQueueConsumerAsync().ConfigureAwait( false );
 			ResetTaskPollingSynchronization();
 
 			CleanupTaskPolling();
@@ -312,12 +321,12 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		private async Task WaitForTaskPollingShutdownAsync()
 		{
-			await mQueuedTaskPollingWorker;
+			await mQueuedTaskPollingWorker.ConfigureAwait( false );
 		}
 
 		private async Task CleanupTaskQueueConsumerAsync()
 		{
-			if ( mTaskQueueConsumer.IsReceivingNewTaskUpdates )
+			if (mTaskQueueConsumer.IsReceivingNewTaskUpdates)
 				await mTaskQueueConsumer.StopReceivingNewTaskUpdatesAsync();
 		}
 
@@ -335,34 +344,45 @@ namespace LVD.Stakhanovise.NET.Processor
 
 		public void Dispose()
 		{
-			Dispose( true );
+			if (mIsDisposed)
+				return;
+
+			DisposeAsync()
+				.ConfigureAwait( false )
+				.GetAwaiter()
+				.GetResult();
+
 			GC.SuppressFinalize( this );
 		}
 
-		protected virtual void Dispose( bool disposing )
+		public async ValueTask DisposeAsync()
 		{
-			if ( !mIsDisposed )
-			{
-				if ( disposing )
-				{
-					StopAync().Wait();
-					CleanupTaskPollingSynchronization();
-				}
+			if (mIsDisposed)
+				return;
 
+			await DisposeAsyncCore().ConfigureAwait( false );
+			GC.SuppressFinalize( this );
+		}
+
+		protected virtual async ValueTask DisposeAsyncCore()
+		{
+			if (!mIsDisposed)
+			{
+				await StopAync().ConfigureAwait( false );
+				CleanupTaskPollingSynchronization();
 				mIsDisposed = true;
 			}
 		}
 
 		private void CleanupTaskPollingSynchronization()
 		{
-			IDisposable syncPolicyAsDisposable = mSyncPolicy as IDisposable;
-			if ( syncPolicyAsDisposable != null )
+			if (mSyncPolicy is IDisposable syncPolicyAsDisposable)
 				syncPolicyAsDisposable.Dispose();
 		}
 
 		private void CheckNotDisposedOrThrow()
 		{
-			if ( mIsDisposed )
+			if (mIsDisposed)
 			{
 				throw new ObjectDisposedException(
 					nameof( StandardTaskPoller ),

@@ -33,6 +33,14 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 			_producer2Mock = new Mock<ITaskQueueProducer>();
 		}
 
+		[TearDown]
+		public void TearDown()
+		{
+			_timestampProviderMock = null;
+			_producer1Mock = null;
+			_producer2Mock = null;
+		}
+
 		[Test]
 		[TestCase( true )]
 		[TestCase( false )]
@@ -70,32 +78,32 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 
 			ClassicAssert.NotNull( result );
 
-			_producer2Mock.Verify( 
+			_producer2Mock.Verify(
 				p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
-				Times.Once 
+				Times.Once
 			);
 
 			if (!stopOnFirstMatch)
 			{
-				_producer1Mock.Verify( 
+				_producer1Mock.Verify(
 					p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
-					Times.Once 
+					Times.Once
 				);
 			}
 		}
 
 		[Test]
-		[TestCase("A", true)]
-		[TestCase("A", false)]
+		[TestCase( "A", true )]
+		[TestCase( "A", false )]
 		[TestCase( "B", true )]
 		[TestCase( "B", false )]
 		[TestCase( "C", true )]
 		[TestCase( "C", false )]
-		public async Task EnqueueAsync_ShouldRespectPredicates(string activeCategory, bool stopOnFirstMatch )
+		public async Task EnqueueAsync_ShouldRespectPredicates( string activeCategory, bool stopOnFirstMatch )
 		{
-			TestPayload payload = new TestPayload 
-			{ 
-				Category = activeCategory 
+			TestPayload payload = new TestPayload
+			{
+				Category = activeCategory
 			};
 
 			_producer1Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
@@ -174,7 +182,7 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 
 			_producer1Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
 				.Callback<QueuedTaskProduceInfo>( info => idSeenByProducer1 = info.Id )
-				.ReturnsAsync( ( QueuedTaskProduceInfo  info) => CreateMockTask( info.Id ) );
+				.ReturnsAsync( ( QueuedTaskProduceInfo info ) => CreateMockTask( info.Id ) );
 
 			_producer2Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
 				.Callback<QueuedTaskProduceInfo>( info => idSeenByProducer2 = info.Id )
@@ -182,10 +190,10 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 
 			List<FanOutTarget> targets = new List<FanOutTarget>
 			{
-				new FanOutTarget( new[] 
-				{ 
-					_producer1Mock.Object, 
-					_producer2Mock.Object 
+				new FanOutTarget( new[]
+				{
+					_producer1Mock.Object,
+					_producer2Mock.Object
 				}, _ => true, 1 )
 			};
 
@@ -200,16 +208,16 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 				options );
 
 			FanOutQueuedTask result = await producer
-				.EnqueueAsync( payload, "test-source", 1 ) 
+				.EnqueueAsync( payload, "test-source", 1 )
 					as FanOutQueuedTask;
 
 			ClassicAssert.IsNotNull( idSeenByProducer1 );
 			ClassicAssert.IsNotNull( idSeenByProducer2 );
 			ClassicAssert.AreNotEqual( Guid.Empty, idSeenByProducer1 );
-			ClassicAssert.AreEqual( 
-				idSeenByProducer1, 
-				idSeenByProducer2, 
-				"Both producers should have received the same Task ID" 
+			ClassicAssert.AreEqual(
+				idSeenByProducer1,
+				idSeenByProducer2,
+				"Both producers should have received the same Task ID"
 			);
 
 			ClassicAssert.IsNotNull( result );
@@ -251,13 +259,13 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 
 			await producer.EnqueueAsync( payload, "test-source", 1 );
 
-			_producer1Mock.Verify( 
-				p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ), 
-				Times.Once 
+			_producer1Mock.Verify(
+				p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
+				Times.Once
 				);
-			_producer2Mock.Verify( 
-				p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ), 
-				Times.Never 
+			_producer2Mock.Verify(
+				p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
+				Times.Never
 				);
 		}
 
@@ -281,7 +289,7 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 				}, _ => true, 1 )
 			};
 
-			FanOutTaskQueueProducerOptions options =new FanOutTaskQueueProducerOptions
+			FanOutTaskQueueProducerOptions options = new FanOutTaskQueueProducerOptions
 			{
 				ErrorPolicy = FanOutErrorPolicy.ThrowOnAnyError
 			};
@@ -293,9 +301,9 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 			AggregateException ex = Assert.ThrowsAsync<AggregateException>( async () =>
 				await producer.EnqueueAsync( payload, "test-source", 1 ) );
 
-			Assert.That( ex.InnerExceptions.Count, 
+			Assert.That( ex.InnerExceptions.Count,
 				Is.EqualTo( 1 ) );
-			Assert.That( ex.InnerExceptions.First().Message, 
+			Assert.That( ex.InnerExceptions.First().Message,
 				Is.EqualTo( "Producer 2 Failed" ) );
 		}
 

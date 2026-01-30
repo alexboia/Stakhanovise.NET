@@ -48,81 +48,81 @@ connection.onDidChangeWatchedFiles(() => {
 });
 
 connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] => {
-  const document = documents.get(params.textDocument.uri);
-  if (!document) {
-	return [];
-  }
+	const document = documents.get(params.textDocument.uri);
+	if (!document) {
+		return [];
+	}
 
-  const lines = document.getText().split(/\r?\n/);
-  const line = lines[params.position.line] ?? "";
-  const languageId = inferLanguageId(document.uri);
+	const lines = document.getText().split(/\r?\n/);
+	const line = lines[params.position.line] ?? "";
+	const languageId = inferLanguageId(document.uri);
 
-  if (isPlaceholderContext(line, params.position.character)) {
-	return providePlaceholderCompletions(placeholderIndex);
-  }
+	if (isPlaceholderContext(line, params.position.character)) {
+		return providePlaceholderCompletions(placeholderIndex);
+	}
 
-  if (languageId === "dbmap") {
-	return provideDbMapCompletions(line, params.position.character);
-  }
-  return provideDbDefCompletions(line, params.position.character);
+	if (languageId === "dbmap") {
+		return provideDbMapCompletions(line, params.position.character);
+	}
+	return provideDbDefCompletions(line, params.position.character);
 });
 
 documents.listen(connection);
 connection.listen();
 
 function validateDocument(document: TextDocument): void {
-  const languageId = inferLanguageId(document.uri);
-  const parsed = parseDocument(languageId, document.getText());
-  const diagnostics = parsed.map(toLspDiagnostic);
+	const languageId = inferLanguageId(document.uri);
+	const parsed = parseDocument(languageId, document.getText());
+	const diagnostics = parsed.map(toLspDiagnostic);
 
-  connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics as Diagnostic[] });
+	connection.sendDiagnostics({ uri: document.uri, diagnostics: diagnostics as Diagnostic[] });
 }
 
 function inferLanguageId(uri: string): "dbmap" | "dbdef" {
-  return uri.toLowerCase().endsWith(".dbmap") ? "dbmap" : "dbdef";
+  	return uri.toLowerCase().endsWith(".dbmap") ? "dbmap" : "dbdef";
 }
 
 function toLspDiagnostic(parsed: ParsedDiagnostic): Diagnostic {
-  return {
-	severity: parsed.severity,
-	code: parsed.code,
-	range: {
-	  start: { line: parsed.line, character: parsed.startChar },
-	  end: { line: parsed.line, character: parsed.endChar }
-	},
-	message: parsed.message,
-	source: "dbcompiler"
-  };
+	return {
+		severity: parsed.severity,
+		code: parsed.code,
+		range: {
+		start: { line: parsed.line, character: parsed.startChar },
+		end: { line: parsed.line, character: parsed.endChar }
+		},
+		message: parsed.message,
+		source: "dbcompiler"
+	};
 }
 
 function updatePlaceholders(document: TextDocument): void {
-  const kind = inferLanguageId(document.uri);
-  if (kind !== "dbmap") {
-	return;
-  }
-  collectPlaceholders(document.getText()).forEach(ph => placeholderIndex.add(ph));
+	const kind = inferLanguageId(document.uri);
+	if (kind !== "dbmap") {
+		return;
+	}
+	collectPlaceholders(document.getText()).forEach(ph => placeholderIndex.add(ph));
 }
 
 function rebuildPlaceholders(): void {
-  placeholderIndex.clear();
-  documents.all().forEach(doc => updatePlaceholders(doc));
-  indexDbMapFilesFromDisk();
+	placeholderIndex.clear();
+	documents.all().forEach(doc => updatePlaceholders(doc));
+	indexDbMapFilesFromDisk();
 }
 
 function isPlaceholderContext(line: string, character: number): boolean {
-  const before = line.slice(0, character);
-  const lastDollar = before.lastIndexOf("$");
-  if (lastDollar === -1) {
-	return false;
-  }
-  if (character === lastDollar + 1) {
-	return true;
-  }
-  const nextDollar = line.indexOf("$", character);
-  if (nextDollar === -1) {
-	return true; // open placeholder, not yet closed
-  }
-  return lastDollar < character && character <= nextDollar;
+	const before = line.slice(0, character);
+	const lastDollar = before.lastIndexOf("$");
+	if (lastDollar === -1) {
+		return false;
+	}
+	if (character === lastDollar + 1) {
+		return true;
+	}
+	const nextDollar = line.indexOf("$", character);
+	if (nextDollar === -1) {
+		return true; // open placeholder, not yet closed
+	}
+	return lastDollar < character && character <= nextDollar;
 }
 
 function collectPlaceholders(text: string): string[] {

@@ -1,69 +1,69 @@
 {
-  "name": "lvd-dbcompiler-langserver-client",
-  "displayName": "LVD DbCompiler Language Support",
-  "description": "Language support for Stakhanovise DbCompiler definitions (.dbdef, .dbmap)",
-  "version": "0.0.1",
-  "private": true,
-  "publisher": "stakhanovise",
-  "engines": {
-    "vscode": "^1.85.0"
-  },
-  "categories": [
-    "Programming Languages"
-  ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
-  "contributes": {
-    "languages": [
-      {
-        "id": "dbdef",
-        "aliases": ["DbDef"],
-        "extensions": [".dbdef"],
-        "configuration": "./language-configuration.json"
-      },
-      {
-        "id": "dbmap",
-        "aliases": ["DbMap"],
-        "extensions": [".dbmap"],
-        "configuration": "./language-configuration.json"
-      }
-    ],
-    "grammars": [
-      {
-        "language": "dbdef",
-        "scopeName": "source.dbdef",
-        "path": "./syntaxes/dbdef.tmLanguage.json"
-      },
-      {
-        "language": "dbmap",
-        "scopeName": "source.dbmap",
-        "path": "./syntaxes/dbmap.tmLanguage.json"
-      }
-    ],
-    "configuration": {
-      "type": "object",
-      "title": "DbCompiler Language Server",
-      "properties": {
-        "dbcompiler.schemaPaths": {
-          "type": "array",
-          "default": ["sample"],
-          "description": "Folders to scan for .dbdef/.dbmap definitions for cross-file references."
-        }
-      }
-    }
-  },
-  "scripts": {
-    "compile": "tsc -p ./",
-    "watch": "tsc -w -p ./",
-    "package": "vsce package",
-    "lint": "eslint src --ext ts"
-  },
-  "dependencies": {
-    "vscode-languageclient": "^8.1.0"
-  },
-  "devDependencies": {
-    "@types/node": "^18.19.0",
-    "@types/vscode": "^1.85.0",
-    "typescript": "^5.3.3"
-  }
+	"name": "lvd-dbcompiler-langserver-client",
+	"displayName": "LVD DbCompiler Language Support",
+	"description": "Language support for Stakhanovise DbCompiler definitions (.dbdef, .dbmap)",
+	"version": "0.0.1",
+	"private": true,
+	"publisher": "stakhanovise",
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"categories": [
+		"Programming Languages"
+	],
+	"activationEvents": [],
+	"main": "./out/extension.js",
+	"contributes": {
+		"languages": [
+			{
+				"id": "dbdef",
+				"aliases": ["DbDef"],
+				"extensions": [".dbdef"],
+				"configuration": "./language-configuration.json"
+			},
+			{
+				"id": "dbmap",
+				"aliases": ["DbMap"],
+				"extensions": [".dbmap"],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "dbdef",
+				"scopeName": "source.dbdef",
+				"path": "./syntaxes/dbdef.tmLanguage.json"
+			},
+			{
+				"language": "dbmap",
+				"scopeName": "source.dbmap",
+				"path": "./syntaxes/dbmap.tmLanguage.json"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "DbCompiler Language Server",
+			"properties": {
+				"dbcompiler.schemaPaths": {
+					"type": "array",
+					"default": ["sample"],
+					"description": "Folders to scan for .dbdef/.dbmap definitions for cross-file references."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"compile": "tsc -p ./",
+		"watch": "tsc -w -p ./",
+		"package": "vsce package",
+		"lint": "eslint src --ext ts"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^8.1.0"
+	},
+	"devDependencies": {
+		"@types/node": "^18.19.0",
+		"@types/vscode": "^1.85.0",
+		"typescript": "^5.3.3"
+	}
 }
