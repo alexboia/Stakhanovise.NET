@@ -36,7 +36,7 @@ using System.Threading.Tasks;
 
 namespace LVD.Stakhanovise.NET.Processor
 {
-	public interface ITaskPoller : IDisposable
+	public interface ITaskPoller : IDisposable, IAsyncDisposable
 	{
 		Task StartAsync ( params string[] requiredPayloadTypes );
 

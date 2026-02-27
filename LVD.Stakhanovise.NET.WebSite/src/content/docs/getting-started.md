@@ -23,8 +23,8 @@ Point the queue to your database. Stakhanovise.NET ships with schemas for SQL Se
 ```csharp
 var storage = new SqlServerQueue("Server=tcp:queue.db,1433;Initial Catalog=Stakhanovise;...", new QueueOptions
 {
-    SchemaName = "stakhanovise",
-    MaxDequeueBatchSize = 64
+		SchemaName = "stakhanovise",
+		MaxDequeueBatchSize = 64
 });
 ```
 
@@ -34,8 +34,8 @@ Workers are lightweight services that fetch jobs, execute handlers, and record o
 
 ```csharp
 var worker = new QueueWorker(storage)
-    .RegisterHandler<EmailJob>(async job => await emailSender.Send(job))
-    .WithRetryPolicy(RetryPolicy.Exponential(maxAttempts: 6, baseDelay: TimeSpan.FromSeconds(5)));
+		.RegisterHandler<EmailJob>(async job => await emailSender.Send(job))
+		.WithRetryPolicy(RetryPolicy.Exponential(maxAttempts: 6, baseDelay: TimeSpan.FromSeconds(5)));
 
 await worker.StartAsync();
 ```

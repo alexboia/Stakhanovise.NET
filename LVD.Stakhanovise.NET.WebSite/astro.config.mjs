@@ -7,15 +7,15 @@ import react from '@astrojs/react';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://stakhanovise.net',
+	site: 'https://stakhanovise.net',
 
-  markdown: {
-    syntaxHighlight: 'prism'
-  },
+	markdown: {
+		syntaxHighlight: 'prism'
+	},
 
-  vite: {
-    plugins: [tailwindcss()]
-  },
+	vite: {
+		plugins: [tailwindcss()]
+	},
 
-  integrations: [react()]
+	integrations: [react()]
 });

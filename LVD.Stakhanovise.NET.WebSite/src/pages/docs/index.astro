@@ -6,31 +6,31 @@ const docs = (await getCollection('docs')).sort((a, b) => (a.data.order ?? 999) 
 ---
 
 <Layout title="Documentation | Stakhanovise.NET" description="Reference, guides, and rollout notes for Stakhanovise.NET.">
-  <section class="space-y-4">
-    <p class="text-xs uppercase tracking-[0.18em] text-muted">Documentation</p>
-    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 class="text-3xl font-black text-ink" style="font-family: var(--font-display);">Learn the system</h1>
-        <p class="text-sm text-muted">Chapters are written in markdown and rendered automatically.</p>
-      </div>
-      <a href="https://github.com/alexboia/Stakhanovise.NET" target="_blank" rel="noreferrer" class="rounded-md border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted transition hover:border-accent hover:text-accent">Source repository</a>
-    </div>
-  </section>
+	<section class="space-y-4">
+		<p class="text-xs uppercase tracking-[0.18em] text-muted">Documentation</p>
+		<div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+			<div>
+				<h1 class="text-3xl font-black text-ink" style="font-family: var(--font-display);">Learn the system</h1>
+				<p class="text-sm text-muted">Chapters are written in markdown and rendered automatically.</p>
+			</div>
+			<a href="https://github.com/alexboia/Stakhanovise.NET" target="_blank" rel="noreferrer" class="rounded-md border border-border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted transition hover:border-accent hover:text-accent">Source repository</a>
+		</div>
+	</section>
 
-  <section class="grid gap-4 md:grid-cols-2">
-    {docs.map((doc) => (
-      <a
-        href={`/docs/${doc.slug}`}
-        class="group flex flex-col gap-3 rounded-xl border border-border bg-surface/80 p-5 shadow-[0_16px_45px_rgba(0,0,0,0.3)] transition hover:border-accent"
-      >
-        <div class="flex items-center justify-between text-xs uppercase tracking-[0.14em] text-muted">
-          <span>Chapter</span>
-          <span class="rounded-sm bg-black/40 px-2 py-1 text-ink">{doc.data.order ?? '—'}</span>
-        </div>
-        <h2 class="text-xl font-black text-ink group-hover:text-accent" style="font-family: var(--font-display);">{doc.data.title}</h2>
-        <p class="text-sm text-muted">{doc.data.summary}</p>
-        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-accent">Read →</span>
-      </a>
-    ))}
-  </section>
+	<section class="grid gap-4 md:grid-cols-2">
+		{docs.map((doc) => (
+			<a
+				href={`/docs/${doc.slug}`}
+				class="group flex flex-col gap-3 rounded-xl border border-border bg-surface/80 p-5 shadow-[0_16px_45px_rgba(0,0,0,0.3)] transition hover:border-accent"
+			>
+				<div class="flex items-center justify-between text-xs uppercase tracking-[0.14em] text-muted">
+					<span>Chapter</span>
+					<span class="rounded-sm bg-black/40 px-2 py-1 text-ink">{doc.data.order ?? '—'}</span>
+				</div>
+				<h2 class="text-xl font-black text-ink group-hover:text-accent" style="font-family: var(--font-display);">{doc.data.title}</h2>
+				<p class="text-sm text-muted">{doc.data.summary}</p>
+				<span class="text-xs font-semibold uppercase tracking-[0.14em] text-accent">Read →</span>
+			</a>
+		))}
+	</section>
 </Layout>

@@ -1,7 +1,7 @@
 ﻿// 
 // BSD 3-Clause License
 // 
-// Copyright (c) 2020 - 2023, Boia Alexandru
+// Copyright (c) 2020 - 2026, Boia Alexandru
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -39,44 +39,47 @@ namespace LVD.Stakhanovise.NET.Helpers
 {
 	public static class NpgsqlConnectionExtensions
 	{
-		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this ConnectionOptions connectionOptions )
+		public static async Task<NpgsqlConnection> TryOpenConnectionAsync( this ConnectionOptions connectionOptions )
 		{
-			return await connectionOptions.TryOpenConnectionAsync( CancellationToken.None );
+			return await connectionOptions
+				.TryOpenConnectionAsync( CancellationToken.None )
+				.ConfigureAwait( false );
 		}
 
-		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this ConnectionOptions connectionOptions, CancellationToken cancellationToken )
+		public static async Task<NpgsqlConnection> TryOpenConnectionAsync( this ConnectionOptions connectionOptions, CancellationToken cancellationToken )
 		{
-			if ( connectionOptions == null )
+			if (connectionOptions == null)
 				throw new ArgumentNullException( nameof( connectionOptions ) );
 
 			return await connectionOptions.ConnectionString
 				.TryOpenConnectionAsync( cancellationToken,
 					connectionOptions.ConnectionRetryCount,
-					connectionOptions.ConnectionRetryDelayMilliseconds );
+					connectionOptions.ConnectionRetryDelayMilliseconds )
+				.ConfigureAwait( false );
 		}
 
-		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this string connectionString,
+		public static async Task<NpgsqlConnection> TryOpenConnectionAsync( this string connectionString,
 			int maxRetryCount = ConnectionOptionsDefaults.MaxRetryCount,
 			int retryDelayMilliseconds = ConnectionOptionsDefaults.RetryDelayMilliseconds )
 		{
-			return await connectionString.TryOpenConnectionAsync( CancellationToken.None,
-				maxRetryCount,
-				retryDelayMilliseconds );
+			return await connectionString
+				.TryOpenConnectionAsync( CancellationToken.None, maxRetryCount, retryDelayMilliseconds )
+				.ConfigureAwait( false );
 		}
 
-		public static async Task<NpgsqlConnection> TryOpenConnectionAsync ( this string connectionString,
+		public static async Task<NpgsqlConnection> TryOpenConnectionAsync( this string connectionString,
 			CancellationToken cancellationToken,
 			int maxRetryCount = ConnectionOptionsDefaults.MaxRetryCount,
 			int retryDelayMilliseconds = ConnectionOptionsDefaults.RetryDelayMilliseconds )
 		{
-			if ( string.IsNullOrEmpty( connectionString ) )
+			if (string.IsNullOrEmpty( connectionString ))
 				throw new ArgumentNullException( nameof( connectionString ) );
 
-			if ( maxRetryCount < 1 )
+			if (maxRetryCount < 1)
 				throw new ArgumentOutOfRangeException( nameof( maxRetryCount ),
 					"Max retry count must be greater than 1" );
 
-			if ( retryDelayMilliseconds < 1 )
+			if (retryDelayMilliseconds < 1)
 				throw new ArgumentOutOfRangeException( nameof( retryDelayMilliseconds ),
 					"Retry delay must be greater than 1" );
 
@@ -84,31 +87,32 @@ namespace LVD.Stakhanovise.NET.Helpers
 			NpgsqlConnection conn = null;
 			bool hasCancellation = !cancellationToken.Equals( CancellationToken.None );
 
-			while ( retryCount < maxRetryCount )
+			while (retryCount < maxRetryCount)
 			{
-				if ( hasCancellation )
+				if (hasCancellation)
 					cancellationToken.ThrowIfCancellationRequested();
 
 				try
 				{
 					conn = new NpgsqlConnection( connectionString );
-					if ( hasCancellation )
-						await conn.OpenAsync( cancellationToken );
+					if (hasCancellation)
+						await conn.OpenAsync( cancellationToken ).ConfigureAwait( false );
 					else
-						await conn.OpenAsync();
+						await conn.OpenAsync().ConfigureAwait( false );
 
 					break;
 				}
-				catch ( Exception )
+				catch (Exception)
 				{
 					conn = null;
 					retryCount++;
-					
-					if ( hasCancellation )
+
+					if (hasCancellation)
 						cancellationToken.ThrowIfCancellationRequested();
 
-					if ( retryCount > 0 )
-						await Task.Delay( retryDelayMilliseconds );
+					if (retryCount > 0)
+						await Task.Delay( retryDelayMilliseconds )
+							.ConfigureAwait( false );
 				}
 			}
 

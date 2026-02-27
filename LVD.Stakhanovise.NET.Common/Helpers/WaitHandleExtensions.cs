@@ -30,8 +30,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,7 +40,7 @@ namespace LVD.Stakhanovise.NET.Helpers
 		private static void WaitForWaitHandleDelegate( object state, bool timedOut )
 		{
 			TaskCompletionSource<bool> waitHandleSignaledCompletionSource =
-				( TaskCompletionSource<bool> ) state;
+				(TaskCompletionSource<bool>) state;
 
 			waitHandleSignaledCompletionSource.TrySetResult( true );
 		}
@@ -54,11 +52,11 @@ namespace LVD.Stakhanovise.NET.Helpers
 
 		public static Task<bool> ToTask( this WaitHandle waitHandle, TimeSpan timeout )
 		{
-			if ( waitHandle == null )
+			if (waitHandle == null)
 				throw new ArgumentNullException( nameof( waitHandle ) );
 
 			TaskCompletionSource<bool> waitHandleSignaledCompletionSource
-				= new TaskCompletionSource<bool>( waitHandle );
+				= new TaskCompletionSource<bool>( waitHandle, TaskCreationOptions.RunContinuationsAsynchronously );
 
 			RegisteredWaitHandle registeredWaitHandle = ThreadPool.RegisterWaitForSingleObject( waitHandle,
 				callBack: WaitForWaitHandleDelegate,

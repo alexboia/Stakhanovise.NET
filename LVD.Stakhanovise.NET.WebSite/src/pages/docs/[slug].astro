@@ -1,23 +1,136 @@
 ---
-import MarkdownLayout from '../../layouts/MarkdownLayout.astro';
-import { getCollection } from 'astro:content';
-
-export async function getStaticPaths() {
-  const docs = await getCollection('docs');
-  return docs.map((doc) => ({ params: { slug: doc.slug } }));
-}
-
-const slug = Astro.params.slug ?? '';
-const allDocs = await getCollection('docs');
-const entry = allDocs.find((doc) => doc.slug === slug);
-
-if (!entry) {
-  throw new Error(`Docs entry not found for slug: ${slug}`);
-}
-
-const { Content } = await entry.render();
+import Layout from '../../layouts/Layout.astro';
+import StatusTicker from '../../components/StatusTicker';
 ---
 
-<MarkdownLayout title={entry.data.title} subtitle={entry.data.summary} breadcrumbHref="/docs">
-  <Content />
-</MarkdownLayout>
+<Layout
+	title="Stakhanovise.NET | Industrial background jobs for .NET"
+	description="A resilient, distributed background job engine for .NET that keeps your workers marching with discipline."
+>
+	<section class="grid gap-10 md:grid-cols-[1.2fr_1fr] md:items-center">
+		<div class="space-y-6">
+			<div class="inline-flex items-center gap-2 rounded-full border border-border bg-surface/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+				<span class="h-2 w-2 rounded-full bg-accent shadow-[0_0_0_4px_rgba(239,62,54,0.18)]"></span>
+				Queue discipline engaged
+			</div>
+			<div class="space-y-3">
+				<p class="text-sm uppercase tracking-[0.32em] text-muted">Industrial Background Processing</p>
+				<h1 class="text-4xl font-black leading-tight text-ink md:text-5xl" style="font-family: var(--font-display);">
+					Stakhanovise.NET keeps your jobs flowing like a well-planned brigade shift.
+				</h1>
+				<p class="max-w-2xl text-lg text-muted">
+					Built for .NET services that refuse downtime: durable queues, worker orchestration, observability, and safeguards so every task reaches completion—even when infrastructure misbehaves.
+				</p>
+			</div>
+
+			<div class="flex flex-wrap items-center gap-3">
+				<a
+					href="/docs"
+						class="rounded-md bg-accent px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-black shadow-[0_14px_45px_rgba(239,62,54,0.35)] transition hover:-translate-y-px"
+				>
+					Read the docs
+				</a>
+				<a
+					href="https://github.com/alexboia/Stakhanovise.NET"
+					target="_blank"
+					rel="noreferrer"
+					class="rounded-md border border-border bg-surface px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-accent hover:text-accent"
+				>
+					View on GitHub
+				</a>
+				<span class="rounded-md border border-dashed border-border px-4 py-2 text-xs uppercase tracking-[0.16em] text-muted">
+					Queue workers: SQL Server + PostgreSQL
+				</span>
+			</div>
+
+			<StatusTicker client:load />
+		</div>
+
+		<div class="relative">
+			<div class="absolute -left-6 -top-6 h-24 w-24 rotate-6 bg-linear-to-tr from-accent via-accent-2 to-ice opacity-60 blur-2xl"></div>
+			<div class="absolute bottom-10 right-4 h-20 w-20 -rotate-6 bg-linear-to-tr from-ice via-accent-2 to-accent opacity-50 blur-2xl"></div>
+
+			<div class="relative overflow-hidden rounded-2xl border border-border bg-surface/80 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.45)] poster-grid">
+				<div class="flex items-center justify-between text-xs uppercase tracking-[0.18em] text-muted">
+					<span>Worker control panel</span>
+					<span class="rounded-sm bg-black/50 px-2 py-1 text-ink">Darkline-46</span>
+				</div>
+				<div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+					<div class="rounded-lg border border-border bg-black/40 px-4 py-3">
+						<p class="text-xs uppercase tracking-[0.14em] text-muted">Queues</p>
+						<p class="text-3xl font-bold text-ice">12</p>
+						<p class="text-xs text-muted">SQL + Postgres backends live</p>
+					</div>
+					<div class="rounded-lg border border-border bg-black/40 px-4 py-3">
+						<p class="text-xs uppercase tracking-[0.14em] text-muted">Throughput</p>
+						<p class="text-3xl font-bold text-accent">58k/min</p>
+						<p class="text-xs text-muted">coordinated workers</p>
+					</div>
+					<div class="rounded-lg border border-border bg-black/40 px-4 py-3">
+						<p class="text-xs uppercase tracking-[0.14em] text-muted">Retries</p>
+						<p class="text-3xl font-bold text-accent-2">Auto</p>
+						<p class="text-xs text-muted">progress-aware backoff</p>
+					</div>
+					<div class="rounded-lg border border-border bg-black/40 px-4 py-3">
+						<p class="text-xs uppercase tracking-[0.14em] text-muted">Observability</p>
+						<p class="text-3xl font-bold text-ink">Metrics</p>
+						<p class="text-xs text-muted">structured logs + health</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="grid gap-6 rounded-2xl border border-border bg-surface/70 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.35)] md:grid-cols-3">
+		<div class="space-y-2 md:col-span-1">
+			<p class="text-xs uppercase tracking-[0.18em] text-muted">Guides + Doctrine</p>
+			<h2 class="text-2xl font-black text-ink" style="font-family: var(--font-display);">Study the plan</h2>
+			<p class="text-sm text-muted">Dive into the operations manual, architecture dossiers, and rollout playbooks assembled for Stakhanovise.NET.</p>
+		</div>
+		<div class="space-y-4 md:col-span-2">
+			<div class="flex flex-wrap gap-3">
+				<a href="/docs" class="stamp rounded-lg border border-border bg-black/50 px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-accent hover:text-accent">Documentation</a>
+				<a href="/presentations" class="stamp rounded-lg border border-border bg-black/50 px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-accent hover:text-accent">Presentation deck</a>
+				<a href="https://github.com/alexboia/Stakhanovise.NET" target="_blank" rel="noreferrer" class="stamp rounded-lg border border-dashed border-border px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-muted transition hover:border-accent hover:text-accent">Source repository</a>
+			</div>
+			<div class="grid gap-4 md:grid-cols-3">
+				<div class="rounded-xl border border-border bg-black/40 p-4">
+					<p class="text-xs uppercase tracking-[0.14em] text-muted">Discipline</p>
+					<p class="mt-2 text-lg font-semibold text-ink">Idempotent execution with per-queue policies to keep job order ironclad.</p>
+				</div>
+				<div class="rounded-xl border border-border bg-black/40 p-4">
+					<p class="text-xs uppercase tracking-[0.14em] text-muted">Cadence</p>
+					<p class="mt-2 text-lg font-semibold text-ink">Configurable worker cadence, backoff, and scheduled retries tuned to your SLAs.</p>
+				</div>
+				<div class="rounded-xl border border-border bg-black/40 p-4">
+					<p class="text-xs uppercase tracking-[0.14em] text-muted">Signals</p>
+					<p class="mt-2 text-lg font-semibold text-ink">Metrics, structured logs, and health probes for every brigade checkpoint.</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="grid gap-6 md:grid-cols-2">
+		<div class="rounded-2xl border border-border bg-surface/80 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
+			<p class="text-xs uppercase tracking-[0.18em] text-muted">Markdown-first</p>
+			<h3 class="mt-2 text-xl font-black text-ink" style="font-family: var(--font-display);">Docs are fueled by markdown</h3>
+			<p class="mt-3 text-sm text-muted">Place docs under <span class="font-mono text-ink">src/content/docs</span> and presentation briefs under <span class="font-mono text-ink">src/content/presentations</span>. Each page is auto-routed and adopts the shared layout and theme.</p>
+			<ul class="mt-4 space-y-2 text-sm text-muted">
+				<li>→ <span class="text-ink">/docs</span> lists documentation chapters.</li>
+				<li>→ <span class="text-ink">/docs/slug</span> renders individual markdown pages.</li>
+				<li>→ <span class="text-ink">/presentations</span> aggregates briefings for stakeholders.</li>
+			</ul>
+		</div>
+		<div class="rounded-2xl border border-border bg-linear-to-br from-accent/15 via-accent-2/18 to-ice/10 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
+			<p class="text-xs uppercase tracking-[0.18em] text-muted">Road-ready</p>
+			<h3 class="mt-2 text-xl font-black text-ink" style="font-family: var(--font-display);">Bring your own infrastructure</h3>
+			<p class="mt-3 text-sm text-muted">Deploy on SQL Server or PostgreSQL, run workers on-prem or in the cloud, and wire telemetry into your existing observability stack. The docs show connection strings, worker lifecycle, and health signals.</p>
+			<div class="mt-4 flex flex-wrap gap-2">
+				<span class="rounded-md bg-black/40 px-3 py-1 text-xs uppercase tracking-[0.14em] text-ink">Durable queues</span>
+				<span class="rounded-md bg-black/40 px-3 py-1 text-xs uppercase tracking-[0.14em] text-ink">Worker orchestration</span>
+				<span class="rounded-md bg-black/40 px-3 py-1 text-xs uppercase tracking-[0.14em] text-ink">Observability</span>
+				<span class="rounded-md bg-black/40 px-3 py-1 text-xs uppercase tracking-[0.14em] text-ink">Safety valves</span>
+			</div>
+		</div>
+	</section>
+</Layout>
