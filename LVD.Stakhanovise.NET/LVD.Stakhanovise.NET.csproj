@@ -54,8 +54,8 @@
     <None Remove="Db\docs\**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Npgsql" Version="8.0.4" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Npgsql" Version="8.0.8" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LVD.Stakhanovise.NET.Common.Interfaces\LVD.Stakhanovise.NET.Common.Interfaces.csproj" />

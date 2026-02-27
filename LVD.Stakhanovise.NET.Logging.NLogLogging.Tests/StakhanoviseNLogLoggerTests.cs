@@ -1,12 +1,9 @@
 ﻿using LVD.Stakhanovise.NET.Logging.Tests.Harness;
 using Moq;
-using NLog.Fluent;
-using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using NLog;
+using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using System;
 
 namespace LVD.Stakhanovise.NET.Logging.NLogLogging.Tests
 {

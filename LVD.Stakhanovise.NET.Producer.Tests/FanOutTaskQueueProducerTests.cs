@@ -27,28 +27,67 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 		{
 			_now = DateTimeOffset.UtcNow;
 			_timestampProviderMock = new Mock<ITimestampProvider>();
-			_timestampProviderMock.Setup( p => p.GetNow() ).Returns( _now );
+			_timestampProviderMock.Setup(p => p.GetNow()).Returns(_now);
 
 			_producer1Mock = new Mock<ITaskQueueProducer>();
 			_producer2Mock = new Mock<ITaskQueueProducer>();
 		}
 
 		[Test]
-		[TestCase( true )]
-		[TestCase( false )]
-		public async Task EnqueueAsync_ShouldFanOutToAllMatchingProducers( bool stopOnFirstMatch )
+		[TestCase(true, true)]
+		[TestCase(false, true)]
+		[TestCase(true, false)]
+		[TestCase(false, false)]
+		public async Task EnqueueAsync_SingleProducer(bool matches, bool stopOnFirstMatch)
 		{
 			TestPayload payload = new TestPayload();
 
 			// Producer 1 always returns success
 			_producer1Mock
-				.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ReturnsAsync( CreateMockTask( Guid.NewGuid() ) );
+				.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
+
+			List<FanOutTarget> targets = new List<FanOutTarget>
+			{
+				new FanOutTarget( new[] { _producer1Mock.Object }, _ => matches, 1 )
+			};
+
+			FanOutTaskQueueProducerOptions options = new FanOutTaskQueueProducerOptions()
+			{
+				StopOnFirstMatch = stopOnFirstMatch
+			};
+
+			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer(targets,
+				_timestampProviderMock.Object,
+				options);
+
+			IQueuedTask result = await producer
+				.EnqueueAsync(payload, "test-source", 1);
+
+			ClassicAssert.NotNull(result);
+
+			_producer1Mock.Verify(
+				p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
+				 matches ? Times.Once : Times.Never
+			);
+		}
+
+		[Test]
+		[TestCase(true)]
+		[TestCase(false)]
+		public async Task EnqueueAsync_ShouldFanOutToAllMatchingProducers(bool stopOnFirstMatch)
+		{
+			TestPayload payload = new TestPayload();
+
+			// Producer 1 always returns success
+			_producer1Mock
+				.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
 
 			// Producer 2 always returns success
 			_producer2Mock
-				.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ReturnsAsync( CreateMockTask( Guid.NewGuid() ) );
+				.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
 
 			List<FanOutTarget> targets = new List<FanOutTarget>
 			{
@@ -61,25 +100,25 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 				StopOnFirstMatch = stopOnFirstMatch
 			};
 
-			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer( targets,
+			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer(targets,
 				_timestampProviderMock.Object,
-				options );
+				options);
 
 			IQueuedTask result = await producer
-				.EnqueueAsync( payload, "test-source", 1 );
+				.EnqueueAsync(payload, "test-source", 1);
 
-			ClassicAssert.NotNull( result );
+			ClassicAssert.NotNull(result);
 
-			_producer2Mock.Verify( 
-				p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
-				Times.Once 
+			_producer2Mock.Verify(
+				p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
+				Times.Once
 			);
 
 			if (!stopOnFirstMatch)
 			{
-				_producer1Mock.Verify( 
-					p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
-					Times.Once 
+				_producer1Mock.Verify(
+					p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
+					Times.Once
 				);
 			}
 		}
@@ -87,22 +126,22 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 		[Test]
 		[TestCase("A", true)]
 		[TestCase("A", false)]
-		[TestCase( "B", true )]
-		[TestCase( "B", false )]
-		[TestCase( "C", true )]
-		[TestCase( "C", false )]
-		public async Task EnqueueAsync_ShouldRespectPredicates(string activeCategory, bool stopOnFirstMatch )
+		[TestCase("B", true)]
+		[TestCase("B", false)]
+		[TestCase("C", true)]
+		[TestCase("C", false)]
+		public async Task EnqueueAsync_ShouldRespectPredicates(string activeCategory, bool stopOnFirstMatch)
 		{
-			TestPayload payload = new TestPayload 
-			{ 
-				Category = activeCategory 
+			TestPayload payload = new TestPayload
+			{
+				Category = activeCategory
 			};
 
-			_producer1Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ReturnsAsync( CreateMockTask( Guid.NewGuid() ) );
+			_producer1Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
 
-			_producer2Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ReturnsAsync( CreateMockTask( Guid.NewGuid() ) );
+			_producer2Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
 
 			List<FanOutTarget> targets = new List<FanOutTarget>
 			{
@@ -115,21 +154,27 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 					info => ((TestPayload)info.Payload).Category == "B", 1 )
 			};
 
-			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer( targets,
-				_timestampProviderMock.Object );
+			FanOutTaskQueueProducerOptions options = new FanOutTaskQueueProducerOptions()
+			{
+				StopOnFirstMatch = stopOnFirstMatch
+			};
 
-			await producer.EnqueueAsync( payload, "test-source", 1 );
+			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer(targets,
+				_timestampProviderMock.Object,
+				options);
+
+			await producer.EnqueueAsync(payload, "test-source", 1);
 
 			switch (activeCategory)
 			{
 				case "A":
 					_producer1Mock.Verify(
-						p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
+						p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
 						Times.Once,
 						"Producer 1 should have been called"
 					);
 					_producer2Mock.Verify(
-						p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
+						p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
 						Times.Never,
 						"Producer 2 should NOT have been called"
 					);
@@ -137,12 +182,12 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 
 				case "B":
 					_producer1Mock.Verify(
-						p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
+						p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
 						Times.Never,
 						"Producer 1 should NOT have been called"
 					);
 					_producer2Mock.Verify(
-						p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
+						p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
 						Times.Once,
 						"Producer 2 should have been called"
 					);
@@ -150,12 +195,12 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 
 				default:
 					_producer1Mock.Verify(
-						p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
+						p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
 						Times.Never,
 						"Producer 1 should NOT have been called"
 					);
 					_producer2Mock.Verify(
-						p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ),
+						p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
 						Times.Never,
 						"Producer 2 should NOT have been called"
 					);
@@ -172,20 +217,20 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 			Guid? idSeenByProducer1 = null;
 			Guid? idSeenByProducer2 = null;
 
-			_producer1Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.Callback<QueuedTaskProduceInfo>( info => idSeenByProducer1 = info.Id )
-				.ReturnsAsync( ( QueuedTaskProduceInfo  info) => CreateMockTask( info.Id ) );
+			_producer1Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.Callback<QueuedTaskProduceInfo>(info => idSeenByProducer1 = info.Id)
+				.ReturnsAsync((QueuedTaskProduceInfo info) => CreateMockTask(info.Id));
 
-			_producer2Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.Callback<QueuedTaskProduceInfo>( info => idSeenByProducer2 = info.Id )
-				.ReturnsAsync( ( QueuedTaskProduceInfo info ) => CreateMockTask( info.Id ) );
+			_producer2Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.Callback<QueuedTaskProduceInfo>(info => idSeenByProducer2 = info.Id)
+				.ReturnsAsync((QueuedTaskProduceInfo info) => CreateMockTask(info.Id));
 
 			List<FanOutTarget> targets = new List<FanOutTarget>
 			{
-				new FanOutTarget( new[] 
-				{ 
-					_producer1Mock.Object, 
-					_producer2Mock.Object 
+				new FanOutTarget( new[]
+				{
+					_producer1Mock.Object,
+					_producer2Mock.Object
 				}, _ => true, 1 )
 			};
 
@@ -195,29 +240,29 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 				StopOnFirstMatch = false
 			};
 
-			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer( targets,
+			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer(targets,
 				_timestampProviderMock.Object,
-				options );
+				options);
 
 			FanOutQueuedTask result = await producer
-				.EnqueueAsync( payload, "test-source", 1 ) 
+				.EnqueueAsync(payload, "test-source", 1)
 					as FanOutQueuedTask;
 
-			ClassicAssert.IsNotNull( idSeenByProducer1 );
-			ClassicAssert.IsNotNull( idSeenByProducer2 );
-			ClassicAssert.AreNotEqual( Guid.Empty, idSeenByProducer1 );
-			ClassicAssert.AreEqual( 
-				idSeenByProducer1, 
-				idSeenByProducer2, 
-				"Both producers should have received the same Task ID" 
+			ClassicAssert.IsNotNull(idSeenByProducer1);
+			ClassicAssert.IsNotNull(idSeenByProducer2);
+			ClassicAssert.AreNotEqual(Guid.Empty, idSeenByProducer1);
+			ClassicAssert.AreEqual(
+				idSeenByProducer1,
+				idSeenByProducer2,
+				"Both producers should have received the same Task ID"
 			);
 
-			ClassicAssert.IsNotNull( result );
-			ClassicAssert.AreEqual( 2, result.AllTasks.Count() );
-			ClassicAssert.AreEqual( 0, result.Errors.Count() );
+			ClassicAssert.IsNotNull(result);
+			ClassicAssert.AreEqual(2, result.AllTasks.Count());
+			ClassicAssert.AreEqual(0, result.Errors.Count());
 
 			foreach (IQueuedTask t in result.AllTasks)
-				ClassicAssert.AreEqual( idSeenByProducer1, t.Id );
+				ClassicAssert.AreEqual(idSeenByProducer1, t.Id);
 		}
 
 		[Test]
@@ -226,10 +271,10 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 			TestPayload payload = new TestPayload();
 
 			/* Setup both mocks to return successful tasks */
-			_producer1Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ReturnsAsync( CreateMockTask( Guid.NewGuid() ) );
-			_producer2Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ReturnsAsync( CreateMockTask( Guid.NewGuid() ) );
+			_producer1Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
+			_producer2Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
 
 			List<FanOutTarget> targets = new List<FanOutTarget>
 			{
@@ -245,19 +290,19 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 				StopOnFirstMatch = true
 			};
 
-			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer( targets,
+			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer(targets,
 				_timestampProviderMock.Object,
-				options );
+				options);
 
-			await producer.EnqueueAsync( payload, "test-source", 1 );
+			await producer.EnqueueAsync(payload, "test-source", 1);
 
-			_producer1Mock.Verify( 
-				p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ), 
-				Times.Once 
+			_producer1Mock.Verify(
+				p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
+				Times.Once
 				);
-			_producer2Mock.Verify( 
-				p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ), 
-				Times.Never 
+			_producer2Mock.Verify(
+				p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()),
+				Times.Never
 				);
 		}
 
@@ -266,11 +311,11 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 		{
 			TestPayload payload = new TestPayload();
 
-			_producer1Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ReturnsAsync( CreateMockTask( Guid.NewGuid() ) );
+			_producer1Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
 
-			_producer2Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ThrowsAsync( new Exception( "Producer 2 Failed" ) );
+			_producer2Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ThrowsAsync(new Exception("Producer 2 Failed"));
 
 			List<FanOutTarget> targets = new List<FanOutTarget>
 			{
@@ -281,22 +326,22 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 				}, _ => true, 1 )
 			};
 
-			FanOutTaskQueueProducerOptions options =new FanOutTaskQueueProducerOptions
+			FanOutTaskQueueProducerOptions options = new FanOutTaskQueueProducerOptions
 			{
 				ErrorPolicy = FanOutErrorPolicy.ThrowOnAnyError
 			};
 
-			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer( targets,
+			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer(targets,
 				_timestampProviderMock.Object,
-				options );
+				options);
 
-			AggregateException ex = Assert.ThrowsAsync<AggregateException>( async () =>
-				await producer.EnqueueAsync( payload, "test-source", 1 ) );
+			AggregateException ex = Assert.ThrowsAsync<AggregateException>(async () =>
+				await producer.EnqueueAsync(payload, "test-source", 1));
 
-			Assert.That( ex.InnerExceptions.Count, 
-				Is.EqualTo( 1 ) );
-			Assert.That( ex.InnerExceptions.First().Message, 
-				Is.EqualTo( "Producer 2 Failed" ) );
+			Assert.That(ex.InnerExceptions.Count,
+				Is.EqualTo(1));
+			Assert.That(ex.InnerExceptions.First().Message,
+				Is.EqualTo("Producer 2 Failed"));
 		}
 
 		[Test]
@@ -306,12 +351,12 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 			TestPayload payload = new TestPayload();
 
 			// One succeeds
-			_producer1Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ReturnsAsync( CreateMockTask( Guid.NewGuid() ) );
+			_producer1Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ReturnsAsync(CreateMockTask(Guid.NewGuid()));
 
 			// One fails
-			_producer2Mock.Setup( p => p.EnqueueAsync( It.IsAny<QueuedTaskProduceInfo>() ) )
-				.ThrowsAsync( new InvalidOperationException( "Producer 2 failure" ) );
+			_producer2Mock.Setup(p => p.EnqueueAsync(It.IsAny<QueuedTaskProduceInfo>()))
+				.ThrowsAsync(new InvalidOperationException("Producer 2 failure"));
 
 			List<FanOutTarget> targets = new List<FanOutTarget>
 			{
@@ -327,27 +372,27 @@ namespace LVD.Stakhanovise.NET.Producer.Tests
 				ErrorPolicy = FanOutErrorPolicy.SucceedIfAny
 			};
 
-			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer( targets,
+			FanOutTaskQueueProducer producer = new FanOutTaskQueueProducer(targets,
 				_timestampProviderMock.Object,
-				options );
+				options);
 
 			// Act
-			IQueuedTask result = await producer.EnqueueAsync( payload, "test-source", 1 );
+			IQueuedTask result = await producer.EnqueueAsync(payload, "test-source", 1);
 
 			// Assert
-			ClassicAssert.IsNotNull( result );
-			ClassicAssert.IsInstanceOf<FanOutQueuedTask>( result );
+			ClassicAssert.IsNotNull(result);
+			ClassicAssert.IsInstanceOf<FanOutQueuedTask>(result);
 
-			FanOutQueuedTask fanOutResult = (FanOutQueuedTask) result;
-			ClassicAssert.AreEqual( 1, fanOutResult.Errors.Count() );
-			ClassicAssert.IsInstanceOf<InvalidOperationException>( fanOutResult.Errors.First() );
-			ClassicAssert.AreEqual( 1, fanOutResult.AllTasks.Count() );
+			FanOutQueuedTask fanOutResult = (FanOutQueuedTask)result;
+			ClassicAssert.AreEqual(1, fanOutResult.Errors.Count());
+			ClassicAssert.IsInstanceOf<InvalidOperationException>(fanOutResult.Errors.First());
+			ClassicAssert.AreEqual(1, fanOutResult.AllTasks.Count());
 		}
 
-		private IQueuedTask CreateMockTask( Guid id )
+		private IQueuedTask CreateMockTask(Guid id)
 		{
 			var taskMock = new Mock<IQueuedTask>();
-			taskMock.SetupGet( t => t.Id ).Returns( id );
+			taskMock.SetupGet(t => t.Id).Returns(id);
 			return taskMock.Object;
 		}
 
